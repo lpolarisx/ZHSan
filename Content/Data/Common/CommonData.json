@@ -101293,8 +101293,8 @@
                     "FrameCount": 12,
                     "StayCount": 4,
                     "TextureFileName": null,
-                    "TextureHeight": 450,
-                    "TextureWidth": 5400
+                    "TextureHeight": 200,
+                    "TextureWidth": 2800
                 }
             },
             {
@@ -101319,8 +101319,8 @@
                     "FrameCount": 12,
                     "StayCount": 4,
                     "TextureFileName": null,
-                    "TextureHeight": 450,
-                    "TextureWidth": 5400
+                    "TextureHeight": 227,
+                    "TextureWidth": 2724
                 }
             },
             {
@@ -101514,8 +101514,8 @@
                     "FrameCount": 15,
                     "StayCount": 10,
                     "TextureFileName": null,
-                    "TextureHeight": 400,
-                    "TextureWidth": 6000
+                    "TextureHeight": 200,
+                    "TextureWidth": 3000
                 }
             },
             {
@@ -101527,8 +101527,8 @@
                     "FrameCount": 14,
                     "StayCount": 5,
                     "TextureFileName": null,
-                    "TextureHeight": 367,
-                    "TextureWidth": 5138
+                    "TextureHeight": 286,
+                    "TextureWidth": 4000
                 }
             },
             {
@@ -101618,8 +101618,8 @@
                     "FrameCount": 16,
                     "StayCount": 6,
                     "TextureFileName": null,
-                    "TextureHeight": 350,
-                    "TextureWidth": 5600
+                    "TextureHeight": 175,
+                    "TextureWidth": 2800
                 }
             },
             {
@@ -101735,8 +101735,8 @@
                     "FrameCount": 12,
                     "StayCount": 7,
                     "TextureFileName": null,
-                    "TextureHeight": 450,
-                    "TextureWidth": 5400
+                    "TextureHeight": 225,
+                    "TextureWidth": 2700
                 }
             },
             {
@@ -101761,8 +101761,8 @@
                     "FrameCount": 16,
                     "StayCount": 3,
                     "TextureFileName": null,
-                    "TextureHeight": 366,
-                    "TextureWidth": 5856
+                    "TextureHeight": 183,
+                    "TextureWidth": 2928
                 }
             },
             {
@@ -101774,8 +101774,8 @@
                     "FrameCount": 17,
                     "StayCount": 9,
                     "TextureFileName": null,
-                    "TextureHeight": 337,
-                    "TextureWidth": 5729
+                    "TextureHeight": 235,
+                    "TextureWidth": 4000
                 }
             },
             {
@@ -101865,8 +101865,8 @@
                     "FrameCount": 16,
                     "StayCount": 10,
                     "TextureFileName": null,
-                    "TextureHeight": 422,
-                    "TextureWidth": 6752
+                    "TextureHeight": 211,
+                    "TextureWidth": 3376
                 }
             },
             {
@@ -101878,8 +101878,8 @@
                     "FrameCount": 18,
                     "StayCount": 10,
                     "TextureFileName": null,
-                    "TextureHeight": 344,
-                    "TextureWidth": 6192
+                    "TextureHeight": 172,
+                    "TextureWidth": 3096
                 }
             },
             {
