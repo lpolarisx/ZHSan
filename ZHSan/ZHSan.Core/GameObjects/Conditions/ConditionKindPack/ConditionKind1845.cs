@@ -1,37 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind1845 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1845 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        private int number = 0;
+        var id = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Troop troop)
+        foreach (Person p in troop.Persons)
         {
-            foreach (Person p in troop.Persons)
+            if (p.ID == id)
             {
-                if (p.ID == number)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
+                return false;
             }
         }
+        
+        return true;
     }
 }
-

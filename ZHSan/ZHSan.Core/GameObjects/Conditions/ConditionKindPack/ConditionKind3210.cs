@@ -1,37 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind3210 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind3210 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Faction faction)
     {
-        private int val;
+        var archId = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Faction faction)
+        foreach (Architecture arch in faction.Architectures)
         {
-            foreach (Architecture a in faction.Architectures)
+            if (arch.ID == archId)
             {
-                if (a.ID == this.val)
-                {
-                    return true;
-                }
+                return true;
             }
-            return false;
         }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return false;
     }
 }
-

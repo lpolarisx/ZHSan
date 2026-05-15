@@ -1,30 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind595 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind595 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private float rate = 0f;
+        // 总战斗次数 = 击破次数 + 被击破次数
+        var totalBattles = person.RoutCount + person.RoutedCount;
 
-        public override bool CheckConditionKind(Person person)
-        {
-            return (((person.RoutCount + person.RoutedCount) > 0) && ((((float) person.RoutCount) / ((float) (person.RoutedCount))) < this.rate));
-        }
+        var result = totalBattles > 0 && (float)person.RoutCount / totalBattles < condition.GetFloatParam();
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return result;
     }
 }
-

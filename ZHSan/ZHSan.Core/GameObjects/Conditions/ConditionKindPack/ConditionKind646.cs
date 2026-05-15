@@ -1,31 +1,13 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind646 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind646 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int number = 0;
-
-        public override bool CheckConditionKind(Person person)
-        {
-            return !Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(this.number).IsLearnable(person);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return !Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(condition.GetIntParam()).IsLearnable(person);
     }
 }
-

@@ -1,32 +1,13 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind1540 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1540 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        private int terrain = 0;
-
-        public override bool CheckConditionKind(Troop troop)
-        {
-            return (int) Session.Current.Scenario.GetTerrainKindByPosition(troop.Position) == terrain;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.terrain = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
+        return (int)Session.Current.Scenario.GetTerrainKindByPosition(troop.Position) == condition.GetIntParam();
     }
 }
-

@@ -1,17 +1,13 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+public class ConditionKind1402 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1402 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        public override bool CheckConditionKind(Troop troop)
-        {
-            return Session.Current.Scenario.GetArchitectureByPosition(troop.Position) != null;
-        }
+        return Session.Current.Scenario.GetArchitectureByPosition(troop.Position) != null;
     }
 }
-

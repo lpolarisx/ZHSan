@@ -1,30 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind4140 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind4140 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int val;
-
-        public override bool CheckConditionKind(Person p)
-        {
-            return p.OfficerKillCount >= val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return person.OfficerKillCount >= condition.GetIntParam();
     }
 }
-

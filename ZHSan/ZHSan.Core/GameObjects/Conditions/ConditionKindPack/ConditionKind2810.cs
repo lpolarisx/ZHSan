@@ -1,38 +1,23 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
+using GameObjects.PersonDetail;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2810 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2810 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private int number = 0;
+        var personId = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Architecture a)
+        foreach (Person person in arch.NoFactionPersons)
         {
-            foreach (Person p in a.NoFactionPersons)
+            if (person.ID == personId && person.Status == PersonStatus.NoFaction)
             {
-                if (p.ID == number && p.Status == GameObjects.PersonDetail.PersonStatus.NoFaction)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
+                return true;
             }
         }
 
+        return false;
     }
 }
-

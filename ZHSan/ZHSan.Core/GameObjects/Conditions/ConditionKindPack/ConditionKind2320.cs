@@ -1,36 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2320 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2320 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private int val;
+        return arch.Meinvkongjian - arch.Feiziliebiao.Count >= condition.GetIntParam();
+    }
 
-        public override bool CheckConditionKind(Architecture a)
-        {
-            return a.Meinvkongjian - a.Feiziliebiao.Count >= val;
-        }
-
-        public override bool CheckConditionKind(Faction faction)
-        {
-            return faction.meinvkongjian() - faction.feiziCount() >= val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
+    public override bool CheckConditionKind(Condition condition, Faction faction)
+    {
+        return faction.meinvkongjian() - faction.feiziCount() >= condition.GetIntParam();
     }
 }
-

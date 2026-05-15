@@ -1,32 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2610 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2610 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private int val;
-
-        public override bool CheckConditionKind(Architecture a)
-        {
-            return a.youzainan && a.zainan.zainanzhonglei.ID == val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-
+        return arch.youzainan && arch.zainan.zainanzhonglei.ID == condition.GetIntParam();
     }
 }
-

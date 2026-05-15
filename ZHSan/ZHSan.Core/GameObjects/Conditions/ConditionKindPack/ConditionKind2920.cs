@@ -1,34 +1,12 @@
-﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Runtime.Serialization;
 
-namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+class ConditionKind2920 : ConditionKind
 {
-    [DataContract]
-    class ConditionKind2920 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private int number = 0;
-
-        public override bool CheckConditionKind(Architecture a)
-        {
-            return a.Mayor != null;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return arch.Mayor != null;
     }
 }

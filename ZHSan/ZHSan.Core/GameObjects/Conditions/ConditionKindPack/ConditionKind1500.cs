@@ -1,74 +1,48 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind1500 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1500 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        private int number = 0;
-        private int terrain = 0;
+        var terrain = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Troop troop)
+        var troopCount = condition.GetIntParam2();
+
+        switch (terrain)
         {
-            switch (this.terrain)
-            {
-                case 1:
-                    return (troop.ViewingPlainFriendlyTroopCount >= this.number);
+            case 1:
+                return troop.ViewingPlainFriendlyTroopCount >= troopCount;
 
-                case 2:
-                    return (troop.ViewingGrasslandFriendlyTroopCount >= this.number);
+            case 2:
+                return troop.ViewingGrasslandFriendlyTroopCount >= troopCount;
 
-                case 3:
-                    return (troop.ViewingForestFriendlyTroopCount >= this.number);
+            case 3:
+                return troop.ViewingForestFriendlyTroopCount >= troopCount;
 
-                case 4:
-                    return (troop.ViewingMarshFriendlyTroopCount >= this.number);
+            case 4:
+                return troop.ViewingMarshFriendlyTroopCount >= troopCount;
 
-                case 5:
-                    return (troop.ViewingMountainFriendlyTroopCount >= this.number);
+            case 5:
+                return troop.ViewingMountainFriendlyTroopCount >= troopCount;
 
-                case 6:
-                    return (troop.ViewingWaterFriendlyTroopCount >= this.number);
+            case 6:
+                return troop.ViewingWaterFriendlyTroopCount >= troopCount;
 
-                case 7:
-                    return (troop.ViewingRidgeFriendlyTroopCount >= this.number);
+            case 7:
+                return troop.ViewingRidgeFriendlyTroopCount >= troopCount;
 
-                case 8:
-                    return (troop.ViewingWastelandFriendlyTroopCount >= this.number);
+            case 8:
+                return troop.ViewingWastelandFriendlyTroopCount >= troopCount;
 
-                case 9:
-                    return (troop.ViewingDesertFriendlyTroopCount >= this.number);
+            case 9:
+                return troop.ViewingDesertFriendlyTroopCount >= troopCount;
 
-                case 10:
-                    return (troop.ViewingCliffFriendlyTroopCount >= this.number);
-            }
-            return false;
+            case 10:
+                return troop.ViewingCliffFriendlyTroopCount >= troopCount;
         }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.terrain = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return false;
     }
 }
-

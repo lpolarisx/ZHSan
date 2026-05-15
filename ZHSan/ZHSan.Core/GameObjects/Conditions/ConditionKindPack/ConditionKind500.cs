@@ -1,67 +1,50 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+public class ConditionKind500 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind500 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int number = 0;
+        Treasure t = Session.Current.Scenario.Treasures.GetGameObject(condition.GetIntParam()) as Treasure;
+        return person.Treasures.GameObjects.Contains(t);
+    }
 
-        public override bool CheckConditionKind(Person person)
+    public override bool CheckConditionKind(Condition condition, Architecture architecture)
+    {
+        foreach (Person p in architecture.Persons)
         {
-            Treasure t = Session.Current.Scenario.Treasures.GetGameObject(number) as Treasure;
-            return person.Treasures.GameObjects.Contains(t);
-        }
-
-        public override bool CheckConditionKind(Architecture architecture)
-        {
-            foreach (Person p in architecture.Persons)
+            if (CheckConditionKind(condition, p))
             {
-                if (this.CheckConditionKind(p))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public override bool CheckConditionKind(Faction faction)
-        {
-            foreach (Person p in faction.Persons)
-            {
-                if (this.CheckConditionKind(p))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public override bool CheckConditionKind(Troop troop)
-        {
-            foreach (Person p in troop.Persons)
-            {
-                if (this.CheckConditionKind(p))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
+                return true;
             }
         }
+        return false;
+    }
+
+    public override bool CheckConditionKind(Condition condition, Faction faction)
+    {
+        foreach (Person p in faction.Persons)
+        {
+            if (CheckConditionKind(condition, p))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public override bool CheckConditionKind(Condition condition, Troop troop)
+    {
+        foreach (Person p in troop.Persons)
+        {
+            if (CheckConditionKind(condition, p))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }
-

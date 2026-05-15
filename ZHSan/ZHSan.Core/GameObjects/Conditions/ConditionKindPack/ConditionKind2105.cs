@@ -1,31 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2105 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2105 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private double val = 0;
-
-        public override bool CheckConditionKind(Architecture a)
-        {
-            return (double) a.Agriculture / a.AgricultureCeiling >= val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = double.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
+        return arch.AgricultureCeiling > 0 && arch.Agriculture / arch.AgricultureCeiling >= condition.GetFloatParam();
     }
 }
-

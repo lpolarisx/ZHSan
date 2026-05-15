@@ -361,7 +361,7 @@ namespace GameObjects
             {
                 foreach (Person p in allPersons)
                 {
-                    bool ok = Condition.CheckConditionList(i.Value, p, this);
+                    bool ok = Condition.CheckConditionList(i.Value, p);
                     if (ok)
                     {
                         if (this.person[i.Key].Contains(null) || this.person[i.Key].Contains(p))
@@ -381,7 +381,7 @@ namespace GameObjects
                         bool ok;
                         if (this.personCond.ContainsKey(i.Key))
                         {
-                            ok = Condition.CheckConditionList(this.personCond[i.Key], p, this);
+                            ok = Condition.CheckConditionList(this.personCond[i.Key], p);
                         }
                         else
                         {
@@ -533,8 +533,8 @@ namespace GameObjects
                 if (Session.Current.Scenario.Date.Month > this.EndMonth) return false;
             }
 
-            if (!Condition.CheckConditionList(this.architectureCond, a, this)) return false;
-            if (!Condition.CheckConditionList(this.factionCond, a.BelongedFaction, this)) return false;
+            if (!Condition.CheckConditionList(this.architectureCond, a)) return false;
+            if (!Condition.CheckConditionList(this.factionCond, a.BelongedFaction)) return false;
 
             if (architecture.Count > 0 || faction.Count > 0)
             {

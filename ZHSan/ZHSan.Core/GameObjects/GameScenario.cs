@@ -20,6 +20,8 @@ using Tools;
 using GameManager;
 using Platforms;
 using WorldOfTheThreeKingdoms.GameScreens;
+using Serilog.Core;
+using Serilog;
 
 namespace GameObjects
 {
@@ -29,6 +31,8 @@ namespace GameObjects
     public class GameScenario
     {
         //public GameFreeText.FreeText GameProgressCaution;
+
+        private static ILogger logger;
 
         [DataMember]
         public string MOD { get; set; }
@@ -258,6 +262,8 @@ namespace GameObjects
           
         public void Init()
         {
+            logger = Log.ForContext<GameScenario>();
+
             this.GeneratorOfTileAnimation = new TileAnimationGenerator();
 
             //public static readonly string SCENARIO_ERROR_TEXT_FILE = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/GameData/ScenarioErrors.txt";
@@ -2821,13 +2827,11 @@ namespace GameObjects
         
         public static CommonData ProcessCommonData(CommonData commonData)
         {
-            List<string> errorMsg = new List<string>();
-
             commonData.NumberGenerator = new CombatNumberGenerator();
 
             commonData.TroopAnimations = new TroopAnimation();
 
-            errorMsg.AddRange(LoadGameCommonData());
+            LoadGameCommonData();
 
             if (commonData.AllTerrainDetails != null && commonData.AllTerrainDetails.TerrainDetails != null)
             {
@@ -2855,7 +2859,7 @@ namespace GameObjects
 
                     facilityKind.Value.Conditions.LoadFromString(commonData.AllConditions, facilityKind.Value.ConditionTableString);
 
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, facilityKind.Value.AIBuildConditionWeightString, out facilityKind.Value.AIBuildConditionWeight);
+                    facilityKind.Value.AIBuildConditionWeight = Condition.LoadConditionWeightFromString(commonData.AllConditions, facilityKind.Value.AIBuildConditionWeightString);
                 }
             }
 
@@ -2866,7 +2870,7 @@ namespace GameObjects
                     technique.Value.Init();
                     technique.Value.Influences.LoadFromString(commonData.AllInfluences, technique.Value.InfluencesString);
                     technique.Value.Conditions.LoadFromString(commonData.AllConditions, technique.Value.ConditionTableString);
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, technique.Value.AIConditionWeightString, out technique.Value.AIConditionWeight);
+                    technique.Value.AIConditionWeight = Condition.LoadConditionWeightFromString(commonData.AllConditions, technique.Value.AIConditionWeightString);
                 }
             }
 
@@ -2904,10 +2908,10 @@ namespace GameObjects
 
                     militaryKind.Value.CreateConditions.LoadFromString(commonData.AllConditions, militaryKind.Value.CreateConditionsString);
 
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AICreateArchitectureConditionWeightString, out militaryKind.Value.AICreateArchitectureConditionWeight);
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AIUpgradeArchitectureConditionWeightString, out militaryKind.Value.AIUpgradeArchitectureConditionWeight);
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AIUpgradeLeaderConditionWeightString, out militaryKind.Value.AIUpgradeLeaderConditionWeight);
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AILeaderConditionWeightString, out militaryKind.Value.AILeaderConditionWeight);
+                    militaryKind.Value.AICreateArchitectureConditionWeight = Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AICreateArchitectureConditionWeightString);
+                    militaryKind.Value.AIUpgradeArchitectureConditionWeight = Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AIUpgradeArchitectureConditionWeightString);
+                    militaryKind.Value.AIUpgradeLeaderConditionWeight = Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AIUpgradeLeaderConditionWeightString);
+                    militaryKind.Value.AILeaderConditionWeight = Condition.LoadConditionWeightFromString(commonData.AllConditions, militaryKind.Value.AILeaderConditionWeightString);
 
                     militaryKind.Value.successor = new MilitaryKindTable();
                     militaryKind.Value.successor.LoadFromString(commonData.AllMilitaryKinds, militaryKind.Value.SuccessorString);
@@ -2927,8 +2931,8 @@ namespace GameObjects
 
                     combatMethod.Value.CastConditions.LoadFromString(commonData.AllConditions, combatMethod.Value.CastConditionsString);
 
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, combatMethod.Value.AIConditionWeightSelfString, out combatMethod.Value.AIConditionWeightSelf);
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, combatMethod.Value.AIConditionWeightEnemyString, out combatMethod.Value.AIConditionWeightEnemy);
+                    combatMethod.Value.AIConditionWeightSelf = Condition.LoadConditionWeightFromString(commonData.AllConditions, combatMethod.Value.AIConditionWeightSelfString);
+                    combatMethod.Value.AIConditionWeightEnemy = Condition.LoadConditionWeightFromString(commonData.AllConditions, combatMethod.Value.AIConditionWeightEnemyString);
                 }
             }
 
@@ -2953,8 +2957,8 @@ namespace GameObjects
                     stratagem.Value.CastConditions.LoadFromString(commonData.AllConditions, stratagem.Value.CastConditionsString);
                     stratagem.Value.CastDefault = commonData.AllCastDefaultKinds.GetGameObject(stratagem.Value.CastDefaultString) as CastDefaultKind;
                     stratagem.Value.CastTarget = commonData.AllCastTargetKinds.GetGameObject(stratagem.Value.CastTargetString) as CastTargetKind;
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, stratagem.Value.AIConditionWeightSelfString, out stratagem.Value.AIConditionWeightSelf);
-                    Condition.LoadConditionWeightFromString(commonData.AllConditions, stratagem.Value.AIConditionWeightEnemyString, out stratagem.Value.AIConditionWeightEnemy);
+                    stratagem.Value.AIConditionWeightSelf = Condition.LoadConditionWeightFromString(commonData.AllConditions, stratagem.Value.AIConditionWeightSelfString);
+                    stratagem.Value.AIConditionWeightEnemy = Condition.LoadConditionWeightFromString(commonData.AllConditions, stratagem.Value.AIConditionWeightEnemyString);
                 }
             }
 
@@ -5243,10 +5247,10 @@ namespace GameObjects
             return true;
         }
 
-        public static List<string> LoadGameCommonData()
+        public static void LoadGameCommonData()
         {
-            var errorMsg = new List<string>();
-            
+            // TODO: 配置项全局唯一的，为什么需要重新匹配？编辑器修改没有强关联或校验？
+
             var conditionKinds = new ConditionKindTable();
             foreach (var conditionKind in CommonData.Current.AllConditionKinds.ConditionKinds)
             {
@@ -5260,21 +5264,27 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"条件类型Id:[{num}]不存在");
                 }
             }
             CommonData.Current.AllConditionKinds = conditionKinds;
 
-            foreach (var condition in CommonData.Current.AllConditions.Conditions)
+            foreach (var (id, condition) in CommonData.Current.AllConditions.Conditions)
             {
-                var Kind = condition.Value.Kind;
-                if (Kind == null)
+                if (condition.Kind == null)
                 {
-
+                    logger.Error($"条件Id:[{id}]没有对应类型");
+                    continue;
+                }
+                
+                var kindId = condition.Kind.ID;
+                if (conditionKinds.ConditionKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    condition.Kind = matchedKind;
                 }
                 else
                 {
-                    CommonData.Current.AllConditionKinds.ConditionKinds.TryGetValue(Kind.ID, out condition.Value.Kind);
+                    logger.Error($"条件类型Id:[{kindId}]不存在");
                 }
             }
 
@@ -5295,21 +5305,27 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"影响类型Id:[{num}]不存在");
                 }
             }
             CommonData.Current.AllInfluenceKinds = influenceKinds;
 
-            foreach (var influence in CommonData.Current.AllInfluences.Influences)
+            foreach (var (id, influence) in CommonData.Current.AllInfluences.Influences)
             {
-                var kind = influence.Value.Kind;
-                if (kind == null)
+                if (influence.Kind == null)
                 {
-
+                    logger.Error($"影响Id:[{id}]没有对应类型");
+                    continue;
+                }
+                
+                var kindId = influence.Kind.ID;
+                if (influenceKinds.InfluenceKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    influence.Kind = matchedKind;
                 }
                 else
                 {
-                    CommonData.Current.AllInfluenceKinds.InfluenceKinds.TryGetValue(kind.ID, out influence.Value.Kind);
+                    logger.Error($"影响类型Id:[{kindId}]不存在");
                 }
             }
 
@@ -5326,29 +5342,36 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"事件效果类型Id:[{num}]不存在");
                 }
             }
             CommonData.Current.AllEventEffectKinds = eventEffectKinds;
 
-            foreach (var eventEffect in CommonData.Current.AllEventEffects.EventEffects)
+            foreach (var (id, eventEffect) in CommonData.Current.AllEventEffects.EventEffects)
             {
-                var kind = eventEffect.Value.Kind;
-                if (kind == null)
+                if (eventEffect.Kind == null)
                 {
-
+                    logger.Error($"事件效果Id:[{id}]没有对应类型");
+                    continue;
+                }
+                
+                var kindId = eventEffect.Kind.ID;
+                if (eventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    eventEffect.Kind = matchedKind;
                 }
                 else
                 {
-                    CommonData.Current.AllEventEffectKinds.EventEffectKinds.TryGetValue(kind.ID, out eventEffect.Value.Kind);
+                    logger.Error($"事件效果类型Id:[{kindId}]不存在");
                 }
             }
 
-            var troopEventEffectKinds = new GameObjects.TroopDetail.EventEffect.EventEffectKindTable();
+            // TODO: 部队事件效果还是EventEffect
+            var troopEventEffectKinds = new TroopDetail.EventEffect.EventEffectKindTable();
             foreach (var eventEffectKind in CommonData.Current.AllTroopEventEffectKinds.EventEffectKinds)
             {
                 int num = eventEffectKind.Key;
-                GameObjects.TroopDetail.EventEffect.EventEffectKind ck = GameObjects.TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(num);
+                TroopDetail.EventEffect.EventEffectKind ck = TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(num);
                 if (ck != null)
                 {
                     ck.ID = num;
@@ -5357,24 +5380,29 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"部队事件效果类型Id:[{num}]不存在");
                 }
             }
             CommonData.Current.AllTroopEventEffectKinds = troopEventEffectKinds;
 
-            foreach (var eventEffect in CommonData.Current.AllTroopEventEffects.EventEffects)
+            foreach (var (id, eventEffect) in CommonData.Current.AllTroopEventEffects.EventEffects)
             {
-                var kind = eventEffect.Value.Kind;
-                if (kind == null)
+                if (eventEffect.Kind == null)
                 {
-                    
+                    logger.Error($"部队事件效果Id:[{id}]没有对应类型");
+                    continue;
+                }
+
+                var kindId = eventEffect.Kind.ID;
+                if (troopEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    eventEffect.Kind = matchedKind;
                 }
                 else
                 {
-                    CommonData.Current.AllTroopEventEffectKinds.EventEffectKinds.TryGetValue(kind.ID, out eventEffect.Value.Kind);
+                    logger.Error($"部队事件效果类型Id:[{kindId}]不存在");
                 }
             }
-            return errorMsg;
         }
 
         public static void SaveGameCommonData(GameScenario scenario)
@@ -5401,8 +5429,8 @@ namespace GameObjects
             commonData.AllTroopEventEffectKinds.EventEffectKinds = commonData.AllTroopEventEffectKinds.EventEffectKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
             commonData.AllTroopEventEffects.EventEffects = commonData.AllTroopEventEffects.EventEffects.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
             commonData.AllTextMessages.textMessages= commonData.AllTextMessages.textMessages.OrderBy(x => x.Key.Key).ToDictionary(x => x.Key, y => y.Value);
-            var errorMsg = new List<string>();
 
+            // TODO: 保存数据也需要重新匹配？
             var conditionKinds = new ConditionKindTable();
             foreach (var conditionKind in commonData.AllConditionKinds.ConditionKinds)
             {
@@ -5416,23 +5444,29 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"条件类型Id:[{num}]不存在");
                 }
             }
             commonData.AllConditionKinds = conditionKinds;
 
             var allConditions = new ConditionTable();
-            foreach (var condition in commonData.AllConditions.Conditions)
+            foreach (var (id, condition) in commonData.AllConditions.Conditions)
             {
-                var conditionClone = condition.Value.Clone();
-                if (conditionClone.Kind == null)
+                if (condition.Kind == null)
                 {
+                    logger.Error($"条件Id:[{id}]没有对应类型");
+                    continue;
+                }
 
+                var kindId = condition.Kind.ID;
+                if (commonData.AllConditionKinds.ConditionKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    condition.Kind = matchedKind;
+                    allConditions.AddCondition(condition);
                 }
                 else
                 {
-                    commonData.AllConditionKinds.ConditionKinds.TryGetValue(conditionClone.Kind.ID, out conditionClone.Kind);
-                    allConditions.AddCondition(conditionClone);
+                    logger.Error($"条件类型Id:[{kindId}]不存在");
                 }
             }
             commonData.AllConditions = allConditions;
@@ -5454,17 +5488,30 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"影响类型Id:[{num}]不存在");
                 }
             }
             commonData.AllInfluenceKinds = influenceKinds;
 
             var allInfluences = new InfluenceTable();
-            foreach (var influence in commonData.AllInfluences.Influences)
+            foreach (var (id, influence) in commonData.AllInfluences.Influences)
             {
-                var inf = influence.Value.Clone();
-                commonData.AllInfluenceKinds.InfluenceKinds.TryGetValue(inf.Kind.ID, out inf.Kind);
-                allInfluences.AddInfluence(inf);
+                if (influence.Kind == null)
+                {
+                    logger.Error($"影响Id:[{id}]没有对应的类型");
+                    continue;
+                }
+
+                var kindId = influence.Kind.ID;
+                if (commonData.AllInfluenceKinds.InfluenceKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    influence.Kind = matchedKind;
+                    allInfluences.AddInfluence(influence);
+                }
+                else
+                {
+                    logger.Error($"影响类型Id:[{kindId}]不存在");
+                }
             }
             commonData.AllInfluences = allInfluences;
 
@@ -5481,32 +5528,38 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"事件效果类型Id:[{num}]不存在");
                 }
             }
             commonData.AllEventEffectKinds = eventEffectKinds;
 
             var eventEffects = new EventEffectTable();
-            foreach (var eventEffect in commonData.AllEventEffects.EventEffects)
+            foreach (var (id, eventEffect) in commonData.AllEventEffects.EventEffects)
             {
-                var eve = eventEffect.Value.Clone();
-                if (eve.Kind == null)
+                if (eventEffect.Kind == null)
                 {
-
+                    logger.Error($"事件效果Id:[{id}]没有对应类型");
+                    continue;
+                }
+                
+                var kindId = eventEffect.Kind.ID;
+                if (commonData.AllEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    eventEffect.Kind = matchedKind;
+                    eventEffects.AddEventEffect(eventEffect);
                 }
                 else
                 {
-                    commonData.AllEventEffectKinds.EventEffectKinds.TryGetValue(eve.Kind.ID, out eve.Kind);
-                    eventEffects.AddEventEffect(eve);
+                    logger.Error($"事件效果类型Id:[{kindId}]不存在");
                 }
             }
             commonData.AllEventEffects = eventEffects;
 
-            var troopEventEffectKinds = new GameObjects.TroopDetail.EventEffect.EventEffectKindTable();
+            var troopEventEffectKinds = new TroopDetail.EventEffect.EventEffectKindTable();
             foreach (var eventEffectKind in commonData.AllTroopEventEffectKinds.EventEffectKinds)
             {
                 int num = eventEffectKind.Key;
-                GameObjects.TroopDetail.EventEffect.EventEffectKind ck = new TroopDetail.EventEffect.EventEffectKind(); // GameObjects.TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(num);
+                TroopDetail.EventEffect.EventEffectKind ck = new TroopDetail.EventEffect.EventEffectKind(); // GameObjects.TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(num);
                 if (ck != null)
                 {
                     ck.ID = num;
@@ -5515,23 +5568,29 @@ namespace GameObjects
                 }
                 else
                 {
-                    errorMsg.Add("条件类型ID" + num + "不存在于游戏中。");
+                    logger.Error($"部队事件效果类型Id:[{num}]不存在");
                 }
             }
             commonData.AllTroopEventEffectKinds = troopEventEffectKinds;
 
             var allTroopEventEffects = new TroopDetail.EventEffect.EventEffectTable();
-            foreach (var eventEffect in commonData.AllTroopEventEffects.EventEffects)
+            foreach (var (id, eventEffect) in commonData.AllTroopEventEffects.EventEffects)
             {
-                var eve = eventEffect.Value.Clone();
-                if (eve.Kind == null)
+                if (eventEffect.Kind == null)
                 {
-
+                    logger.Error($"部队事件效果Id:[{id}]没有对应类型");
+                    continue;
+                }
+                
+                var kindId = eventEffect.Kind.ID;
+                if (commonData.AllTroopEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
+                {
+                    eventEffect.Kind = matchedKind;
+                    allTroopEventEffects.AddEventEffect(eventEffect);
                 }
                 else
                 {
-                    commonData.AllTroopEventEffectKinds.EventEffectKinds.TryGetValue(eve.Kind.ID, out eve.Kind);
-                    allTroopEventEffects.AddEventEffect(eve);
+                    logger.Error($"部队事件效果类型Id:[{kindId}]不存在");
                 }
             }
             commonData.AllTroopEventEffects = allTroopEventEffects;

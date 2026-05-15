@@ -1,396 +1,234 @@
-﻿using GameObjects;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using Tools;
+using Serilog;
 
 namespace GameObjects.Conditions
 {
     [DataContract]
     public class Condition : GameObject
     {
+        # region DataMember
+
+        /// <summary>
+        /// 条件类型
+        /// </summary>
         [DataMember]
-        public ConditionKind Kind;
+        public ConditionKind Kind { get; set; }
+
         private string parameter;
-        private string parameter2;
+        private int? intParameter;
+        private float? floatParameter;
 
-        public Condition Clone()
-        {
-            return this.MemberwiseClone() as Condition;
-        }
 
-        public static bool CheckConditionList(ICollection<Condition> list, Architecture a, Event e = null)
-        {
-            if (a == null) return false;
-            bool flag = true;
-            bool negate = false;
-            foreach (Condition condition in list)
-            {
-                if (condition.Kind.ID == 996)
-                {
-                    negate = true;
-                }
-                else if (condition.Kind.ID == 997)
-                {
-                    if (flag) return true;
-                    flag = true;
-                }
-                else
-                {
-                    if (negate)
-                    {
-                        if (e == null)
-                        {
-                            if (condition.CheckCondition(a))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (condition.CheckCondition(a, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (e == null)
-                        {
-                            if (!condition.CheckCondition(a))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (!condition.CheckCondition(a, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    negate = false;
-                }
-            }
-            return flag;
-        }
-
-        public static bool CheckConditionList(ICollection<Condition> list, Person p, Event e = null)
-        {
-            if (p == null) return false;
-            bool flag = true;
-            bool negate = false;
-            foreach (Condition condition in list)
-            {
-                //why Kind is null sometimes?
-                if (condition.Kind == null)
-                {
-                    flag = false;
-                    continue;
-                }
-                if (condition.Kind.ID == 996)
-                {
-                    negate = true;
-                }
-                else if (condition.Kind.ID == 997)
-                {
-                    if (flag) return true;
-                    flag = true;
-                }
-                else
-                {
-                    if (negate)
-                    {
-                        if (e == null)
-                        {
-                            if (condition.CheckCondition(p))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (condition.CheckCondition(p, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (e == null)
-                        {
-                            if (!condition.CheckCondition(p))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (!condition.CheckCondition(p, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    negate = false;
-                }
-            }
-            return flag;
-        }
-
-        public static bool CheckConditionList(ICollection<Condition> list, Faction f, Event e = null)
-        {
-            if (f == null) return false;
-            bool flag = true;
-            bool negate = false;
-            foreach (Condition condition in list)
-            {
-                if (condition.Kind.ID == 996)
-                {
-                    negate = true;
-                }
-                else if (condition.Kind.ID == 997)
-                {
-                    if (flag) return true;
-                    flag = true;
-                }
-                else
-                {
-                    if (negate)
-                    {
-                        if (e == null)
-                        {
-                            if (condition.CheckCondition(f))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (condition.CheckCondition(f, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (e == null)
-                        {
-                            if (!condition.CheckCondition(f))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (!condition.CheckCondition(f, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    negate = false;
-                }
-            }
-            return flag;
-        }
-
-        public static bool CheckConditionList(ICollection<Condition> list, Troop t, Event e = null)
-        {
-            if (t == null) return false;
-            bool flag = true;
-            bool negate = false;
-            foreach (Condition condition in list)
-            {
-                if (condition.Kind.ID == 996)
-                {
-                    negate = true;
-                }
-                else if (condition.Kind.ID == 997)
-                {
-                    if (flag) return true;
-                    flag = true;
-                }
-                else
-                {
-                    if (negate)
-                    {
-                        if (e == null)
-                        {
-                            if (condition.CheckCondition(t))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (condition.CheckCondition(t, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (e == null)
-                        {
-                            if (!condition.CheckCondition(t))
-                            {
-                                flag = false;
-                            }
-                        }
-                        else
-                        {
-                            if (!condition.CheckCondition(t, e))
-                            {
-                                flag = false;
-                            }
-                        }
-                    }
-                    negate = false;
-                }
-            }
-            return flag;
-        }
-
-        public bool CheckCondition(Architecture architecture, Event e)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(architecture, e) || this.Kind.CheckConditionKind(architecture);
-        }
-
-        public bool CheckCondition(Faction faction, Event e)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(faction, e) || this.Kind.CheckConditionKind(faction);
-        }
-
-        public bool CheckCondition(Person person, Event e)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(person, e) || this.Kind.CheckConditionKind(person);
-        }
-
-        public bool CheckCondition(Troop troop, Event e)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(troop, e) || this.Kind.CheckConditionKind(troop);
-        }
-
-        public bool CheckCondition(Architecture architecture)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(architecture);
-        }
-
-        public bool CheckCondition(Faction faction)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-
-            if (this.Kind.ID >= 2100 && this.Kind.ID < 3000)
-            {
-                foreach (Architecture a in faction.Architectures)
-                {
-                    if (this.Kind.CheckConditionKind(faction))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            else
-            {
-                return this.Kind.CheckConditionKind(faction);
-            }
-        }
-
-        public bool CheckCondition(Person person)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(person);
-        }
-
-        public bool CheckCondition(Troop troop)
-        {
-            if (this.Kind == null) return false;
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.CheckConditionKind(troop);
-        }
+        /// <summary>
+        /// 参数1
+        /// </summary>
         [DataMember]
         public string Parameter
         {
-            get
-            {
-                return this.parameter;
-            }
+            get => parameter;
             set
             {
-                this.parameter = value;
+                parameter = value;
+                intParameter = null; // 重置缓存
+                floatParameter = null;
             }
         }
+
+        private string parameter2;
+        private int? intParameter2;
+        private float? floatParameter2;
+
+        /// <summary>
+        /// 参数2
+        /// </summary>
         [DataMember]
         public string Parameter2
         {
-            get
-            {
-                return this.parameter2;
-            }
+            get => parameter2;
             set
             {
-                this.parameter2 = value;
+                parameter2 = value;
+                intParameter2 = null; // 重置缓存
+                floatParameter2 = null;
             }
         }
 
-        public static List<string> LoadConditionWeightFromString(ConditionTable conditions, string str, out Dictionary<Condition, float> result)
+        #endregion
+
+        /// <summary>
+        /// 获取参数1解析的int值
+        /// </summary>
+        /// <returns></returns>
+        public int GetIntParam()
         {
-            result = new Dictionary<Condition, float>();
-
-            str = str.NullToString("");
-
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = str.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            Condition condition = null;
-            List<string> errorMsg = new List<string>();
-            try
+            if (!intParameter.HasValue)
             {
-                for (int i = 0; i < strArray.Length; i += 2)
+                intParameter = int.TryParse(parameter, out int v) ? v : 0;
+            }
+            return intParameter.Value;
+        }
+
+        /// <summary>
+        /// 获取参数1解析的float值
+        /// </summary>
+        /// <returns></returns>
+        public float GetFloatParam()
+        {
+            if (!floatParameter.HasValue)
+            {
+                floatParameter = float.TryParse(parameter, out float v) ? v : 0;
+            }
+            return floatParameter.Value;
+        }
+
+        /// <summary>
+        /// 获取参数2解析的int值
+        /// </summary>
+        /// <returns></returns>
+        public int GetIntParam2()
+        {
+            if (!intParameter2.HasValue)
+            {
+                intParameter2 = int.TryParse(parameter2, out int v) ? v : 0;
+            }
+            return intParameter2.Value;
+        }
+
+        /// <summary>
+        /// 获取参数2解析的float值
+        /// </summary>
+        /// <returns></returns>
+        public float GetFloatParam2()
+        {
+            if (!floatParameter2.HasValue)
+            {
+                floatParameter2 = float.TryParse(parameter, out float v) ? v : 0;
+            }
+            return floatParameter2.Value;
+        }
+
+        private static readonly ILogger logger = Log.ForContext<Condition>();
+
+        /// <summary>
+        /// 校验条件列表
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static bool CheckConditionList<T>(ICollection<Condition> list, T target) where T : GameObject
+        {
+            if (target == null) return false;
+            
+            if (list == null || list.Count == 0) return true;
+
+            bool result = true;
+            bool negate = false;
+
+            foreach (Condition condition in list)
+            {
+                var conditionKind = condition.Kind;
+
+                // 忽略不存在的条件类型，并重置negate
+                if (conditionKind == null)
                 {
-                    if (conditions.Conditions.TryGetValue(int.Parse(strArray[i]), out condition))
+                    logger.Error($"条件类型Id:[{conditionKind.ID}]不存在");
+                    negate = false;
+                    result = false;
+                    continue;
+                }
+
+                if (conditionKind.ID == ConditionKindIds.Negate)
+                {
+                    negate = true;
+                }
+                else if (conditionKind.ID == ConditionKindIds.Or)
+                {
+                    // 记录or前有negate，并重置negate
+                    if (negate)
                     {
-                        result.Add(condition, float.Parse(strArray[i + 1]));
+                        logger.Error("或前设置取反，已忽略取反操作");
+                        negate = false;
                     }
-                    else
+
+                    if (result) return true;
+                    result = true;
+                }
+                else
+                {
+                    try
                     {
-                        errorMsg.Add("条件ID" + int.Parse(strArray[i]) + "不存在");
+                        bool passed = condition.CheckCondition(target) ^ negate; // negate时取反
+                        if (!passed) result = false;
+
+                        negate = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex.Message);
                     }
                 }
             }
-            catch
+
+            if (negate)
             {
-                errorMsg.Add("条件AI应为半型空格分隔的条件ID及数值相间");
+                logger.Error("末尾的取反操作无效");
             }
-            return errorMsg;
+
+            return result;
+        }
+
+        public bool CheckCondition<T>(T target) where T : GameObject
+        {
+            return target switch
+            {
+                Faction faction => Kind.CheckConditionKind(this, faction),
+                Architecture arch => Kind.CheckConditionKind(this, arch),
+                Person person => Kind.CheckConditionKind(this, person),
+                Troop troop => Kind.CheckConditionKind(this, troop),
+                _ => throw new NotSupportedException($"不支持的条件对象: {typeof(T)}")
+            };
+        }
+
+        /// <summary>
+        /// 加载条件权重
+        /// </summary>
+        /// <param name="conditions"></param>
+        /// <param name="weightStr"></param>
+        /// <returns></returns>
+        public static Dictionary<Condition, float> LoadConditionWeightFromString(ConditionTable conditions, string weightStr)
+        {
+            var weights = weightStr.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            var conditionDict = conditions.Conditions;
+            var result = new Dictionary<Condition, float>();
+
+            var length = weights.Length;
+            for (int i = 0; i < length && i + 1 < length; i += 2)
+            {
+                var conditionIdStr = weights[i];
+                var valueStr = weights[i + 1];
+
+                if (!int.TryParse(conditionIdStr, out var conditionId))
+                {
+                    logger.Error($"无法解析条件Id:{conditionIdStr}");
+                }
+
+                if (!float.TryParse(valueStr, out var value))
+                {
+                    logger.Error($"无法解析权重值:{valueStr}");
+                }
+
+                if (!conditionDict.TryGetValue(conditionId, out var condition))
+                {
+                    logger.Error($"条件Id:[{conditionIdStr}]不存在");
+                }
+                
+                result.Add(condition, value);
+            }
+
+            return result;
         }
     }
 }
-

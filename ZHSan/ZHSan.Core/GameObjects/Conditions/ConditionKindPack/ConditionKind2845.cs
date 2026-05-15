@@ -1,27 +1,24 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2845 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2845 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        public override bool CheckConditionKind(Architecture a)
+        if (arch.BelongedFaction == null) return false;
+
+        var leader = arch.BelongedFaction.Leader;
+
+        foreach (Person person in arch.Feiziliebiao)
         {
-            if (a.BelongedFaction == null) return false;
-            foreach (Person p in a.Feiziliebiao)
+            if (person == leader)
             {
-                if (p == a.BelongedFaction.Leader)
-                {
-                    return false;
-                }
+                return false;
             }
-            return true;
         }
 
-
+        return true;
     }
 }
-

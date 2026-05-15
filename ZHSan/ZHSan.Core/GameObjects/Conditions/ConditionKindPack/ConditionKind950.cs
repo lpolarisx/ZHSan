@@ -1,17 +1,14 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind950 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind950 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        public override bool CheckConditionKind(Person person)
-        {
-            return person.BelongedFactionWithPrincess != null && person.Closes(person.BelongedFactionWithPrincess.Leader);
-        }
+        var result = person.BelongedFactionWithPrincess != null && person.Closes(person.BelongedFactionWithPrincess.Leader);
+
+        return result;
     }
 }
-

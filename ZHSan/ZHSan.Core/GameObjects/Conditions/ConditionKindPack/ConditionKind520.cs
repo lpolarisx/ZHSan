@@ -1,30 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+public class ConditionKind520 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind520 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int personID;
+        Person p1 = Session.Current.Scenario.Persons.GetGameObject(condition.GetIntParam()) as Person;
 
-        public override bool CheckConditionKind(Person person)
-        {
-            Person p1 = Session.Current.Scenario.Persons.GetGameObject(personID) as Person;
-            return ( person.LocationArchitecture != null && p1.LocationArchitecture  != null && person.LocationArchitecture == p1.LocationArchitecture );
-        }
+        var result = person.LocationArchitecture != null && p1.LocationArchitecture != null && person.LocationArchitecture == p1.LocationArchitecture;
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.personID = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return result;
     }
 }

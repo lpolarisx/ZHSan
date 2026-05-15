@@ -1,18 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind4320 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind4320 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
- 
-        public override bool CheckConditionKind(Person person)
-        {
-            return person.OutsideTask == OutsideTaskKind.亲善;
-        }
+        return person.OutsideTask == OutsideTaskKind.亲善;
     }
 }
-

@@ -1,38 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2825 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2825 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private int number = 0;
+        var personId = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Architecture a)
+        foreach (Captive captive in arch.Captives)
         {
-            foreach (Captive p in a.Captives)
+            if (captive.CaptivePersonID == personId)
             {
-                if (p.CaptivePersonID == number)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
+                return false;
             }
         }
 
+        return true;
     }
 }
-
