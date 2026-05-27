@@ -1,36 +1,18 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
-using GameGlobal;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+namespace GameObjects.Influences.InfluenceKindPack;
+
+[DataContract]
+public class InfluenceKind120 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind120 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment = 0;
+        arch.DayLearnTitleDay = influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture person)
-        {
-            person.DayLearnTitleDay = this.increment;
-        }
-
-        public override void PurifyInfluenceKind(Architecture person)
-        {
-            person.DayLearnTitleDay = Session.Parameters.LearnTitleDays;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.DayLearnTitleDay = Session.Parameters.LearnTitleDays;
     }
 }
-

@@ -1,42 +1,37 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind40 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind40 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int multiple = 1;
+        var multiple = influence.GetIntParam() - 1;
 
-        public override void ApplyInfluenceKind(Person person)
+        if (multiple > 0)
         {
-            person.MultipleOfAgricultureTechniquePoint += this.multiple - 1;
-            person.MultipleOfCommerceTechniquePoint += this.multiple - 1;
-            person.MultipleOfTechnologyTechniquePoint += this.multiple - 1;
-            person.MultipleOfDominationTechniquePoint += this.multiple - 1;
-            person.MultipleOfMoraleTechniquePoint += this.multiple - 1;
-            person.MultipleOfEnduranceTechniquePoint += this.multiple - 1;
+            person.MultipleOfAgricultureTechniquePoint += multiple;
+            person.MultipleOfCommerceTechniquePoint += multiple;
+            person.MultipleOfTechnologyTechniquePoint += multiple;
+            person.MultipleOfDominationTechniquePoint += multiple;
+            person.MultipleOfMoraleTechniquePoint += multiple;
+            person.MultipleOfEnduranceTechniquePoint += multiple;
         }
+    }
 
-        public override void PurifyInfluenceKind(Person person)
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        var multiple = influence.GetIntParam() - 1;
+
+        if (multiple > 0)
         {
-            person.MultipleOfAgricultureTechniquePoint -= this.multiple - 1;
-            person.MultipleOfCommerceTechniquePoint -= this.multiple - 1;
-            person.MultipleOfTechnologyTechniquePoint -= this.multiple - 1;
-            person.MultipleOfDominationTechniquePoint -= this.multiple - 1;
-            person.MultipleOfMoraleTechniquePoint -= this.multiple - 1;
-            person.MultipleOfEnduranceTechniquePoint -= this.multiple - 1;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            if (int.TryParse(parameter, out this.multiple))
-            {
-
-            }
+            person.MultipleOfAgricultureTechniquePoint -= multiple;
+            person.MultipleOfCommerceTechniquePoint -= multiple;
+            person.MultipleOfTechnologyTechniquePoint -= multiple;
+            person.MultipleOfDominationTechniquePoint -= multiple;
+            person.MultipleOfMoraleTechniquePoint -= multiple;
+            person.MultipleOfEnduranceTechniquePoint -= multiple;
         }
     }
 }
-

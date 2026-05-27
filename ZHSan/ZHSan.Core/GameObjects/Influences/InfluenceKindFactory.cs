@@ -1,22 +1,18 @@
 ﻿using System;
 
+namespace GameObjects.Influences;
 
-namespace GameObjects.Influences
+public static class InfluenceKindFactory
 {
-
-    public static class InfluenceKindFactory
+    public static InfluenceKind CreateInfluenceKindByID(int id)
     {
-        public static InfluenceKind CreateInfluenceKindByID(int id)
+        try
         {
-            try
-            {
-                return (Activator.CreateInstance(Type.GetType("GameObjects.Influences.InfluenceKindPack.InfluenceKind" + id.ToString())) as InfluenceKind);
-            }
-            catch
-            {
-                return null;
-            }
+            return Activator.CreateInstance(Type.GetType("GameObjects.Influences.InfluenceKindPack.InfluenceKind" + id.ToString())) as InfluenceKind;
+        }
+        catch
+        {
+            return null;
         }
     }
 }
-

@@ -1,47 +1,16 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using GameObjects.Conditions;
-using System;
-
-
+﻿using GameObjects.Conditions;
 using System.Runtime.Serialization;
 using GameManager;
 
-namespace GameObjects.Influences.InfluenceKindPack
+namespace GameObjects.Influences.InfluenceKindPack;
+
+[DataContract]
+public class InfluenceKind286 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind286 : InfluenceKind
+    public override bool IsVaild(Influence influence, Person person)
     {
-        private int conditionID;
-
-       
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.conditionID = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override bool IsVaild(Person person)
-        {
-            Condition t = Session.Current.Scenario.GameCommonData.AllConditions.GetCondition(conditionID);
-            if (t.CheckCondition(person))
-            {
-                return true;
-            }
-            return false;
-        }
+        Condition condition = Session.Current.Scenario.GameCommonData.AllConditions.GetCondition(influence.GetIntParam());
+        
+        return condition.CheckCondition(person);
     }
 }
-        
-        
-         
-
-
-
-
-    

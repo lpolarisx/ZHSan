@@ -1,41 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind42 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind42 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private float multiple = 1;
+        var multiple = influence.GetIntParam() - 1;
 
-        public override void ApplyInfluenceKind(Person person)
+        if (person.LocationTroop != null && multiple > 0)
         {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.MultipleOfCombatTechniquePoint += this.multiple - 1;
-            }
+            person.LocationTroop.MultipleOfCombatTechniquePoint += multiple;
         }
+    }
 
-        public override void PurifyInfluenceKind(Person person)
-        {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.MultipleOfCombatTechniquePoint -= this.multiple - 1;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        var multiple = influence.GetIntParam() - 1;
 
-        public override void InitializeParameter(string parameter)
+        if (person.LocationTroop != null && multiple > 0)
         {
-            try
-            {
-                this.multiple = float.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.LocationTroop.MultipleOfCombatTechniquePoint -= multiple;
         }
     }
 }
-

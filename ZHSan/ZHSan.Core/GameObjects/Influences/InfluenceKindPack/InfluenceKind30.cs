@@ -1,22 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind30 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind30 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        public override void ApplyInfluenceKind(Person person)
-        {
-            person.InternalNoFundNeeded = true;
-        }
+        person.InternalNoFundNeeded = true;
+    }
 
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.InternalNoFundNeeded = false;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        person.InternalNoFundNeeded = false;
     }
 }
-

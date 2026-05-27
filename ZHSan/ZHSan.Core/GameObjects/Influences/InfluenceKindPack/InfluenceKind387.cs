@@ -1,24 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind387 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind387 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
+        troop.BaseAttackEveryAround = true;
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.BaseAttackEveryAround = true;
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.BaseAttackEveryAround = false;
-        }
-
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.BaseAttackEveryAround = false;
     }
 }
-

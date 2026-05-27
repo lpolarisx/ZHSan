@@ -1,38 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind382 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind382 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int chance;
+        troop.ChanceOfOnFire = troop.BaseChanceOfOnFire + influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.ChanceOfOnFire = troop.BaseChanceOfOnFire + this.chance;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.chance = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.ChanceOfOnFire = troop.BaseChanceOfOnFire;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.ChanceOfOnFire = troop.BaseChanceOfOnFire;
     }
 }
-

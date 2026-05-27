@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind351 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind351 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private float rate = 1f;
+        troop.RateOfInjuryOnCriticalStrike = influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.RateOfInjuryOnCriticalStrike = this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.RateOfInjuryOnCriticalStrike = 1;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.RateOfInjuryOnCriticalStrike = 1;
     }
 }
-

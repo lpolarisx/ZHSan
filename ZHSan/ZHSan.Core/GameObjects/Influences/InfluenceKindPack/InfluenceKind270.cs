@@ -1,28 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind270 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind270 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.YesOrNoOfObliqueView = true;
-            }
-        }
+        troop.YesOrNoOfObliqueView = true;
+    }
 
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.YesOrNoOfObliqueView = false;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.YesOrNoOfObliqueView = false;
     }
 }
-
