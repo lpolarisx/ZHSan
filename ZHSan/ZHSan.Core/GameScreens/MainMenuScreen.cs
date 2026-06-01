@@ -133,12 +133,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         string CurrentSetting = "基本";
 
-        string[] hards1 = new string[] { "beginner", "easy", "normal", "hard", "veryhard", "custom" };
-        string[] hards2 = new string[] { "入门", "初级", "上级", "超级", "修罗", "自订" };
-
         string[] AvaliableResolutions = new string[] { "1024*768", "1280*720", "1368*768", "1440*900", "1920*1080" };
-
-        //private bool doNotSetDifficultyToCustom = false;
 
         NumericSetTextureF nstMusic, nstSound;
 
@@ -168,7 +163,17 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         //public ButtonTexture btnTextureAlpha = null;
 
-        List<ButtonTexture> cbAIHardList = null;
+        private List<ButtonTexture> cbAIHardList = new();
+
+        private Dictionary<string, string> difficultyMap = new ()
+        {
+            { Difficulty.Beginner.ToString(), "入门" },
+            { Difficulty.Easy.ToString(), "初级"},
+            { Difficulty.Normal.ToString(), "上级" },
+            { Difficulty.Hard.ToString(), "超级"},
+            { Difficulty.VeryHard.ToString(), "修罗" },
+            { Difficulty.Custom.ToString(), "自订"},
+        };
 
         private int AIEncircleRank = 0;
         private int AIEncircleVar = 0;
@@ -187,8 +192,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         string[] startLines = null;
 
         string message = "";
-
-
+        
         public MainMenuScreen()
         {
             var startLineFile = @"Content\StartLines.txt";
@@ -1395,53 +1399,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 Unit = 0.1f
             };
 
-            left1 = 50;
-
-            cbAIHardList = new List<ButtonTexture>();
-
-            for (int i = 0; i < hards1.Length; i++)
-            {
-                var hard = hards1[i];
-
-                btOne = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(560 + 90 * i, 110))
-                {
-                    ID = hard,
-                    Scale = 0.8f
-                };
-                btOne.OnButtonPress += (sender, e) =>
-                {
-                    var bt = (ButtonTexture)sender;
-
-                    if (bt.ID == "beginner")
-                    {
-                        this.setDifficultyParameters(Difficulty.beginner);
-                    }
-                    else if (bt.ID == "easy")
-                    {
-                        this.setDifficultyParameters(Difficulty.easy);
-                    }
-                    else if (bt.ID == "normal")
-                    {
-                        this.setDifficultyParameters(Difficulty.normal);
-                    }
-                    else if (bt.ID == "hard")
-                    {
-                        this.setDifficultyParameters(Difficulty.hard);
-                    }
-                    else if (bt.ID == "veryhard")
-                    {
-                        this.setDifficultyParameters(Difficulty.veryhard);
-                    }
-                    else if (bt.ID == "custom")
-                    {
-                        this.setDifficultyParameters(Difficulty.custom);
-                    }
-
-                    //Setting.Current.Difficulty = ((ButtonTexture)sender).ID;
-                    //InitSetting();
-                };
-                cbAIHardList.Add(btOne);
-            }
+            // 生成难度选项CheckBox
+            cbAIHardList = GenerateDifficultyCheckBoxs();
 
             btConfigList4 = new List<ButtonTexture>();
             left1 = 175;
@@ -1463,7 +1422,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -1484,7 +1443,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -1505,7 +1464,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.AIAutoTakePlayerCaptives = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -1526,7 +1485,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -1547,7 +1506,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.PinPointAtPlayer = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -1568,7 +1527,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -1589,7 +1548,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     bt.Selected = true;
                     Session.globalVariablesTemp.internalSurplusRateForAI = true;
                 }
-                setDifficultyToCustom(sender, e);
+                SetDifficultyToCustom();
             };
             btConfigList4.Add(btOne);
 
@@ -2702,337 +2661,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             #endregion
         }
 
-        private void setDifficultyParameters(Difficulty d)
-        {
-            //doNotSetDifficultyToCustom = true;
-
-            //nstDianNaoChuZhan, , ,
-
-            //btOne = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(left1, heightBase + height * 3.5f))
-            //{
-            //    ID = "HuLueDianNaoZhanLue"
-            //};
-            //btOne.OnButtonPress += (sender, e) =>
-            //{
-            //    var bt = (ButtonTexture)sender;
-            //    if (bt.Selected)
-            //    {
-            //        bt.Selected = false;
-            //        Session.globalVariablesTemp.IgnoreStrategyTendency = false;
-            //    }
-            //    else
-            //    {
-            //        bt.Selected = true;
-            //        Session.globalVariablesTemp.IgnoreStrategyTendency = true;
-            //    }
-            //};
-            //btConfigList4.Add(btOne);
-
-            //btOne = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(left1, heightBase + height * 4f))
-            //{
-            //    ID = "DianNaoYouXianNengLi"
-            //};
-            //btOne.OnButtonPress += (sender, e) =>
-            //{
-            //    var bt = (ButtonTexture)sender;
-            //    if (bt.Selected)
-            //    {
-            //        bt.Selected = false;
-            //        Session.globalVariablesTemp.AIExecuteBetterOfficer = false;
-            //    }
-            //    else
-            //    {
-            //        bt.Selected = true;
-            //        Session.globalVariablesTemp.AIExecuteBetterOfficer = true;
-            //    }
-            //};
-            //btConfigList4.Add(btOne);
-
-            changeDifficultySelection(d);
-
-            switch (d)
-            {
-                case Difficulty.beginner:
-
-                    this.nstDianNaoZiJing1.NowNumber = 0.7f;
-                    this.nstDianNaoLiangCao1.NowNumber = 0.7f;
-                    this.nstDianNaoShangHai1.NowNumber = 0.7f;
-                    this.nstDianNaoBuDuiGongJi1.NowNumber = 0.7f;
-                    this.nstDianNaoFangYu1.NowNumber = 0.7f;
-                    this.nstDianNaoZhengBing1.NowNumber = 0.7f;
-                    this.nstDianNaoXunLian1.NowNumber = 0.7f;
-                    this.nstDianNaoWuJiangJingYan1.NowNumber = 0.7f;
-                    this.nstDianNaoBuDuiJingYan1.NowNumber = 0.7f;
-                    this.nstDianNaoKangJi1.NowNumber = 0;
-                    this.nstDianNaoKangWei1.NowNumber = 0;
-                    this.nstDianNaoZiJing2.NowNumber = 0.0f;
-                    this.nstDianNaoLiangCao2.NowNumber = 0.0f;
-                    this.nstDianNaoShangHai2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
-                    this.nstDianNaoFangYu2.NowNumber = 0.0f;
-                    this.nstDianNaoZhengBing2.NowNumber = 0.0f;
-                    this.nstDianNaoXunLian2.NowNumber = 0.0f;
-                    this.nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoKangJi2.NowNumber = 0.0f;
-                    this.nstDianNaoKangWei2.NowNumber = 0.0f;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = false;
-                    Session.globalVariablesTemp.PinPointAtPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = false;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = false;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = false;
-                    Session.globalVariablesTemp.GameDifficulty = "beginner";
-
-                    this.nstDianNaoShengTao.NowNumber = 0;
-                    this.nstDianNaoEWai1.NowNumber = 1.0f;
-                    this.nstDianNaoEWai2.NowNumber = 0.0f;
-
-                    this.nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
-                    this.AIEncircleRank = 0;
-                    this.AIEncircleVar = 0;
-
-                    break;
-                case Difficulty.easy:
-
-                    this.nstDianNaoZiJing1.NowNumber = 1.0f;
-                    this.nstDianNaoLiangCao1.NowNumber = 1.0f;
-                    this.nstDianNaoShangHai1.NowNumber = 1.0f;
-                    this.nstDianNaoBuDuiGongJi1.NowNumber = 1.0f;
-                    this.nstDianNaoFangYu1.NowNumber = 1.0f;
-                    this.nstDianNaoZhengBing1.NowNumber = 1.0f;
-                    this.nstDianNaoXunLian1.NowNumber = 1.0f;
-                    this.nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
-                    this.nstDianNaoBuDuiJingYan1.NowNumber = 1.0f;
-                    this.nstDianNaoKangJi1.NowNumber = 0;
-                    this.nstDianNaoKangWei1.NowNumber = 0;
-                    this.nstDianNaoZiJing2.NowNumber = 0.0f;
-                    this.nstDianNaoLiangCao2.NowNumber = 0.0f;
-                    this.nstDianNaoShangHai2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
-                    this.nstDianNaoFangYu2.NowNumber = 0.0f;
-                    this.nstDianNaoZhengBing2.NowNumber = 0.0f;
-                    this.nstDianNaoXunLian2.NowNumber = 0.0f;
-                    this.nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoKangJi2.NowNumber = 0.0f;
-                    this.nstDianNaoKangWei2.NowNumber = 0.0f;
-
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = false;
-                    Session.globalVariablesTemp.PinPointAtPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = false;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = false;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = false;
-                    Session.globalVariablesTemp.GameDifficulty = "easy";
-
-                    this.nstDianNaoShengTao.NowNumber = 0;
-                    this.nstDianNaoEWai1.NowNumber = 1.0f;
-                    this.nstDianNaoEWai2.NowNumber = 0.0f;
-                    this.nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
-                    this.AIEncircleRank = 15;
-                    this.AIEncircleVar = 15;
-                    break;
-
-                case Difficulty.normal:
-
-                    this.nstDianNaoZiJing1.NowNumber = 3.0f;
-                    this.nstDianNaoLiangCao1.NowNumber = 3.0f;
-                    this.nstDianNaoShangHai1.NowNumber = 1.2f;
-                    this.nstDianNaoBuDuiGongJi1.NowNumber = 1.0f;
-                    this.nstDianNaoFangYu1.NowNumber = 1.2f;
-                    this.nstDianNaoZhengBing1.NowNumber = 1.5f;
-                    this.nstDianNaoXunLian1.NowNumber = 1.5f;
-                    this.nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
-                    this.nstDianNaoBuDuiJingYan1.NowNumber = 2.0f;
-                    this.nstDianNaoKangJi1.NowNumber = 0f;
-                    this.nstDianNaoKangWei1.NowNumber = 0f;
-                    this.nstDianNaoZiJing2.NowNumber = 0.05f;
-                    this.nstDianNaoLiangCao2.NowNumber = 0.05f;
-                    this.nstDianNaoShangHai2.NowNumber = 0.005f;
-                    this.nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
-                    this.nstDianNaoFangYu2.NowNumber = 0.01f;
-                    this.nstDianNaoZhengBing2.NowNumber = 0.05f;
-                    this.nstDianNaoXunLian2.NowNumber = 0.05f;
-                    this.nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiJingYan2.NowNumber = 0.02f;
-                    this.nstDianNaoKangJi2.NowNumber = 0.0f;
-                    this.nstDianNaoKangWei2.NowNumber = 0.0f;
-
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = false;
-                    Session.globalVariablesTemp.PinPointAtPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
-                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = false;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = false;
-                    Session.globalVariablesTemp.GameDifficulty = "normal";
-
-                    this.nstDianNaoShengTao.NowNumber = 0f;
-                    this.nstDianNaoEWai1.NowNumber = 1.0f;
-                    this.nstDianNaoEWai2.NowNumber = 0.01f;
-
-                    this.nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
-
-                    this.AIEncircleRank = 30;
-                    this.AIEncircleVar = 30;
-
-                    break;
-
-                case Difficulty.hard:
-
-                    this.nstDianNaoZiJing1.NowNumber = 5.0f;
-                    this.nstDianNaoLiangCao1.NowNumber = 5.0f;
-                    this.nstDianNaoShangHai1.NowNumber = 1.5f;
-                    this.nstDianNaoBuDuiGongJi1.NowNumber = 1.2f;
-                    this.nstDianNaoFangYu1.NowNumber = 1.5f;
-                    this.nstDianNaoZhengBing1.NowNumber = 3.0f;
-                    this.nstDianNaoXunLian1.NowNumber = 3.0f;
-                    this.nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
-                    this.nstDianNaoBuDuiJingYan1.NowNumber = 3.0f;
-                    this.nstDianNaoKangJi1.NowNumber = 0f;
-                    this.nstDianNaoKangWei1.NowNumber = 0f;
-                    this.nstDianNaoZiJing2.NowNumber = 0.05f;
-                    this.nstDianNaoLiangCao2.NowNumber = 0.05f;
-                    this.nstDianNaoShangHai2.NowNumber = 0.02f;
-                    this.nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
-                    this.nstDianNaoFangYu2.NowNumber = 0.05f;
-                    this.nstDianNaoZhengBing2.NowNumber = 0.1f;
-                    this.nstDianNaoXunLian2.NowNumber = 0.1f;
-                    this.nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiJingYan2.NowNumber = 0.1f;
-                    this.nstDianNaoKangJi2.NowNumber = 0.1f;
-                    this.nstDianNaoKangWei2.NowNumber = 0.1f;
-
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = true;
-                    Session.globalVariablesTemp.PinPointAtPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
-                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = true;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = true;
-                    Session.globalVariablesTemp.GameDifficulty = "hard";
-
-                    this.nstDianNaoShengTao.NowNumber = 10f;
-                    this.nstDianNaoEWai1.NowNumber = 1.0f;
-                    this.nstDianNaoEWai2.NowNumber = 0.0f;
-
-                    this.nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
-
-                    this.AIEncircleRank = 70;
-                    this.AIEncircleVar = 30;
-
-                    break;
-
-                case Difficulty.veryhard:
-
-                    this.nstDianNaoZiJing1.NowNumber = 8.0f;
-                    this.nstDianNaoLiangCao1.NowNumber = 8.0f;
-                    this.nstDianNaoShangHai1.NowNumber = 3.0f;
-                    this.nstDianNaoBuDuiGongJi1.NowNumber = 1.5f;
-                    this.nstDianNaoFangYu1.NowNumber = 3.0f;
-                    this.nstDianNaoZhengBing1.NowNumber = 5.0f;
-                    this.nstDianNaoXunLian1.NowNumber = 5.0f;
-                    this.nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
-                    this.nstDianNaoBuDuiJingYan1.NowNumber = 4.0f;
-                    this.nstDianNaoKangJi1.NowNumber = 0f;
-                    this.nstDianNaoKangWei1.NowNumber = 0f;
-                    this.nstDianNaoZiJing2.NowNumber = 0.05f;
-                    this.nstDianNaoLiangCao2.NowNumber = 0.05f;
-                    this.nstDianNaoShangHai2.NowNumber = 0.05f;
-                    this.nstDianNaoBuDuiGongJi2.NowNumber = 0.02f;
-                    this.nstDianNaoFangYu2.NowNumber = 0.2f;
-                    this.nstDianNaoZhengBing2.NowNumber = 0.2f;
-                    this.nstDianNaoXunLian2.NowNumber = 0.2f;
-                    this.nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
-                    this.nstDianNaoBuDuiJingYan2.NowNumber = 0.1f;
-                    this.nstDianNaoKangJi2.NowNumber = 0.2f;
-                    this.nstDianNaoKangWei2.NowNumber = 0.2f;
-
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = true;
-                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = true;
-                    Session.globalVariablesTemp.PinPointAtPlayer = false;
-                    Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
-                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
-                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = true;
-                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = true;
-                    Session.globalVariablesTemp.GameDifficulty = "veryhard";
-
-                    this.nstDianNaoShengTao.NowNumber = 10f;
-                    this.nstDianNaoEWai1.NowNumber = 1.0f;
-                    this.nstDianNaoEWai2.NowNumber = 0.0f;
-
-                    this.nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
-
-                    this.AIEncircleRank = 100;
-                    this.AIEncircleVar = 0;
-
-                    break;
-            }
-            //doNotSetDifficultyToCustom = false;
-        }
-
-        private void setDifficultyToCustom(object sender, EventArgs e)
-        {
-            //if (!doNotSetDifficultyToCustom)
-            //{
-            changeDifficultySelection(Difficulty.custom);
-            //}
-        }
-
-        private void changeDifficultySelection(Difficulty d)
-        {
-            cbAIHardList.ForEach(bt => bt.Selected = false);
-
-            switch (d)
-            {
-                case Difficulty.beginner: cbAIHardList.FirstOrDefault(cb => cb.ID == "beginner").Selected = true; break;
-                case Difficulty.easy: cbAIHardList.FirstOrDefault(cb => cb.ID == "easy").Selected = true; break;
-                case Difficulty.normal: cbAIHardList.FirstOrDefault(cb => cb.ID == "normal").Selected = true; break;
-                case Difficulty.hard: cbAIHardList.FirstOrDefault(cb => cb.ID == "hard").Selected = true; break;
-                case Difficulty.veryhard: cbAIHardList.FirstOrDefault(cb => cb.ID == "veryhard").Selected = true; break;
-                case Difficulty.custom: cbAIHardList.FirstOrDefault(cb => cb.ID == "custom").Selected = true; break;
-                default: cbAIHardList.FirstOrDefault(cb => cb.ID == "custom").Selected = true; break;
-            }
-        }
-
         public void InitScenarioSaveList()
         {
             pageIndex = pageIndex1 = 1;
@@ -3280,14 +2908,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             //電腦
 
-            //changeDifficultySelection(Difficulty.easy);
+            //ChangeDifficulty(Difficulty.Easy);
             if(Enum.TryParse(Session.globalVariablesTemp.GameDifficulty, true, out Difficulty difficulty))
             {
-                changeDifficultySelection(difficulty);
+                ChangeDifficulty(difficulty);
             }
             else
             {
-                changeDifficultySelection(Difficulty.easy);
+                ChangeDifficulty(Difficulty.Easy);
             }
 
             btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = (bool)Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives;
@@ -3364,9 +2992,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             AIEncircleRank = Session.parametersTemp.AIEncircleRank;
             AIEncircleVar = Session.parametersTemp.AIEncircleVar;
-
-            //doNotSetDifficultyToCustom = false;
-
         }
 
         void InitSetting()
@@ -3467,13 +3092,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             nstShowNumberAddTime.NowNumber = Setting.Current.GlobalVariables.ShowNumberAddTime;
 
             nstSpeedUp.NowNumber = Setting.Current.SpeedUp;
-            //cbAIHardList.ForEach(cb => cb.Selected = false);
-            //var cbAIHard = cbAIHardList.FirstOrDefault(cb => cb.ID == Setting.Current.Difficulty);
-            //if (cbAIHard != null)
-            //{
-            //    cbAIHard.Selected = true;
-            //}
-
         }
 
         public void Load()
@@ -4027,7 +3645,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         nst.Update(Vector2.Zero, ref nstValue);
                         if (origin != nstValue)
                         {
-                            setDifficultyToCustom(null, null);
+                            SetDifficultyToCustom();
                         }
 
                         if (nst.NowNumber <= nst.MinNumber)
@@ -4066,7 +3684,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AIFundRate != (float)nstDianNaoZiJing1.NowNumber)
                     {
                         Session.parametersTemp.AIFundRate = (float)nstDianNaoZiJing1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AIFundYearIncreaseRate != (float)nstDianNaoZiJing2.NowNumber)
@@ -4077,7 +3695,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AIFoodRate != (float)nstDianNaoLiangCao1.NowNumber)
                     {
                         Session.parametersTemp.AIFoodRate = (float)nstDianNaoLiangCao1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AIFoodYearIncreaseRate != (float)nstDianNaoLiangCao2.NowNumber)
@@ -4088,7 +3706,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AITroopOffenceRate != (float)nstDianNaoBuDuiGongJi1.NowNumber)
                     {
                         Session.parametersTemp.AITroopOffenceRate = (float)nstDianNaoBuDuiGongJi1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AITroopOffenceYearIncreaseRate != (float)nstDianNaoBuDuiGongJi2.NowNumber)
@@ -4099,7 +3717,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AITroopDefenceRate != (float)nstDianNaoFangYu1.NowNumber)
                     {
                         Session.parametersTemp.AITroopDefenceRate = (float)nstDianNaoFangYu1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AITroopDefenceYearIncreaseRate != (float)nstDianNaoFangYu2.NowNumber)
@@ -4110,7 +3728,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AIArchitectureDamageRate != (float)nstDianNaoShangHai1.NowNumber)
                     {
                         Session.parametersTemp.AIArchitectureDamageRate = (float)nstDianNaoShangHai1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AIArchitectureDamageYearIncreaseRate != (float)nstDianNaoShangHai2.NowNumber)
@@ -4121,7 +3739,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AITrainingSpeedRate != (float)nstDianNaoXunLian1.NowNumber)
                     {
                         Session.parametersTemp.AITrainingSpeedRate = (float)nstDianNaoXunLian1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AITrainingSpeedYearIncreaseRate != (float)nstDianNaoXunLian2.NowNumber)
@@ -4132,7 +3750,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (Session.parametersTemp.AIRecruitmentSpeedRate != (float)nstDianNaoZhengBing1.NowNumber)
                     {
                         Session.parametersTemp.AIRecruitmentSpeedRate = (float)nstDianNaoZhengBing1.NowNumber;
-                        //setDifficultyToCustom(null, null);
+                        //SetDifficultyToCustom();
                     }
 
                     if (Session.parametersTemp.AIRecruitmentSpeedYearIncreaseRate != (float)nstDianNaoZhengBing2.NowNumber)
@@ -4853,15 +4471,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     { bt.Scale = 0.8f; bt.Draw(); });
 
                     CacheManager.DrawString(Session.Current.Font, "难度", new Vector2(505, 110), Color.White * alpha, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 1f);
-                    int inHard = 0;
-                    cbAIHardList.ForEach(cb =>
+                    
+                    foreach (var cb in cbAIHardList)
                     {
                         cb.Draw(null, Color.White * alpha);
 
-                        CacheManager.DrawString(Session.Current.Font, hards2[inHard], new Vector2(cb.Position.X + 30 - 2, cb.Position.Y), Color.White * alpha, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 1f);
+                        var text = difficultyMap.TryGetValue(cb.ID, out var desc) ? desc : cb.ID;
 
-                        inHard++;
-                    });
+                        CacheManager.DrawString(Session.Current.Font, text, new Vector2(cb.Position.X + 30 - 2, cb.Position.Y), Color.White * alpha, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 1f);
+                    }
+
                     height = 70;
                     CacheManager.DrawString(Session.Current.Font, "电脑必成功说服没势力俘虏", new Vector2(left1, heightBase), Color.White * alpha, 0f, Vector2.Zero, 0.7f, SpriteEffects.None, 1f);
 
@@ -5230,5 +4849,374 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             #endregion
 
         }
+
+         #region 游戏难度
+
+        /// <summary>
+        /// 生成难度选项
+        /// </summary>
+        /// <returns></returns>
+        private List<ButtonTexture> GenerateDifficultyCheckBoxs()
+        {
+            var checkBoxs = new List<ButtonTexture>();
+            var difficulties = Enum.GetValues<Difficulty>();
+
+            for (int i = 0; i < difficulties.Length; i++)
+            {
+                var difficulty = difficulties[i];
+
+                var button = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(560 + 90 * i, 110))
+                {
+                    ID = difficulty.ToString(), 
+                    Scale = 0.8f,
+                };
+
+                button.OnButtonPress += (sender, e) =>
+                {
+                    SetDifficultyParameters(difficulty);
+                };
+
+                checkBoxs.Add(button);
+            }
+
+            return checkBoxs;
+        }
+
+        /// <summary>
+        /// 更改游戏难度
+        /// </summary>
+        /// <param name="difficulty"></param>
+        private void ChangeDifficulty(Difficulty difficulty)
+        {
+            // 重置
+            cbAIHardList.ForEach(x => x.Selected = false);
+
+            var id = difficulty.ToString();
+
+            var target = cbAIHardList.FirstOrDefault(x => x.ID == id);
+            if (target != null)
+                target.Selected = true;
+        }
+
+        /// <summary>
+        /// 将游戏难度设置为自订
+        /// </summary>
+        private void SetDifficultyToCustom()
+        {
+            ChangeDifficulty(Difficulty.Custom);
+        }
+
+        /// <summary>
+        /// 设置游戏难度的参数
+        /// </summary>
+        /// <param name="difficulty"></param>
+        private void SetDifficultyParameters(Difficulty difficulty)
+        {
+            //btOne = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(left1, heightBase + height * 3.5f))
+            //{
+            //    ID = "HuLueDianNaoZhanLue"
+            //};
+            //btOne.OnButtonPress += (sender, e) =>
+            //{
+            //    var bt = (ButtonTexture)sender;
+            //    if (bt.Selected)
+            //    {
+            //        bt.Selected = false;
+            //        Session.globalVariablesTemp.IgnoreStrategyTendency = false;
+            //    }
+            //    else
+            //    {
+            //        bt.Selected = true;
+            //        Session.globalVariablesTemp.IgnoreStrategyTendency = true;
+            //    }
+            //};
+            //btConfigList4.Add(btOne);
+
+            //btOne = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(left1, heightBase + height * 4f))
+            //{
+            //    ID = "DianNaoYouXianNengLi"
+            //};
+            //btOne.OnButtonPress += (sender, e) =>
+            //{
+            //    var bt = (ButtonTexture)sender;
+            //    if (bt.Selected)
+            //    {
+            //        bt.Selected = false;
+            //        Session.globalVariablesTemp.AIExecuteBetterOfficer = false;
+            //    }
+            //    else
+            //    {
+            //        bt.Selected = true;
+            //        Session.globalVariablesTemp.AIExecuteBetterOfficer = true;
+            //    }
+            //};
+            //btConfigList4.Add(btOne);
+
+            ChangeDifficulty(difficulty);
+
+            switch (difficulty)
+            {
+                case Difficulty.Beginner:
+
+                    nstDianNaoZiJing1.NowNumber = 0.7f;
+                    nstDianNaoLiangCao1.NowNumber = 0.7f;
+                    nstDianNaoShangHai1.NowNumber = 0.7f;
+                    nstDianNaoBuDuiGongJi1.NowNumber = 0.7f;
+                    nstDianNaoFangYu1.NowNumber = 0.7f;
+                    nstDianNaoZhengBing1.NowNumber = 0.7f;
+                    nstDianNaoXunLian1.NowNumber = 0.7f;
+                    nstDianNaoWuJiangJingYan1.NowNumber = 0.7f;
+                    nstDianNaoBuDuiJingYan1.NowNumber = 0.7f;
+                    nstDianNaoKangJi1.NowNumber = 0;
+                    nstDianNaoKangWei1.NowNumber = 0;
+                    nstDianNaoZiJing2.NowNumber = 0.0f;
+                    nstDianNaoLiangCao2.NowNumber = 0.0f;
+                    nstDianNaoShangHai2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
+                    nstDianNaoFangYu2.NowNumber = 0.0f;
+                    nstDianNaoZhengBing2.NowNumber = 0.0f;
+                    nstDianNaoXunLian2.NowNumber = 0.0f;
+                    nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiJingYan2.NowNumber = 0.0f;
+                    nstDianNaoKangJi2.NowNumber = 0.0f;
+                    nstDianNaoKangWei2.NowNumber = 0.0f;
+
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = false;
+
+                    Session.globalVariablesTemp.PinPointAtPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = false;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = false;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = false;
+                    Session.globalVariablesTemp.GameDifficulty = "beginner";
+
+                    nstDianNaoShengTao.NowNumber = 0;
+                    nstDianNaoEWai1.NowNumber = 1.0f;
+                    nstDianNaoEWai2.NowNumber = 0.0f;
+                    nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
+
+                    AIEncircleRank = 0;
+                    AIEncircleVar = 0;
+
+                    break;
+                case Difficulty.Easy:
+
+                    nstDianNaoZiJing1.NowNumber = 1.0f;
+                    nstDianNaoLiangCao1.NowNumber = 1.0f;
+                    nstDianNaoShangHai1.NowNumber = 1.0f;
+                    nstDianNaoBuDuiGongJi1.NowNumber = 1.0f;
+                    nstDianNaoFangYu1.NowNumber = 1.0f;
+                    nstDianNaoZhengBing1.NowNumber = 1.0f;
+                    nstDianNaoXunLian1.NowNumber = 1.0f;
+                    nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
+                    nstDianNaoBuDuiJingYan1.NowNumber = 1.0f;
+                    nstDianNaoKangJi1.NowNumber = 0;
+                    nstDianNaoKangWei1.NowNumber = 0;
+                    nstDianNaoZiJing2.NowNumber = 0.0f;
+                    nstDianNaoLiangCao2.NowNumber = 0.0f;
+                    nstDianNaoShangHai2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
+                    nstDianNaoFangYu2.NowNumber = 0.0f;
+                    nstDianNaoZhengBing2.NowNumber = 0.0f;
+                    nstDianNaoXunLian2.NowNumber = 0.0f;
+                    nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiJingYan2.NowNumber = 0.0f;
+                    nstDianNaoKangJi2.NowNumber = 0.0f;
+                    nstDianNaoKangWei2.NowNumber = 0.0f;
+
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = false;
+
+                    Session.globalVariablesTemp.PinPointAtPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = false;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = false;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = false;
+                    Session.globalVariablesTemp.GameDifficulty = "easy";
+
+                    nstDianNaoShengTao.NowNumber = 0;
+                    nstDianNaoEWai1.NowNumber = 1.0f;
+                    nstDianNaoEWai2.NowNumber = 0.0f;
+                    nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
+
+                    AIEncircleRank = 15;
+                    AIEncircleVar = 15;
+                    break;
+
+                case Difficulty.Normal:
+
+                    nstDianNaoZiJing1.NowNumber = 3.0f;
+                    nstDianNaoLiangCao1.NowNumber = 3.0f;
+                    nstDianNaoShangHai1.NowNumber = 1.2f;
+                    nstDianNaoBuDuiGongJi1.NowNumber = 1.0f;
+                    nstDianNaoFangYu1.NowNumber = 1.2f;
+                    nstDianNaoZhengBing1.NowNumber = 1.5f;
+                    nstDianNaoXunLian1.NowNumber = 1.5f;
+                    nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
+                    nstDianNaoBuDuiJingYan1.NowNumber = 2.0f;
+                    nstDianNaoKangJi1.NowNumber = 0f;
+                    nstDianNaoKangWei1.NowNumber = 0f;
+                    nstDianNaoZiJing2.NowNumber = 0.05f;
+                    nstDianNaoLiangCao2.NowNumber = 0.05f;
+                    nstDianNaoShangHai2.NowNumber = 0.005f;
+                    nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
+                    nstDianNaoFangYu2.NowNumber = 0.01f;
+                    nstDianNaoZhengBing2.NowNumber = 0.05f;
+                    nstDianNaoXunLian2.NowNumber = 0.05f;
+                    nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiJingYan2.NowNumber = 0.02f;
+                    nstDianNaoKangJi2.NowNumber = 0.0f;
+                    nstDianNaoKangWei2.NowNumber = 0.0f;
+
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = false;
+
+                    Session.globalVariablesTemp.PinPointAtPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
+                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = false;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = false;
+                    Session.globalVariablesTemp.GameDifficulty = "normal";
+
+                    nstDianNaoShengTao.NowNumber = 0f;
+                    nstDianNaoEWai1.NowNumber = 1.0f;
+                    nstDianNaoEWai2.NowNumber = 0.01f;
+
+                    nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
+
+                    AIEncircleRank = 30;
+                    AIEncircleVar = 30;
+
+                    break;
+
+                case Difficulty.Hard:
+
+                    nstDianNaoZiJing1.NowNumber = 5.0f;
+                    nstDianNaoLiangCao1.NowNumber = 5.0f;
+                    nstDianNaoShangHai1.NowNumber = 1.5f;
+                    nstDianNaoBuDuiGongJi1.NowNumber = 1.2f;
+                    nstDianNaoFangYu1.NowNumber = 1.5f;
+                    nstDianNaoZhengBing1.NowNumber = 3.0f;
+                    nstDianNaoXunLian1.NowNumber = 3.0f;
+                    nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
+                    nstDianNaoBuDuiJingYan1.NowNumber = 3.0f;
+                    nstDianNaoKangJi1.NowNumber = 0f;
+                    nstDianNaoKangWei1.NowNumber = 0f;
+                    nstDianNaoZiJing2.NowNumber = 0.05f;
+                    nstDianNaoLiangCao2.NowNumber = 0.05f;
+                    nstDianNaoShangHai2.NowNumber = 0.02f;
+                    nstDianNaoBuDuiGongJi2.NowNumber = 0.0f;
+                    nstDianNaoFangYu2.NowNumber = 0.05f;
+                    nstDianNaoZhengBing2.NowNumber = 0.1f;
+                    nstDianNaoXunLian2.NowNumber = 0.1f;
+                    nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiJingYan2.NowNumber = 0.1f;
+                    nstDianNaoKangJi2.NowNumber = 0.1f;
+                    nstDianNaoKangWei2.NowNumber = 0.1f;
+
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = true;
+
+                    Session.globalVariablesTemp.PinPointAtPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
+                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = true;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = true;
+                    Session.globalVariablesTemp.GameDifficulty = "hard";
+
+                    nstDianNaoShengTao.NowNumber = 10f;
+                    nstDianNaoEWai1.NowNumber = 1.0f;
+                    nstDianNaoEWai2.NowNumber = 0.0f;
+                    nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
+
+                    AIEncircleRank = 70;
+                    AIEncircleVar = 30;
+
+                    break;
+
+                case Difficulty.VeryHard:
+
+                    nstDianNaoZiJing1.NowNumber = 8.0f;
+                    nstDianNaoLiangCao1.NowNumber = 8.0f;
+                    nstDianNaoShangHai1.NowNumber = 3.0f;
+                    nstDianNaoBuDuiGongJi1.NowNumber = 1.5f;
+                    nstDianNaoFangYu1.NowNumber = 3.0f;
+                    nstDianNaoZhengBing1.NowNumber = 5.0f;
+                    nstDianNaoXunLian1.NowNumber = 5.0f;
+                    nstDianNaoWuJiangJingYan1.NowNumber = 1.0f;
+                    nstDianNaoBuDuiJingYan1.NowNumber = 4.0f;
+                    nstDianNaoKangJi1.NowNumber = 0f;
+                    nstDianNaoKangWei1.NowNumber = 0f;
+                    nstDianNaoZiJing2.NowNumber = 0.05f;
+                    nstDianNaoLiangCao2.NowNumber = 0.05f;
+                    nstDianNaoShangHai2.NowNumber = 0.05f;
+                    nstDianNaoBuDuiGongJi2.NowNumber = 0.02f;
+                    nstDianNaoFangYu2.NowNumber = 0.2f;
+                    nstDianNaoZhengBing2.NowNumber = 0.2f;
+                    nstDianNaoXunLian2.NowNumber = 0.2f;
+                    nstDianNaoWuJiangJingYan2.NowNumber = 0.0f;
+                    nstDianNaoBuDuiJingYan2.NowNumber = 0.1f;
+                    nstDianNaoKangJi2.NowNumber = 0.2f;
+                    nstDianNaoKangWei2.NowNumber = 0.2f;
+
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoWanJiaDiRen").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianWanJia").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "ShouRuSuoJianDianNao").Selected = false;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuFuLu").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoChengZhongWuJiang").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoShuoFuWanJiaFuLu").Selected = true;
+                    btConfigList4.FirstOrDefault(bt => bt.ID == "DianNaoFuLuZhongCheng").Selected = true;
+
+                    Session.globalVariablesTemp.PinPointAtPlayer = false;
+                    Session.globalVariablesTemp.internalSurplusRateForPlayer = true;
+                    Session.globalVariablesTemp.internalSurplusRateForAI = false;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionCaptives = true;
+                    Session.globalVariablesTemp.AIAutoTakeNoFactionPerson = true;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptives = true;
+                    Session.globalVariablesTemp.AIAutoTakePlayerCaptiveOnlyUnfull = true;
+                    Session.globalVariablesTemp.GameDifficulty = "veryhard";
+
+                    nstDianNaoShengTao.NowNumber = 10f;
+                    nstDianNaoEWai1.NowNumber = 1.0f;
+                    nstDianNaoEWai2.NowNumber = 0.0f;
+                    nstDianNaoYinWanJiaHeBing.NowNumber = -1f;
+
+                    AIEncircleRank = 100;
+                    AIEncircleVar = 0;
+
+                    break;
+            }
+        }
+
+        #endregion
     }
 }

@@ -1,9 +1,5 @@
 using GameGlobal;
-using GameManager;
 using GameObjects;
-using GameObjects.ArchitectureDetail.EventEffect;
-using GameObjects.Conditions;
-using GameObjects.Influences;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,27 +7,14 @@ using Microsoft.Xna.Framework.Input.Touch;
 using Platforms;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using Tools;
-using TroopDetailPlugin;
 using WorldOfTheThreeKingdoms;
 using WorldOfTheThreeKingdoms.GameScreens;
 
 namespace GameManager
 {
-
-    public enum Difficulty
-    {
-        beginner,
-        easy,
-        normal,
-        hard,
-        veryhard,
-        custom
-    }
-
     public class Session
     {
         public static object WorkLock = new object();
