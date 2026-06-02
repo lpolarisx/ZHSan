@@ -1,39 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿namespace GameObjects.PersonDetail;
 
-
-//using GameObjects;
-
-
-namespace GameObjects.PersonDetail
+public class PersonGenerateParam
 {
-	public  class PersonGenerateParam
-	{
-        public PersonGenerateParam(Architecture foundLocation, Person finder, bool inGame, PersonGeneratorType preferredType, bool isAI)
-        {
-            this.foundLocation = foundLocation;
-            this.finder = finder;
-            this.inGame = inGame;
-            this.preferredType = preferredType;
-            this.isAI = isAI;
-        }
-        
-        public Architecture FoundLocation { get { return foundLocation; } }
+    public Architecture FoundLocation { get; private set; }
 
-        public Person Finder { get { return finder; } }
+    public Person Finder { get; private set; }
 
-        public bool InGame { get { return inGame; } }
+    public bool InGame { get; private set; }
 
-        public PersonGeneratorType PreferredType { get { return preferredType; } }
+    public PersonGeneratorType PreferredType { get; private set; }
 
-        public bool IsAI { get { return isAI; } }
+    public bool IsAI { get; private set; }
 
-        private readonly Architecture foundLocation;
-        private readonly Person finder;
-        private readonly bool inGame;
-        private readonly PersonGeneratorType preferredType;
-        private readonly bool isAI;
-	}
+    public PersonGenerateParam(Architecture foundLocation, Person finder, bool inGame, PersonGeneratorType preferredType, bool isAI)
+    {
+        FoundLocation = foundLocation;
+        Finder = finder;
+        InGame = inGame;
+        PreferredType = preferredType;
+        IsAI = isAI;
+    }
 }

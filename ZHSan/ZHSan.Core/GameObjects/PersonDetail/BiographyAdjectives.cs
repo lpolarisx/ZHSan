@@ -1,43 +1,47 @@
-﻿using GameObjects;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
 
-namespace GameObjects.PersonDetail
+namespace GameObjects.PersonDetail;
+
+[DataContract]
+public class BiographyAdjectives : GameObject
 {
-    [DataContract]
-    public class BiographyAdjectives : GameObject
-    {
-        [DataMember]
-        public int Strength { get; set; }
-        [DataMember]
-        public int Command { get; set; }
-        [DataMember]
-        public int Intelligence { get; set; }
-        [DataMember]
-        public int Politics { get; set; }
-        [DataMember]
-        public int Glamour { get; set; }
-        [DataMember]
-        public int Braveness { get; set; }
-        [DataMember]
-        public int Calmness { get; set; }
-        [DataMember]
-        public int PersonalLoyalty { get; set; }
-        [DataMember]
-        public int Ambition { get; set; }
-        [DataMember]
-        public Boolean Male { get; set; }
-        [DataMember]
-        public Boolean Female { get; set; }
+    [DataMember]
+    public int Strength { get; set; }
 
-        private List<String> text = new List<string>();
-        [DataMember]
-        public List<String> Text { get { return text; } set { text = value; } }
+    [DataMember]
+    public int Command { get; set; }
 
-        private List<String> suffixText = new List<string>();
-        [DataMember]
-        public List<String> SuffixText { get { return suffixText; } set { suffixText = value; } }
-    }
+    [DataMember]
+    public int Intelligence { get; set; }
+
+    [DataMember]
+    public int Politics { get; set; }
+
+    [DataMember]
+    public int Glamour { get; set; }
+
+    [DataMember]
+    public int Braveness { get; set; }
+
+    [DataMember]
+    public int Calmness { get; set; }
+
+    [DataMember]
+    public int PersonalLoyalty { get; set; }
+
+    [DataMember]
+    public int Ambition { get; set; }
+
+    [DataMember]
+    public bool Male { get; set; }
+
+    [DataMember]
+    public bool Female { get; set; }
+
+    [DataMember]
+    public List<string> Text { get; set; } = new();
+
+    [DataMember]
+    public List<string> SuffixText { get; set; } = new();
 }
-

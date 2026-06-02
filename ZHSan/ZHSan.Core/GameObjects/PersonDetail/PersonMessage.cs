@@ -1,11 +1,6 @@
-﻿using GameObjects;
+﻿namespace GameObjects.PersonDetail;
 
-
-namespace GameObjects.PersonDetail
+public class PersonMessage : GameMessage
 {
-
-    public class PersonMessage : GameMessage
-    {
-    }
+    
 }
-

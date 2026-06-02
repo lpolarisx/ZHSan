@@ -1,17 +1,12 @@
-﻿using System;
+﻿namespace GameObjects.PersonDetail;
 
-
-namespace GameObjects.PersonDetail
+public enum PersonStatus
 {
-
-    public enum PersonStatus
-    {
-        NoFaction,
-        NoFactionMoving,
-        Normal,
-        Moving,
-        Captive,
-        Princess,
-        None
-    }
+    NoFaction,
+    NoFactionMoving,
+    Normal,
+    Moving,
+    Captive,
+    Princess,
+    None
 }
