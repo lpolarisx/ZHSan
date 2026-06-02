@@ -1,12 +1,9 @@
-﻿using GameObjects;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 
-namespace GameObjects.ArchitectureDetail
+namespace GameObjects.ArchitectureDetail;
+
+[DataContract]
+public class StateList : GameObjectList
 {
-    [DataContract]
-    public class StateList : GameObjectList
-    {
 
-    }
 }
-
