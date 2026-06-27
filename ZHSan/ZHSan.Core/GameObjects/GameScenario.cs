@@ -2195,12 +2195,12 @@ namespace GameObjects
             {
                 return null;
             }
-            return this.GameCommonData.AllTerrainDetails.GetTerrainDetail(ScenarioMap.MapData[position.X, position.Y]);
+            return this.GameCommonData.AllTerrainDetails.Get(ScenarioMap.MapData[position.X, position.Y]);
         }
 
         public TerrainDetail GetTerrainDetailByPositionNoCheck(Point position)
         {
-            return this.GameCommonData.AllTerrainDetails.GetTerrainDetail(ScenarioMap.MapData[position.X, position.Y]);
+            return this.GameCommonData.AllTerrainDetails.Get(ScenarioMap.MapData[position.X, position.Y]);
         }
 
         public TerrainKind GetTerrainKindByPosition(Point position)
@@ -2223,7 +2223,7 @@ namespace GameObjects
             {
                 return "----";
             }
-            return this.GameCommonData.AllTerrainDetails.GetTerrainDetail(ScenarioMap.MapData[position.X, position.Y]).Name;
+            return this.GameCommonData.AllTerrainDetails.Get(ScenarioMap.MapData[position.X, position.Y]).Name;
         }
 
         public int GetTransferFundDays(Architecture from, Architecture to)
