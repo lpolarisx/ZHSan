@@ -3330,7 +3330,7 @@ namespace GameObjects
                 architecture.Init();
                 
                 // 建筑类型
-                architecture.Kind = this.GameCommonData.AllArchitectureKinds.GetArchitectureKind(architecture.KindId);
+                architecture.Kind = this.GameCommonData.AllArchitectureKinds.Get(architecture.KindId);
                 if (architecture.Kind == null)
                 {
                     var message = $"建筑种类ID：{architecture.KindId}, 不存在";
