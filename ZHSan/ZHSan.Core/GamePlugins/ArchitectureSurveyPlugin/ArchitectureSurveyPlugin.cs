@@ -13,6 +13,7 @@ using PluginInterface.BaseInterface;
 using WorldOfTheThreeKingdoms;
 using Platforms;
 using GameManager;
+using GameEnums;
 
 namespace ArchitectureSurveyPlugin
 {

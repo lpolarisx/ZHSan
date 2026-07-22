@@ -12,6 +12,6 @@ public class InfluenceKind2100 : InfluenceKind
 
     public override void PurifyInfluenceKind(Influence influence, Faction faction)
     {
-        faction.TechniqueMilitaryKinds.MilitaryKinds.Remove(influence.GetIntParam());
+        faction.RemoveTechniuqeMilitaryKind(influence.GetIntParam());
     }
 }

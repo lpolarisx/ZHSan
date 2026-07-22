@@ -4,7 +4,6 @@ using GameObjects.TroopDetail.EventEffect;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
 namespace GameObjects
@@ -52,7 +51,7 @@ namespace GameObjects
         [DataMember]
         public string SelfEffectsString { get; set; }
 
-        public List<GameObjects.TroopDetail.EventEffect.EventEffect> SelfEffects = new List<GameObjects.TroopDetail.EventEffect.EventEffect>();
+        public List<TroopDetail.EventEffect.EventEffect> SelfEffects { get; set; } = new();
 
         [DataMember]
         public string TargetPersonsString { get; set; }
@@ -347,46 +346,44 @@ namespace GameObjects
             }
         }
 
-        public void LoadEffectAreaFromString(EventEffectTable eventEffects, string data)
+        public void LoadEffectAreaFromString(Dictionary<int, TroopDetail.EventEffect.EventEffect> eventEffects, string data)
         {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.EffectAreas.Clear();
+            EffectAreas.Clear();
+
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                TroopEffectArea item = new TroopEffectArea();
-                item.Kind = (EffectAreaKind) int.Parse(strArray[i]);
-                item.Effect = eventEffects.Get(int.Parse(strArray[i + 1]));
-                this.EffectAreas.Add(item);
-            }
-        }
+                var effectArea = int.Parse(strArray[i]);
+                var eventEffectId = int.Parse(strArray[i + 1]);
 
-        public void LoadEffectPersonFromString(Dictionary<int, Person> persons, EventEffectTable eventEffects, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.EffectPersons.Clear();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                if (!persons.ContainsKey(int.Parse(strArray[i]))) continue;
-                TroopEffectPerson item = new TroopEffectPerson();
-                item.EffectPerson = persons[int.Parse(strArray[i])];
-                item.Effect = eventEffects.Get(int.Parse(strArray[i + 1]));
-                this.EffectPersons.Add(item);
-            }
-        }
-
-        public void LoadSelfEffectFromString(EventEffectTable eventEffects, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.SelfEffects.Clear();
-            for (int i = 0; i < strArray.Length; i++)
-            {
-                GameObjects.TroopDetail.EventEffect.EventEffect eventEffect = eventEffects.Get(int.Parse(strArray[i]));
-                if (eventEffect != null)
+                if (eventEffects.TryGetValue(eventEffectId, out var eventEffect))
                 {
-                    this.SelfEffects.Add(eventEffect);
+                    EffectAreas.Add(new TroopEffectArea
+                    {
+                        Kind = (EffectAreaKind)effectArea,
+                        Effect = eventEffect,
+                    });
+                }
+            }
+        }
+
+        public void LoadEffectPersonFromString(Dictionary<int, Person> persons, Dictionary<int, TroopDetail.EventEffect.EventEffect> eventEffects, string data)
+        {
+            EffectPersons.Clear();
+
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 0; i < strArray.Length; i += 2)
+            {
+                var personId = int.Parse(strArray[i]);
+                var eventEffectId = int.Parse(strArray[i + 1]);
+
+                if (persons.TryGetValue(personId, out var person) && eventEffects.TryGetValue(eventEffectId, out var eventEffect))
+                {
+                    EffectPersons.Add(new TroopEffectPerson
+                    {
+                        EffectPerson = person,
+                        Effect = eventEffect,
+                    });
                 }
             }
         }

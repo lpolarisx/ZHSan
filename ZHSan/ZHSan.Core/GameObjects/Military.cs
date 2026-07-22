@@ -4,6 +4,8 @@ using Microsoft.Xna.Framework;
 using System;
 using System.Runtime.Serialization;
 using GameManager;
+using GameEnums;
+using GameDatas;
 
 namespace GameObjects
 {
@@ -677,37 +679,24 @@ namespace GameObjects
         {
             get
             {
-                if (this.kind == null)
+                var allMilitaryKinds = Session.Current.Scenario.GameCommonData.AllMilitaryKinds;
+
+                if (kind == null && allMilitaryKinds.TryGetValue(kindID, out var militaryKind))
                 {
-                    this.kind = Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(this.kindID);
+                    kind = militaryKind;
                 }
-                if (this.BelongedArchitecture!=null )
+
+                if (BelongedArchitecture == null && bushiShuijunBingqieChuyuShuiyu() && allMilitaryKinds.TryGetValue(28, out militaryKind))
                 {
-                    return this.kind;
+                    return militaryKind;
                 }
-                else
-                {
-                    if (this.bushiShuijunBingqieChuyuShuiyu())
-                    {
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28);  //运兵船
-                    }
-                    else
-                    {
-                        return this.kind;
-                    }
-                }
+
+                return kind;
             }
             set
             {
-                this.kind = value;
-                if (this.kind != null)
-                {
-                    this.kindID = this.kind.ID;
-                }
-                else
-                {
-                    this.kindID = -1;
-                }
+                kind = value;
+                kindID = kind == null ? -1 : kind.ID;
             }
         }
 
@@ -715,30 +704,17 @@ namespace GameObjects
         {
             get
             {
+                if (BelongedArchitecture == null && bushiShuijunBingqieChuyuShuiyu()) return 28;
                 
-                if (this.BelongedArchitecture != null)
-                {
-                    return this.kindID;
-                }
-                else
-                {
-                    if (this.bushiShuijunBingqieChuyuShuiyu())
-                    {
-                        return 28;  //运兵船
-                    }
-                    else
-                    {
-                        return this.kindID;
-                    }
-                }
-
+                return kindID;
             }
             set
             {
-                this.kindID = value;
-                if (Session.Current.Scenario != null && Session.Current.Scenario.GameCommonData != null && Session.Current.Scenario.GameCommonData.AllMilitaryKinds != null)
+                kindID = value;
+
+                if (Session.Current.Scenario.GameCommonData.AllMilitaryKinds.TryGetValue(kindID, out var militaryKind))
                 {
-                    this.kind = Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(this.kindID);
+                    kind = militaryKind;
                 }
             }
         }
@@ -781,7 +757,7 @@ namespace GameObjects
 
         public bool bushiShuijunBingqieChuyuShuiyu(Point position)
         {
-            if (Session.GlobalVariables.LandArmyCanGoDownWater && kind != null && kind.Type != MilitaryType.水军 &&
+            if (Session.GlobalVariables.LandArmyCanGoDownWater && kind != null && kind.Type != MilitaryType.Navy &&
                 Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域)
             {
                 return true;
@@ -1189,7 +1165,7 @@ namespace GameObjects
                 if (this.BelongedFaction == null) return 0;
                 
                 int result = (int)(this.RealMilitaryKind.CreateCost + this.Experience * 5 + (this.FollowedLeader != null ? 1000 : this.LeaderExperience) / 1000.0 * 5000);
-                if (!this.BelongedFaction.AvailableMilitaryKinds.GetMilitaryKindList().GameObjects.Contains(this.RealMilitaryKind) || this.RealMilitaryKind.RecruitLimit == 1)
+                if (!BelongedFaction.AvailableMilitaryKinds.ContainsKey(RealMilitaryKind.ID) || this.RealMilitaryKind.RecruitLimit == 1)
                 {
                     result *= 2;
                 }
@@ -1266,7 +1242,7 @@ namespace GameObjects
             get
             {
                 double influenceValue = 0;
-                foreach (var influence in Kind.Influences.Values)
+                foreach (var influence in Kind.Influences)
                 {
                     influenceValue += influence.AIPersonValue;
                 }

@@ -20,6 +20,7 @@ using WorldOfTheThreeKingdoms.GameScreens;
 using WorldOfTheThreeKingdoms.GameScreens.ScreenLayers;
 using WorldOfTheThreeKingdoms.Resources;
 using GameManager;
+using GameEnums;
 
 //using GameObjects.PersonDetail.PersonMessages;
 
@@ -101,25 +102,27 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public override void Architecturefashengzainan(Architecture architecture, int zainanID)
+        public override void Architecturefashengzainan(Architecture architecture, int disasterKindId)
         {
             if (((Session.Current.Scenario.CurrentPlayer != null) && architecture.BelongedFaction!=null  && Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction)) || Session.GlobalVariables.SkyEye)
             {
-                string zainanming = Session.Current.Scenario.GameCommonData.suoyouzainanzhonglei.Getzainanzhonglei(zainanID).Name;
-                if (Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction) && architecture.BelongedFaction != null)
+                if (Session.Current.Scenario.GameCommonData.AllDisasterKinds.TryGetValue(disasterKindId, out var disasterKind))
                 {
-                    this.xianshishijiantupian(architecture.BelongedFaction.Leader, architecture.Name, TextMessageKind.DisasterHappened, "fashengzainan", "zainan" + zainanID.ToString() + ".jpg", "zainan" + zainanID.ToString(), zainanming, false);
-                    /*
-                    architecture.TextDestinationString = zainanming;
-                    this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom);
-                    this.Plugins.tupianwenziPlugin.SetGameObjectBranch(architecture.BelongedFaction.Leader, architecture, "fashengzainan");
-                    this.Plugins.tupianwenziPlugin.IsShowing = true;
-                    */
+                    var disasterName = disasterKind.Name;
+                    if (Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction) && architecture.BelongedFaction != null)
+                    {
+                        this.xianshishijiantupian(architecture.BelongedFaction.Leader, architecture.Name, TextMessageKind.DisasterHappened, "fashengzainan", "zainan" + disasterKindId.ToString() + ".jpg", "zainan" + disasterKindId.ToString(), disasterName, false);
+                        /*
+                        architecture.TextDestinationString = disasterName;
+                        this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom);
+                        this.Plugins.tupianwenziPlugin.SetGameObjectBranch(architecture.BelongedFaction.Leader, architecture, "fashengzainan");
+                        this.Plugins.tupianwenziPlugin.IsShowing = true;
+                        */
+                    }
+                    architecture.TextDestinationString = disasterName;
+
+                    this.Plugins.GameRecordPlugin.AddBranch(architecture, "fashengzainan", architecture.Position);
                 }
-                architecture.TextDestinationString = zainanming;
-
-                this.Plugins.GameRecordPlugin.AddBranch(architecture, "fashengzainan", architecture.Position);
-
             }
         }
 

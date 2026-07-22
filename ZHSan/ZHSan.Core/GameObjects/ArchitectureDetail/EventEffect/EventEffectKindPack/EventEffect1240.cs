@@ -9,10 +9,17 @@ public class EventEffect1240 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        var influence = Session.Current.Scenario.GameCommonData.AllInfluences.Get(eventEffect.GetIntParam());
+        var influenceId = eventEffect.GetIntParam();
 
-        arch.Characteristics.PurifyInfluence(arch, Applier.Characteristics, 0);
-        arch.Characteristics.Add(influence);
-        arch.Characteristics.ApplyInfluence(arch, Applier.Characteristics, 0);
+        if (Session.Current.Scenario.GameCommonData.AllInfluences.TryGetValue(influenceId, out var influence))
+        {
+            var characteristics = arch.Characteristics.Values;
+            var applier = Applier.Characteristics;
+            var id = 0;
+
+            Influence.PurifyInfluenceList(characteristics, arch, applier, id);
+            arch.Characteristics.TryAdd(influenceId, influence);
+            Influence.ApplyInfluenceList(characteristics, arch, applier, id);
+        }
     }
 }

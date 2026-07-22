@@ -69,7 +69,7 @@ namespace WorldOfTheThreeKingdoms.Resources
             }
             try
             {
-                foreach (TerrainDetail detail in Session.Current.Scenario.GameCommonData.AllTerrainDetails.TerrainDetails.Values)
+                foreach (var detail in Session.Current.Scenario.GameCommonData.AllTerrainDetails.Values)
                 {
                     detail.Textures = new TerrainTextures();
                     str = "Content/Textures/Resources/Terrain/" + detail.ID.ToString() + "/";
@@ -164,7 +164,7 @@ namespace WorldOfTheThreeKingdoms.Resources
             //}
             try
             {
-                foreach (MilitaryKind kind2 in Session.Current.Scenario.GameCommonData.AllMilitaryKinds.MilitaryKinds.Values)
+                foreach (var kind2 in Session.Current.Scenario.GameCommonData.AllMilitaryKinds.Values)
                 {
                     str = "Content/Textures/Resources/Troop/" + kind2.ID.ToString() + "/";
 
@@ -269,7 +269,7 @@ namespace WorldOfTheThreeKingdoms.Resources
             }
             //try
             //{
-                foreach (Animation animation in Session.Current.Scenario.GameCommonData.AllTileAnimations.Animations.Values)
+                foreach (var animation in Session.Current.Scenario.GameCommonData.AllTileAnimations.Values)
                 {
                     //animation.Device = device;
                     animation.TextureFileName = "Content/Textures/Resources/Effects/TileEffect/" + animation.Name + ".png";

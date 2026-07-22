@@ -1,3 +1,4 @@
+using GameEnums;
 using GameGlobal;
 using GameManager;
 using GameObjects.FactionDetail;

@@ -12,6 +12,7 @@ using GameObjects.TroopDetail;
 using GameObjects.SectionDetail;
 using GameObjects.PersonDetail;
 using GameManager;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.GameScreens
 
@@ -459,14 +460,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetOfficerType()
         {
-
-            this.CurrentGameObjects = this.CurrentArchitecture.AvailGeneratorTypeList().GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var generatorType = CurrentArchitecture.AvailGeneratorTypeList().Where(x => x.Selected).FirstOrDefault();
+            if (generatorType != null)
             {
-
                 //this.CurrentGameObject = Session.Current.Scenario.GameCommonData.PlayerGeneratorTypes.GetSelectedList()[0] as PersonGeneratorType;
-                PersonGeneratorType preferredType = this.CurrentArchitecture.AvailGeneratorTypeList().GetSelectedList()[0] as PersonGeneratorType;
-                this.CurrentArchitecture.DoZhaoXian(preferredType);
+                
+                CurrentArchitecture.DoZhaoXian(generatorType);
                 //this.CurrentArchitecture.DecreaseFund(preferredType.CostFund);
             }
         }
@@ -482,7 +481,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
             {
                 this.CurrentPerson = this.CurrentGameObjects[0] as Person;
-                this.CurrentPerson.CurrentInformationKind = Session.Current.Scenario.GameCommonData.AllInformationKinds.GetSelectedList()[0] as InformationKind;
+                this.CurrentPerson.CurrentInformationKind = Session.Current.Scenario.GameCommonData.AllInformationKinds.Values.FirstOrDefault(x => x.Selected);
                 Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.InformationPosition));
             }
         }
@@ -499,12 +498,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetLevelUpMilitaryKind()
         {
-            if (this.CurrentArchitecture != null)
+            if (CurrentArchitecture != null)
             {
-                this.CurrentGameObjects = this.CurrentArchitecture.UpgradableMilitaryKindList.GetSelectedList();
-                if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+                var militaryKind = CurrentArchitecture.GetUpgradableMilitaryKinds(CurrentMilitary).FirstOrDefault(x => x.Selected);
+
+                if (militaryKind != null)
                 {
-                    this.CurrentArchitecture.LevelUpMilitary(this.CurrentMilitary, this.CurrentGameObjects[0] as MilitaryKind);
+                    CurrentArchitecture.LevelUpMilitary(CurrentMilitary, militaryKind);
                 }
             }
         }
@@ -517,7 +517,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
                 {
                     this.CurrentMilitary = (Military) this.CurrentGameObjects[0];
-                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.MilitaryKind, FrameFunction.GetLevelUpMiliaryKind, true, true, true, false, this.CurrentArchitecture.GetUpgradableMilitaryKindList(this.CurrentMilitary), null, "编队升级", "编队升级");
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.MilitaryKind, FrameFunction.GetLevelUpMiliaryKind, true, true, true, false, [.. CurrentArchitecture.GetUpgradableMilitaryKinds(CurrentMilitary)], null, "编队升级", "编队升级");
                 }
             }
         }
@@ -574,22 +574,24 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if ((selectedList != null) && (selectedList.Count >= 1))
             {
                 this.CurrentPersons = selectedList;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.TrainPolicy, FrameFunction.SelectTrainPolicy, false, true, true, false, (this.CurrentPersons[0] as Person).TrainPolicies(), null, "选择培育方针", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.TrainPolicy, FrameFunction.SelectTrainPolicy, false, true, true, false, [.. Session.Current.Scenario.GameCommonData.AllTrainPolicies.Values], null, "选择培育方针", "");
             }
             this.CurrentArchitecture.Persons.ClearSelected();
         }
 
         private void FrameFunction_Architecture_AfterSelectTrainPolicy()
         {
-            GameObjectList selectedList = Session.Current.Scenario.GameCommonData.AllTrainPolicies.GetSelectedList();
-            if ((selectedList != null) && (selectedList.Count == 1))
+            var trainPolicy = Session.Current.Scenario.GameCommonData.AllTrainPolicies.Values.Where(x => x.Selected).FirstOrDefault();
+
+            if (trainPolicy != null)
             {
                 foreach (Person p in this.CurrentPersons)
                 {
-                    p.TrainPolicy = (TrainPolicy)selectedList[0];
+                    p.TrainPolicy = trainPolicy;
                 }
             }
-            this.CurrentArchitecture.Persons.ClearSelected();
+
+            CurrentArchitecture.Persons.ClearSelected();
         }
 
         private void FrameFunction_Architecture_AfterGetNewCapital()
@@ -604,13 +606,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetNewMilitaryKind()
         {
-            if (this.CurrentArchitecture != null)
+            var militaryKind = CurrentArchitecture?.GetNewMilitaryKinds().Values.FirstOrDefault(x => x.Selected);
+
+            if (militaryKind != null)
             {
-                this.CurrentGameObjects = this.CurrentArchitecture.NewMilitaryKindList.GetSelectedList();
-                if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
-                {
-                    this.CurrentArchitecture.CreateMilitary(this.CurrentGameObjects[0] as MilitaryKind);
-                }
+                CurrentArchitecture.CreateMilitary(militaryKind);
             }
         }
 
@@ -836,9 +836,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     if ((section.OrientationSection != null) && !this.CurrentArchitecture.BelongedFaction.Sections.HasGameObject(section.OrientationSection))
                     {
-                        foreach (SectionAIDetail detail in Session.Current.Scenario.GameCommonData.AllSectionAIDetails.SectionAIDetails.Values)
+                        foreach (var detail in Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values)
                         {
-                            if (detail.OrientationKind == SectionOrientationKind.无)
+                            if (detail.OrientationKind == SectionOrientationKind.None)
                             {
                                 section.AIDetail = detail;
                                 break;
@@ -1154,37 +1154,37 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Troop_AfterGetAttackDefaultKind()
         {
-            this.CurrentGameObjects = Session.Current.Scenario.GameCommonData.AllAttackDefaultKinds.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var attackDefaultKind = Session.Current.Scenario.GameCommonData.AllAttackDefaultKinds.FirstOrDefault(x => x.Selected);
+            if (attackDefaultKind != null)
             {
-                (this.CurrentGameObjects[0] as AttackDefaultKind).Apply(this.CurrentTroop);
+                CurrentTroop.AttackDefaultKind = (TroopAttackDefaultKind)attackDefaultKind.ID;
             }
         }
 
         private void FrameFunction_Troop_AfterGetAttackTargetKind()
         {
-            this.CurrentGameObjects = Session.Current.Scenario.GameCommonData.AllAttackTargetKinds.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var attackTargetKind = Session.Current.Scenario.GameCommonData.AllAttackTargetKinds.FirstOrDefault(x => x.Selected);
+            if (attackTargetKind != null)
             {
-                (this.CurrentGameObjects[0] as AttackTargetKind).Apply(this.CurrentTroop);
+                CurrentTroop.AttackTargetKind = (TroopAttackTargetKind)attackTargetKind.ID;
             }
         }
 
         private void FrameFunction_Troop_AfterGetCastDefaultKind()
         {
-            this.CurrentGameObjects = Session.Current.Scenario.GameCommonData.AllCastDefaultKinds.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var castDefaultKind = Session.Current.Scenario.GameCommonData.AllCastDefaultKinds.FirstOrDefault(x => x.Selected);
+            if (castDefaultKind != null)
             {
-                (this.CurrentGameObjects[0] as CastDefaultKind).Apply(this.CurrentTroop);
+                CurrentTroop.CastDefaultKind = (TroopCastDefaultKind)castDefaultKind.ID;
             }
         }
 
         private void FrameFunction_Troop_AfterGetCastTargetKind()
         {
-            this.CurrentGameObjects = Session.Current.Scenario.GameCommonData.AllCastTargetKinds.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var castTargetKind = Session.Current.Scenario.GameCommonData.AllCastTargetKinds.FirstOrDefault(x => x.Selected);
+            if (castTargetKind != null)
             {
-                (this.CurrentGameObjects[0] as CastTargetKind).Apply(this.CurrentTroop);
+                CurrentTroop.CastTargetKind = (TroopCastTargetKind)castTargetKind.ID;
             }
         }
 

@@ -8,6 +8,11 @@ public class EventEffect400 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        person.Character = Session.Current.Scenario.GameCommonData.AllCharacterKinds[eventEffect.GetIntParam()];
+        var id = eventEffect.GetIntParam();
+
+        if (Session.Current.Scenario.GameCommonData.AllCharacterKinds.TryGetValue(id, out var characterKind))
+        {
+            person.Character = characterKind;
+        }
     }
 }

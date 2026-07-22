@@ -1,4 +1,5 @@
-﻿using GameGlobal;
+﻿using GameEnums;
+using GameGlobal;
 using GameManager;
 using Microsoft.Xna.Framework;
 using System;
@@ -58,7 +59,7 @@ namespace GameObjects
         private void DetectAmbush(Troop troop)
         {
             int chance = 40 - troop.Leader.Calmness;
-            if (this.Level <= InformationLevel.中)
+            if (this.Level <= InformationLevel.Medium)
             {
                 if (troop.OnlyBeDetectedByHighLevelInformation)
                 {

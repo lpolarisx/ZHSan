@@ -59,7 +59,7 @@ namespace GameObjects
             {
                 p.PersonBiography = new PersonDetail.Biography();
                 p.PersonBiography.FactionColor = 52;
-                p.PersonBiography.MilitaryKinds.AddBasicMilitaryKinds();
+                p.PersonBiography.AddBasicMilitaryKinds();
                 p.PersonBiography.Brief = "";
                 p.PersonBiography.History = "";
                 p.PersonBiography.Romance = "";
@@ -264,20 +264,20 @@ namespace GameObjects
                 String.Format(yearTableStrings["gameEndWithUnite_p"], f.Name, f.Leader.Name));
         }
 
-        public void addAdvanceGuanjueEntry(GameDate date, Faction f, guanjuezhongleilei guanjue)
+        public void addAdvanceGuanjueEntry(GameDate date, Faction f, OfficialTitleKind officialTitleKind)
         {
             this.addTableEntry(date, composeFactionList(f),
-                String.Format(yearTableStrings["advanceGuanjue"], f.Name, guanjue.Name), true);
+                String.Format(yearTableStrings["advanceGuanjue"], f.Name, officialTitleKind.Name), true);
             this.addPersonInGameBiography(f.Leader, date,
-                String.Format(yearTableStrings["advanceGuanjue_p"], f.Name, guanjue.Name));
+                String.Format(yearTableStrings["advanceGuanjue_p"], f.Name, officialTitleKind.Name));
         }
 
-        public void addSelfAdvanceGuanjueEntry(GameDate date, Faction f, guanjuezhongleilei guanjue)
+        public void addSelfAdvanceGuanjueEntry(GameDate date, Faction f, OfficialTitleKind officialTitleKind)
         {
             this.addTableEntry(date, composeFactionList(f),
-                String.Format(yearTableStrings["selfAdvanceGuanjue"], f.Name, guanjue.Name), true);
+                String.Format(yearTableStrings["selfAdvanceGuanjue"], f.Name, officialTitleKind.Name), true);
             this.addPersonInGameBiography(f.Leader, date,
-                String.Format(yearTableStrings["selfAdvanceGuanjue_p"], f.Name, guanjue.Name));
+                String.Format(yearTableStrings["selfAdvanceGuanjue_p"], f.Name, officialTitleKind.Name));
         }
 
         public void addCreateSpouseEntry(GameDate date, Person p1, Person p2)

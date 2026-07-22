@@ -160,9 +160,11 @@ namespace FactionTechniquesPlugin
                                     "，技巧点数：" + (this.ShowingFaction == null ? item.LinkedTechnique.PointCost.ToString() : this.ShowingFaction.getTechniqueActualPointCost(item.LinkedTechnique).ToString()) + 
                                     "，资金：" + (this.ShowingFaction == null ? item.LinkedTechnique.FundCost.ToString() : this.ShowingFaction.getTechniqueActualFundCost(item.LinkedTechnique).ToString()),
                                     this.CommentsText.DefaultColor);
-                                if (item.LinkedTechnique.PreID >= 0)
+
+                                var preId = item.LinkedTechnique.PreID;
+                                if (preId >= 0 && Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(preId, out var technique))
                                 {
-                                    this.CommentsText.AddText("，前提条件：" + Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(item.LinkedTechnique.PreID).Name, this.CommentsText.DefaultColor);
+                                    CommentsText.AddText($"，前提条件：{technique.Name}", CommentsText.DefaultColor);
                                 }
                                 this.CommentsText.AddNewLine();
                                 this.CommentsText.AddText("请单击鼠标左键开始升级", this.CommentsText.SubTitleColor2);
@@ -202,17 +204,14 @@ namespace FactionTechniquesPlugin
                                 {
                                     this.CommentsText.AddText("资金：" + (this.ShowingFaction == null ? item.LinkedTechnique.FundCost.ToString() : this.ShowingFaction.getTechniqueActualFundCost(item.LinkedTechnique).ToString()), this.CommentsText.NegativeColor);
                                 }
-                                if (item.LinkedTechnique.PreID >= 0)
+
+                                var preId = item.LinkedTechnique.PreID;
+                                if (preId >= 0 && Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(preId, out var technique))
                                 {
-                                    this.CommentsText.AddNewLine();
-                                    if (this.ShowingFaction.HasTechnique(item.LinkedTechnique.PreID))
-                                    {
-                                        this.CommentsText.AddText("前提条件：" + Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(item.LinkedTechnique.PreID).Name, this.CommentsText.PositiveColor);
-                                    }
-                                    else
-                                    {
-                                        this.CommentsText.AddText("前提条件：" + Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(item.LinkedTechnique.PreID).Name, this.CommentsText.NegativeColor);
-                                    }
+                                    var color = ShowingFaction.HasTechnique(preId) ? CommentsText.PositiveColor : CommentsText.NegativeColor;
+
+                                    CommentsText.AddNewLine();
+                                    CommentsText.AddText($"前提条件：{technique.Name}", color);
                                 }
 
                                 foreach (Condition condition in item.LinkedTechnique.Conditions)
@@ -268,7 +267,7 @@ namespace FactionTechniquesPlugin
             this.AllTechniques.Clear();
 
             Dictionary<Microsoft.Xna.Framework.Point, Technique> showTechniques = new Dictionary<Microsoft.Xna.Framework.Point, Technique>();
-            foreach (Technique technique in Session.Current.Scenario.GameCommonData.AllTechniques.Techniques.Values)
+            foreach (var technique in Session.Current.Scenario.GameCommonData.AllTechniques.Values)
             {
                 Microsoft.Xna.Framework.Point p = new Microsoft.Xna.Framework.Point(technique.DisplayRow, technique.DisplayCol);
                 //try

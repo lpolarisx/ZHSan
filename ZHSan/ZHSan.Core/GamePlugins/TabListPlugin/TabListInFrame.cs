@@ -900,7 +900,7 @@ namespace TabListPlugin
             this.MultiSelecting = multiSelecting;
             if (this.listKindToDisplay != null)
             {
-                this.SetShowCheckBox(showCheckBox);
+                this.SetShowCheckBox(showCheckBox); 
             }
         }
 

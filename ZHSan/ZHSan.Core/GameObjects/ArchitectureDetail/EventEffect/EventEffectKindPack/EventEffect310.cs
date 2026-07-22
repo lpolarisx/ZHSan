@@ -1,5 +1,4 @@
 ﻿using GameManager;
-using GameObjects.PersonDetail;
 using System.Runtime.Serialization;
 
 namespace GameObjects.ArchitectureDetail.EventEffect;
@@ -9,9 +8,11 @@ public class EventEffect310 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        var title = Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(eventEffect.GetIntParam());
-        if (title == null) return;
+        var titleId = eventEffect.GetIntParam();
 
-        person.LearnTitle(title);
+        if (Session.Current.Scenario.GameCommonData.AllTitles.TryGetValue(titleId, out var title))
+        {
+            person.LearnTitle(title);
+        }
     }
 }

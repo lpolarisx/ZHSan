@@ -1,4 +1,4 @@
-﻿using GameGlobal;
+﻿using GameEnums;
 using System.Runtime.Serialization;
 
 namespace GameObjects.Influences.InfluenceKindPack;

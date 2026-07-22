@@ -8,8 +8,12 @@ public class EventEffect1250 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        arch.Characteristics.PurifyInfluence(arch, Applier.Characteristics, 0);
+        var characteristics = arch.Characteristics.Values;
+        var applier = Applier.Characteristics;
+        var id = 0;
+
+        Influence.PurifyInfluenceList(characteristics, arch, applier, id);
         arch.Characteristics.Remove(eventEffect.GetIntParam());
-        arch.Characteristics.ApplyInfluence(arch, Applier.Characteristics, 0);
+        Influence.ApplyInfluenceList(characteristics, arch, applier, id);
     }
 }

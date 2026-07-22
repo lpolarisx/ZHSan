@@ -8,6 +8,13 @@ public class ConditionKind621 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        return Session.Current.Scenario.GameCommonData.AllSkills.GetSkill(condition.GetIntParam()).CanLearn(person);
+        var skillId = condition.GetIntParam();
+
+        if (Session.Current.Scenario.GameCommonData.AllSkills.TryGetValue(skillId, out var skill))
+        {
+            return skill.CanLearn(person);
+        }
+
+        return false;
     }
 }

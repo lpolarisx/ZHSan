@@ -1,4 +1,5 @@
-﻿using GameFreeText;
+﻿using GameEnums;
+using GameFreeText;
 using GameGlobal;
 using GameManager;
 using GameObjects;

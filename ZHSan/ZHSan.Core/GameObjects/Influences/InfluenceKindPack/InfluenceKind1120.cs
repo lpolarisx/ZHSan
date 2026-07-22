@@ -7,11 +7,11 @@ public class InfluenceKind1120 : InfluenceKind
 {
     public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
     {
-        architecture.PrivateMilitaryKinds.AddMilitaryKind(influence.GetIntParam());
+        architecture.AddMilitaryKind(influence.GetIntParam());
     }
 
     public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
     {
-        architecture.PrivateMilitaryKinds.RemoveMilitaryKind(influence.GetIntParam());
+        architecture.RemoveMilitaryKind(influence.GetIntParam());
     }
 }

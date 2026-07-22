@@ -1,5 +1,6 @@
-﻿using GameManager;
-using GameObjects.PersonDetail;
+﻿using GameGlobal;
+using GameManager;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace GameObjects.ArchitectureDetail.EventEffect;
@@ -9,12 +10,10 @@ public class EventEffect275 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        if (person.BelongedFaction != null && person.LocationArchitecture != null && person.BelongedCaptive == null)
-        {
-            var random = Random(Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.Count);
+        if (person.BelongedFaction == null || person.LocationArchitecture == null || person.BelongedCaptive != null) return;
 
-            PersonGeneratorType type = Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes[random] as PersonGeneratorType;
-            person.LocationArchitecture.GenerateOfficer(type, true);
-        }
+        var allPersonGeneratorTypes = Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.Values.ToList();
+        var type = StaticMethods.GetRandomItem(allPersonGeneratorTypes);
+        person.LocationArchitecture.GenerateOfficer(type, true);
     }
 }

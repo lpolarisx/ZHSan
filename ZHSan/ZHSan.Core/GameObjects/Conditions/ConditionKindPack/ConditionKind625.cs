@@ -7,6 +7,6 @@ public class ConditionKind625 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        return person.Skills.GetSkill(condition.GetIntParam()) == null;
+        return person.Skills.ContainsKey(condition.GetIntParam());
     }
 }

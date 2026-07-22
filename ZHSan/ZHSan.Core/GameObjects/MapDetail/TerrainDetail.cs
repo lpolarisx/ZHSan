@@ -1,104 +1,100 @@
 ﻿using GameGlobal;
 using GameObjects.TroopDetail;
-using System.Runtime.Serialization;
 using GameManager;
+using GameDatas;
 
 namespace GameObjects.MapDetail;
 
-[DataContract]
 public class TerrainDetail : GameObject
 {
-    #region DataMember
-
     /// <summary>
     /// 图形层次
     /// </summary>
-    [DataMember]
     public int GraphicLayer { get; set; }
 
     /// <summary>
     /// 视线可穿透
     /// </summary>
-    [DataMember]
     public bool ViewThrough { get; set; }
 
     /// <summary>
     /// 粮道开通资金消耗
     /// </summary>
-    [DataMember]
     public int RoutewayBuildFundCost { get; set; }
 
     /// <summary>
     /// 粮道维持资金消耗
     /// </summary>
-    [DataMember]
     public int RoutewayActiveFundCost { get; set; }
 
     /// <summary>
     /// 粮道开通工作量
     /// </summary>
-    [DataMember]
     public int RoutewayBuildWorkCost { get; set; }
 
     /// <summary>
     /// 粮草消耗率
     /// </summary>
-    [DataMember]
     public float RoutewayConsumptionRate { get; set; }
 
     /// <summary>
     /// 粮草蕴藏量
     /// </summary>
-    [DataMember]
     public int FoodDeposit { get; set; }
 
     /// <summary>
     /// 粮草恢复天数
     /// </summary>
-    [DataMember]
     public int FoodRegainDays { get; set; }
 
     /// <summary>
     /// 春粮系数
     /// </summary>
-    [DataMember]
     public float FoodSpringRate { get; set; }
 
     /// <summary>
     /// 夏粮系数
     /// </summary>
-    [DataMember]
     public float FoodSummerRate { get; set; }
 
     /// <summary>
     /// 秋粮系数
     /// </summary>
-    [DataMember]
     public float FoodAutumnRate { get; set; }
 
     /// <summary>
     /// 冬粮系数
     /// </summary>
-    [DataMember]
     public float FoodWinterRate { get; set; }
 
     /// <summary>
     /// 火焰伤害率
     /// </summary>
-    [DataMember]
     public float FireDamageRate { get; set; }
 
-    [DataMember]
     public bool CanExtendInto { get; set; }
 
-    #endregion
-
-    public TerrainTextures Textures = new TerrainTextures();
-
-    public void Init()
+    public TerrainDetail(TerrainDetailConfig config)
     {
-        Textures = new TerrainTextures();
+        ID = config.Id;
+        Name = config.Name;
+        GraphicLayer = config.GraphicLayer;
+        ViewThrough = config.ViewThrough;
+        RoutewayBuildFundCost = config.RoutewayBuildFundCost;
+        RoutewayActiveFundCost = config.RoutewayActiveFundCost;
+        RoutewayBuildWorkCost = config.RoutewayBuildWorkCost;
+        RoutewayConsumptionRate = config.RoutewayConsumptionRate;
+        FoodDeposit = config.FoodDeposit;
+        FoodRegainDays = config.FoodRegainDays;
+        FoodSpringRate = config.FoodSpringRate;
+        FoodSummerRate = config.FoodSummerRate;
+        FoodAutumnRate = config.FoodAutumnRate;
+        FoodWinterRate = config.FoodWinterRate;
+        FireDamageRate = config.FireDamageRate;
+        CanExtendInto = config.CanExtendInto;
     }
+
+    public TerrainTextures Textures { get; set; } = new();
 
     public int GetFood(GameSeason season)
     {
@@ -165,7 +161,7 @@ public class TerrainDetail : GameObject
             if (troopPassable == null)
             {
                 troopPassable = false;
-                foreach (MilitaryKind militaryKind in Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKindList())
+                foreach (var militaryKind in Session.Current.Scenario.GameCommonData.AllMilitaryKinds.Values)
                 {
                     bool passable = false;
                     switch (ID)

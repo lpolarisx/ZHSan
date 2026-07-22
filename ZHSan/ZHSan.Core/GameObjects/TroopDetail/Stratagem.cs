@@ -1,17 +1,15 @@
-﻿using GameObjects.Animations;
-using GameObjects.Influences;
+﻿using GameObjects.Influences;
 using GameObjects.Conditions;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
-using System.Runtime.Serialization;
-using GameGlobal;
+using GameEnums;
+using GameDatas;
 
 namespace GameObjects.TroopDetail;
 
 /// <summary>
 /// 计略
 /// </summary>
-[DataContract]
 public class Stratagem : GameObject
 {
     #region DataMember
@@ -19,71 +17,72 @@ public class Stratagem : GameObject
     /// <summary>
     /// 消耗战意
     /// </summary>
-    [DataMember]
     public int Combativity { get; set; }
 
     /// <summary>
     /// 描述
     /// </summary>
-    [DataMember]
     public string Description { get; set; }
 
     /// <summary>
     /// 动画
     /// </summary>
-    [DataMember]
     public TileAnimationKind AnimationKind { get; set; }
 
     /// <summary>
     /// 影响列表
     /// </summary>
-    [DataMember]
     public string InfluencesString { get; set; }
 
     /// <summary>
     /// 使用条件列表
     /// </summary>
-    [DataMember]
     public string CastConditionsString { get; set; }
 
-    [DataMember]
     public string AIConditionWeightSelfString { get; set; }
 
-    [DataMember]
     public string AIConditionWeightEnemyString { get; set; }
 
-    
-    [DataMember]
     public bool ArchitectureTarget { get; set; }
 
-    [DataMember]
     public int CastDefaultString { get; set; }
 
-    [DataMember]
     public int CastTargetString { get; set; }
 
-    public CastDefaultKind CastDefault { get; set; }
-
-    public CastTargetKind CastTarget { get; set; }
-
-    [DataMember]
     public int Chance { get; set; }
 
-    [DataMember]
     public bool Friendly { get; set; }
 
-    [DataMember]
     public bool Self { get; set; }
 
-    [DataMember]
     public int TechniquePoint { get; set; }
 
-    [DataMember]
     public bool RequireInfluenceToUse { get; set; }
 
     #endregion
 
-    public InfluenceTable Influences { get; set; } = new();
+    public Stratagem(StratagemConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        Combativity = config.Combativity;
+        Description = config.Description;
+        AnimationKind = config.AnimationKind;
+        InfluencesString = config.InfluencesString;
+        CastConditionsString = config.CastConditionsString;
+        AIConditionWeightSelfString = config.AIConditionWeightSelfString;
+        AIConditionWeightEnemyString = config.AIConditionWeightEnemyString;
+        ArchitectureTarget = config.ArchitectureTarget;
+        CastDefaultString = config.CastDefaultString;
+        CastTargetString = config.CastTargetString;
+        Chance = config.Chance;
+        Friendly = config.Friendly;
+        Self = config.Self;
+        TechniquePoint = config.TechniquePoint;
+        RequireInfluenceToUse = config.RequireInfluenceToUse;
+    }
+
+    public List<Influence> Influences { get; set; } = new();
 
     public List<Condition> CastConditions { get; set; } = new();
     
@@ -93,7 +92,7 @@ public class Stratagem : GameObject
 
     public void Apply(Troop troop)
     {
-        foreach (var influence in Influences.Values)
+        foreach (var influence in Influences)
         {
             influence.ApplyInfluence(troop, Applier.Stratagem, 0);
         }
@@ -104,7 +103,7 @@ public class Stratagem : GameObject
         if (!source.HasStratagem(ID)) return 0;
 
         int num = 0;
-        foreach (var influence in Influences.Values)
+        foreach (var influence in Influences)
         {
             num += influence.GetCredit(source, destination);
         }
@@ -116,15 +115,13 @@ public class Stratagem : GameObject
         return Condition.CheckConditionList(CastConditions, troop);
     }
 
-    public string CastConditionString => StaticMethods.SaveNameToString(CastConditions);
-
     public int GetCreditWithPosition(Troop source, out Point? position)
     {
         position = new Point(0, 0);
 
         int num = 0;
         List<Point?> list = new List<Point?>();
-        foreach (var influence in Influences.Values)
+        foreach (var influence in Influences)
         {
             Point? nullable = null;
             num += influence.GetCreditWithPosition(source, out nullable);
@@ -139,7 +136,7 @@ public class Stratagem : GameObject
 
     public bool IsValid(Troop troop)
     {
-        foreach (var influence in Influences.Values)
+        foreach (var influence in Influences)
         {
             if (!influence.IsVaild(troop)) return false;
         }

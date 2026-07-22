@@ -21,6 +21,7 @@ using WorldOfTheThreeKingdoms.GameScreens.ScreenLayers;
 using WorldOfTheThreeKingdoms.Resources;
 using Platforms;
 using GameManager;
+using GameEnums;
 
 //using GameObjects.PersonDetail.PersonMessages;
 
@@ -1200,10 +1201,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         if (this.selectingLayer.Canceled)
                         {
-                            this.CurrentTroop.AttackTargetKind = TroopAttackTargetKind.遇敌;
+                            this.CurrentTroop.AttackTargetKind = TroopAttackTargetKind.EncounterEnemy;
                             if (this.CurrentTroop.CurrentStratagem != null)
                             {
-                                this.CurrentTroop.CastTargetKind = TroopCastTargetKind.可能;
+                                this.CurrentTroop.CastTargetKind = TroopCastTargetKind.Possible;
                             }
                             
                             if (this.CurrentTroop.Status == TroopStatus.埋伏)
@@ -1948,21 +1949,18 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private void SetTroopCombatMethod(int id)
         {
             //this.CurrentTroop.Operated = true;
-            this.CurrentTroop.CurrentStratagem = null;
-            this.CurrentTroop.CurrentCombatMethod = Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(id);
-            if (this.CurrentTroop.CurrentCombatMethod != null)
+            CurrentTroop.CurrentStratagem = null;
+
+            if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(id, out var combatMethod))
             {
-                if (this.CurrentTroop.CurrentCombatMethod.AttackDefault != null)
+                CurrentTroop.CurrentCombatMethod = combatMethod;
+
+                CurrentTroop.AttackDefaultKind = (TroopAttackDefaultKind)combatMethod.AttackDefaultString;
+                CurrentTroop.AttackTargetKind = (TroopAttackTargetKind)combatMethod.AttackTargetString;
+
+                if (CurrentTroop.AttackTargetKind == TroopAttackTargetKind.TargetDefault || CurrentTroop.AttackTargetKind == TroopAttackTargetKind.Target)
                 {
-                    this.CurrentTroop.AttackDefaultKind = (TroopAttackDefaultKind)this.CurrentTroop.CurrentCombatMethod.AttackDefault.ID;
-                }
-                if (this.CurrentTroop.CurrentCombatMethod.AttackTarget != null)
-                {
-                    this.CurrentTroop.AttackTargetKind = (TroopAttackTargetKind)this.CurrentTroop.CurrentCombatMethod.AttackTarget.ID;
-                }
-                if ((this.CurrentTroop.AttackTargetKind == TroopAttackTargetKind.目标默认) || (this.CurrentTroop.AttackTargetKind == TroopAttackTargetKind.目标))
-                {
-                    this.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.TroopTarget));
+                    PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.TroopTarget));
                 }
             }
         }
@@ -1970,24 +1968,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private void SetTroopStratagem(int id)
         {
             //this.CurrentTroop.Operated = true;
-            this.CurrentTroop.CurrentCombatMethod = null;
-            this.CurrentTroop.CurrentStratagem = Session.Current.Scenario.GameCommonData.AllStratagems.GetStratagem(id);
-            if (this.CurrentTroop.CurrentStratagem != null)
+            CurrentTroop.CurrentCombatMethod = null;
+
+            if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
             {
-                if (this.CurrentTroop.CurrentStratagem.CastDefault != null)
-                {
-                    this.CurrentTroop.CastDefaultKind = (TroopCastDefaultKind)this.CurrentTroop.CurrentStratagem.CastDefault.ID;
-                }
-                if (this.CurrentTroop.CurrentStratagem.CastTarget != null)
-                {
-                    this.CurrentTroop.CastTargetKind = (TroopCastTargetKind)this.CurrentTroop.CurrentStratagem.CastTarget.ID;
-                }
+                CurrentTroop.CurrentStratagem = stratagem;
+                CurrentTroop.CastDefaultKind = (TroopCastDefaultKind)stratagem.CastDefaultString;
+                CurrentTroop.CastTargetKind = (TroopCastTargetKind)stratagem.CastTargetString;
 
                 if (id == 2 || id == 3 || id == 6 || id == 8)
                 {
 
                 }
-                else if ((this.CurrentTroop.CastTargetKind == TroopCastTargetKind.特定默认) || (this.CurrentTroop.CastTargetKind == TroopCastTargetKind.特定))
+                else if ((this.CurrentTroop.CastTargetKind == TroopCastTargetKind.SpecificDefault) || (this.CurrentTroop.CastTargetKind == TroopCastTargetKind.Specific))
                 {
                     this.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.TroopTarget));
                 }
@@ -1997,8 +1990,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private void SetTroopStunt(int id)
         {
             //this.CurrentTroop.Operated = true;
-            this.CurrentTroop.CurrentStunt = Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(id);
-            this.CurrentTroop.ApplyCurrentStunt();
+            if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(id, out var stunt))
+            {
+                CurrentTroop.CurrentStunt = stunt;
+                CurrentTroop.ApplyCurrentStunt();
+            }
         }
 
         public void ShowFactionTechniques(Faction faction, Architecture architecture)

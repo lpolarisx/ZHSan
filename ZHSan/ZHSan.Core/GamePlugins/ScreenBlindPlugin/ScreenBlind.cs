@@ -151,7 +151,11 @@ namespace ScreenBlindPlugin
 
                     this.FactionText.Text = string.Concat(new object[] { Session.Current.Scenario.CurrentFaction.Name, " • ", Session.Current.Scenario.CurrentFaction.TotalTechniquePoint, });
 
-                    this.FactionTechText.Text = string.Concat(new object[] { Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(Session.Current.Scenario.CurrentFaction.UpgradingTechnique), "•", "余", Session.Current.Scenario.CurrentFaction.UpgradingDaysLeft * Session.Parameters.DayInTurn, "天" });
+                    var techniqueId = Session.Current.Scenario.CurrentFaction.UpgradingTechnique;
+                    if (Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(techniqueId, out var technique))
+                    {
+                        FactionTechText.Text = $"{technique.Name}•余{Session.Current.Scenario.CurrentFaction.UpgradingDaysLeft * Session.Parameters.DayInTurn}天";
+                    }
                 }
                 else
                 {

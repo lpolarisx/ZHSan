@@ -3518,7 +3518,7 @@ namespace ArchitectureDetail
                     {
                         this.TheCharacteristic1Text.AddText("特色", this.TheCharacteristic1Text.TitleColor);
                         this.TheCharacteristic1Text.AddNewLine();
-                        foreach (Influence influence in this.ShowingArchitecture.Characteristics.Values)
+                        foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
                         {
                             this.TheCharacteristic1Text.AddText(influence.Description, this.TheCharacteristic1Text.SubTitleColor);
                             this.TheCharacteristic1Text.AddNewLine();
@@ -4303,7 +4303,7 @@ namespace ArchitectureDetail
             int id=0;
             int ID = 0;
             int n = 1;
-            foreach (Influence influence in this.ShowingArchitecture.Characteristics.Influences.Values)
+            foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
             {
                 if (n == c) { ID = influence.ID; break; } n++;
             }
@@ -4417,7 +4417,7 @@ namespace ArchitectureDetail
         {
             bool H = false;
             int ID = -1;
-            foreach (Influence influence in this.ShowingArchitecture.Characteristics.Influences.Values)
+            foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
             {
                 ID = influence.ID;
                 if (ID == i)

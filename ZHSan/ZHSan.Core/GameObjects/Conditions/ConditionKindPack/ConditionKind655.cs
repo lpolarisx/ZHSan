@@ -9,17 +9,17 @@ public class ConditionKind655 : ConditionKind
     {
         var influenceId = condition.GetIntParam();
 
-        foreach (var skill in person.Skills.Skills.Values)
+        foreach (var skill in person.Skills.Values)
         {
-            if (skill.Influences.HasInfluence(influenceId)) return false;
+            if (skill.Influences.ContainsKey(influenceId)) return false;
         }
         foreach (var title in person.Titles)
         {
-            if (title.Influences.HasInfluence(influenceId)) return false;
+            if (title.Influences.ContainsKey(influenceId)) return false;
         }
-        foreach (var stunt in person.Stunts.Stunts.Values)
+        foreach (var stunt in person.Stunts.Values)
         {
-            if (stunt.Influences.HasInfluence(influenceId)) return false;
+            if (stunt.Influences.ContainsKey(influenceId)) return false;
         }
         return true;
     }

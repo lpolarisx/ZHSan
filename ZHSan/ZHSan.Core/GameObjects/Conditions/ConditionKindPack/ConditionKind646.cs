@@ -8,6 +8,13 @@ public class ConditionKind646 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        return !Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(condition.GetIntParam()).IsLearnable(person);
+        var stuntId = condition.GetIntParam();
+
+        if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(stuntId, out var stunt))
+        {
+            return !stunt.IsLearnable(person);
+        }
+
+        return true;
     }
 }

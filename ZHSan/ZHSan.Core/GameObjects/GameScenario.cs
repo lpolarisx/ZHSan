@@ -22,6 +22,8 @@ using Platforms;
 using WorldOfTheThreeKingdoms.GameScreens;
 using Serilog.Core;
 using Serilog;
+using GameEnums;
+using System.Text;
 
 namespace GameObjects
 {
@@ -1148,15 +1150,15 @@ namespace GameObjects
             newFaction.Name = leader.Name;
             if (leader.PersonBiography != null)
             {
-                foreach (MilitaryKind kind in leader.PersonBiography.MilitaryKinds.MilitaryKinds.Values)
+                foreach (var kind in leader.PersonBiography.MilitaryKinds)
                 {
-                    newFaction.BaseMilitaryKinds.AddMilitaryKind(kind);
+                    newFaction.AddMilitaryKind(kind);
                 }
                 newFaction.ColorIndex = leader.PersonBiography.FactionColor;
             }
             else
             {
-                newFaction.BaseMilitaryKinds.AddBasicMilitaryKinds();
+                newFaction.AddBasicMilitaryKinds();
                 newFaction.ColorIndex = -1;
             }
 
@@ -1188,9 +1190,9 @@ namespace GameObjects
 
             if (oldFaction != null)
             {
-                foreach (Technique tech in oldFaction.AvailableTechniques.GetTechniqueList())
+                foreach (var technique in oldFaction.AvailableTechniques.Values)
                 {
-                    newFaction.AvailableTechniques.AddTechnique(tech);
+                    newFaction.AddTechnique(technique);
                 }
 
                 if (oldFaction.IsAlien && leader.PersonalLoyalty < 2)
@@ -1474,19 +1476,18 @@ namespace GameObjects
 
         private void militaryKindEvent()
         {
-            foreach (MilitaryKind m in this.GameCommonData.AllMilitaryKinds.MilitaryKinds.Values)
+            foreach (var militaryKind in GameCommonData.AllMilitaryKinds.Values)
             {
-                if (m.Persons.Count > 0 && m.ObtainProb > 0)
+                var obtainProb = militaryKind.ObtainProb;
+
+                if (obtainProb > 0)
                 {
-                    foreach (Person p in m.Persons)
+                    foreach (var person in militaryKind.Persons)
                     {
-                        if (GameObject.Random(m.ObtainProb) == 0)
+                        var faction = person.BelongedFaction;
+                        if (StaticMethods.Random(obtainProb) == 0 && faction != null && faction.AddMilitaryKind(militaryKind))
                         {
-                            if (p.BelongedFaction != null && !p.BelongedFaction.BaseMilitaryKinds.MilitaryKinds.ContainsValue(m))
-                            {
-                                p.BelongedFaction.BaseMilitaryKinds.AddMilitaryKind(m);
-                                Session.MainGame.mainGameScreen.xianshishijiantupian(p, m.Name, TextMessageKind.ObtainMilitaryKind, "ObtainMilitaryKind", "", "", false);
-                            }
+                            Session.MainGame.mainGameScreen.xianshishijiantupian(person, militaryKind.Name, TextMessageKind.ObtainMilitaryKind, "ObtainMilitaryKind", "", "", false);
                         }
                     }
                 }
@@ -1497,7 +1498,7 @@ namespace GameObjects
         {
 
             List<Title> ManualAwardTitles = new List<Title>();
-            foreach (Title t in this.GameCommonData.AllTitles.Titles.Values)
+            foreach (var t in GameCommonData.AllTitles.Values)
             {
                 if (t.ManualAward)
                 {
@@ -1542,7 +1543,7 @@ namespace GameObjects
             {
                 courier = (Person)this.Persons.GetGameObject(7200);
             }
-            foreach (Title t in this.GameCommonData.AllTitles.Titles.Values)
+            foreach (var t in GameCommonData.AllTitles.Values)
             {
                 if (t.AutoLearn > 0 && GameObject.Random(t.AutoLearn) == 0)
                 {
@@ -1709,7 +1710,7 @@ namespace GameObjects
             GameArea area = GameArea.GetArea(position, 1, false);
             foreach (Point point in area.Area)
             {
-                if ((point != position) && this.IsFireVaild(point, false, MilitaryType.步兵))
+                if ((point != position) && this.IsFireVaild(point, false, MilitaryType.Infantry))
                 {
                     if (this.PositionIsOnFire(point))
                     {
@@ -2191,16 +2192,25 @@ namespace GameObjects
 
         public TerrainDetail GetTerrainDetailByPosition(Point position)
         {
-            if (this.PositionOutOfRange(position))
+            TerrainDetail terrainDetail = null;
+
+            if (!PositionOutOfRange(position))
             {
-                return null;
+                var terrainId = ScenarioMap.MapData[position.X, position.Y];
+
+                GameCommonData.AllTerrainDetails.TryGetValue(terrainId, out terrainDetail);
             }
-            return this.GameCommonData.AllTerrainDetails.Get(ScenarioMap.MapData[position.X, position.Y]);
+
+            return terrainDetail;
         }
 
         public TerrainDetail GetTerrainDetailByPositionNoCheck(Point position)
         {
-            return this.GameCommonData.AllTerrainDetails.Get(ScenarioMap.MapData[position.X, position.Y]);
+            var terrainId = ScenarioMap.MapData[position.X, position.Y];
+
+            GameCommonData.AllTerrainDetails.TryGetValue(terrainId, out var terrainDetail);
+
+            return terrainDetail;
         }
 
         public TerrainKind GetTerrainKindByPosition(Point position)
@@ -2219,11 +2229,16 @@ namespace GameObjects
 
         public string GetTerrainNameByPosition(Point position)
         {
-            if (this.PositionOutOfRange(position))
+            TerrainDetail terrainDetail = null;
+
+            if (!PositionOutOfRange(position))
             {
-                return "----";
+                var terrainId = ScenarioMap.MapData[position.X, position.Y];
+
+                GameCommonData.AllTerrainDetails.TryGetValue(terrainId, out terrainDetail);
             }
-            return this.GameCommonData.AllTerrainDetails.Get(ScenarioMap.MapData[position.X, position.Y]).Name;
+
+            return terrainDetail?.Name ?? "----";
         }
 
         public int GetTransferFundDays(Architecture from, Architecture to)
@@ -2277,7 +2292,7 @@ namespace GameObjects
                 {
                     return 0;
                 }
-                if (kind.Type == MilitaryType.水军)
+                if (kind.Type == MilitaryType.Navy)
                 {
                     return 0;
                 }
@@ -2313,7 +2328,7 @@ namespace GameObjects
             }
             else
             {
-                if (kind.Type != MilitaryType.水军 || kind.IsShell || kind.IsTransport)
+                if (kind.Type != MilitaryType.Navy || kind.IsShell || kind.IsTransport)
                 {
                     return 0;
                 }
@@ -2381,15 +2396,16 @@ namespace GameObjects
             this.InitializePersonData();
             //this.InitializeSpyMessageData();
 
-            foreach (Person p in this.Persons)
+            foreach (Person p in Persons)
             {
-                foreach (Title t in p.UniqueTitles.Titles.Values)
+                foreach (var t in p.UniqueTitles)
                 {
                     t.Persons.Add(p);
                 }
-                foreach (MilitaryKind m in p.UniqueMilitaryKinds.MilitaryKinds.Values)
+
+                foreach (var militaryKind in p.UniqueMilitaryKinds)
                 {
-                    m.Persons.Add(p);
+                    militaryKind.Persons.Add(p);
                 }
             }
 
@@ -2682,7 +2698,7 @@ namespace GameObjects
                 return false;
             }
             TerrainKind terrainKindByPosition = this.GetTerrainKindByPosition(position);
-            return (((typevalid && (type == MilitaryType.水军)) && (terrainKindByPosition == TerrainKind.水域)) || ((((terrainKindByPosition == TerrainKind.平原) || (terrainKindByPosition == TerrainKind.草原)) || (terrainKindByPosition == TerrainKind.森林)) || (terrainKindByPosition == TerrainKind.山地)));
+            return (((typevalid && (type == MilitaryType.Navy)) && (terrainKindByPosition == TerrainKind.水域)) || ((((terrainKindByPosition == TerrainKind.平原) || (terrainKindByPosition == TerrainKind.草原)) || (terrainKindByPosition == TerrainKind.森林)) || (terrainKindByPosition == TerrainKind.山地)));
         }
 
         public bool IsLastPlayer(Faction faction)
@@ -2832,14 +2848,22 @@ namespace GameObjects
             commonData.TroopAnimations = new TroopAnimation();
 
             // TODO: CommonData需移除InfluenceTable
-            var allInfluences = commonData.AllInfluences.Values.ToDictionary(x => x.ID, x => x);
-            var allConditions = commonData.AllConditions.Conditions;
+            var allInfluences = commonData.AllInfluences;
+            var allConditions = commonData.AllConditions;
 
             LoadGameCommonData();
 
-            foreach (var terrainDetail in commonData.AllTerrainDetails?.TerrainDetails?.Values ?? Enumerable.Empty<TerrainDetail>())
+            var allTitleKinds = commonData.AllTitleKinds;
+            foreach (var title in commonData.AllTitles.Values)
             {
-                terrainDetail.Init();
+                if (allTitleKinds.TryGetValue(title.KindId, out var titleKind))
+                {
+                    title.Kind = titleKind;
+                }
+                else
+                {
+                    logger.Error($"称号Id:[{title.ID}]没有对应称号类别");
+                }
             }
 
             foreach (var influence in allInfluences.Values ?? Enumerable.Empty<Influence>())
@@ -2849,28 +2873,28 @@ namespace GameObjects
 
             foreach (var facilityKind in commonData.AllFacilityKinds?.FacilityKinds?.Values ?? Enumerable.Empty<FacilityKind>())
             {
-                facilityKind.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, facilityKind.InfluencesString));
-                facilityKind.Conditions = new ConditionTable(StaticMethods.LoadFromString(allConditions, facilityKind.ConditionTableString));
+                facilityKind.Influences = StaticMethods.LoadFromString(allInfluences, facilityKind.InfluencesString).Values.ToList();
+                facilityKind.Conditions = StaticMethods.LoadFromString(allConditions, facilityKind.ConditionTableString).Values.ToList();
                 facilityKind.AIBuildConditionWeight = Condition.LoadConditionWeightFromString(allConditions, facilityKind.AIBuildConditionWeightString);
             }
 
-            foreach (var technique in commonData.AllTechniques?.Techniques?.Values ?? Enumerable.Empty<Technique>())
+            foreach (var technique in commonData.AllTechniques.Values)
             {
-                technique.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, technique.InfluencesString));
+                technique.Influences = StaticMethods.LoadFromString(allInfluences, technique.InfluencesString).Values.ToList();
                 technique.Conditions = StaticMethods.LoadFromString(allConditions, technique.ConditionTableString).Values.ToList();
                 technique.AIConditionWeight = Condition.LoadConditionWeightFromString(allConditions, technique.AIConditionWeightString);
             }
 
-            foreach (var skill in commonData.AllSkills?.Skills?.Values ?? Enumerable.Empty<Skill>())
+            foreach (var skill in commonData.AllSkills.Values)
             {
-                skill.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, skill.InfluencesString));
+                skill.Influences = StaticMethods.LoadFromString(allInfluences, skill.InfluencesString);
                 skill.Conditions = StaticMethods.LoadFromString(allConditions, skill.ConditionTableString).Values.ToList();
             }
 
-            foreach (var title in commonData.AllTitles?.Titles?.Values ?? Enumerable.Empty<Title>())
+            foreach (var title in commonData.AllTitles.Values)
             {
                 title.Init();
-                title.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, title.InfluencesString));
+                title.Influences = StaticMethods.LoadFromString(allInfluences, title.InfluencesString);
                 title.Conditions = StaticMethods.LoadFromString(allConditions, title.ConditionTableString).Values.ToList();
                 title.ArchitectureConditions = StaticMethods.LoadFromString(allConditions, title.ArchitectureConditionsString).Values.ToList();
                 title.FactionConditions = StaticMethods.LoadFromString(allConditions, title.FactionConditionsString).Values.ToList();
@@ -2878,53 +2902,44 @@ namespace GameObjects
                 title.GenerateConditions = StaticMethods.LoadFromString(allConditions, title.GenerateConditionsString).Values.ToList();
             }
 
-            foreach (var militaryKind in commonData.AllMilitaryKinds?.MilitaryKinds?.Values ?? Enumerable.Empty<MilitaryKind>())
+            foreach (var militaryKind in commonData.AllMilitaryKinds.Values)
             {
-                militaryKind.Init();
-                militaryKind.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, militaryKind.InfluencesString));
+                militaryKind.Influences = StaticMethods.LoadFromString(allInfluences, militaryKind.InfluencesString).Values.ToList();
                 militaryKind.CreateConditions = StaticMethods.LoadFromString(allConditions, militaryKind.CreateConditionsString).Values.ToList();
                 militaryKind.AICreateArchitectureConditionWeight = Condition.LoadConditionWeightFromString(allConditions, militaryKind.AICreateArchitectureConditionWeightString);
                 militaryKind.AIUpgradeArchitectureConditionWeight = Condition.LoadConditionWeightFromString(allConditions, militaryKind.AIUpgradeArchitectureConditionWeightString);
                 militaryKind.AIUpgradeLeaderConditionWeight = Condition.LoadConditionWeightFromString(allConditions, militaryKind.AIUpgradeLeaderConditionWeightString);
                 militaryKind.AILeaderConditionWeight = Condition.LoadConditionWeightFromString(allConditions, militaryKind.AILeaderConditionWeightString);
-                militaryKind.successor = new MilitaryKindTable();
-                militaryKind.successor.LoadFromString(commonData.AllMilitaryKinds, militaryKind.SuccessorString);
+                militaryKind.Successor = StaticMethods.LoadFromString(commonData.AllMilitaryKinds, militaryKind.SuccessorString).Values.ToList();
             }
 
-            foreach (var combatMethod in commonData.AllCombatMethods?.CombatMethods?.Values ?? Enumerable.Empty<CombatMethod>())
+            foreach (var combatMethod in commonData.AllCombatMethods.Values)
             {
-                combatMethod.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, combatMethod.InfluencesString));
-                combatMethod.AttackDefault = commonData.AllAttackDefaultKinds.GetGameObject(combatMethod.AttackDefaultString) as AttackDefaultKind;
-                combatMethod.AttackTarget = commonData.AllAttackTargetKinds.GetGameObject(combatMethod.AttackTargetString) as AttackTargetKind;
+                combatMethod.Influences = StaticMethods.LoadFromString(allInfluences, combatMethod.InfluencesString).Values.ToList();
                 combatMethod.CastConditions = StaticMethods.LoadFromString(allConditions, combatMethod.CastConditionsString).Values.ToList();
                 combatMethod.AIConditionWeightSelf = Condition.LoadConditionWeightFromString(allConditions, combatMethod.AIConditionWeightSelfString);
                 combatMethod.AIConditionWeightEnemy = Condition.LoadConditionWeightFromString(allConditions, combatMethod.AIConditionWeightEnemyString);
             }
 
-            foreach (var stunt in commonData.AllStunts?.Stunts?.Values ?? Enumerable.Empty<Stunt>())
+            foreach (var stunt in commonData.AllStunts.Values)
             {
-                stunt.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, stunt.InfluencesString));
+                stunt.Influences = StaticMethods.LoadFromString(allInfluences, stunt.InfluencesString);
                 stunt.CastConditions = StaticMethods.LoadFromString(allConditions, stunt.CastConditionsString).Values.ToList();
                 stunt.LearnConditions = StaticMethods.LoadFromString(allConditions, stunt.LearnConditionsString).Values.ToList();
                 stunt.AIConditions = StaticMethods.LoadFromString(allConditions, stunt.AIConditionsString).Values.ToList();
             }
 
-            foreach (var stratagem in commonData.AllStratagems?.Stratagems?.Values ?? Enumerable.Empty<Stratagem>())
+            foreach (var stratagem in commonData.AllStratagems.Values)
             {
-                stratagem.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, stratagem.InfluencesString));
+                stratagem.Influences = StaticMethods.LoadFromString(allInfluences, stratagem.InfluencesString).Values.ToList();
                 stratagem.CastConditions = StaticMethods.LoadFromString(allConditions, stratagem.CastConditionsString).Values.ToList();
-                stratagem.CastDefault = commonData.AllCastDefaultKinds.GetGameObject(stratagem.CastDefaultString) as CastDefaultKind;
-                stratagem.CastTarget = commonData.AllCastTargetKinds.GetGameObject(stratagem.CastTargetString) as CastTargetKind;
                 stratagem.AIConditionWeightSelf = Condition.LoadConditionWeightFromString(allConditions, stratagem.AIConditionWeightSelfString);
                 stratagem.AIConditionWeightEnemy = Condition.LoadConditionWeightFromString(allConditions, stratagem.AIConditionWeightEnemyString);
             }
 
-            // 数据转业务实体
-            commonData.AllStatusEffects = commonData.allStatusEffects?.Values.Select(config => new StatusEffect(config)).ToDictionary(x => x.ID, x => x);
-
-            foreach (var statusEffect in commonData.AllStatusEffects?.Values ?? Enumerable.Empty<StatusEffect>())
+            foreach (var statusEffect in commonData.AllStatusEffects.Values)
             {
-                statusEffect.Influences = new InfluenceTable(StaticMethods.LoadFromString(allInfluences, statusEffect.InfluenceString));
+                statusEffect.Influences = StaticMethods.LoadFromString(allInfluences, statusEffect.InfluenceString).Values.ToList();
             }
 
             return commonData;
@@ -2966,62 +2981,59 @@ namespace GameObjects
 
                 person.Init();
 
-                //person.IdealTendencyIDString = (short)reader["IdealTendency"];
-                person.IdealTendency = this.GameCommonData.AllIdealTendencyKinds.GetGameObject(person.IdealTendencyIDString) as IdealTendencyKind;
-
-                person.Character = this.GameCommonData.AllCharacterKinds[person.PCharacter];
-
-                //person.UniqueMilitaryKindsString = reader["UniqueMilitaryKinds"].ToString();
-                //person.UniqueTitlesString = reader["UniqueTitles"].ToString();
-
-                try
+                if (GameCommonData.AllIdealTendencyKinds.TryGetValue(person.IdealTendencyIDString, out var idealTendencyKind))
                 {
-                    errors.AddRange(person.UniqueMilitaryKinds.LoadFromString(this.GameCommonData.AllMilitaryKinds, person.UniqueMilitaryKindsString));
-                    errors.AddRange(person.UniqueTitles.LoadFromString(this.GameCommonData.AllTitles, person.UniqueTitlesString));
-                    //errors.AddRange(person.Guanzhis.LoadFromString(this.GameCommonData.AllTitles, reader["Guanzhis"].ToString()));
-                }
-                catch
-                {
+                    person.IdealTendency = idealTendencyKind;
                 }
 
-                //person.SkillsString = reader["Skills"].ToString();
-                person.Skills.LoadFromString(this.GameCommonData.AllSkills, person.SkillsString);
-
-                //person.StudyingTitleString = (short)reader["StudyingTitle"];
-                person.StudyingTitle = this.GameCommonData.AllTitles.GetTitle(person.StudyingTitleString);
-
-                try
+                if (GameCommonData.AllCharacterKinds.TryGetValue(person.PCharacter, out var characterKind))
                 {
-                    errors.AddRange(person.LoadTitleFromString(person.RealTitlesString, this.GameCommonData.AllTitles));
-                }
-                catch
-                {
-                    Title t = this.GameCommonData.AllTitles.GetTitle(person.PersonalTitleString);
-                    if (t != null)
-                    {
-                        person.RealTitles.Add(t);
-                    }
-                    t = this.GameCommonData.AllTitles.GetTitle(person.CombatTitleString);
-                    if (t != null)
-                    {
-                        person.RealTitles.Add(t);
-                    }
+                    person.Character = characterKind;
                 }
 
-                //person.StuntsString = reader["Stunts"].ToString();
-                //person.StudyingStuntString = (short)reader["StudyingStunt"];
+                person.UniqueMilitaryKinds = StaticMethods.LoadFromString(GameCommonData.AllMilitaryKinds, person.UniqueMilitaryKindsString).Values.ToList();
+                person.UniqueTitles = StaticMethods.LoadFromString(GameCommonData.AllTitles, person.UniqueTitlesString).Values.ToList();
 
-                try
+                //errors.AddRange(person.Guanzhis.LoadFromString(this.GameCommonData.AllTitles, reader["Guanzhis"].ToString()));
+
+                person.Skills = StaticMethods.LoadFromString(GameCommonData.AllSkills, person.SkillsString);
+
+                if (GameCommonData.AllTitles.TryGetValue(person.StudyingTitleString, out var title))
                 {
-                    person.Stunts.LoadFromString(this.GameCommonData.AllStunts, person.StuntsString);
-                    person.StudyingStunt = this.GameCommonData.AllStunts.GetStunt(person.StudyingStuntString);
-                }
-                catch
-                {
+                    person.StudyingTitle = title;
                 }
 
-                //person.TrainPolicyIDString = (short)reader["TrainPolicy"];
-                person.TrainPolicy = (TrainPolicy)this.GameCommonData.AllTrainPolicies.GetGameObject(person.TrainPolicyIDString);
+                person.RealTitles = StaticMethods.LoadFromString(GameCommonData.AllTitles, person.RealTitlesString).Values.ToList();
+
+                // TODO: catch里无法命中
+                // try
+                // {
+                //     person.RealTitles = StaticMethods.LoadFromString<Title>(GameCommonData.AllTitles, person.RealTitlesString).Values.ToList();
+                // }
+                // catch
+                // {
+                //     if (GameCommonData.AllTitles.TryGetValue(person.PersonalTitleString, out var title1))
+                //     {
+                //         person.RealTitles.Add(title1);
+                //     }
+
+                //     if (GameCommonData.AllTitles.TryGetValue(person.CombatTitleString, out var title2))
+                //     {
+                //         person.RealTitles.Add(title2);
+                //     }
+                // }
+
+                person.Stunts = StaticMethods.LoadFromString(GameCommonData.AllStunts, person.StuntsString);
+
+                if (GameCommonData.AllStunts.TryGetValue(person.StudyingStuntString, out var stunt))
+                {
+                    person.StudyingStunt = stunt;
+                }
+
+                if (GameCommonData.AllTrainPolicies.TryGetValue(person.TrainPolicyIDString, out var trainPolicy))
+                {
+                    person.TrainPolicy = trainPolicy;
+                }
 
                 //person.preferredTroopPersonsString = reader["PreferredTroopPersons"].ToString();
 
@@ -3196,29 +3208,20 @@ namespace GameObjects
                 }
             }
 
-            foreach (var biography in this.AllBiographies.Biographys)
+            foreach (var (id, biography) in AllBiographies.Biographys)
             {
-                biography.Value.Init();
-                Person p = (Person)this.Persons.GetGameObject(biography.Value.ID);
+                Person p = (Person)Persons.GetGameObject(id);
                 if (p != null)
                 {
-                    List<string> e = new List<string>();
+                    biography.MilitaryKinds = StaticMethods.LoadFromString(GameCommonData.AllMilitaryKinds, biography.MilitaryKindsString).Values.ToList();
 
-                    if (!String.IsNullOrEmpty(biography.Value.MilitaryKindsString))
+                   
+                    if (biography.MilitaryKinds.Count == 0)
                     {
-                        e = biography.Value.MilitaryKinds.LoadFromString(this.GameCommonData.AllMilitaryKinds, biography.Value.MilitaryKindsString);
+                        errorMsg.Add("列传人物ID" + id + "：没有基本兵种。");
                     }
-
-                    if (e.Count > 0)
-                    {
-                        errorMsg.Add("列传人物ID" + biography.Value.ID + "：");
-                        errorMsg.AddRange(e);
-                    }
-                    if (biography.Value.MilitaryKinds.MilitaryKinds.Count == 0)
-                    {
-                        errorMsg.Add("列传人物ID" + biography.Value.ID + "：没有基本兵种。");
-                    }
-                    p.PersonBiography = biography.Value;
+                    
+                    p.PersonBiography = biography;
                 }
             }
 
@@ -3228,7 +3231,7 @@ namespace GameObjects
                 {
                     p.PersonBiography = new Biography();
                     p.PersonBiography.FactionColor = 52;
-                    p.PersonBiography.MilitaryKinds.AddBasicMilitaryKinds();
+                    p.PersonBiography.AddBasicMilitaryKinds();
                     p.PersonBiography.Brief = "";
                     p.PersonBiography.History = "";
                     p.PersonBiography.Romance = "";
@@ -3283,11 +3286,13 @@ namespace GameObjects
             {
                 military.Init();
 
-                if (this.GameCommonData.AllMilitaryKinds.GetMilitaryKind(military.KindID) == null)
+                var kindId = military.KindID;
+                if (!GameCommonData.AllMilitaryKinds.ContainsKey(kindId))
                 {
-                    errorMsg.Add("编队ID" + military.ID + "：兵种ID" + military.KindID + "不存在");
+                    errorMsg.Add($"编队ID:[{military.ID}], 兵种ID:[{kindId}]不存在");
                     continue;
                 }
+
                 if (military.RecruitmentPersonID >= 0)
                 {
                     Person person = (Person)this.Persons.GetGameObject(military.RecruitmentPersonID);
@@ -3330,10 +3335,13 @@ namespace GameObjects
                 architecture.Init();
                 
                 // 建筑类型
-                architecture.Kind = this.GameCommonData.AllArchitectureKinds.Get(architecture.KindId);
-                if (architecture.Kind == null)
+                if (GameCommonData.AllArchitectureKinds.TryGetValue(architecture.KindId, out var kind))
                 {
-                    var message = $"建筑种类ID：{architecture.KindId}, 不存在";
+                    architecture.Kind = kind;
+                }
+                else
+                {
+                    var message = $"建筑种类Id：{architecture.KindId}, 不存在";
                     throw new Exception(message);
                 }
 
@@ -3356,7 +3364,7 @@ namespace GameObjects
                     }
                 }
 
-                architecture.Characteristics = new InfluenceTable(StaticMethods.LoadFromString(GameCommonData.AllInfluences.Influences, architecture.CharacteristicsString));
+                architecture.Characteristics = StaticMethods.LoadFromString(GameCommonData.AllInfluences, architecture.CharacteristicsString);
 
                 //architecture.ArchitectureAreaString = reader["Area"].ToString();
 
@@ -3417,14 +3425,15 @@ namespace GameObjects
                 //architecture.AILandLinksString = reader["AILandLinks"].ToString();
                 //architecture.AIWaterLinksString = reader["AIWaterLinks"].ToString();
 
-                try
+                if (GameCommonData.AllDisasterKinds.TryGetValue(architecture.zainan.zainanleixing, out var disasterKind))
                 {
-                    architecture.zainan.zainanzhonglei = this.GameCommonData.suoyouzainanzhonglei.Getzainanzhonglei(architecture.zainan.zainanleixing);
+                    architecture.zainan.DisasterKind = disasterKind;
                 }
-                catch
+                else
                 {
                     architecture.youzainan = false;
                 }
+
 
                 try
                 {
@@ -3525,15 +3534,19 @@ namespace GameObjects
                 //troop.CaptivesString = reader["Captives"].ToString();
                 errors.AddRange(troop.LoadCaptivesFromString(this.Captives, troop.CaptivesString.NullToString("")));
 
-                //troop.EventInfluencesString = reader["EventInfluences"].ToString();
-                errors.AddRange(troop.EventInfluences.LoadFromString(this.GameCommonData.AllInfluences, troop.EventInfluencesString.NullToString("")));
+                troop.EventInfluences = StaticMethods.LoadFromString(GameCommonData.AllInfluences, troop.EventInfluencesString).Values.ToList();
 
-                errors.AddRange(troop.LoadCombatMethodFromString(this.GameCommonData.AllCombatMethods, troop.CombatMethodsString.NullToString("")));
+                troop.CombatMethods = StaticMethods.LoadFromString(GameCommonData.AllCombatMethods, troop.CombatMethodsString);
 
-                //troop.CurrentStuntIDString = (short)reader["CurrentStunt"];
-                troop.CurrentStunt = this.GameCommonData.AllStunts.GetStunt(troop.CurrentStuntIDString);
+                if (GameCommonData.AllStunts.TryGetValue(troop.CurrentStuntIDString, out var stunt))
+                {
+                    troop.CurrentStunt = stunt;
+                }
 
-                troop.CurrentStratagem = this.GameCommonData.AllStratagems.GetStratagem(troop.CurrentStratagemID);
+                if (GameCommonData.AllStratagems.TryGetValue(troop.CurrentStratagemID, out var stratagem))
+                {
+                    troop.CurrentStratagem = stratagem;
+                }
 
                 if (errors.Count > 0)
                 {
@@ -3576,12 +3589,14 @@ namespace GameObjects
                 section.Init();
 
                 List<string> e = new List<string>();
-                //section.AIDetailIDString = (short)reader["AIDetail"];
-                section.AIDetail = this.GameCommonData.AllSectionAIDetails.GetSectionAIDetail(section.AIDetailIDString);
 
-                if (section.AIDetail == null)
+                if (GameCommonData.AllSectionAIDetails.TryGetValue(section.AIDetailIDString, out var sectionAIDetail))
                 {
-                    e.Add("军区委任类型" + section.AIDetailIDString + "不存在");
+                    section.AIDetail = sectionAIDetail;
+                }
+                else
+                {
+                    logger.Error($"军区委任类型Id: [{section.AIDetailIDString}]不存在");
                 }
 
                 //section.ArchitecturesString = reader["Architectures"].ToString();
@@ -3620,14 +3635,22 @@ namespace GameObjects
                 //faction.LegionsString = reader["Legions"].ToString();
                 e.AddRange(faction.LoadLegionsFromString(this.Legions, faction.LegionsString));
 
-                //faction.BaseMilitaryKindsString = reader["BaseMilitaryKinds"].ToString();
-                faction.BaseMilitaryKinds.LoadFromString(this.GameCommonData.AllMilitaryKinds, faction.BaseMilitaryKindsString);
+                var baseMilitaryKinds = StaticMethods.LoadFromString(GameCommonData.AllMilitaryKinds, faction.BaseMilitaryKindsString);
+                if (baseMilitaryKinds.Count == 0)
+                {
+                    faction.AddBasicMilitaryKinds();
+                }
+                else
+                {
+                    faction.BaseMilitaryKinds = baseMilitaryKinds;
+                }
+                
+                faction.AvailableTechniques = StaticMethods.LoadFromString(GameCommonData.AllTechniques, faction.AvailableTechniquesString);
 
-                //faction.AvailableTechniquesString = reader["AvailableTechniques"].ToString();
-                e.AddRange(faction.AvailableTechniques.LoadFromString(this.GameCommonData.AllTechniques, faction.AvailableTechniquesString));
-
-                //faction.PlanTechniqueString = (short)reader["PlanTechnique"];
-                faction.PlanTechnique = this.GameCommonData.AllTechniques.GetTechnique(faction.PlanTechniqueString);
+                if (GameCommonData.AllTechniques.TryGetValue(faction.PlanTechniqueString, out var technique))
+                {
+                    faction.PlanTechnique = technique;
+                }
 
                 //faction.TransferingMilitariesString = reader["TransferingMilitaries"].ToString();
                 e.AddRange(faction.LoadTransferingMilitariesFromString(this.Militaries, faction.TransferingMilitariesString.NullToString()));
@@ -3641,12 +3664,7 @@ namespace GameObjects
                 {
                     faction.Prince = this.Persons.GetGameObject(faction.PrinceID) as Person;
                 }
-                if (faction.AvailableMilitaryKinds.GetMilitaryKindList().Count == 0)
-                {
-                    faction.AvailableMilitaryKinds.AddMilitaryKind(this.GameCommonData.AllMilitaryKinds.GetMilitaryKind(0));
-                    faction.AvailableMilitaryKinds.AddMilitaryKind(this.GameCommonData.AllMilitaryKinds.GetMilitaryKind(1));
-                    faction.AvailableMilitaryKinds.AddMilitaryKind(this.GameCommonData.AllMilitaryKinds.GetMilitaryKind(2));
-                }
+               
                 if (e.Count > 0)
                 {
                     errorMsg.Add("势力ID" + faction.ID + "：");
@@ -3671,7 +3689,7 @@ namespace GameObjects
                     treasure.BelongedPerson.Treasures.Add(treasure);
                 }
 
-                treasure.Influences = new InfluenceTable(StaticMethods.LoadFromString(GameCommonData.AllInfluences.Influences, treasure.InfluencesString));
+                treasure.Influences = StaticMethods.LoadFromString(GameCommonData.AllInfluences, treasure.InfluencesString);
 
                 //this.Treasures.AddTreasure(treasure);
             }
@@ -3681,25 +3699,21 @@ namespace GameObjects
 
             //}
 
-            foreach (TroopEvent te in this.TroopEvents)
+            foreach (TroopEvent te in TroopEvents)
             {
                 te.Init();
 
                 //te.LaunchPersonString = (short)reader["LaunchPerson"];
                 te.LaunchPerson = this.Persons.GetGameObject(te.LaunchPersonString) as Person;
 
-                te.Conditions = StaticMethods.LoadFromString(GameCommonData.AllConditions.Conditions, te.ConditionsString).Values.ToList();
+                te.Conditions = StaticMethods.LoadFromString(GameCommonData.AllConditions, te.ConditionsString).Values.ToList();
 
                 //te.TargetPersonsString = reader["TargetPersons"].ToString();
                 te.LoadTargetPersonFromString(this.AllPersons, te.TargetPersonsString);
 
-                //te.SelfEffectsString = reader["EffectSelf"].ToString();
-                te.LoadSelfEffectFromString(this.GameCommonData.AllTroopEventEffects, te.SelfEffectsString);
+                te.SelfEffects = StaticMethods.LoadFromString(GameCommonData.AllTroopEventEffects, te.SelfEffectsString).Values.ToList();
 
-                //te.EffectPersonsString = reader["EffectPersons"].ToString();
-                te.LoadEffectPersonFromString(this.AllPersons, this.GameCommonData.AllTroopEventEffects, te.EffectPersonsString);
-
-                //te.EffectAreasString = reader["EffectAreas"].ToString();
+                te.LoadEffectPersonFromString(AllPersons, GameCommonData.AllTroopEventEffects, te.EffectPersonsString);
                 te.LoadEffectAreaFromString(this.GameCommonData.AllTroopEventEffects, te.EffectAreasString);
 
                 te.LoadDialogFromString(this.AllPersons, te.dialogString);
@@ -3714,39 +3728,30 @@ namespace GameObjects
                 //e.personString = reader["PersonId"].ToString();
                 e.LoadPersonIdFromString(this.Persons, e.personString);
 
-                //e.PersonCondString = reader["PersonCond"].ToString();
-                e.LoadPersonCondFromString(this.GameCommonData.AllConditions, e.PersonCondString);
+                e.personCond = StaticMethods.LoadListFromString(GameCommonData.AllConditions, e.PersonCondString);
 
                 //e.architectureString = reader["ArchitectureID"].ToString();
                 e.LoadArchitectureFromString(this.Architectures, e.architectureString);
 
-                //e.architectureCondString = reader["ArchitectureCond"].ToString();
-                e.LoadArchitctureCondFromString(this.GameCommonData.AllConditions, e.architectureCondString);
+                e.architectureCond = StaticMethods.LoadFromString(GameCommonData.AllConditions, e.architectureCondString).Values.ToList();
 
                 //e.factionString = reader["FactionID"].ToString();
                 e.LoadFactionFromString(this.Factions, e.factionString);
 
-                //e.factionCondString = reader["FactionCond"].ToString();
-                e.LoadFactionCondFromString(this.GameCommonData.AllConditions, e.factionCondString);
+                e.factionCond = StaticMethods.LoadFromString(GameCommonData.AllConditions, e.factionCondString).Values.ToList();
 
-                //e.effectString = reader["Effect"].ToString();
-                e.LoadEffectFromString(this.GameCommonData.AllEventEffects, e.effectString);
+                e.effect = StaticMethods.LoadListFromString(GameCommonData.AllEventEffects, e.effectString);
 
-                //e.architectureEffectString = reader["ArchitectureEffect"].ToString();
-                e.LoadArchitectureEffectFromString(this.GameCommonData.AllEventEffects, e.architectureEffectString);
-
-                //e.factionEffectIDString = reader["FactionEffect"].ToString();
-                e.LoadFactionEffectFromString(this.GameCommonData.AllEventEffects, e.factionEffectIDString);
+                e.architectureEffect = StaticMethods.LoadFromString(GameCommonData.AllEventEffects, e.architectureEffectString).Values.ToList();
+                e.factionEffect = StaticMethods.LoadFromString(GameCommonData.AllEventEffects, e.factionEffectIDString).Values.ToList();
 
                 if (e.dialogString != null)
                 {
                     e.LoadDialogFromString(e.dialogString);
                 }
 
-                //e.yesEffectString = reader["YesEffect"].ToString();
-                e.LoadYesEffectFromString(this.GameCommonData.AllEventEffects, e.yesEffectString);
-                //e.noEffectString = reader["NoEffect"].ToString();
-                e.LoadNoEffectFromString(this.GameCommonData.AllEventEffects, e.noEffectString);
+                e.yesEffect = StaticMethods.LoadListFromString(GameCommonData.AllEventEffects, e.yesEffectString);
+                e.noEffect = StaticMethods.LoadListFromString(GameCommonData.AllEventEffects, e.noEffectString);
 
                 if (e.yesdialogString != null)
                 {
@@ -3757,10 +3762,8 @@ namespace GameObjects
                     e.LoadnoDialogFromString(e.nodialogString);
                 }
 
-                //e.yesArchitectureEffectString = reader["YesArchitectureEffect"].ToString();
-                //e.noArchitectureEffectString = reader["NoArchitectureEffect"].ToString();
-                e.LoadYesArchitectureEffectFromString(this.GameCommonData.AllEventEffects, e.yesArchitectureEffectString);
-                e.LoadNoArchitectureEffectFromString(this.GameCommonData.AllEventEffects, e.noArchitectureEffectString);
+                e.yesArchitectureEffect = StaticMethods.LoadFromString(GameCommonData.AllEventEffects, e.yesArchitectureEffectString).Values.ToList();
+                e.noArchitectureEffect = StaticMethods.LoadFromString(GameCommonData.AllEventEffects, e.noArchitectureEffectString).Values.ToList();
 
                 if (e.scenBiographyString != null)
                 {
@@ -3848,34 +3851,36 @@ namespace GameObjects
         
         private void alterTransportShipAdaptibility()
         {
-            MilitaryKind militaryKind = this.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28);
-            if (Session.GlobalVariables.LandArmyCanGoDownWater)
+            if (GameCommonData.AllMilitaryKinds.TryGetValue(28, out var militaryKind))
             {
-                militaryKind.OneAdaptabilityKind = 0;
-                /*militaryKind.PlainAdaptability = 5;
-                militaryKind.GrasslandAdaptability = 5;
-                militaryKind.ForrestAdaptability = 6;
-                militaryKind.MarshAdaptability = 100;
-                militaryKind.MountainAdaptability = 10;
-                militaryKind.WaterAdaptability = 5;
-                militaryKind.RidgeAdaptability = 100;
-                militaryKind.WastelandAdaptability = 6;
-                militaryKind.DesertAdaptability = 10;
-                militaryKind.CliffAdaptability = 7;*/
-            }
-            else
-            {
-                militaryKind.OneAdaptabilityKind = 6;
-                militaryKind.PlainAdaptability = 100;
-                militaryKind.GrasslandAdaptability = 100;
-                militaryKind.ForrestAdaptability = 100;
-                militaryKind.MarshAdaptability = 100;
-                militaryKind.MountainAdaptability = 100;
-                //militaryKind.WaterAdaptability = 5;
-                militaryKind.RidgeAdaptability = 100;
-                militaryKind.WastelandAdaptability = 100;
-                militaryKind.DesertAdaptability = 100;
-                militaryKind.CliffAdaptability = 100;
+                if (Session.GlobalVariables.LandArmyCanGoDownWater)
+                {
+                    militaryKind.OneAdaptabilityKind = 0;
+                    /*militaryKind.PlainAdaptability = 5;
+                    militaryKind.GrasslandAdaptability = 5;
+                    militaryKind.ForrestAdaptability = 6;
+                    militaryKind.MarshAdaptability = 100;
+                    militaryKind.MountainAdaptability = 10;
+                    militaryKind.WaterAdaptability = 5;
+                    militaryKind.RidgeAdaptability = 100;
+                    militaryKind.WastelandAdaptability = 6;
+                    militaryKind.DesertAdaptability = 10;
+                    militaryKind.CliffAdaptability = 7;*/
+                }
+                else
+                {
+                    militaryKind.OneAdaptabilityKind = 6;
+                    militaryKind.PlainAdaptability = 100;
+                    militaryKind.GrasslandAdaptability = 100;
+                    militaryKind.ForrestAdaptability = 100;
+                    militaryKind.MarshAdaptability = 100;
+                    militaryKind.MountainAdaptability = 100;
+                    //militaryKind.WaterAdaptability = 5;
+                    militaryKind.RidgeAdaptability = 100;
+                    militaryKind.WastelandAdaptability = 100;
+                    militaryKind.DesertAdaptability = 100;
+                    militaryKind.CliffAdaptability = 100;
+                }
             }
         }
 
@@ -4147,14 +4152,13 @@ namespace GameObjects
             {
                 architecture.MonthEvent();
             }
-            foreach (MilitaryKind kind in this.GameCommonData.AllMilitaryKinds.MilitaryKinds.Values)
+
+            foreach (var militaryKind in GameCommonData.AllMilitaryKinds.Values)
             {
-#pragma warning disable CS0219 // The variable 'flag' is assigned but its value is never used
-                bool flag = true;
-#pragma warning restore CS0219 // The variable 'flag' is assigned but its value is never used
-                foreach (Troop troop in this.Troops)
+                var flag = true;
+                foreach (Troop troop in Troops)
                 {
-                    if ((troop.Army.Kind == kind) && Session.MainGame.mainGameScreen.TileInScreen(troop.Position))
+                    if ((troop.Army.Kind == militaryKind) && Session.MainGame.mainGameScreen.TileInScreen(troop.Position))
                     {
                         flag = false;
                         break;
@@ -4705,8 +4709,8 @@ namespace GameObjects
                     faction.InformationsString = faction.Informations.SaveToString();
                     faction.RoutewaysString = faction.Routeways.SaveToString();
                     faction.LegionsString = faction.Legions.SaveToString();
-                    faction.BaseMilitaryKindsString = faction.BaseMilitaryKinds.SaveToString();
-                    faction.AvailableTechniquesString = faction.AvailableTechniques.SaveToString();
+                    faction.BaseMilitaryKindsString = StaticMethods.SaveIdToString(faction.GetMilitaryKinds());
+                    faction.AvailableTechniquesString = StaticMethods.SaveIdToString(faction.AvailableTechniques.Values);
                     faction.PlanTechniqueString = (faction.PlanTechnique != null) ? faction.PlanTechnique.ID : -1;
                     faction.GetGeneratorPersonCountString = faction.SaveGeneratorPersonCountToString();
                     faction.TransferingMilitariesString = faction.TransferingMilitaries.SaveToString();
@@ -4824,9 +4828,9 @@ namespace GameObjects
 
                 if (!editing) troop.CaptivesString = troop.Captives.SaveToString();   //0413剧本编辑器部队可以存储俘虏  
 
-                troop.EventInfluencesString = troop.EventInfluences.SaveToString();
+                troop.EventInfluencesString = StaticMethods.SaveIdToString(troop.EventInfluences);
 
-                troop.CombatMethodsString = troop.CombatMethods.SaveToString();
+                troop.CombatMethodsString = StaticMethods.SaveIdToString(troop.CombatMethods.Values);
 
                 troop.CurrentStuntIDString = (troop.CurrentStunt != null) ? troop.CurrentStunt.ID : -1;
                 
@@ -4886,15 +4890,15 @@ namespace GameObjects
             {
                 foreach (Person person in this.Persons)
                 {
-                    person.UniqueTitlesString = person.UniqueTitles.SaveToString();
-                    person.UniqueMilitaryKindsString = person.UniqueMilitaryKinds.SaveToString();
+                    person.UniqueTitlesString = StaticMethods.SaveIdToString(person.UniqueTitles);
+                    // person.UniqueMilitaryKindsString = person.UniqueMilitaryKinds.SaveToString();
                     person.IdealTendencyIDString = (person.IdealTendency != null) ? person.IdealTendency.ID : -1;
                     if (person.Character != null)
                     {
                         person.PCharacter = person.Character.ID;
                     }
-                    person.UniqueTitlesString = person.UniqueTitles.SaveToString();
-                    person.UniqueMilitaryKindsString = person.UniqueMilitaryKinds.SaveToString();
+                    person.UniqueTitlesString = StaticMethods.SaveIdToString(person.UniqueTitles);
+                    person.UniqueMilitaryKindsString = StaticMethods.SaveIdToString(person.UniqueMilitaryKinds);
 
                     //row["Braveness"] = person.BaseBraveness;                    
                     //row["Calmness"] = person.BaseCalmness;
@@ -5004,11 +5008,11 @@ namespace GameObjects
 
                     person.ConvincingPersonID = (person.ConvincingPerson != null) ? person.ConvincingPerson.ID : -1;
 
-                    person.SkillsString = person.Skills.SaveToString();
-                    person.RealTitlesString = person.SaveTitleToString();
+                    person.SkillsString = StaticMethods.SaveIdToString(person.Skills.Values);
+                    person.RealTitlesString = StaticMethods.SaveIdToString(person.RealTitles);
                     person.StudyingTitleString = (person.StudyingTitle != null) ? person.StudyingTitle.ID : -1;
 
-                    person.StuntsString = person.Stunts.SaveToString();
+                    person.StuntsString = StaticMethods.SaveIdToString(person.Stunts.Values);
                     person.StudyingStuntString = (person.StudyingStunt != null) ? person.StudyingStunt.ID : -1;
 
                     person.waitForFeiziId = (person.WaitForFeiZi != null) ? person.WaitForFeiZi.ID : -1;
@@ -5080,22 +5084,22 @@ namespace GameObjects
             {
                 foreach (Event e in this.AllEvents)
                 {
-                    e.personString = e.SavePersonIdToString();
-                    e.PersonCondString = e.SavePersonCondToString();
+                    e.personString = StaticMethods.SaveKeyToString(e.person);
+                    e.PersonCondString = StaticMethods.SaveKeyToString(e.personCond);
                     e.architectureString = e.architecture.SaveToString();
-                    e.architectureCondString = e.SaveArchitecureCondToString();
+                    e.architectureCondString = StaticMethods.SaveIdToString(e.architectureCond);
                     e.factionString = e.faction.SaveToString();
-                    e.factionCondString = e.SaveFactionCondToString();
+                    e.factionCondString = StaticMethods.SaveIdToString(e.factionCond);
                     e.dialogString = e.SaveDialogToString();
-                    e.effectString = e.SaveEventEffectToString();
-                    e.architectureEffectString = e.SaveArchitectureEffectToString();
-                    e.factionEffectIDString = e.SaveFactionEffectToString();
+                    e.effectString = StaticMethods.SaveKeyToString(e.effect);
+                    e.architectureEffectString = StaticMethods.SaveIdToString(e.architectureEffect);
+                    e.factionEffectIDString = StaticMethods.SaveIdToString(e.factionEffect);
                     e.yesdialogString = e.SaveyesDialogToString();
                     e.nodialogString = e.SavenoDialogToString();
-                    e.yesEffectString = e.SaveYesEffectToString();
-                    e.noEffectString = e.SaveNoEffectToString();
-                    e.yesArchitectureEffectString = e.SaveYesArchitectureEffectToString();
-                    e.noArchitectureEffectString = e.SaveNoArchitectureEffectToString();
+                    e.yesEffectString = StaticMethods.SaveKeyToString(e.yesEffect);
+                    e.noEffectString = StaticMethods.SaveKeyToString(e.noEffect);
+                    e.yesArchitectureEffectString = StaticMethods.SaveIdToString(e.yesArchitectureEffect);
+                    e.noArchitectureEffectString = StaticMethods.SaveIdToString(e.noArchitectureEffect);
                     e.scenBiographyString = e.SaveScenBiographyToString();
                 }
             }
@@ -5116,9 +5120,9 @@ namespace GameObjects
                 this.OnAfterSaveScenario();
             }
 
-            foreach (Biography i in this.AllBiographies.Biographys.Values)
+            foreach (Biography biography in AllBiographies.Biographys.Values)
             {
-                i.MilitaryKindsString = i.MilitaryKinds.SaveToString();
+                biography.MilitaryKindsString = StaticMethods.SaveIdToString(biography.MilitaryKinds);
             }
 
             var scenarioClone = this.Clone();            
@@ -5211,34 +5215,14 @@ namespace GameObjects
         {
             // TODO: 配置项全局唯一的，为什么需要重新匹配？编辑器修改没有强关联或校验？
 
-            var conditionKinds = new ConditionKindTable();
-            foreach (var conditionKind in CommonData.Current.AllConditionKinds.ConditionKinds)
-            {
-                int num = conditionKind.Key;
-                ConditionKind ck = ConditionKindFactory.CreateConditionKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = conditionKind.Value.Name;
-                    conditionKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"条件类型Id:[{num}]不存在");
-                }
-            }
-            CommonData.Current.AllConditionKinds = conditionKinds;
+            var conditionKinds = CommonData.Current.AllConditionKinds;
+            var eventEffectKinds = CommonData.Current.AllEventEffectKinds;
+            var troopEventEffectKinds = CommonData.Current.AllTroopEventEffectKinds;
 
-            foreach (var (id, condition) in CommonData.Current.AllConditions.Conditions)
+            foreach (var condition in CommonData.Current.AllConditions.Values)
             {
-                if (condition.Kind == null)
-                {
-                    logger.Error($"条件Id:[{id}]没有对应类型");
-                    continue;
-                }
-                
-                var kindId = condition.Kind.ID;
-                if (conditionKinds.ConditionKinds.TryGetValue(kindId, out var matchedKind))
+                var kindId = condition.KindId;
+                if (conditionKinds.TryGetValue(kindId, out var matchedKind))
                 {
                     condition.Kind = matchedKind;
                 }
@@ -5248,38 +5232,10 @@ namespace GameObjects
                 }
             }
 
-            var influenceKinds = new InfluenceKindTable();
-            foreach (var influenceKind in CommonData.Current.AllInfluenceKinds.InfluenceKinds)
+            foreach (var influence in CommonData.Current.AllInfluences.Values)
             {
-                int num = influenceKind.Key;
-                InfluenceKind ck = InfluenceKindFactory.CreateInfluenceKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = influenceKind.Value.Name;
-                    ck.Type = influenceKind.Value.Type;
-                    ck.Combat = influenceKind.Value.Combat;
-                    ck.AIPersonValue = influenceKind.Value.AIPersonValue;
-                    ck.AIPersonValuePow = influenceKind.Value.AIPersonValuePow;
-                    influenceKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"影响类型Id:[{num}]不存在");
-                }
-            }
-            CommonData.Current.AllInfluenceKinds = influenceKinds;
-
-            foreach (var (id, influence) in CommonData.Current.AllInfluences.Influences)
-            {
-                if (influence.Kind == null)
-                {
-                    logger.Error($"影响Id:[{id}]没有对应类型");
-                    continue;
-                }
-                
-                var kindId = influence.Kind.ID;
-                if (influenceKinds.InfluenceKinds.TryGetValue(kindId, out var matchedKind))
+                var kindId = influence.KindId;
+                if (CommonData.Current.AllInfluenceKinds.TryGetValue(kindId, out var matchedKind))
                 {
                     influence.Kind = matchedKind;
                 }
@@ -5289,78 +5245,29 @@ namespace GameObjects
                 }
             }
 
-            var eventEffectKinds = new EventEffectKindTable();
-            foreach (var eventEffectKind in CommonData.Current.AllEventEffectKinds.EventEffectKinds)
+            foreach (var eventEffect in CommonData.Current.AllEventEffects.Values)
             {
-                int num = eventEffectKind.Key;
-                EventEffectKind ck = EventEffectKindFactory.CreateEventEffectKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = eventEffectKind.Value.Name;
-                    eventEffectKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"事件效果类型Id:[{num}]不存在");
-                }
-            }
-            CommonData.Current.AllEventEffectKinds = eventEffectKinds;
-
-            foreach (var (id, eventEffect) in CommonData.Current.AllEventEffects.EventEffects)
-            {
-                if (eventEffect.Kind == null)
-                {
-                    logger.Error($"事件效果Id:[{id}]没有对应类型");
-                    continue;
-                }
-                
-                var kindId = eventEffect.Kind.ID;
-                if (eventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
+                var kindId = eventEffect.KindId;
+                if (eventEffectKinds.TryGetValue(kindId, out var matchedKind))
                 {
                     eventEffect.Kind = matchedKind;
                 }
                 else
                 {
-                    logger.Error($"事件效果类型Id:[{kindId}]不存在");
+                    logger.Error($"事件影响类型Id:[{kindId}]不存在");
                 }
             }
 
-            // TODO: 部队事件效果还是EventEffect
-            var troopEventEffectKinds = new TroopDetail.EventEffect.EventEffectKindTable();
-            foreach (var eventEffectKind in CommonData.Current.AllTroopEventEffectKinds.EventEffectKinds)
+            foreach (var eventEffect in CommonData.Current.AllTroopEventEffects.Values)
             {
-                int num = eventEffectKind.Key;
-                TroopDetail.EventEffect.EventEffectKind ck = TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = eventEffectKind.Value.Name;
-                    troopEventEffectKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"部队事件效果类型Id:[{num}]不存在");
-                }
-            }
-            CommonData.Current.AllTroopEventEffectKinds = troopEventEffectKinds;
-
-            foreach (var (id, eventEffect) in CommonData.Current.AllTroopEventEffects.EventEffects)
-            {
-                if (eventEffect.Kind == null)
-                {
-                    logger.Error($"部队事件效果Id:[{id}]没有对应类型");
-                    continue;
-                }
-
-                var kindId = eventEffect.Kind.ID;
-                if (troopEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
+                var kindId = eventEffect.KindId;
+                if (troopEventEffectKinds.TryGetValue(kindId, out var matchedKind))
                 {
                     eventEffect.Kind = matchedKind;
                 }
                 else
                 {
-                    logger.Error($"部队事件效果类型Id:[{kindId}]不存在");
+                    logger.Error($"部队事件影响类型Id:[{kindId}]不存在");
                 }
             }
         }
@@ -5368,192 +5275,9 @@ namespace GameObjects
         public static void SaveGameCommonData(GameScenario scenario)
         {
             var commonData = scenario.GameCommonData.Clone();
-            commonData.AllTitles.Titles = commonData.AllTitles.Titles.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllArchitectureKinds.ArchitectureKinds = commonData.AllArchitectureKinds.ArchitectureKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllBiographyAdjectives = commonData.AllBiographyAdjectives.OrderBy(x => x.ID).ToList();
-            commonData.AllCombatMethods.CombatMethods = commonData.AllCombatMethods.CombatMethods.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllConditionKinds.ConditionKinds = commonData.AllConditionKinds.ConditionKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllConditions.Conditions = commonData.AllConditions.Conditions.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllEventEffectKinds.EventEffectKinds = commonData.AllEventEffectKinds.EventEffectKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllEventEffects.EventEffects = commonData.AllEventEffects.EventEffects.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
             commonData.AllFacilityKinds.FacilityKinds = commonData.AllFacilityKinds.FacilityKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllInfluenceKinds.InfluenceKinds = commonData.AllInfluenceKinds.InfluenceKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllInfluences.Influences = commonData.AllInfluences.Influences.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllMilitaryKinds.MilitaryKinds= commonData.AllMilitaryKinds.MilitaryKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllSkills.Skills = commonData.AllSkills.Skills.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllStratagems.Stratagems = commonData.AllStratagems.Stratagems.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllStunts.Stunts = commonData.AllStunts.Stunts.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllTechniques.Techniques = commonData.AllTechniques.Techniques.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllTitleKinds.TitleKinds = commonData.AllTitleKinds.TitleKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllTitles.Titles = commonData.AllTitles.Titles.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllTroopEventEffectKinds.EventEffectKinds = commonData.AllTroopEventEffectKinds.EventEffectKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllTroopEventEffects.EventEffects = commonData.AllTroopEventEffects.EventEffects.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            commonData.AllTextMessages.textMessages= commonData.AllTextMessages.textMessages.OrderBy(x => x.Key.Key).ToDictionary(x => x.Key, y => y.Value);
 
             // TODO: 保存数据也需要重新匹配？
-            var conditionKinds = new ConditionKindTable();
-            foreach (var conditionKind in commonData.AllConditionKinds.ConditionKinds)
-            {
-                int num = conditionKind.Key;
-                ConditionKind ck = new ConditionKind(); // ConditionKindFactory.CreateConditionKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = conditionKind.Value.Name;
-                    conditionKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"条件类型Id:[{num}]不存在");
-                }
-            }
-            commonData.AllConditionKinds = conditionKinds;
-
-            var allConditions = new ConditionTable();
-            foreach (var (id, condition) in commonData.AllConditions.Conditions)
-            {
-                if (condition.Kind == null)
-                {
-                    logger.Error($"条件Id:[{id}]没有对应类型");
-                    continue;
-                }
-
-                var kindId = condition.Kind.ID;
-                if (commonData.AllConditionKinds.ConditionKinds.TryGetValue(kindId, out var matchedKind))
-                {
-                    condition.Kind = matchedKind;
-                    allConditions.Add(condition);
-                }
-                else
-                {
-                    logger.Error($"条件类型Id:[{kindId}]不存在");
-                }
-            }
-            commonData.AllConditions = allConditions;
-
-            var influenceKinds = new InfluenceKindTable();
-            foreach (var influenceKind in commonData.AllInfluenceKinds.InfluenceKinds)
-            {
-                int num = influenceKind.Key;
-                InfluenceKind ck = new InfluenceKind(); // InfluenceKindFactory.CreateInfluenceKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Type = influenceKind.Value.Type;
-                    ck.Name = influenceKind.Value.Name;
-                    ck.Combat = influenceKind.Value.Combat;
-                    ck.AIPersonValue = influenceKind.Value.AIPersonValue;
-                    ck.AIPersonValuePow = influenceKind.Value.AIPersonValuePow;
-                    influenceKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"影响类型Id:[{num}]不存在");
-                }
-            }
-            commonData.AllInfluenceKinds = influenceKinds;
-
-            var allInfluences = new InfluenceTable();
-            foreach (var (id, influence) in commonData.AllInfluences.Influences)
-            {
-                if (influence.Kind == null)
-                {
-                    logger.Error($"影响Id:[{id}]没有对应的类型");
-                    continue;
-                }
-
-                var kindId = influence.Kind.ID;
-                if (commonData.AllInfluenceKinds.InfluenceKinds.TryGetValue(kindId, out var matchedKind))
-                {
-                    influence.Kind = matchedKind;
-                    allInfluences.Add(influence);
-                }
-                else
-                {
-                    logger.Error($"影响类型Id:[{kindId}]不存在");
-                }
-            }
-            commonData.AllInfluences = allInfluences;
-
-            var eventEffectKinds = new EventEffectKindTable();
-            foreach (var eventEffectKind in commonData.AllEventEffectKinds.EventEffectKinds)
-            {
-                int num = eventEffectKind.Key;
-                EventEffectKind ck = new EventEffectKind(); // EventEffectKindFactory.CreateEventEffectKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = eventEffectKind.Value.Name;
-                    eventEffectKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"事件效果类型Id:[{num}]不存在");
-                }
-            }
-            commonData.AllEventEffectKinds = eventEffectKinds;
-
-            var eventEffects = new EventEffectTable();
-            foreach (var (id, eventEffect) in commonData.AllEventEffects.EventEffects)
-            {
-                if (eventEffect.Kind == null)
-                {
-                    logger.Error($"事件效果Id:[{id}]没有对应类型");
-                    continue;
-                }
-                
-                var kindId = eventEffect.Kind.ID;
-                if (commonData.AllEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
-                {
-                    eventEffect.Kind = matchedKind;
-                    eventEffects.Add(eventEffect);
-                }
-                else
-                {
-                    logger.Error($"事件效果类型Id:[{kindId}]不存在");
-                }
-            }
-            commonData.AllEventEffects = eventEffects;
-
-            var troopEventEffectKinds = new TroopDetail.EventEffect.EventEffectKindTable();
-            foreach (var eventEffectKind in commonData.AllTroopEventEffectKinds.EventEffectKinds)
-            {
-                int num = eventEffectKind.Key;
-                TroopDetail.EventEffect.EventEffectKind ck = new TroopDetail.EventEffect.EventEffectKind(); // GameObjects.TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(num);
-                if (ck != null)
-                {
-                    ck.ID = num;
-                    ck.Name = eventEffectKind.Value.Name;
-                    troopEventEffectKinds.Add(ck);
-                }
-                else
-                {
-                    logger.Error($"部队事件效果类型Id:[{num}]不存在");
-                }
-            }
-            commonData.AllTroopEventEffectKinds = troopEventEffectKinds;
-
-            var allTroopEventEffects = new TroopDetail.EventEffect.EventEffectTable();
-            foreach (var (id, eventEffect) in commonData.AllTroopEventEffects.EventEffects)
-            {
-                if (eventEffect.Kind == null)
-                {
-                    logger.Error($"部队事件效果Id:[{id}]没有对应类型");
-                    continue;
-                }
-                
-                var kindId = eventEffect.Kind.ID;
-                if (commonData.AllTroopEventEffectKinds.EventEffectKinds.TryGetValue(kindId, out var matchedKind))
-                {
-                    eventEffect.Kind = matchedKind;
-                    allTroopEventEffects.Add(eventEffect);
-                }
-                else
-                {
-                    logger.Error($"部队事件效果类型Id:[{kindId}]不存在");
-                }
-            }
-            commonData.AllTroopEventEffects = allTroopEventEffects;
 
             scenario.GameCommonData = commonData;
         }
@@ -6140,9 +5864,9 @@ namespace GameObjects
                 //if (p.Trainable && GameObject.Random(30) == 0)
                 if (p.Trainable && GameObject.Random((int)(30 / (IsPlayer(p.Father.BelongedFaction) ? 1 : Session.Current.Scenario.Parameters.AIExtraPerson) / Session.Parameters.DayInTurn)) == 0)
                 {
-                    if (p.TrainPolicy == null)
+                    if (p.TrainPolicy == null && GameCommonData.AllTrainPolicies.TryGetValue(1, out var trainPolicy))
                     {
-                        p.TrainPolicy = (TrainPolicy)this.GameCommonData.AllTrainPolicies.GetGameObject(1);
+                        p.TrainPolicy = trainPolicy;
                     }
                     Dictionary<int, float> weighting = p.TrainPolicy.Weighting;
                     if (p.Age < 8) // No attempt to learn title until age 8
@@ -6374,7 +6098,7 @@ namespace GameObjects
                                     //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
                                     if (q.Skills.Count <= 0) continue;
                                     List<Skill> skillToTeach = new List<Skill>();
-                                    foreach (Skill s in q.Skills.Skills.Values)
+                                    foreach (var s in q.Skills.Values)
                                     {
                                         if (s.CanBeBorn(p))
                                         {
@@ -6382,7 +6106,7 @@ namespace GameObjects
                                         }
                                     }
                                     List<Skill> candidates = new List<Skill>();
-                                    foreach (Skill s in this.GameCommonData.AllSkills.Skills.Values)
+                                    foreach (var s in GameCommonData.AllSkills.Values)
                                     {
                                         if (s.CanBeBorn(p) && GameObject.GetChance((s.GetRelatedAbility(q) - 70) / 5) && GameObject.GetChance(100 / s.Level))
                                         {
@@ -6398,13 +6122,13 @@ namespace GameObjects
                                     foreach (Skill t in realSkillToTeach)
                                     {
                                         int extraChance = 0;
-                                        if (p.Father.GetSkillList().GameObjects.Contains(t) || p.Mother.GetSkillList().GameObjects.Contains(t))
+                                        if (p.Father.Skills.ContainsKey(t.ID) || p.Mother.Skills.ContainsKey(t.ID))
                                         {
                                             extraChance += 5;
                                         }
                                         if (GameObject.GetChance(100 / t.Level + q.childrenSkillChanceIncrease + extraChance))
                                         {
-                                            p.Skills.AddSkill(t);
+                                            p.AddSkill(t);
                                             p.AdjustRelation(q, 5, 5);
                                             q.AdjustRelation(p, 2, 5);
                                             if (GameObject.GetChance(30))
@@ -6432,7 +6156,7 @@ namespace GameObjects
                                     if (q.Hates(p)) continue;
                                     //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
                                     List<Stunt> stuntToTeach = new List<Stunt>();
-                                    foreach (Stunt s in q.Stunts.Stunts.Values)
+                                    foreach (var s in q.Stunts.Values)
                                     {
                                         if (s.CanBeBorn(p))
                                         {
@@ -6441,7 +6165,7 @@ namespace GameObjects
                                     }
 
                                     List<Stunt> candidates = new List<Stunt>();
-                                    foreach (Stunt s in this.GameCommonData.AllStunts.Stunts.Values)
+                                    foreach (var s in this.GameCommonData.AllStunts.Values)
                                     {
                                         if (s.CanBeBorn(p))
                                         {
@@ -6455,15 +6179,15 @@ namespace GameObjects
 
                                     if (stuntToTeach.Count > 0)
                                     {
-                                        Stunt t = stuntToTeach[GameObject.Random(stuntToTeach.Count)];
+                                        var t = stuntToTeach[GameObject.Random(stuntToTeach.Count)];
                                         int extraChance = 0;
-                                        if (p.Father.GetStuntList().GameObjects.Contains(t) || p.Mother.GetStuntList().GameObjects.Contains(t))
+                                        if (p.Father.Stunts.ContainsKey(t.ID) || p.Mother.Stunts.ContainsKey(t.ID))
                                         {
                                             extraChance += 10;
                                         }
                                         if (GameObject.GetChance((10 + q.childrenStuntChanceIncrease + extraChance) / 3))
                                         {
-                                            p.Stunts.AddStunt(t);
+                                            p.AddStunt(t);
                                             p.AdjustRelation(q, 5, 10);
                                             q.AdjustRelation(p, 2, 10);
                                             if (GameObject.GetChance(30))
@@ -6500,7 +6224,7 @@ namespace GameObjects
                                         }
                                     }
 
-                                    foreach (Title t in this.GameCommonData.AllTitles.Titles.Values)
+                                    foreach (var t in GameCommonData.AllTitles.Values)
                                     {
                                         if (t.Kind.RandomTeachable && t.Level <= maxLevel + q.childrenTitleChanceIncrease + 1 && GameObject.GetChance(t.InheritChance) && t.CanBeBorn(p))
                                         {
@@ -6518,9 +6242,9 @@ namespace GameObjects
                                         if (GameObject.GetChance(t.InheritChance * 3 + q.childrenTitleChanceIncrease * 3 + extraChance) && t.CanBeBorn(p))
                                         {
                                             Title existing = null;
-                                            foreach (Title u in p.Titles)
+                                            foreach (var u in p.Titles)
                                             {
-                                                if (u.Kind.Equals(t.Kind))
+                                                if (u.KindId == t.KindId)
                                                 {
                                                     existing = u;
                                                     break;

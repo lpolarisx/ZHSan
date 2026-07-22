@@ -65,17 +65,17 @@ namespace GameObjects
                 {
                     foreach (var title in person.Titles)
                     {
-                        title.Influences.PurifyInfluence(person, Applier.Title, title.ID);
+                        Influence.PurifyInfluenceList(title.Influences.Values,  person, Applier.Title, title.ID);
                     }
 
-                    foreach (var skill in person.Skills.Skills.Values)
+                    foreach (var skill in person.Skills.Values)
                     {
-                        skill.Influences.PurifyInfluence(person, Applier.Skill, skill.ID);
+                        Influence.PurifyInfluenceList(skill.Influences.Values,  person, Applier.Skill, skill.ID);
                     }
 
-                    foreach (var stunt in person.Stunts.Stunts.Values)
+                    foreach (var stunt in person.Stunts.Values)
                     {
-                        stunt.Influences.PurifyInfluence(person, Applier.Stunt, stunt.ID);
+                        Influence.PurifyInfluenceList(stunt.Influences.Values,  person, Applier.Stunt, stunt.ID);
                     }
 
                     person.PurifyAllTreasures();

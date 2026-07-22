@@ -8,6 +8,8 @@ public class ConditionKind631 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        return Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(condition.GetIntParam()).CanLearn(person);
+        var titleId = condition.GetIntParam();
+
+        return Session.Current.Scenario.GameCommonData.AllTitles.TryGetValue(titleId, out var title) && title.CanLearn(person);
     }
 }

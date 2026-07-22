@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Platforms;
 using GameManager;
+using GameEnums;
 
 namespace GameGlobal
 {
@@ -108,13 +109,13 @@ namespace GameGlobal
         [DataMember]
         public bool PopulationRecruitmentLimit = true;
         [DataMember]
-        public InformationLevel RoutewayInformationLevel = InformationLevel.低;
+        public InformationLevel RoutewayInformationLevel = InformationLevel.Low;
         [DataMember]
         public const float RoutewayLayerDepth = 0.85f;
         [DataMember]
         public bool RunWhileNotFocused = true;
         [DataMember]
-        public InformationLevel ScoutRoutewayInformationLevel = InformationLevel.高;
+        public InformationLevel ScoutRoutewayInformationLevel = InformationLevel.High;
         [DataMember]
         public const float ScreenBlindDepth = 0.43f;
         [DataMember]

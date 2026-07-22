@@ -10,9 +10,10 @@ public class EventEffect300 : EventEffectKind
     public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
         var skillId = eventEffect.GetIntParam();
-        var skill = Session.Current.Scenario.GameCommonData.AllSkills.GetSkill(skillId);
-
-        person.Skills.AddSkill(skill);
-        skill.Influences.ApplyInfluence(person, Applier.Skill, skillId);
+        if (Session.Current.Scenario.GameCommonData.AllSkills.TryGetValue(skillId, out var skill))
+        {
+            person.AddSkill(skill);
+            Influence.ApplyInfluenceListToPerson(skill.Influences.Values, person, Applier.Skill, skillId);
+        }
     }
 }

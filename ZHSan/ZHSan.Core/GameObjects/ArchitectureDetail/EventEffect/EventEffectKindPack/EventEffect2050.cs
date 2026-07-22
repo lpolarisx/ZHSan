@@ -7,6 +7,6 @@ public class EventEffect2050 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
-        faction.BaseMilitaryKinds.RemoveMilitaryKind(eventEffect.GetIntParam());
+        faction.RemoveMilitaryKind(eventEffect.GetIntParam());
     }
 }

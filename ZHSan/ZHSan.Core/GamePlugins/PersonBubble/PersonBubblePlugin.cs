@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using WorldOfTheThreeKingdoms;
 using Platforms;
 using GameManager;
+using GameEnums;
 
 namespace PersonBubble
 {
@@ -38,18 +39,19 @@ namespace PersonBubble
             this.personBubble.AddPersonText(person as Person, position, text);
         }
 
-        public void AddPerson(object person, Microsoft.Xna.Framework.Point position, Enum kind, string fallback)
+        public void AddPerson(object person, Point position, Enum kind, string fallback)
         {
-            Person p = (Person)person;
-            TextMessageKind k = (TextMessageKind)kind;
-            List<string> msg = Session.Current.Scenario.GameCommonData.AllTextMessages.GetTextMessage(p.ID, k);
-            if (msg.Count > 0)
+            var p = (Person)person;
+            var textMessageKind = (TextMessageKind)kind;
+            var messages = CommonData.GetPersonMessage(p.ID, textMessageKind);
+
+            if (messages.Count > 0)
             {
-                this.AddPersonText(person, position, msg[GameObject.Random(msg.Count)]);
+                AddPersonText(person, position, StaticMethods.GetRandomItem(messages));
             }
             else
             {
-                this.AddPerson(person, position, fallback);
+                AddPerson(person, position, fallback);
             }
         }
 

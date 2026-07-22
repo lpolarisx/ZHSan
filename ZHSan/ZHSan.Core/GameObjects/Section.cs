@@ -1,4 +1,5 @@
-﻿using GameManager;
+﻿using GameEnums;
+using GameManager;
 using GameObjects.ArchitectureDetail;
 using GameObjects.SectionDetail;
 using System;
@@ -341,27 +342,30 @@ namespace GameObjects
         {
             get
             {
+                var defaultStr = "----";
+
                 if (this.AIDetail != null)
                 {
                     switch (this.AIDetail.OrientationKind)
                     {
-                        case SectionOrientationKind.无:
-                            return "----";
+                        case SectionOrientationKind.None:
+                            return defaultStr;
 
-                        case SectionOrientationKind.军区:
-                            return ((this.OrientationSection != null) ? this.OrientationSection.Name : "----");
+                        case SectionOrientationKind.Section:
+                            return OrientationSection?.Name ?? defaultStr;
 
-                        case SectionOrientationKind.势力:
-                            return ((this.OrientationFaction != null) ? this.OrientationFaction.Name : "----");
+                        case SectionOrientationKind.Faction:
+                            return OrientationFaction?.Name ?? defaultStr;
 
-                        case SectionOrientationKind.州域:
-                            return ((this.OrientationState != null) ? this.OrientationState.Name : "----");
+                        case SectionOrientationKind.State:
+                            return OrientationState?.Name ?? defaultStr;
 
-                        case SectionOrientationKind.建筑:
-                            return ((this.OrientationArchitecture != null) ? this.OrientationArchitecture.Name : "----");
+                        case SectionOrientationKind.Architecture:
+                            return OrientationArchitecture?.Name ?? defaultStr;
                     }
                 }
-                return "----";
+
+                return defaultStr;
             }
         }
 

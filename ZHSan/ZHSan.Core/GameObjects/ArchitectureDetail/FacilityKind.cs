@@ -113,9 +113,9 @@ namespace GameObjects.ArchitectureDetail
         
         # endregion
 
-        public InfluenceTable Influences { get; set; } = new();
+        public List<Influence> Influences { get; set; } = new();
 
-        public ConditionTable Conditions { get; set; } = new();
+        public List<Condition> Conditions { get; set; } = new();
 
         public Dictionary<Condition, float> AIBuildConditionWeight { get; set; } = new();
 
@@ -127,7 +127,7 @@ namespace GameObjects.ArchitectureDetail
         public double AIValue(Architecture architecture)
         {
             // TODO:影响为空时返回一个很小的负数，是否调整为0
-            var value = Influences.Values.Any() ? Influences.Values.Max(x => x.AIFacilityValue(architecture)) : double.MinValue;
+            var value = Influences.Any() ? Influences.Max(x => x.AIFacilityValue(architecture)) : double.MinValue;
 
             if (value >= 0)
             {
@@ -145,7 +145,7 @@ namespace GameObjects.ArchitectureDetail
             {
                 var str = rongna > 0 ? $"•可以容纳{rongna}名美女" : "";
 
-                str += string.Join("•", Influences.Values.Select(x => x.Description));
+                str += string.Join("•", Influences.Select(x => x.Description));
 
                 return str;
             }
@@ -161,7 +161,7 @@ namespace GameObjects.ArchitectureDetail
             get
             {
                 int fundIncrease = 0;
-                foreach (var influence in Influences.Values)
+                foreach (var influence in Influences)
                 {
                     var influenceKindId = influence.Kind.ID;
 
@@ -195,7 +195,7 @@ namespace GameObjects.ArchitectureDetail
                 // 增筑 & 治所占用位置为0
                 if (PositionOccupied > 0) return false;
 
-                var influenceKindIds = Influences.Values.Select(x => x.Kind.ID);
+                var influenceKindIds = Influences.Select(x => x.Kind.ID);
 
                 // 农业、商业、技术、耐久、设施空间、人口上限
                 var targetKindIds = new [] { 1000, 1001, 1002, 1003, 1020, 1050 };
@@ -228,7 +228,7 @@ namespace GameObjects.ArchitectureDetail
             if (TechnologyNeeded > architecture.Technology)
                 return false;
 
-            if (!Condition.CheckConditionList(Conditions.Values, architecture)) 
+            if (!Condition.CheckConditionList(Conditions, architecture)) 
                 return false;
 
             // 已达建筑上限

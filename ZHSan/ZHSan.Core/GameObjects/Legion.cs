@@ -122,29 +122,28 @@ namespace GameObjects
                 if (list.Count > 0)
                 {
                     Person person = list[GameObject.Random(list.Count)] as Person;
-                    InformationKindList availList = Session.Current.Scenario.GameCommonData.AllInformationKinds.GetAvailList(person.LocationArchitecture);
-                    if (availList.Count > 0)
+
+                    var availKinds = person.LocationArchitecture.GetAvailInformationKindList();
+                    var count = availKinds.Count;
+
+                    if (count == 0) return;
+
+                    var index = StaticMethods.Random(count / 2); 
+
+                    if (WillArchitecture.BelongedFaction == null)
                     {
-                        if (availList.Count > 1)
-                        {
-                            if (this.WillArchitecture.BelongedFaction == null)
-                            {
-                                availList.PropertyName = "CostFund";
-                                availList.SmallToBig = true;
-                            }
-                            else
-                            {
-                                availList.PropertyName = "FightingWeighing";
-                            }
-                            availList.IsNumber = true;
-                            availList.ReSort();
-                        }
-                        this.SetInformationPosition();
-                        if (this.InformationDestination.HasValue)
-                        {
-                            person.CurrentInformationKind = availList[GameObject.Random(availList.Count / 2)] as InformationKind;
-                            person.GoForInformation(this.InformationDestination.Value);
-                        }
+                        availKinds.Sort((x, y) => x.CostFund.CompareTo(y.CostFund));
+                    }
+                    else
+                    {
+                        availKinds.Sort((x, y) => x.FightingWeighing.CompareTo(y.FightingWeighing));
+                    }
+
+                    SetInformationPosition();
+                    if (InformationDestination.HasValue)
+                    {
+                        person.CurrentInformationKind = availKinds[index];
+                        person.GoForInformation(InformationDestination.Value);
                     }
                 }
             }

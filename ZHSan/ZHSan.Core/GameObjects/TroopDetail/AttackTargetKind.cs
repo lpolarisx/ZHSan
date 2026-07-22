@@ -1,16 +1,14 @@
-﻿using GameObjects;
-using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using GameDatas;
 
-namespace GameObjects.TroopDetail
+namespace GameObjects.TroopDetail;
+
+[DataContract]
+public class AttackTargetKind : GameObject
 {
-    [DataContract]
-    public class AttackTargetKind : GameObject
+    public AttackTargetKind(AttackDefaultKindConfig config)
     {
-        public void Apply(Troop troop)
-        {
-            troop.AttackTargetKind = (TroopAttackTargetKind) base.ID;
-        }
+        ID = config.Id;
+        Name = config.Name;
     }
 }
-

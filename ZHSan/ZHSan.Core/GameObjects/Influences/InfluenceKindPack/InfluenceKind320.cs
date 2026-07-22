@@ -8,15 +8,21 @@ public class InfluenceKind320 : InfluenceKind
 {
     public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        var combatMethod = Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(influence.GetIntParam());
+        var id = influence.GetIntParam();
 
-        troop.CombatMethods.AddCombatMethod(combatMethod);
+        if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(id, out var combatMethod))
+        {
+            troop.CombatMethods.TryAdd(combatMethod.ID, combatMethod);
+        }
     }
 
     public override void PurifyInfluenceKind(Influence influence, Troop troop)
     {
-        var combatMethod = Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(influence.GetIntParam());
+        var id = influence.GetIntParam();
 
-        troop.CombatMethods.RemoveCombatMethod(combatMethod);
+        if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(id, out var combatMethod))
+        {
+            troop.CombatMethods.Remove(combatMethod.ID);
+        }
     }
 }

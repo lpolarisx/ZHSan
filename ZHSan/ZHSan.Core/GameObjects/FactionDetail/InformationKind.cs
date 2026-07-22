@@ -1,86 +1,48 @@
-﻿using GameGlobal;
-using GameObjects;
-using System;
-using System.Runtime.Serialization;
+﻿using Extensions;
+using GameDatas;
+using GameEnums;
+using GameGlobal;
 
-namespace GameObjects.FactionDetail
+namespace GameObjects.FactionDetail;
+
+/// <summary>
+/// 情报种类
+/// </summary>
+public class InformationKind : GameObject
 {
-    [DataContract]
-    public class InformationKind : GameObject
+    /// <summary>
+    /// 消耗资金
+    /// </summary>
+    public int CostFund { get; set; }
+    
+    /// <summary>
+    /// 等级
+    /// </summary>
+    public InformationLevel Level { get; set; }
+
+    /// <summary>
+    /// 斜向
+    /// </summary>
+    public bool Oblique { get; set; }
+
+    /// <summary>
+    /// 半径范围
+    /// </summary>
+    public int Radius { get; set; }
+
+    public InformationKind(InformationKindConfig config)
     {
-        private int costFund;
-        private InformationLevel level;
-        private bool oblique;
-        private int radius;
-
-        public bool Avail(Architecture a)
-        {
-            return (a.Fund >= this.costFund);
-        }
-        [DataMember]
-        public int CostFund
-        {
-            get
-            {
-                return this.costFund;
-            }
-            set
-            {
-                this.costFund = value;
-            }
-        }
-
-        public int FightingWeighing
-        {
-            get
-            {
-                return ((((this.Radius) *(int)  this.Level) * 100) / this.CostFund);
-            }
-        }
-        [DataMember]
-        public InformationLevel Level
-        {
-            get
-            {
-                return this.level;
-            }
-            set
-            {
-                this.level = value;
-            }
-        }
-        [DataMember]
-        public bool Oblique
-        {
-            get
-            {
-                return this.oblique;
-            }
-            set
-            {
-                this.oblique = value;
-            }
-        }
-
-        public string ObliqueString
-        {
-            get
-            {
-                return (this.Oblique ? "○" : "×");
-            }
-        }
-        [DataMember]
-        public int Radius
-        {
-            get
-            {
-                return this.radius;
-            }
-            set
-            {
-                this.radius = value;
-            }
-        }
+        ID = config.Id;
+        Name = config.Name;
+        CostFund = config.CostFund;
+        Level = config.Level;
+        Oblique = config.Oblique;
+        Radius = config.Radius;
     }
-}
 
+    public string ObliqueString => StaticMethods.ToMark(Oblique);
+
+    public int FightingWeighing => Radius * (int)Level * 100 / CostFund;
+
+    public string LevelName => Level.GetDescription();
+}

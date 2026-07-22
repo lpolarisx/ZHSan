@@ -1,4 +1,5 @@
-﻿using GameFreeText;
+﻿using GameEnums;
+using GameFreeText;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -195,9 +196,9 @@ namespace MarshalSectionDialogPlugin
                     {
                         if ((section3 != section) && (section3.OrientationSection == section))
                         {
-                            foreach (SectionAIDetail detail in Session.Current.Scenario.GameCommonData.AllSectionAIDetails.SectionAIDetails.Values)
+                            foreach (var detail in Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values)
                             {
-                                if (detail.OrientationKind == SectionOrientationKind.无)
+                                if (detail.OrientationKind == SectionOrientationKind.None)
                                 {
                                     section3.AIDetail = detail;
                                     break;
@@ -236,18 +237,18 @@ namespace MarshalSectionDialogPlugin
                     )
                 ) && (
                     (
-                        (this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.无) || 
-                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.军区) && (this.EditingSection.OrientationSection != null)) ||
-                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.势力) && (this.EditingSection.OrientationFaction != null)) ||
-                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.州域) && (this.EditingSection.OrientationState != null)) ||
-                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.建筑) && (this.EditingSection.OrientationArchitecture != null))
+                        (this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.None) || 
+                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.Section) && (this.EditingSection.OrientationSection != null)) ||
+                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.Faction) && (this.EditingSection.OrientationFaction != null)) ||
+                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.State) && (this.EditingSection.OrientationState != null)) ||
+                        ((this.EditingSection.AIDetail.OrientationKind == SectionOrientationKind.Architecture) && (this.EditingSection.OrientationArchitecture != null))
                     )
                 );
         }
 
         private void RefreshOrientationButton()
         {
-            this.OrientationButtonEnabled = (this.EditingSection.AIDetail != null) && (this.EditingSection.AIDetail.OrientationKind != SectionOrientationKind.无);
+            this.OrientationButtonEnabled = (this.EditingSection.AIDetail != null) && (this.EditingSection.AIDetail.OrientationKind != SectionOrientationKind.None);
         }
 
         private void screen_OnMouseLeftUp(Point position)
@@ -431,7 +432,7 @@ namespace MarshalSectionDialogPlugin
 
         private void ShowAIDetailFrame()
         {
-            this.TabListPlugin.InitialValues(Session.Current.Scenario.GameCommonData.AllSectionAIDetails.GetSectionAIDetailList(), this.EditingSection.AIDetail, InputManager.NowMouse.ScrollWheelValue, "");
+            this.TabListPlugin.InitialValues(Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values, EditingSection.AIDetail, InputManager.NowMouse.ScrollWheelValue, "");
             this.TabListPlugin.SetListKindByName("SectionAIDetail", true, false);
             this.TabListPlugin.SetSelectedTab("");
             this.GameFramePlugin.Kind = FrameKind.Section;
@@ -443,7 +444,7 @@ namespace MarshalSectionDialogPlugin
                 this.EditingSection.AIDetail = this.TabListPlugin.SelectedItem as SectionAIDetail;
                 switch (this.EditingSection.AIDetail.OrientationKind)
                 {
-                    case SectionOrientationKind.军区:
+                    case SectionOrientationKind.Section:
                     {
                         SectionList otherSections = this.EditingFaction.GetOtherSections(this.OriginalSection);
                         if (otherSections.Count == 1)
@@ -452,7 +453,7 @@ namespace MarshalSectionDialogPlugin
                         }
                         break;
                     }
-                    case SectionOrientationKind.势力:
+                    case SectionOrientationKind.Faction:
                     {
                         GameObjectList diplomaticRelationListByFactionID = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(this.EditingFaction.ID);
                         if (diplomaticRelationListByFactionID.Count == 1)
@@ -461,7 +462,7 @@ namespace MarshalSectionDialogPlugin
                         }
                         break;
                     }
-                    case SectionOrientationKind.州域:
+                    case SectionOrientationKind.State:
                     {
                         StateList states = Session.Current.Scenario.States;
                         if (states.Count == 1)
@@ -470,7 +471,7 @@ namespace MarshalSectionDialogPlugin
                         }
                         break;
                     }
-                    case SectionOrientationKind.建筑:
+                    case SectionOrientationKind.Architecture:
                     {
                         ArchitectureList allArch = Session.Current.Scenario.Architectures;
                         ArchitectureList targetArch = new ArchitectureList();
@@ -534,7 +535,7 @@ namespace MarshalSectionDialogPlugin
                 GameDelegates.VoidFunction function3 = null;
                 switch (this.EditingSection.AIDetail.OrientationKind)
                 {
-                    case SectionOrientationKind.军区:
+                    case SectionOrientationKind.Section:
                         this.TabListPlugin.InitialValues(this.EditingFaction.GetOtherSections(this.OriginalSection), null, InputManager.NowMouse.ScrollWheelValue, "");
                         this.TabListPlugin.SetListKindByName("Section", true, false);
                         this.TabListPlugin.SetSelectedTab("");
@@ -558,7 +559,7 @@ namespace MarshalSectionDialogPlugin
                         this.GameFramePlugin.SetOKFunction(function);
                         break;
 
-                    case SectionOrientationKind.势力:
+                    case SectionOrientationKind.Faction:
                         var list0 = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationDisplayListByFactionID(this.EditingFaction.ID);
 
                         if (list0 == null)
@@ -600,7 +601,7 @@ namespace MarshalSectionDialogPlugin
                         this.GameFramePlugin.SetOKFunction(function2);
                         break;
 
-                    case SectionOrientationKind.州域:
+                    case SectionOrientationKind.State:
                         this.TabListPlugin.InitialValues(Session.Current.Scenario.States.GetList(), null, InputManager.NowMouse.ScrollWheelValue, "");
                         this.TabListPlugin.SetListKindByName("State", true, false);
                         this.TabListPlugin.SetSelectedTab("");
@@ -624,7 +625,7 @@ namespace MarshalSectionDialogPlugin
                         this.GameFramePlugin.SetOKFunction(function3);
                         break;
 
-                    case SectionOrientationKind.建筑:
+                    case SectionOrientationKind.Architecture:
                         ArchitectureList allArch = Session.Current.Scenario.Architectures;
                         ArchitectureList targetArch = new ArchitectureList();
                         foreach (Architecture a in allArch)

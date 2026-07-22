@@ -622,7 +622,7 @@
                     int num3 = num2;
                     if (this.ShowingPerson.Stunts.Count > num3)
                     {
-                        Stunt stunt = this.ShowingPerson.Stunts.GetStuntList()[num3] as Stunt;
+                        var stunt = ShowingPerson.Stunts.Values.ToList()[num3];
                         if (stunt != null)
                         {
                             if (this.current != stunt)
@@ -636,7 +636,7 @@
                                 this.InfluenceText.AddText((stunt.Period * Session.Parameters.DayInTurn).ToString(), this.InfluenceText.SubTitleColor3);
                                 this.InfluenceText.AddText("天", this.InfluenceText.SubTitleColor2);
                                 this.InfluenceText.AddNewLine();
-                                foreach (Influence influence in stunt.Influences.Influences.Values)
+                                foreach (var influence in stunt.Influences.Values)
                                 {
                                     this.InfluenceText.AddText(influence.Description);
                                     this.InfluenceText.AddNewLine();
@@ -802,7 +802,7 @@
         internal void SetPerson(Person person)
         {
             this.AllSkillTexts.SimpleClear();
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
                 Rectangle position = new Rectangle(this.SkillDisplayOffset.X + (skill.DisplayCol * this.SkillBlockSize.X), this.SkillDisplayOffset.Y + (skill.DisplayRow * this.SkillBlockSize.Y), this.SkillBlockSize.X, this.SkillBlockSize.Y);
                 this.AllSkillTexts.AddText(skill.Name, position);
@@ -902,10 +902,10 @@
              */
             this.PersonSkillTexts.SimpleClear();
             this.LearnableSkillTexts.SimpleClear();
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
                 Rectangle position = new Rectangle(this.SkillDisplayOffset.X + (skill.DisplayCol * this.SkillBlockSize.X), this.SkillDisplayOffset.Y + (skill.DisplayRow * this.SkillBlockSize.Y), this.SkillBlockSize.X, this.SkillBlockSize.Y);
-                if (person.Skills.GetSkill(skill.ID) != null)
+                if (person.HasSkill(skill.ID))
                 {
                     this.PersonSkillTexts.AddText(skill.Name, position);
                 }
@@ -922,7 +922,7 @@
             //this.StuntText.AddNewLine();
             //this.StuntText.AddText(person.Stunts.Count.ToString() + "种", Color.Lime);
             //this.StuntText.AddNewLine();
-            foreach (Stunt stunt in person.Stunts.Stunts.Values)
+            foreach (var stunt in person.Stunts.Values)
             {
                 this.StuntText.AddText(stunt.Name, Color.Khaki);
                 this.StuntText.AddText(" 战意消耗" + stunt.Combativity.ToString(), Color.SkyBlue);

@@ -1,4 +1,5 @@
-﻿using GameManager;
+﻿using GameEnums;
+using GameManager;
 using GameObjects.TroopDetail;
 using Microsoft.Xna.Framework;
 using System;
@@ -25,7 +26,7 @@ public class InfluenceKind398 : InfluenceKind
         TroopList list2 = new TroopList();
         foreach (Troop troop in hostileTroopsInView)
         {
-            if (troop.IsInArchitecture || !troop.DaysToReachPosition(source.Position, 1) || (troop.Army.Kind.Type == MilitaryType.水军))
+            if (troop.IsInArchitecture || !troop.DaysToReachPosition(source.Position, 1) || (troop.Army.Kind.Type == MilitaryType.Navy))
             {
                 list2.Add(troop);
             }
@@ -54,7 +55,7 @@ public class InfluenceKind398 : InfluenceKind
             GameArea area = new GameArea();
             foreach (Point point in source.GetStratagemArea(source.Position).Area)
             {
-                if (!Session.Current.Scenario.PositionIsOnFire(point) && Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.步兵))
+                if (!Session.Current.Scenario.PositionIsOnFire(point) && Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
                 {
                     area.Area.Add(point);
                 }

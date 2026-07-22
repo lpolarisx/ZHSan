@@ -424,7 +424,7 @@ namespace TroopDetailPlugin
 			personCount = troop.CombatMethods.Count;
 			this.CombatMethodText.AddText(string.Concat(personCount.ToString(), "种"), this.CombatMethodText.SubTitleColor);
 			this.CombatMethodText.AddNewLine();
-			Dictionary<int, CombatMethod>.ValueCollection.Enumerator enumerator2 = troop.CombatMethods.CombatMethods.Values.GetEnumerator();
+			Dictionary<int, CombatMethod>.ValueCollection.Enumerator enumerator2 = troop.CombatMethods.Values.GetEnumerator();
 			try
 			{
 				while (true)
@@ -451,7 +451,7 @@ namespace TroopDetailPlugin
 			personCount = troop.Stunts.Count;
 			this.StuntText.AddText(string.Concat(personCount.ToString(), "种"), this.StuntText.SubTitleColor);
 			this.StuntText.AddNewLine();
-			Dictionary<int, Stunt>.ValueCollection.Enumerator enumerator3 = troop.Stunts.Stunts.Values.GetEnumerator();
+			Dictionary<int, Stunt>.ValueCollection.Enumerator enumerator3 = troop.Stunts.Values.GetEnumerator();
 			try
 			{
 				while (true)
@@ -477,7 +477,7 @@ namespace TroopDetailPlugin
 			this.InfluenceText.AddNewLine();
 			this.InfluenceText.AddText(this.ShowingTroop.Army.Kind.Name, this.InfluenceText.SubTitleColor);
 			this.InfluenceText.AddNewLine();
-			var enumerator4 = this.ShowingTroop.Army.Kind.Influences.Values.GetEnumerator();
+			var enumerator4 = this.ShowingTroop.Army.Kind.Influences.GetEnumerator();
 			try
 			{
 				while (true)

@@ -1,30 +1,17 @@
-﻿using GameObjects;
-using System;
-using System.Runtime.Serialization;
+﻿using GameDatas;
 
-namespace GameObjects.PersonDetail
+namespace GameObjects.PersonDetail;
+
+public class IdealTendencyKind : GameObject
 {
-    [DataContract]
-    public class IdealTendencyKind : GameObject
+    public int Offset { get; set; }
+
+    public IdealTendencyKind(IdealTendencyKindConfig config)
     {
-        private int offset;
-
-        public override string ToString()
-        {
-            return (base.Name + " " + this.Offset.ToString());
-        }
-        [DataMember]
-        public int Offset
-        {
-            get
-            {
-                return this.offset;
-            }
-            set
-            {
-                this.offset = value;
-            }
-        }
+        ID = config.Id;
+        Name = config.Name;
+        Offset = config.Offset;
     }
-}
 
+    public override string ToString() => $"{base.Name} {Offset}";
+}

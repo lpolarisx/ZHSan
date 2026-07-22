@@ -315,24 +315,24 @@ namespace CreateTroopPlugin
                 {
                     foreach (Person person in this.CreatingPersons)
                     {
-                        foreach (var technique in CreatingTroop.BelongedFaction.AvailableTechniques.Techniques.Values)
+                        foreach (var technique in CreatingTroop.BelongedFaction.AvailableTechniques.Values)
                         {
-                            foreach(var influence in technique.Influences.Values)  
+                            foreach(var influence in technique.Influences)  
                             {
                                 influence.PurifyInfluence(CreatingTroop, Applier.Technique, technique.ID);
                             }
                         }
-                        foreach (var skill in person.Skills.Skills.Values)
+                        foreach (var skill in person.Skills.Values)
                         {
-                            skill.Influences.PurifyInfluence(person, Applier.Skill, skill.ID);
+                            Influence.PurifyInfluenceList(skill.Influences.Values, person, Applier.Skill, skill.ID);
                         }
                         foreach (var title in person.Titles)
                         {
-                            title.Influences.PurifyInfluence(person, Applier.Title, title.ID);
+                            Influence.PurifyInfluenceList(title.Influences.Values, person, Applier.Title, title.ID);
                         }
-                        foreach (var stunt in person.Stunts.Stunts.Values)
+                        foreach (var stunt in person.Stunts.Values)
                         {
-                            stunt.Influences.PurifyInfluence(person, Applier.Stunt, 0);
+                            Influence.PurifyInfluenceList(stunt.Influences.Values, person, Applier.Stunt, stunt.ID);
                         }
                         person.PurifyAllTreasures();
                     }                  
@@ -347,28 +347,29 @@ namespace CreateTroopPlugin
                 {
                     foreach (Person person in this.CreatingPersons)
                     {
-                        foreach (var skill in person.Skills.Skills.Values)
+                        foreach (var skill in person.Skills.Values)
                         {
-                            skill.Influences.PurifyInfluence(person, Applier.Skill, skill.ID);
+                            Influence.PurifyInfluenceList(skill.Influences.Values, person, Applier.Skill, skill.ID);
                         }
 
                         foreach (var title in person.Titles)
                         {
-                            title.Influences.PurifyInfluence(person, Applier.Title, title.ID);
+                            Influence.PurifyInfluenceList(title.Influences.Values, person, Applier.Title, title.ID);
                         }
 
-                        foreach (var stunt in person.Stunts.Stunts.Values)
+                        foreach (var stunt in person.Stunts.Values)
                         {
-                            stunt.Influences.PurifyInfluence(person, Applier.Stunt, stunt.ID);
+                            Influence.PurifyInfluenceList(stunt.Influences.Values, person, Applier.Stunt, stunt.ID);
                         }
 
                         person.PurifyAllTreasures();
                     }
-                     foreach (Technique t in this.CreatingTroop.BelongedFaction.AvailableTechniques.Techniques.Values)
+
+                    foreach (var technique in CreatingTroop.BelongedFaction.AvailableTechniques.Values)
                     {
-                        foreach (GameObjects.Influences.Influence i in t.Influences.Influences.Values)
+                        foreach (var influence in technique.Influences)
                         {
-                            i.PurifyInfluence(this.CreatingTroop, Applier.Technique, t.ID);
+                            influence.PurifyInfluence(CreatingTroop, Applier.Technique, technique.ID);
                         }
                     }
                 }
@@ -479,7 +480,7 @@ namespace CreateTroopPlugin
                 {
                     this.CombatMethodText.AddText(this.CreatingTroop.CombatMethods.Count.ToString() + "种", this.CombatMethodText.SubTitleColor);
                     this.CombatMethodText.AddNewLine();
-                    foreach (CombatMethod method in this.CreatingTroop.CombatMethods.CombatMethods.Values)
+                    foreach (var method in CreatingTroop.CombatMethods.Values)
                     {
                         this.CombatMethodText.AddText(method.Name, this.CombatMethodText.SubTitleColor2);
                         this.CombatMethodText.AddText(" 战意消耗" + ((method.Combativity - this.CreatingTroop.DecrementOfCombatMethodCombativityConsuming)).ToString(), Color.LightGreen);
@@ -494,7 +495,7 @@ namespace CreateTroopPlugin
                 {
                     this.StuntText.AddText(this.CreatingTroop.Stunts.Count.ToString() + "种", this.StuntText.SubTitleColor);
                     this.StuntText.AddNewLine();
-                    foreach (Stunt stunt in this.CreatingTroop.Stunts.Stunts.Values)
+                    foreach (var stunt in this.CreatingTroop.Stunts.Values)
                     {
                         this.StuntText.AddText(stunt.Name, this.StuntText.SubTitleColor2);
                         this.StuntText.AddText(" 战意消耗" + stunt.Combativity, this.StuntText.SubTitleColor3);
@@ -509,7 +510,7 @@ namespace CreateTroopPlugin
                 {
                     this.InfluenceText.AddText(this.CreatingMilitary.Kind.Name, this.InfluenceText.SubTitleColor);
                     this.InfluenceText.AddNewLine();
-                    foreach (Influence influence in this.CreatingMilitary.Kind.Influences.Influences.Values)
+                    foreach (var influence in this.CreatingMilitary.Kind.Influences)
                     {
                         this.InfluenceText.AddText(influence.Name, this.InfluenceText.SubTitleColor2);
                         this.InfluenceText.AddText(influence.Description, this.InfluenceText.SubTitleColor3);

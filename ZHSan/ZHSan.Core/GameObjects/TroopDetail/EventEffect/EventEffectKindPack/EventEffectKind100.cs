@@ -10,22 +10,20 @@ public class EventEffectKind100 : EventEffectKind
     public override void ApplyEffectKind(EventEffect eventEffect, Person person)
     {
         var troop = person.LocationTroop;
+        var influenceId = eventEffect.GetIntParam();
 
-        if (troop != null)
+        if (troop != null && Session.Current.Scenario.GameCommonData.AllInfluences.TryGetValue(influenceId, out var influence))
         {
-            var influence = Session.Current.Scenario.GameCommonData.AllInfluences.Get(eventEffect.GetIntParam());
-            if (influence != null)
-            {
-                troop.EventInfluences.Add(influence);
-                influence.ApplyInfluence(troop, Applier.Event, 0);
-            }
+            troop.EventInfluences.Add(influence);
+            influence.ApplyInfluence(troop, Applier.Event, 0);
         }
     }
 
     public override void ApplyEffectKind(EventEffect eventEffect, Troop troop)
     {
-        var influence = Session.Current.Scenario.GameCommonData.AllInfluences.Get(eventEffect.GetIntParam());
-        if (influence != null)
+        var influenceId = eventEffect.GetIntParam();
+
+        if (Session.Current.Scenario.GameCommonData.AllInfluences.TryGetValue(influenceId, out var influence))
         {
             troop.EventInfluences.Add(influence);
             influence.ApplyInfluence(troop, Applier.Event, 0);

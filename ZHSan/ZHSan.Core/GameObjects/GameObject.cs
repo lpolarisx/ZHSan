@@ -1,28 +1,19 @@
 ﻿using GameGlobal;
-using GameManager;
 using GameObjects.ArchitectureDetail;
-using GameObjects.FactionDetail;
 using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
-using Platforms;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using WorldOfTheThreeKingdoms;
 
 namespace GameObjects
 {
     [DataContract]
-    [KnownType(typeof(AttackDefaultKind))]
     [KnownType(typeof(AttackTargetKind))]
     [KnownType(typeof(CastDefaultKind))]
     [KnownType(typeof(CastTargetKind))]
     [KnownType(typeof(Captive))]
     [KnownType(typeof(CharacterKind))]
-    [KnownType(typeof(IdealTendencyKind))]
-    [KnownType(typeof(InformationKind))]
-    [KnownType(typeof(PersonGeneratorType))]
-    [KnownType(typeof(TrainPolicy))]
     [KnownType(typeof(Event))]
     [KnownType(typeof(Person))]
     [KnownType(typeof(Architecture))]
@@ -39,7 +30,6 @@ namespace GameObjects
     [KnownType(typeof(Troop))]
     [KnownType(typeof(Faction))]
     [KnownType(typeof(YearTableEntry))]
-    [KnownType(typeof(TreasureCreationSetting))]
     
     public class GameObject
     {
@@ -54,11 +44,13 @@ namespace GameObjects
 
         public static bool GetChance(int chance)
         {
-            if (chance <= 0)
-            {
-                return false;
-            }
-            return ((chance >= 100) || (Random(100) < chance));
+            if (chance <= 0) return false;
+
+            if (chance >= 100) return true;
+
+            if (StaticMethods.Random(100) < chance) return true;
+
+            return false;
         }
 
         public static bool GetChance(int chance, int root)

@@ -1,43 +1,52 @@
-﻿using GameObjects;
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using GameDatas;
 
-namespace GameObjects.PersonDetail
+namespace GameObjects.PersonDetail;
+
+public class BiographyAdjectives : GameObject
 {
-    [DataContract]
-    public class BiographyAdjectives : GameObject
+    public int Strength { get; set; }
+
+    public int Command { get; set; }
+
+    public int Intelligence { get; set; }
+
+    public int Politics { get; set; }
+
+    public int Glamour { get; set; }
+
+    public int Braveness { get; set; }
+
+    public int Calmness { get; set; }
+
+    public int PersonalLoyalty { get; set; }
+
+    public int Ambition { get; set; }
+
+    public bool Male { get; set; }
+
+    public bool Female { get; set; }
+
+    public List<string> Text { get; set; }
+
+    public List<string> SuffixText { get; set; }
+
+    public BiographyAdjectives(BiographyAdjectiveConfig config)
     {
-        [DataMember]
-        public int Strength { get; set; }
-        [DataMember]
-        public int Command { get; set; }
-        [DataMember]
-        public int Intelligence { get; set; }
-        [DataMember]
-        public int Politics { get; set; }
-        [DataMember]
-        public int Glamour { get; set; }
-        [DataMember]
-        public int Braveness { get; set; }
-        [DataMember]
-        public int Calmness { get; set; }
-        [DataMember]
-        public int PersonalLoyalty { get; set; }
-        [DataMember]
-        public int Ambition { get; set; }
-        [DataMember]
-        public Boolean Male { get; set; }
-        [DataMember]
-        public Boolean Female { get; set; }
-
-        private List<String> text = new List<string>();
-        [DataMember]
-        public List<String> Text { get { return text; } set { text = value; } }
-
-        private List<String> suffixText = new List<string>();
-        [DataMember]
-        public List<String> SuffixText { get { return suffixText; } set { suffixText = value; } }
+        ID = config.Id;
+        Name = config.Name;
+        Strength = config.Strength;
+        Command = config.Command;
+        Intelligence = config.Intelligence;
+        Politics = config.Politics;
+        Glamour = config.Glamour;
+        Braveness = config.Braveness;
+        Calmness = config.Calmness;
+        PersonalLoyalty = config.PersonalLoyalty;
+        Ambition = config.Ambition;
+        Male = config.Male;
+        Female = config.Female;
+        Text = config.Text;
+        SuffixText = config.SuffixText;
     }
 }
-

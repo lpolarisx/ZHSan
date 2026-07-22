@@ -1,8 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿namespace GameObjects.Conditions;
 
-namespace GameObjects.Conditions;
-
-[DataContract]
 public class ConditionKind : GameObject
 {
     protected static Person markedPerson = null;

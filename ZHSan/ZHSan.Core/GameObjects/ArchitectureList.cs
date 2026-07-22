@@ -62,9 +62,9 @@ namespace GameObjects
             Session.MainGame.mainGameScreen.ArchitectureFacilityCompleted(architecture, facility);
         }
 
-        private void architecture_Onfashengzainan(Architecture architecture, int zainanID)
+        private void architecture_Onfashengzainan(Architecture architecture, int disasterKindId)
         {
-            Session.MainGame.mainGameScreen.Architecturefashengzainan(architecture, zainanID);
+            Session.MainGame.mainGameScreen.Architecturefashengzainan(architecture, disasterKindId);
         }
 
         private void architecture_OnHirePerson(PersonList personList)

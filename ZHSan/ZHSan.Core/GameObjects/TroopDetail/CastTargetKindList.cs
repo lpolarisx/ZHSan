@@ -1,4 +1,5 @@
-﻿using GameObjects;
+﻿using GameEnums;
+using GameObjects;
 using System.Runtime.Serialization;
 
 namespace GameObjects.TroopDetail

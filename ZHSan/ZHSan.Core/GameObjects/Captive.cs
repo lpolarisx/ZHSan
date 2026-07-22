@@ -4,6 +4,7 @@ using GameGlobal;
 using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
 using GameManager;
+using GameEnums;
 
 namespace GameObjects
 {
@@ -293,7 +294,7 @@ namespace GameObjects
             this.CaptivePerson.FleeCount++;
             if (this.BelongedFaction != null)
             {
-                Session.MainGame.mainGameScreen.xianshishijiantupian(this.CaptivePerson, this.BelongedFaction.Name, GameObjects.PersonDetail.TextMessageKind.CaptiveEscape, "CaptiveEscape", "", "", false);
+                Session.MainGame.mainGameScreen.xianshishijiantupian(this.CaptivePerson, this.BelongedFaction.Name, TextMessageKind.CaptiveEscape, "CaptiveEscape", "", "", false);
             }
             this.DoReturn();
             this.DoRelease();

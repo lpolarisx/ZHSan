@@ -1,11 +1,10 @@
-﻿using System.Runtime.Serialization;
+﻿using GameDatas;
 
 namespace GameObjects.TroopDetail.EventEffect;
 
 /// <summary>
 /// 部队事件影响
 /// </summary>
-[DataContract]
 public class EventEffect : GameObject
 {
     #region DataMember
@@ -13,8 +12,9 @@ public class EventEffect : GameObject
     /// <summary>
     /// 部队事件影响类型
     /// </summary>
-    [DataMember]
     public EventEffectKind Kind { get; set; }
+
+    public int KindId { get; set; }
 
     private string parameter;
     private int? intParameter;
@@ -23,7 +23,6 @@ public class EventEffect : GameObject
     /// <summary>
     /// 参数1
     /// </summary>
-    [DataMember]
     public string Parameter
     {
         get => parameter;
@@ -36,6 +35,14 @@ public class EventEffect : GameObject
     }
 
     #endregion
+
+    public EventEffect(TroopEventEffectConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        KindId = config.KindId;
+        Parameter = config.Parameter;
+    }
 
     /// <summary>
     /// 获取参数1解析的int值

@@ -5,6 +5,9 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
     <ItemGroup>
+        <ProjectReference Include="..\ZHSan.Data\ZHSan.Data.csproj" />
+    </ItemGroup>
+    <ItemGroup>
         <PackageReference Include="FontStashSharp.MonoGame" Version="1.5.2" />
         <PackageReference Include="MersenneTwister" Version="1.0.6" />
         <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*">

@@ -1,19 +1,18 @@
-﻿using GameGlobal;
+﻿using GameDatas;
+using GameEnums;
+using GameGlobal;
 using GameManager;
 using GameObjects.Conditions;
 using GameObjects.Influences;
-using GameObjects.TroopDetail;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace GameObjects.PersonDetail;
 
 /// <summary>
 /// 称号
 /// </summary>
-[DataContract]
 public class Title : GameObject
 {
     #region DataMember
@@ -21,109 +20,96 @@ public class Title : GameObject
     /// <summary>
     /// 类别
     /// </summary>
-    [DataMember]
     public TitleKind Kind { get; set; }
+
+    /// <summary>
+    /// 类别Id
+    /// </summary>
+    public int KindId { get; set; }
 
     /// <summary>
     /// 等级
     /// </summary>
-    [DataMember]
     public int Level { get; set; }
 
     /// <summary>
     /// 战斗
     /// </summary>
-    [DataMember]
     public bool Combat { get; set; }
 
     /// <summary>
     /// 手动授予
     /// </summary>
-    [DataMember]
     public bool ManualAward { get; set; }
 
     /// <summary>
     /// 薪金
     /// </summary>
-    [DataMember]
     public int FundForHolder { get; set; }
 
     /// <summary>
     /// 影响列表
     /// </summary>
-    [DataMember]
     public string InfluencesString { get; set; }
 
     /// <summary>
     /// 条件列表
     /// </summary>
-    [DataMember]
     public string ConditionTableString { get; set; }
 
     /// <summary>
     /// 生成武將条件
     /// </summary>
-    [DataMember]
     public string GenerateConditionsString { get; set; }
 
     /// <summary>
     /// 建筑条件
     /// </summary>
-    [DataMember]
     public string ArchitectureConditionsString { get; set; }
 
     /// <summary>
     /// 势力条件
     /// </summary>
-    [DataMember]
     public string FactionConditionsString { get; set; }
 
     /// <summary>
     /// 失去条件
     /// </summary>
-    [DataMember]
     public string LoseConditionsString { get; set; }
 
     /// <summary>
     /// 自动习得机率：每天有1除以此数的机率自动习得这个称号。0为不会自动习得
     /// </summary>
-    [DataMember]
     public int AutoLearn { get; set; }
 
     /// <summary>
     /// 习得对话
     /// </summary>
-    [DataMember]
     public string AutoLearnText { get; set; }
 
     /// <summary>
     /// 习得传令官对话
     /// </summary>
-    [DataMember]
     public string AutoLearnTextByCourier { get; set; }
 
     /// <summary>
     /// 全地图数目上限
     /// </summary>
-    [DataMember]
     public int MapLimit { get; set; }
 
     /// <summary>
     /// 势力数目上限
     /// </summary>
-    [DataMember]
     public int FactionLimit { get; set; }
 
     /// <summary>
     /// 继承机率
     /// </summary>
-    [DataMember]
     public int InheritChance { get; set; }
 
     /// <summary>
     /// 不同生成武将类型获得机率
     /// </summary>
-    [DataMember]
     public int[] GenerationChance { get; set; } = new int[10];
 
     #endregion
@@ -131,7 +117,31 @@ public class Title : GameObject
     //public ConditionTable LoseArchitectureConditions = new ConditionTable(); //失去建筑条件
     // public ConditionTable LoseFactionConditions = new ConditionTable(); //失去势力条件
 
-    public InfluenceTable Influences { get; set; } = new();
+    public Title(TitleConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        KindId = config.KindId;
+        Level = config.Level;
+        Combat = config.Combat;
+        ManualAward = config.ManualAward;
+        FundForHolder = config.FundForHolder;
+        InfluencesString = config.InfluencesString;
+        ConditionTableString = config.ConditionTableString;
+        GenerateConditionsString = config.GenerateConditionsString;
+        ArchitectureConditionsString = config.ArchitectureConditionsString;
+        FactionConditionsString = config.FactionConditionsString;
+        LoseConditionsString = config.LoseConditionsString;
+        AutoLearn = config.AutoLearn;
+        AutoLearnText = config.AutoLearnText;
+        AutoLearnTextByCourier = config.AutoLearnTextByCourier;
+        MapLimit = config.MapLimit;
+        FactionLimit = config.FactionLimit;
+        InheritChance = config.InheritChance;
+        GenerationChance = config.GenerationChance;
+    }
+
+    public Dictionary<int, Influence> Influences { get; set; } = new();
 
     public List<Condition> Conditions { get; set; } = new();
 
@@ -161,7 +171,7 @@ public class Title : GameObject
             }
             foreach (var influence in Influences.Values)
             {
-                if (influence.Kind.ID == 281)
+                if (influence.KindId == 281)
                 {
                     containsLeaderOnlyCache = true;
                     return true;
@@ -178,12 +188,12 @@ public class Title : GameObject
         {
             foreach (var influence in Influences.Values)
             {
-                if (influence.Kind.ID == 290)
+                if (influence.KindId == 290)
                 {
                     return (MilitaryType)Enum.Parse(typeof(MilitaryType), influence.Parameter);
                 }
             }
-            return MilitaryType.其他;
+            return MilitaryType.Other;
         }
     }
 
@@ -194,7 +204,7 @@ public class Title : GameObject
         {
             foreach (var influence in Influences.Values)
             {
-                if (influence.Kind.ID == 300) return influence.GetIntParam();
+                if (influence.KindId == 300) return influence.GetIntParam();
             }
 
             return -1;
@@ -444,18 +454,23 @@ public class Title : GameObject
         }
     }
 
-    public static Dictionary<TitleKind, List<Title>> GetKindTitleDictionary()
+    public static Dictionary<int, List<Title>> GetKindTitleDictionary()
     {
-        GameObjectList rawTitles = Session.Current.Scenario.GameCommonData.AllTitles.GetTitleList().GetRandomList();
-        Dictionary<TitleKind, List<Title>> titles = new Dictionary<TitleKind, List<Title>>();
-        foreach (Title t in rawTitles)
+        var dict = new Dictionary<int, List<Title>>();
+        foreach (var title in Session.Current.Scenario.GameCommonData.AllTitles.Values)
         {
-            if (!titles.ContainsKey(t.Kind))
+            var kindId = title.KindId;
+
+            if (dict.ContainsKey(kindId))
             {
-                titles[t.Kind] = new List<Title>();
+                dict[kindId].Add(title);
             }
-            titles[t.Kind].Add(t);
+            else
+            {
+                dict[kindId] = new List<Title>();
+            }
         }
-        return titles;
+
+        return dict;
     }
 }

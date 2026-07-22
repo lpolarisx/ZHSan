@@ -8,6 +8,8 @@ public class ConditionKind635 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        return !person.RealTitles.Contains(Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(condition.GetIntParam()));
+        var titleId = condition.GetIntParam();
+
+        return Session.Current.Scenario.GameCommonData.AllTitles.TryGetValue(titleId, out var title) && !person.RealTitles.Contains(title);
     }
 }

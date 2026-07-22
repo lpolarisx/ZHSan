@@ -81,7 +81,7 @@ namespace GameObjects
 
         public void DoWork(Architecture architecture)
         {
-            foreach (var influence in Kind.Influences.Values)
+            foreach (var influence in Kind.Influences)
             {
                 influence.DoWork(architecture);
             }
@@ -93,7 +93,7 @@ namespace GameObjects
 
         public int EnduranceCeiling => Kind.Endurance;
 
-        public InfluenceTable Influences => Kind.Influences;
+        public List<Influence> Influences => Kind.Influences;
         
         public int MaintenanceCost => Kind.MaintenanceCost;
 

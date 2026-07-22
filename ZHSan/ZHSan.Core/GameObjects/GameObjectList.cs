@@ -2,27 +2,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Linq;
 using System.Runtime.Serialization;
 using GameObjects.TroopDetail;
-using GameObjects.FactionDetail;
-using GameObjects.PersonDetail;
 
 namespace GameObjects
 {
     [DataContract]
-    [KnownType(typeof(AttackDefaultKindList))]
-    [KnownType(typeof(AttackTargetKindList))]
-    [KnownType(typeof(CastDefaultKindList))]
     [KnownType(typeof(CastTargetKindList))]
-    [KnownType(typeof(InformationKindList))]
-    [KnownType(typeof(PersonGeneratorTypeList))]
-    [KnownType(typeof(TrainPolicyList))]
-    [KnownType(typeof(TreasureCreationSettingList))]
 
     public class GameObjectList : IEnumerable
     {

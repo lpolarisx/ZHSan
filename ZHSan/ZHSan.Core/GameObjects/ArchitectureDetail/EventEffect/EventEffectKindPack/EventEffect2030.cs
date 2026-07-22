@@ -11,11 +11,13 @@ public class EventEffect2030 : EventEffectKind
     {
         var techniqueId = eventEffect.GetIntParam();
 
-        var technique = Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(techniqueId);
-        faction.AvailableTechniques.RemoveTechniuqe(techniqueId);
+        if (Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(techniqueId, out var technique))
+        {
+            faction.RemoveTechniuqe(techniqueId);
 
-        Session.Current.Scenario.NewInfluence = true;
-        technique.Influences.PurifyInfluence(faction, Applier.Technique, techniqueId);
-        Session.Current.Scenario.NewInfluence = false;
+            Session.Current.Scenario.NewInfluence = true;
+            Influence.PurifyInfluenceList(technique.Influences, faction, Applier.Technique, techniqueId);
+            Session.Current.Scenario.NewInfluence = false;
+        }
     }
 }

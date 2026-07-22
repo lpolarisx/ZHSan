@@ -9,9 +9,8 @@ public class ConditionKind4745 : ConditionKind
     public override bool CheckConditionKind(Condition condition, Person person)
     {
         var kindId = condition.GetIntParam();
-
-        var current = person.getTitleOfKind(Session.Current.Scenario.GameCommonData.AllTitleKinds.GetTitleKind(kindId));
-        var marked = markedPerson.getTitleOfKind(Session.Current.Scenario.GameCommonData.AllTitleKinds.GetTitleKind(kindId));
+        var current = person.GetTitleOfKind(kindId);
+        var marked = markedPerson.GetTitleOfKind(kindId);
 
         int t1 = current?.Level ?? 0;
         int t2 = marked?.Level ?? 0;

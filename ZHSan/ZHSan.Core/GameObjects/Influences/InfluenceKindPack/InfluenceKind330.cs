@@ -8,15 +8,21 @@ public class InfluenceKind330 : InfluenceKind
 {
     public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        var stunt = Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(influence.GetIntParam());
+        var stuntId = influence.GetIntParam();
 
-        troop.Stunts.AddStunt(stunt);
+        if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(stuntId, out var stunt))
+        {
+            troop.AddStunt(stunt);
+        }
     }
 
     public override void PurifyInfluenceKind(Influence influence, Troop troop)
     {
-        var stunt = Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(influence.GetIntParam());
+        var stuntId = influence.GetIntParam();
 
-        troop.Stunts.RemoveStunt(stunt);
+        if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(stuntId, out var stunt))
+        {
+            troop.RemoveStunt(stunt);
+        }
     }
 }

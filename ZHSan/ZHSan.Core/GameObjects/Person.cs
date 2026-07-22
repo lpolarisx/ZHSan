@@ -1,4 +1,5 @@
-﻿using GameGlobal;
+﻿using GameEnums;
+using GameGlobal;
 using GameManager;
 using GameObjects.Animations;
 using GameObjects.Conditions;
@@ -102,8 +103,6 @@ namespace GameObjects
                 prohibitedFactionID = new Dictionary<int, int>();
             }
 
-            Skills = new SkillTable();
-
             StudySkillList = new GameObjectList();
 
             StudyStuntList = new GameObjectList();
@@ -112,15 +111,9 @@ namespace GameObjects
 
             AppointableTitleList = new GameObjectList();
 
-            Stunts = new StuntTable();
-
             Treasures = new TreasureList();
 
             RealTitles = new List<Title>();
-
-            UniqueMilitaryKinds = new MilitaryKindTable();
-
-            UniqueTitles = new TitleTable();
 
             relations = new Dictionary<Person, int>();
 
@@ -336,7 +329,7 @@ namespace GameObjects
         [DataMember]
         public string SkillsString { get; set; }
         
-        public SkillTable Skills = new SkillTable();
+        public Dictionary<int, Skill> Skills = new();
 
         private Person spouse = null;
         private int strain;
@@ -365,7 +358,11 @@ namespace GameObjects
         [DataMember]
         public int StudyingStuntString { get; set; }        
 
-        public StuntTable Stunts = new StuntTable();
+        /// <summary>
+        /// 特技
+        /// </summary>
+        public Dictionary<int, Stunt> Stunts { get; set; } = new();
+
         private string surName;
         private float tacticsExperience;
 
@@ -393,10 +390,11 @@ namespace GameObjects
         [DataMember]
         public int StudyingTitleString { get; set; }
 
-        public List<Title> RealTitles = new List<Title>();
+        public List<Title> RealTitles { get; set; } = new();
 
-        public MilitaryKindTable UniqueMilitaryKinds = new MilitaryKindTable();
-        public TitleTable UniqueTitles = new TitleTable();
+        public List<MilitaryKind> UniqueMilitaryKinds { get; set; } = new();
+
+        public List<Title> UniqueTitles { get; set; } = new();
 
         //public List<Title> RealGuanzhis = new List<Title>();
         // public TitleTable Guanzhis = new TitleTable();
@@ -820,200 +818,230 @@ namespace GameObjects
                 return list;
             }
         }
-        //↓获取人物某类称号的名称
+        
+        /// <summary>
+        /// 获取人物某类称号的名称
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string TitleNameforGroup(int id)
         {
-
-            foreach (Title t in this.Titles)
+            foreach (var t in Titles)
             {
-                if (t.Kind.ID == id)
+                if (t.KindId == id)
                 {
                     return t.Name;
                 }
             }
+
             return "无";
         }
-        //↓获取人物某类称号的称号种类
+
+
+        /// <summary>
+        /// 获取人物某类称号的称号种类
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string TitleKindforGroup(int id)
         {
-
-            foreach (Title t in this.Titles)
+            foreach (var t in Titles)
             {
-                if (t.Kind.ID == id)
+                if (t.KindId == id)
                 {
                     return t.KindName;
                 }
             }
+
             return "无";
         }
-        //↓获取人物某类称号的称号等级
+        
+
+        /// <summary>
+        /// 获取人物某类称号的称号等级
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public int TitleLevelforGroup(int id)
         {
-
-            foreach (Title t in this.Titles)
+            foreach (var t in Titles)
             {
-                if (t.Kind.ID == id)
+                if (t.KindId == id)
                 {
                     return t.Level;
                 }
             }
+
             return -1;
         }
-        //↓获取人物某类称号的称号说明
+        
+
+        /// <summary>
+        /// 获取人物某类称号的称号说明
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string TitleDescriptionforGroup(int id)
         {
-
-            foreach (Title t in this.Titles)
+            foreach (var t in Titles)
             {
-                if (t.Kind.ID == id)
+                if (t.KindId == id)
                 {
                     return t.Description;
                 }
             }
             return "无";
         }
-        //↓判定是否拥有某类称号
+
+
+        /// <summary>
+        /// 判定是否拥有某类称号
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public bool HasTitleforGroup(int id)
         {
-            foreach (Title t in this.Titles)
+            foreach (var t in Titles)
             {
-                if (t.Kind.ID == id)
+                if (t.KindId == id)
                 {
                     return true;
                 }
             }
             return false;
         }
-        //↓获取人物某类特技的名称
+
+
+        /// <summary>
+        /// 获取人物某类特技的名称
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string StuntNameforGroup(int id)
         {
-
-            foreach (Stunt t in this.Stunts.Stunts.Values)
+            if (Stunts.TryGetValue(id, out var stunt))
             {
-                if (t.ID == id)
-                {
-                    return t.Name;
-                }
+                return stunt.Name;
             }
+
             return "无";
         }
-        //↓获取人物某类特技的消耗
+
+        /// <summary>
+        /// 获取人物某类特技的消耗
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public int StuntCombativityforGroup(int id)
         {
-
-            foreach (Stunt t in this.Stunts.Stunts.Values)
+            if (Stunts.TryGetValue(id, out var stunt))
             {
-                if (t.ID == id)
-                {
-                    return t.Combativity;
-                }
+                return stunt.Combativity;
             }
+
             return -1;
         }
-        //↓获取人物某类特技的持久
+
+        /// <summary>
+        /// 获取人物某类特技的持久
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public int StuntPeriodforGroup(int id)
         {
-
-            foreach (Stunt t in this.Stunts.Stunts.Values)
+            if (Stunts.TryGetValue(id, out var stunt))
             {
-                if (t.ID == id)
-                {
-                    return t.Period;
-                }
+                return stunt.Period;
             }
+
             return -1;
         }
-        //↓获取人物某类特技的使用说明
+
+        /// <summary>
+        /// 获取人物某类特技的使用说明
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string StuntDescriptionforGroup(int id)
         {
-
-            foreach (Stunt t in this.Stunts.Stunts.Values)
+            if (Stunts.TryGetValue(id, out var stunt))
             {
-                if (t.ID == id)
-                {
-                    return t.CastConditionString;
-                }
+                return stunt.CastConditionString;
             }
+            
             return "无";
         }
-        //↓判定是否拥有某特技
+
+        /// <summary>
+        /// 判定是否拥有某特技
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public bool HasStuntforGroup(int id)
         {
-            foreach (Stunt t in this.Stunts.Stunts.Values)
-            {
-                if (t.ID == id)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return Stunts.ContainsKey(id);
         }
-        //↓获取人物某技能的名称
+        
+        /// <summary>
+        /// 获取人物某技能的名称
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string SkillNameforGroup(int id)
         {
-
-            foreach (Skill t in this.Skills.Skills.Values)
+            if (Skills.TryGetValue(id, out var skill))
             {
-                if (t.ID == id)
-                {
-                    return t.Name;
-                }
+                return skill.Name;
             }
+
             return "无";
         }
-        //↓获取人物某技能的技能种类
+        
+        /// <summary>
+        /// 获取人物某技能的技能种类
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string SkillKindforGroup(int id)
         {
-            foreach (Skill t in this.Skills.Skills.Values)
+            if (Skills.TryGetValue(id, out var skill) && skill.Combat)
             {
-                if (t.ID == id)
-                {
-                    if (t.Combat == true)
-                    {
-                        return "战斗";
-                    }
-                }
+                return "战斗";
             }
+
             return "非战斗";
         }
-        //↓获取人物某类技能的等级
+        
+        /// <summary>
+        /// 获取人物某类技能的等级
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public int SkillLevelforGroup(int id)
         {
-            foreach (Skill t in this.Skills.Skills.Values)
+            if (Skills.TryGetValue(id, out var skill))
             {
-                if (t.ID == id)
-                {
-                    return t.Level;
-                }
+                return skill.Level;
             }
+
             return -1;
         }
-        //↓获取人物某类技能的技能说明
+        
+        /// <summary>
+        /// 获取人物某类技能的技能说明
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public string SkillDescriptionforGroup(int id)
         {
-
-            foreach (Skill t in this.Skills.Skills.Values)
+            if (Skills.TryGetValue(id, out var skill))
             {
-                if (t.ID == id)
-                {
-                    return t.Description;
-                }
+                return skill.Description;
             }
+            
             return "无";
         }
-        //↓判定是否拥有某技能
-        public bool HasSkillforGroup(int id)
-        {
-            foreach (Skill t in this.Skills.Skills.Values)
-            {
-                if (t.ID == id)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        //以上添加
+        
         public bool CanOwnTitleByAge(Title t)
         {
             if (!Session.GlobalVariables.EnableAgeAbilityFactor) return true;
@@ -1087,15 +1115,16 @@ namespace GameObjects
         }
         */
 
-        public Title getTitleOfKind(TitleKind kind)
+        public Title GetTitleOfKind(int kindId)
         {
-            foreach (Title t in this.Titles)
+            foreach (var t in Titles)
             {
-                if (t.Kind.Equals(kind))
+                if (t.KindId == kindId)
                 {
                     return t;
                 }
             }
+            
             return null;
         }
 
@@ -1422,43 +1451,6 @@ namespace GameObjects
         }
         */
 
-        public List<string> LoadTitleFromString(String s, TitleTable allTitles)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = s.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            Title title = null;
-            try
-            {
-                for (int i = 0; i < strArray.Length; i++)
-                {
-                    if (allTitles.Titles.TryGetValue(int.Parse(strArray[i]), out title))
-                    {
-                        this.RealTitles.Add(title);
-                    }
-                    else
-                    {
-                        errorMsg.Add("稱號ID" + strArray[i] + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("稱號一栏应为半型空格分隔的稱號ID");
-            }
-            return errorMsg;
-        }
-
-        public String SaveTitleToString()
-        {
-            String s = "";
-            foreach (Title t in this.RealTitles)
-            {
-                s += t.ID + " ";
-            }
-            return s;
-        }
-
         public double TirednessFactor
         {
             get
@@ -1659,23 +1651,23 @@ namespace GameObjects
             {
                 switch (this.RecruitmentMilitary.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         this.AddBubingExperience(increment);
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         this.AddNubingExperience(increment);
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         this.AddQibingExperience(increment);
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         this.AddShuijunExperience(increment);
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         this.AddQixieExperience(increment);
                         break;
                 }
@@ -1692,37 +1684,38 @@ namespace GameObjects
 
         public void ApplySkills()
         {
-            foreach (Skill skill in Skills.Skills.Values)
+            foreach (var skill in Skills.Values)
             {
-                skill.Influences.ApplyInfluence(this, Applier.Skill, skill.ID);
+                Influence.ApplyInfluenceListToPerson(skill.Influences.Values, this, Applier.Skill, skill.ID);
             }
         }
 
         public void PurifySkills()
         {
-            foreach (Skill skill in this.Skills.Skills.Values)
+            foreach (var skill in this.Skills.Values)
             {
-                skill.Influences.PurifyInfluence(this, Applier.Skill, skill.ID);
+                Influence.PurifyInfluenceList(skill.Influences.Values, this, Applier.Skill, skill.ID);
             }
         }
 
         public void ApplyStunts()
         {
-            if ((this.LocationTroop != null) && (this.LocationTroop.Leader == this))
+            if (LocationTroop != null && LocationTroop.Leader == this)
             {
-                this.LocationTroop.Stunts.Clear();
-                foreach (Stunt stunt in this.Stunts.Stunts.Values)
+                LocationTroop.Stunts.Clear();
+
+                foreach (var stunt in Stunts.Values)
                 {
-                    this.LocationTroop.Stunts.AddStunt(stunt);
+                    LocationTroop.AddStunt(stunt);
                 }
             }
         }
 
         public void ApplyTitles()
         {
-            foreach (Title title in Titles)
+            foreach (var title in Titles)
             {
-                title.Influences.ApplyInfluence(this, Applier.Title, title.ID);
+                Influence.ApplyInfluenceListToPerson(title.Influences.Values, this, Applier.Title, title.ID);
             }
         }
 
@@ -1730,7 +1723,7 @@ namespace GameObjects
         {
             foreach (Title title in Titles)
             {
-                title.Influences.PurifyInfluence(this, Applier.Title, title.ID);
+                Influence.PurifyInfluenceList(title.Influences.Values, this, Applier.Title, title.ID);
             }
         }
 
@@ -1761,7 +1754,7 @@ namespace GameObjects
 
         private void PurifyTreasureSkipSubstitute(Treasure treasure)
         {
-            treasure.Influences.PurifyInfluence(this, Applier.Treasure, treasure.TreasureGroup);
+            Influence.PurifyInfluenceList(treasure.Influences.Values, this, Applier.Treasure, treasure.TreasureGroup);
             effectiveTreasures.Remove(treasure.TreasureGroup);
         }
 
@@ -1770,7 +1763,7 @@ namespace GameObjects
             // removing all treasures, do not need to care about treasure group stacking
             foreach (Treasure treasure in Treasures)
             {
-                treasure.Influences.PurifyInfluence(this, Applier.Treasure, treasure.TreasureGroup);
+                Influence.PurifyInfluenceList(treasure.Influences.Values, this, Applier.Treasure, treasure.TreasureGroup);
                 effectiveTreasures.Remove(treasure.TreasureGroup);
             }
         }
@@ -1789,7 +1782,8 @@ namespace GameObjects
                     return;
                 }
             }
-            treasure.Influences.ApplyInfluence(this, Applier.Treasure, treasure.TreasureGroup);
+
+            Influence.ApplyInfluenceListToPerson(treasure.Influences.Values, this, Applier.Treasure, treasure.TreasureGroup);
             effectiveTreasures.Add(treasure.TreasureGroup, treasure);
         }
 
@@ -2187,27 +2181,24 @@ namespace GameObjects
 
         public void ApplyFactionInfluence()
         {
-            if (this.BelongedFaction != null)
+            foreach (var t in BelongedFaction?.AvailableTechniques.Values)
             {
-                foreach (Technique t in this.BelongedFaction.AvailableTechniques.Techniques.Values)
+                foreach (var influence in t.Influences)
                 {
-                    foreach (var influence in t.Influences.Values)
+                    var type = influence.Kind.Type;
+
+                    if (type == InfluenceType.Combat || type == InfluenceType.ArchitectureCombat)
                     {
-                        var type = influence.Kind.Type;
-
-                        if (type == InfluenceType.战斗 || type == InfluenceType.建筑战斗)
+                        Troop a = this.LocationTroop;
+                        if (a != null && a.Leader == this)
                         {
-                            Troop a = this.LocationTroop;
-                            if (a != null && a.Leader == this)
-                            {
-                                influence.ApplyInfluence(a, Applier.Technique, t.ID);
-                            }
+                            influence.ApplyInfluence(a, Applier.Technique, t.ID);
                         }
+                    }
 
-                        if (type == InfluenceType.个人 || type == InfluenceType.势力 || type == InfluenceType.多选一)
-                        {
-                            influence.ApplyInfluence(this, Applier.Technique, t.ID);
-                        }
+                    if (type == InfluenceType.Person || type == InfluenceType.Faction || type == InfluenceType.Exclusive)
+                    {
+                        influence.ApplyInfluence(this, Applier.Technique, t.ID);
                     }
                 }
             }
@@ -2215,27 +2206,24 @@ namespace GameObjects
 
         public void PurifyFactionInfluence()
         {
-            if (this.BelongedFaction != null)
+            foreach (var t in BelongedFaction?.AvailableTechniques.Values)
             {
-                foreach (Technique t in this.BelongedFaction.AvailableTechniques.Techniques.Values)
+                foreach (var influence in t.Influences)
                 {
-                    foreach (var influence in t.Influences.Values)
+                    var type = influence.Kind.Type;
+
+                    if (type == InfluenceType.Combat || type == InfluenceType.ArchitectureCombat)
                     {
-                        var type = influence.Kind.Type;
-
-                        if (type == InfluenceType.战斗 || type == InfluenceType.建筑战斗)
+                        Troop a = this.LocationTroop;
+                        if (a != null && a.Leader == this)
                         {
-                            Troop a = this.LocationTroop;
-                            if (a != null && a.Leader == this)
-                            {
-                                influence.PurifyInfluence(a, Applier.Technique, t.ID);
-                            }
+                            influence.PurifyInfluence(a, Applier.Technique, t.ID);
                         }
+                    }
 
-                        if (type == InfluenceType.个人 || type == InfluenceType.势力 || type == InfluenceType.多选一)
-                        {
-                            influence.PurifyInfluence(this, Applier.Technique, t.ID);
-                        }
+                    if (type == InfluenceType.Person || type == InfluenceType.Faction || type == InfluenceType.Prerequisite)
+                    {
+                        influence.PurifyInfluence(this, Applier.Technique, t.ID);
                     }
                 }
             }
@@ -2249,7 +2237,7 @@ namespace GameObjects
                 {
                     var type = influence.Kind.Type;
 
-                    if (type == InfluenceType.战斗 || type == InfluenceType.建筑战斗)
+                    if (type == InfluenceType.Combat || type == InfluenceType.ArchitectureCombat)
                     {
                         Troop a = this.LocationTroop;
                         if (a != null && a.Leader == this)
@@ -2258,7 +2246,7 @@ namespace GameObjects
                         }
                     }
 
-                    if (type == InfluenceType.个人 || type == InfluenceType.势力 || type == InfluenceType.多选一)
+                    if (type == InfluenceType.Person || type == InfluenceType.Faction || type == InfluenceType.Exclusive)
                     {
                         influence.ApplyInfluence(this, GameObjects.Influences.Applier.Characteristics, 0);
                     }
@@ -2274,7 +2262,7 @@ namespace GameObjects
                 {
                     var type = influence.Kind.Type;
 
-                    if (type == InfluenceType.战斗 || type == InfluenceType.建筑战斗)
+                    if (type == InfluenceType.Combat || type == InfluenceType.ArchitectureCombat)
                     {
                         Troop a = this.LocationTroop;
                         if (a != null && a.Leader == this)
@@ -2283,7 +2271,7 @@ namespace GameObjects
                         }
                     }
 
-                    if (type == InfluenceType.个人 || type == InfluenceType.势力 || type == InfluenceType.多选一)
+                    if (type == InfluenceType.Person || type == InfluenceType.Faction || type == InfluenceType.Prerequisite)
                     {
                         influence.PurifyInfluence(this, GameObjects.Influences.Applier.Characteristics, 0);
                     }
@@ -2434,12 +2422,12 @@ namespace GameObjects
         private void AutoLearnSkill()
         {
             string skillString = "";
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
-                if (((this.Skills.GetSkill(skill.ID) == null) && skill.CanLearn(this)) && (GameObject.GetChance(Session.Parameters.AutoLearnSkillSuccessRate)))
+                if (!HasSkill(skill.ID) && skill.CanLearn(this) && GameObject.GetChance(Session.Parameters.AutoLearnSkillSuccessRate))
                 {
-                    this.Skills.AddSkill(skill);
-                    skill.Influences.ApplyInfluence(this, Applier.Skill, skill.ID);
+                    AddSkill(skill);
+                    Influence.ApplyInfluenceListToPerson(skill.Influences.Values, this, Applier.Skill, skill.ID);
                     skillString = skillString + "•" + skill.Name;
                 }
             }
@@ -2447,12 +2435,12 @@ namespace GameObjects
 
         private void AutoLearnStunt()
         {
-            foreach (Stunt stunt in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+            foreach (var stunt in Session.Current.Scenario.GameCommonData.AllStunts.Values)
             {
-                if ((this.Stunts.GetStunt(stunt.ID) == null) && stunt.IsLearnable(this) && (GameObject.GetChance(Session.Parameters.AutoLearnStuntSuccessRate)))
+                if (!HasStunt(stunt.ID) && stunt.IsLearnable(this) && GameObject.GetChance(Session.Parameters.AutoLearnStuntSuccessRate))
                 {
-                    this.Stunts.AddStunt(stunt);
-                    stunt.Influences.ApplyInfluence(this, Applier.Stunt, stunt.ID);
+                    AddStunt(stunt);
+                    Influence.ApplyInfluenceListToPerson(stunt.Influences.Values, this, Applier.Stunt, stunt.ID);
                 }
             }
         }
@@ -4478,13 +4466,12 @@ namespace GameObjects
                     {
                         pack.FoundPerson = Person.createPerson(this.TargetArchitecture, this, true, true);
 
-                        GameObjectList ideals = Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds;
                         IdealTendencyKind minIdeal = null;
-                        foreach (IdealTendencyKind itk in ideals)
+                        foreach (var idealTendencyKind in Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds.Values)
                         {
-                            if (minIdeal == null || itk.Offset < minIdeal.Offset)
+                            if (minIdeal == null || idealTendencyKind.Offset < minIdeal.Offset)
                             {
-                                minIdeal = itk;
+                                minIdeal = idealTendencyKind;
                             }
                         }
 
@@ -4657,9 +4644,9 @@ namespace GameObjects
             get
             {
                 int result = 0;
-                foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+                foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
                 {
-                    if ((this.Skills.GetSkill(skill.ID) == null) && skill.CanLearn(this))
+                    if (!HasSkill(skill.ID) && skill.CanLearn(this))
                     {
                         result++;
                     }
@@ -4673,9 +4660,9 @@ namespace GameObjects
             get
             {
                 int result = 0;
-                foreach (Stunt stunt in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+                foreach (var stunt in Session.Current.Scenario.GameCommonData.AllStunts.Values)
                 {
-                    if (this.Stunts.GetStunt(stunt.ID) == null && stunt.IsLearnable(this))
+                    if (!HasStunt(stunt.ID)&& stunt.IsLearnable(this))
                     {
                         result++;
                     }
@@ -4731,7 +4718,7 @@ namespace GameObjects
             get
             {
                 Dictionary<TitleKind, int> title = new Dictionary<TitleKind, int>();
-                foreach (Title candidate in Session.Current.Scenario.GameCommonData.AllTitles.Titles.Values)
+                foreach (var candidate in Session.Current.Scenario.GameCommonData.AllTitles.Values)
                 {
                     HashSet<TitleKind> hasKind = new HashSet<TitleKind>();
                     foreach (Title t in this.Titles)
@@ -4776,12 +4763,12 @@ namespace GameObjects
             this.OutsideTask = OutsideTaskKind.无;
             int num = 0;
             string skillString = "";
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
-                if (((this.Skills.GetSkill(skill.ID) == null) && skill.CanLearn(this)) && (GameObject.Random((skill.Level * 2) + 8) >= ((skill.Level + num) * 2 - Session.Parameters.LearnSkillSuccessRate)))
+                if (Skills.ContainsKey(skill.ID) && skill.CanLearn(this) && GameObject.Random((skill.Level * 2) + 8) >= ((skill.Level + num) * 2 - Session.Parameters.LearnSkillSuccessRate))
                 {
-                    this.Skills.AddSkill(skill);
-                    skill.Influences.ApplyInfluence(this, Applier.Skill, skill.ID);
+                    AddSkill(skill);
+                    Influence.ApplyInfluenceListToPerson(skill.Influences.Values, this, Applier.Skill, skill.ID);
                     skillString = skillString + "•" + skill.Name;
                     num++;
                     ExtensionInterface.call("StudySkill", new Object[] { Session.Current.Scenario, this, skill });
@@ -4802,7 +4789,7 @@ namespace GameObjects
             {
                 if (GameObject.GetChance(Session.Parameters.LearnStuntSuccessRate))
                 {
-                    this.Stunts.AddStunt(this.StudyingStunt);
+                    AddStunt(StudyingStunt);
                     ExtensionInterface.call("StudyStuntSuccess", new Object[] { Session.Current.Scenario, this, this.StudyingStunt });
                     if (this.OnStudyStuntFinished != null && this.ManualStudy)
                     {
@@ -4842,12 +4829,12 @@ namespace GameObjects
             {
                 if (t.Kind.Equals(title.Kind))
                 {
-                    t.Influences.PurifyInfluence(this, Applier.Title, t.ID);
+                    Influence.PurifyInfluenceList(t.Influences.Values, this, Applier.Title, t.ID);
                     this.RealTitles.Remove(t);
                 }
             }
             this.RealTitles.Add(title);
-            title.Influences.ApplyInfluence(this, Applier.Title, title.ID);
+            Influence.ApplyInfluenceListToPerson(title.Influences.Values, this, Applier.Title, title.ID);
             Session.Current.Scenario.YearTable.addObtainedTitleEntry(Session.Current.Scenario.Date, this, title);
         }
 
@@ -4858,8 +4845,7 @@ namespace GameObjects
             {
                 if (t.LoseConditions.Count > 0  && t.WillLose(this))
                 {
-                    t.Influences.PurifyInfluence(this, Applier.Title, t.ID);
-
+                    Influence.PurifyInfluenceList(t.Influences.Values, this, Applier.Title, t.ID);
                     this.RealTitles.Remove(t);
                 }
             }
@@ -4872,12 +4858,12 @@ namespace GameObjects
             {
                 if (t.Kind.Equals(title.Kind))
                 {
-                    t.Influences.PurifyInfluence(this, Applier.Title, t.ID);
+                    Influence.PurifyInfluenceList(t.Influences.Values, this, Applier.Title, t.ID);
                     this.RealTitles.Remove(t);
                 }
             }
             this.RealTitles.Add(title);
-            title.Influences.ApplyInfluence(this, Applier.Title, title.ID);
+            Influence.ApplyInfluenceListToPerson(title.Influences.Values, this, Applier.Title, title.ID);
             if (Session.Current.Scenario.IsPlayer(this.BelongedFaction))
             {
                 Session.MainGame.mainGameScreen.xianshishijiantupian(this.BelongedFaction.Leader, this.Name, "AwardTitle", "AwardTitle.jpg", "AwardTitle", title.Name, true);
@@ -4887,7 +4873,7 @@ namespace GameObjects
 
         public void RemoveTitle(Title title)
         {
-            title.Influences.PurifyInfluence(this, Applier.Title, title.ID);
+            Influence.PurifyInfluenceList(title.Influences.Values, this, Applier.Title, title.ID);
             this.RealTitles.Remove(title);
         }
 
@@ -4904,14 +4890,14 @@ namespace GameObjects
                     {
                         if (t.Kind.ID == this.StudyingTitle.Kind.ID)
                         {
-                            t.Influences.PurifyInfluence(this, Applier.Title, t.ID);
+                            Influence.PurifyInfluenceList(t.Influences.Values, this, Applier.Title, t.ID);
                             this.RealTitles.Remove(t);
                             break;
                         }
 
                     }
                     this.RealTitles.Add(this.StudyingTitle);
-                    StudyingTitle.Influences.ApplyInfluence(this, Applier.Title, this.StudyingTitle.ID);
+                    Influence.ApplyInfluenceListToPerson(StudyingTitle.Influences.Values, this, Applier.Title, StudyingTitle.ID);
 
                     Session.Current.Scenario.YearTable.addObtainedTitleEntry(Session.Current.Scenario.Date, this, this.StudyingTitle);
 
@@ -5055,17 +5041,12 @@ namespace GameObjects
 
         }
 
-        public GameObjectList GetSkillList()
-        {
-            return this.Skills.GetSkillList();
-        }
-
         public GameObjectList GetStudySkillList()
         {
             this.StudySkillList.Clear();
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
-                if ((this.Skills.GetSkill(skill.ID) == null) && skill.CanLearn(this))
+                if (!HasSkill(skill.ID) && skill.CanLearn(this))
                 {
                     this.StudySkillList.Add(skill);
                 }
@@ -5073,19 +5054,14 @@ namespace GameObjects
             return StudySkillList;
         }
 
-        public GameObjectList GetStuntList()
-        {
-            return this.Stunts.GetStuntList();
-        }
-
         public GameObjectList GetStudyStuntList()
         {
-            this.StudyStuntList.Clear();
-            foreach (Stunt stunt in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+            StudyStuntList.Clear();
+            foreach (var stunt in Session.Current.Scenario.GameCommonData.AllStunts.Values)
             {
-                if ((this.Stunts.GetStunt(stunt.ID) == null) && stunt.IsLearnable(this))
+                if (!HasStunt(stunt.ID)&& stunt.IsLearnable(this))
                 {
-                    this.StudyStuntList.Add(stunt);
+                    StudyStuntList.Add(stunt);
                 }
             }
             return StudyStuntList;
@@ -5104,7 +5080,7 @@ namespace GameObjects
         public GameObjectList GetStudyTitleList()
         {
             this.StudyTitleList.Clear();
-            foreach (Title title in Session.Current.Scenario.GameCommonData.AllTitles.Titles.Values)
+            foreach (var title in Session.Current.Scenario.GameCommonData.AllTitles.Values)
             {
                 if (!this.RealTitles.Contains(title) && title.CanLearn(this))
                 {
@@ -5117,7 +5093,7 @@ namespace GameObjects
         public GameObjectList GetAppointableTitleList()
         {
             this.AppointableTitleList.Clear();
-            foreach (Title title in Session.Current.Scenario.GameCommonData.AllTitles.Titles.Values)
+            foreach (var title in Session.Current.Scenario.GameCommonData.AllTitles.Values)
             {
                 if (!this.RealTitles.Contains(title) && !this.HasHigherLevelTitle(title) && title.ManualAward && title.CanLearn(this,true))        
                 {
@@ -5140,17 +5116,18 @@ namespace GameObjects
             return list;
         }
 
-        public PersonRelationValueList GetPersonRelationList()
+        public List<PersonRelationValue> GetPersonRelationList()
         {
-            PersonRelationValueList list = new PersonRelationValueList();
-            foreach (KeyValuePair<Person, int> i in relations) 
+            var result = new List<PersonRelationValue>();
+            foreach (var (person, val) in relations) 
             {
-                if (i.Key.Alive && i.Key.Available)
+                if (person.Alive && person.Available)
                 {
-                    list.Add(new PersonRelationValue(this, i.Key, i.Value));
+                    result.Add(new PersonRelationValue(this, person, val));
                 }
             }
-            return list;
+
+            return result;
         }
 
         public int GetWorkAbility(ArchitectureWorkKind workKind)
@@ -6798,7 +6775,7 @@ namespace GameObjects
             get
             {
                 int num = 0;
-                foreach (Skill skill in this.Skills.Skills.Values)
+                foreach (var skill in Skills.Values)
                 {
                     num += 5 * skill.Level;
                 }
@@ -7302,9 +7279,9 @@ namespace GameObjects
         public int MilitaryTypeSkillMerit(MilitaryType kind)
         {
             int result = 0;
-            foreach (Skill skill in this.Skills.Skills.Values)
+            foreach (var skill in Skills.Values)
             {
-                if (skill.Combat && (skill.MilitaryTypeOnly == kind || skill.MilitaryTypeOnly == MilitaryType.其他))
+                if (skill.Combat && (skill.MilitaryTypeOnly == kind || skill.MilitaryTypeOnly == MilitaryType.Other))
                 {
                     result += 5 * skill.Level;
                 }
@@ -7315,9 +7292,9 @@ namespace GameObjects
         public int MilitaryTypeStuntMerit(MilitaryType kind)
         {
             int result = 0;
-            foreach (Stunt stunt in this.Stunts.Stunts.Values)
+            foreach (var stunt in Stunts.Values)
             {
-                if ((stunt.MilitaryTypeOnly == kind || stunt.MilitaryTypeOnly == MilitaryType.其他))
+                if (stunt.MilitaryTypeOnly == kind || stunt.MilitaryTypeOnly == MilitaryType.Other)
                 {
                     result += 30;
                 }
@@ -7341,7 +7318,7 @@ namespace GameObjects
         {
             foreach (Title t in this.Titles)
             {
-                if (t.MilitaryTypeOnly == kind || t.MilitaryTypeOnly == MilitaryType.其他)
+                if (t.MilitaryTypeOnly == kind || t.MilitaryTypeOnly == MilitaryType.Other)
                 {
                     return true;
                 }
@@ -7354,7 +7331,7 @@ namespace GameObjects
             get
             {
                 int num = 0;
-                foreach (Skill skill in this.Skills.Skills.Values)
+                foreach (var skill in Skills.Values)
                 {
                     if (skill.Combat)
                     {
@@ -7370,7 +7347,7 @@ namespace GameObjects
             get
             {
                 int num = 0;
-                foreach (Skill skill in this.Skills.Skills.Values)
+                foreach (var skill in Skills.Values)
                 {
                     if (skill.Combat)
                     {
@@ -7469,10 +7446,11 @@ namespace GameObjects
         {
             get
             {
-                if (this.currentInformationKind == null)
+                if (currentInformationKind == null && Session.Current.Scenario.GameCommonData.AllInformationKinds.TryGetValue(informationKindID, out var informationKind))
                 {
-                    this.currentInformationKind = Session.Current.Scenario.GameCommonData.AllInformationKinds.GetGameObject(this.informationKindID) as InformationKind;
+                    currentInformationKind = informationKind;
                 }
+                
                 return this.currentInformationKind;
             }
             set
@@ -7636,7 +7614,7 @@ namespace GameObjects
                 int result = 0;
                 foreach (Title t in this.Titles)
                 {
-                    if (t.Kind.IsInheritable(Session.Current.Scenario.GameCommonData.AllTitles))
+                    if (t.Kind.IsInheritable(Session.Current.Scenario.GameCommonData.AllTitles.Values.ToList()))
                     {
                         result += t.Merit;
                     }
@@ -7653,7 +7631,7 @@ namespace GameObjects
                     (this.Strength * (1 - Session.GlobalVariables.LeadershipOffenceRate) + this.Command * (Session.GlobalVariables.LeadershipOffenceRate + 1)
                     + (this.Intelligence * 0.5)) *
                     (100 + this.TitleFightingMerit
-                    + this.TreasureMerit + this.CombatSkillMerit + Math.Pow(this.StuntCount, 0.3) * 30));
+                    + this.TreasureMerit + this.CombatSkillMerit + Math.Pow(Stunts.Count, 0.3) * 30));
             }
         }
 
@@ -7803,11 +7781,11 @@ namespace GameObjects
         {
             get
             {
-                foreach (Title t in this.Titles)
+                foreach (var title in Titles)
                 {
-                    if (t.Influences.HasTroopLeaderValidInfluence)
+                    foreach(var influence in title.Influences.Values)
                     {
-                        return true;
+                        if (influence.TroopLeaderValid) return true;
                     }
                 }
                 return false;
@@ -7822,7 +7800,7 @@ namespace GameObjects
                 {
                     foreach (var influence in t.Influences.Values)
                     {
-                        if (influence.Kind.Type == InfluenceType.战斗 || influence.Kind.Type == InfluenceType.建筑战斗)
+                        if (influence.Kind.Type == InfluenceType.Combat || influence.Kind.Type == InfluenceType.ArchitectureCombat)
                         {
                             return true;
                         }
@@ -7852,12 +7830,17 @@ namespace GameObjects
 
         public bool HasSkill(int id)
         {
-            return this.Skills.GetSkill(id) != null;
+            return Skills.ContainsKey(id);
         }
 
         public bool HasStunt(int id)
         {
-            return this.Stunts.GetStunt(id) != null;
+            return Stunts.ContainsKey(id);
+        }
+
+        public void AddStunt(Stunt stunt)
+        {
+            Stunts.TryAdd(stunt.ID, stunt);
         }
 
         public String TitleName(int kind)
@@ -7884,19 +7867,6 @@ namespace GameObjects
             return "";
         }
         */
-
-        public String StuntList
-        {
-            get
-            {
-                String result = "";
-                foreach (Stunt s in this.Stunts.Stunts.Values)
-                {
-                    result += s.Name + " ";
-                }
-                return result;
-            }
-        }
 
         public String StudyableSkillList
         {
@@ -7930,9 +7900,9 @@ namespace GameObjects
             {
                 if (Session.Current.Scenario.GameCommonData.AllSkills.Count > this.SkillCount)
                 {
-                    foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+                    foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
                     {
-                        if ((this.Skills.GetSkill(skill.ID) == null) && skill.CanLearn(this))
+                        if (!HasSkill(skill.ID) && skill.CanLearn(this))
                         {
                             return true;
                         }
@@ -7946,16 +7916,14 @@ namespace GameObjects
         {
             get
             {
-                if (Session.Current.Scenario.GameCommonData.AllStunts.Count > this.StuntCount)
+                foreach (var stunt in Session.Current.Scenario.GameCommonData.AllStunts.Values)
                 {
-                    foreach (Stunt stunt in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+                    if (!HasStunt(stunt.ID) && stunt.IsLearnable(this))
                     {
-                        if ((this.Stunts.GetStunt(stunt.ID) == null) && stunt.IsLearnable(this))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
+
                 return false;
             }
         }
@@ -7978,7 +7946,7 @@ namespace GameObjects
                     return higherLevelLearnableTitle;
                 }
                 List<Title> title = new List<Title>();
-                foreach (Title candidate in Session.Current.Scenario.GameCommonData.AllTitles.Titles.Values)
+                foreach (var candidate in Session.Current.Scenario.GameCommonData.AllTitles.Values)
                 {
                     HashSet<TitleKind> hasKind = new HashSet<TitleKind>();
                     foreach (Title t in this.Titles)
@@ -8223,7 +8191,10 @@ namespace GameObjects
                     v += (this.PersonalLoyalty - 2) * 15;
                     v -= (this.Ambition - 2) * 5;
 
-                    v += Session.Current.Scenario.GameCommonData.suoyouguanjuezhonglei.guanjuedezhongleizidian[this.BelongedFaction.guanjue].Loyalty;
+                    if (Session.Current.Scenario.GameCommonData.AllOfficialTitleKinds.TryGetValue(BelongedFaction.guanjue, out var officialTitleKind))
+                    {
+                        v += officialTitleKind.Loyalty;
+                    }
 
                     v += Math.Min(20, this.ServedYears / 2);
 
@@ -8334,7 +8305,7 @@ namespace GameObjects
             get
             {
                 return (int)((this.Strength + this.Command + this.Intelligence + this.Politics + this.Glamour) *
-                    (100 + this.TitleMerit + this.AllSkillMerit + this.TreasureMerit + Math.Pow(this.StuntCount, 0.3) * 30));
+                    (100 + this.TitleMerit + this.AllSkillMerit + this.TreasureMerit + Math.Pow(Stunts.Count, 0.3) * 30));
             }
         }
 
@@ -9047,13 +9018,7 @@ namespace GameObjects
             }
         }
 
-        public int SkillCount
-        {
-            get
-            {
-                return this.Skills.Skills.Count;
-            }
-        }
+        public int SkillCount => Skills.Count;
 
         //public Texture2D SmallPortrait
         //{
@@ -9246,13 +9211,6 @@ namespace GameObjects
             return ((int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500) - num2 + ExperienceNow);
         }
 
-        public int StuntCount
-        {
-            get
-            {
-                return this.Stunts.Count;
-            }
-        }
 
         [DataMember]
         public string SurName
@@ -9808,7 +9766,7 @@ namespace GameObjects
             List<String> suffixes = new List<String>();
             int strength, command, intelligence, politics, glamour, braveness, calmness, personalLoyalty, ambition;
             strength = command = intelligence = politics = glamour = braveness = calmness = personalLoyalty = ambition = 0;
-            foreach (BiographyAdjectives b in Session.Current.Scenario.GameCommonData.AllBiographyAdjectives)
+            foreach (var b in Session.Current.Scenario.GameCommonData.AllBiographyAdjectives)
             {
                 if (b.Male && r.Sex)
                 {
@@ -9871,15 +9829,14 @@ namespace GameObjects
 
         private static PersonGeneratorType generatePersonType()
         {
-            PersonGeneratorType gernrateType = new PersonGeneratorType();
+            var gernrateType = new PersonGeneratorType();
             
             //int[] weights = new int[10];
-            int typeCount = Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.Count;
             Dictionary<int, int> weights = new Dictionary<int, int>();
 
-            foreach (PersonGeneratorType type in Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes)
+            foreach (var type in Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.Values)
             {
-                weights[type.ID] = type.generationChance;
+                weights[type.ID] = type.GenerationChance;
             }
 
             int total = 0;
@@ -9954,33 +9911,35 @@ namespace GameObjects
             return r;
         }
 
-        private static void HandlePersonCharacter(Person r, int officerType)
+        private static void HandlePersonCharacter(Person person, int officerType)
         {
-            r.BornRegion = (PersonBornRegion)GameObject.Random(Enum.GetNames(typeof(PersonBornRegion)).Length);
+            person.BornRegion = (PersonBornRegion)StaticMethods.Random(Enum.GetNames(typeof(PersonBornRegion)).Length);
 
+            var chances = new Dictionary<int, int>();
+            var allCharacterKinds = Session.Current.Scenario.GameCommonData.AllCharacterKinds;
+
+            foreach (var (key, characterKind) in allCharacterKinds)
             {
-                Dictionary<CharacterKind, int> chances = new Dictionary<CharacterKind, int>();
-                foreach (CharacterKind t in Session.Current.Scenario.GameCommonData.AllCharacterKinds)
-                {
-                    chances.Add(t, t.GenerationChance[(int)officerType]);
-                }
+                chances.Add(key, characterKind.GenerationChance[officerType]);
+            }
 
-                int sum = 0;
-                foreach (int i in chances.Values)
-                {
-                    sum += i;
-                }
+            int sum = 0;
+            foreach (int i in chances.Values)
+            {
+                sum += i;
+            }
 
-                int p = GameObject.Random(sum);
-                double pt = 0;
-                foreach (KeyValuePair<CharacterKind, int> td in chances)
+            var randomChance = StaticMethods.Random(sum);
+            var totalChance = 0;
+
+            foreach (var item in chances)
+            {
+                totalChance += item.Value;
+
+                if (randomChance < totalChance)
                 {
-                    pt += td.Value;
-                    if (p < pt)
-                    {
-                        r.Character = td.Key;
-                        break;
-                    }
+                    person.Character = allCharacterKinds[item.Key];
+                    break;
                 }
             }
         }
@@ -9990,13 +9949,12 @@ namespace GameObjects
             if ((Session.Current.Scenario.IsPlayer(foundLocation.BelongedFaction) && Session.GlobalVariables.PlayerZhaoxianFixIdeal) ||
                 (!Session.Current.Scenario.IsPlayer(foundLocation.BelongedFaction) && Session.GlobalVariables.AIZhaoxianFixIdeal))
             {
-                GameObjectList ideals = Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds;
                 IdealTendencyKind minIdeal = null;
-                foreach (IdealTendencyKind itk in ideals)
+                foreach (var idealTendencyKind in Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds.Values)
                 {
-                    if (minIdeal == null || itk.Offset < minIdeal.Offset)
+                    if (minIdeal == null || idealTendencyKind.Offset < minIdeal.Offset)
                     {
-                        minIdeal = itk;
+                        minIdeal = idealTendencyKind;
                     }
                 }
 
@@ -10017,33 +9975,35 @@ namespace GameObjects
        
             titleChance = 0;
 
-            PersonGeneratorType typeParam = (PersonGeneratorType)Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.GetGameObject(officerType);
+            if (!Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.TryGetValue(officerType, out var typeParam)) return;
 
-            if (typeParam.genderFix == -1)
+            var sex = false;
+            if (typeParam.GenderFix == -1)
             {
-                r.Sex = false;
+                sex = false;
             }
-            else if (typeParam.genderFix == 1)
+            else if (typeParam.GenderFix == 1)
             {
-                r.Sex = true;
+                sex = true;
             }
             else
             {
-                r.Sex = GameObject.GetChance(options.femaleChance) ? true : false;
+                sex = GameObject.GetChance(options.FemaleChance) ? true : false;
             }
             
-            r.BaseCommand = GameObject.RandomGaussianRange(typeParam.commandLo, typeParam.commandHi);
-            r.BaseStrength = GameObject.RandomGaussianRange(typeParam.strengthLo, typeParam.strengthHi);
-            r.BaseIntelligence = GameObject.RandomGaussianRange(typeParam.intelligenceLo, typeParam.intelligenceHi);
-            r.BasePolitics = GameObject.RandomGaussianRange(typeParam.politicsLo, typeParam.politicsHi);
-            r.BaseGlamour = GameObject.RandomGaussianRange(typeParam.glamourLo, typeParam.glamourHi);
-            r.Braveness = GameObject.RandomGaussianRange(typeParam.braveLo, typeParam.braveHi);
-            r.Calmness = GameObject.RandomGaussianRange(typeParam.calmnessLo, typeParam.calmnessHi);
-            r.PersonalLoyalty = GameObject.RandomGaussianRange(typeParam.personalLoyaltyLo, typeParam.personalLoyaltyHi);
-            r.Ambition = GameObject.RandomGaussianRange(typeParam.ambitionLo, typeParam.ambitionHi);
-            titleChance = typeParam.titleChance;
+            r.Sex = sex;
+            r.BaseCommand = GameObject.RandomGaussianRange(typeParam.CommandLo, typeParam.CommandHi);
+            r.BaseStrength = GameObject.RandomGaussianRange(typeParam.StrengthLo, typeParam.StrengthHi);
+            r.BaseIntelligence = GameObject.RandomGaussianRange(typeParam.IntelligenceLo, typeParam.IntelligenceHi);
+            r.BasePolitics = GameObject.RandomGaussianRange(typeParam.PoliticsLo, typeParam.PoliticsHi);
+            r.BaseGlamour = GameObject.RandomGaussianRange(typeParam.GlamourLo, typeParam.GlamourHi);
+            r.Braveness = GameObject.RandomGaussianRange(typeParam.BraveLo, typeParam.BraveHi);
+            r.Calmness = GameObject.RandomGaussianRange(typeParam.CalmnessLo, typeParam.CalmnessHi);
+            r.PersonalLoyalty = GameObject.RandomGaussianRange(typeParam.PersonalLoyaltyLo, typeParam.PersonalLoyaltyHi);
+            r.Ambition = GameObject.RandomGaussianRange(typeParam.AmbitionLo, typeParam.AmbitionHi);
+            titleChance = typeParam.TitleChance;
 
-            if (typeParam.affectedByRateParameter || Session.GlobalVariables.CreatedOfficerAbilityFactor > 1)
+            if (typeParam.AffectedByRateParameter || Session.GlobalVariables.CreatedOfficerAbilityFactor > 1)
             {
                 r.BaseCommand = (int)(r.BaseCommand * Session.GlobalVariables.CreatedOfficerAbilityFactor);
                 r.BaseStrength = (int)(r.BaseStrength * Session.GlobalVariables.CreatedOfficerAbilityFactor);
@@ -10059,16 +10019,16 @@ namespace GameObjects
 
             setNewOfficerFace(r);
 
-            r.YearBorn = Session.Current.Scenario.Date.Year + GameObject.Random(options.bornLo, options.bornHi);
-            r.YearAvailable = Session.Current.Scenario.Date.Year + (inGame ? 0 : GameObject.Random(options.debutLo, options.debutHi));
-            r.YearDead = Math.Max(r.YearBorn + GameObject.Random(options.dieLo, options.dieHi), Session.Current.Scenario.Date.Year + options.debutAtLeast);
+            r.YearBorn = Session.Current.Scenario.Date.Year + GameObject.Random(options.BornLo, options.BornHi);
+            r.YearAvailable = Session.Current.Scenario.Date.Year + (inGame ? 0 : GameObject.Random(options.DebutLo, options.DebutHi));
+            r.YearDead = Math.Max(r.YearBorn + GameObject.Random(options.DieLo, options.DieHi), Session.Current.Scenario.Date.Year + options.DebutAtLeast);
 
             r.Reputation = GameObject.Random(51) * 100;
 
             r.Qualification = (PersonQualification)GameObject.Random(Enum.GetNames(typeof(PersonQualification)).Length);
             r.ValuationOnGovernment = (PersonValuationOnGovernment)GameObject.Random(Enum.GetNames(typeof(PersonValuationOnGovernment)).Length);
             r.StrategyTendency = (PersonStrategyTendency)GameObject.Random(Enum.GetNames(typeof(PersonStrategyTendency)).Length);
-            r.IdealTendency = Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds.GetRandomList()[0] as IdealTendencyKind;
+            r.IdealTendency = StaticMethods.GetRandomItem(Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds.Values.ToList());
         }
 
         private static void HandleName(Person r)
@@ -10178,7 +10138,7 @@ namespace GameObjects
             bio.Brief = biography;
             bio.ID = r.ID;
             bio.FactionColor = 52;
-            bio.MilitaryKinds.AddBasicMilitaryKinds();
+            bio.AddBasicMilitaryKinds();
             Session.Current.Scenario.AllBiographies.AddBiography(bio);
 
             r.PersonBiography = bio;
@@ -10188,11 +10148,11 @@ namespace GameObjects
         {
             if (GameObject.GetChance(titleChance))
             {
-                Dictionary<TitleKind, List<Title>> titles = Title.GetKindTitleDictionary();
-                foreach (KeyValuePair<TitleKind, List<Title>> kv in titles)
+                foreach (var (kindId, titles) in Title.GetKindTitleDictionary())
                 {
-                    Dictionary<Title, float> chances = new Dictionary<Title, float>();
-                    foreach (Title t in kv.Value)
+                    var chances = new Dictionary<Title, float>();
+
+                    foreach (var t in titles)
                     {
                         if (t.CanBeChosenForGenerated(r))
                         {
@@ -10210,7 +10170,7 @@ namespace GameObjects
 
         private static void HandleStunt(Person r, int officerType)
         {
-            foreach (Stunt s in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+            foreach (var s in Session.Current.Scenario.GameCommonData.AllStunts.Values)
             {
                 if (s.CanBeChosenForGenerated())
                 {
@@ -10218,7 +10178,7 @@ namespace GameObjects
                     chance = (int)(chance * Math.Max(0, s.GetRelatedAbility(r) - 50) / 10.0 + 1);
                     if (GameObject.Random(1000) <= chance)
                     {
-                        r.Stunts.AddStunt(s);
+                        r.AddStunt(s);
                     }
                 }
             }
@@ -10226,7 +10186,7 @@ namespace GameObjects
 
         private static void HandleSkill(Person r, int officerType)
         {
-            foreach (Skill s in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var s in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
                 if (s.CanBeChosenForGenerated(r))
                 {
@@ -10234,7 +10194,7 @@ namespace GameObjects
                     chance = (int)(chance * (Math.Max(0, s.GetRelatedAbility(r) - 50) / 10.0 + 1));
                     if (GameObject.GetChance(chance))
                     {
-                        r.Skills.AddSkill(s);
+                        r.AddSkill(s);
                     }
                 }
             }
@@ -10278,7 +10238,11 @@ namespace GameObjects
                 HandleChildrenFaction(father, mother, r);
 
                 r.IsGeneratedChildren = true;
-                r.TrainPolicy = (TrainPolicy) Session.Current.Scenario.GameCommonData.AllTrainPolicies.GetGameObject(1);
+
+                if (Session.Current.Scenario.GameCommonData.AllTrainPolicies.TryGetValue(1, out var trainPolicy))
+                {
+                    r.TrainPolicy = trainPolicy;
+                }
             }
             else
             {
@@ -10430,7 +10394,7 @@ namespace GameObjects
             else
             {
                 bio.FactionColor = 52;
-                bio.MilitaryKinds.AddBasicMilitaryKinds();
+                bio.AddBasicMilitaryKinds();
             }
             Session.Current.Scenario.AllBiographies.AddBiography(bio);
             r.PersonBiography = bio;
@@ -10438,11 +10402,10 @@ namespace GameObjects
 
         private static void HandleChildrenTitle(Person father, Person mother, Person r)
         {
-            Dictionary<TitleKind, List<Title>> titles = Title.GetKindTitleDictionary();
-            foreach (KeyValuePair<TitleKind, List<Title>> i in titles)
+            foreach (var (kindId, titles) in Title.GetKindTitleDictionary())
             {
-                Title ft = father.getTitleOfKind(i.Key);
-                Title mt = mother.getTitleOfKind(i.Key);
+                Title ft = father.GetTitleOfKind(kindId);
+                Title mt = mother.GetTitleOfKind(kindId);
                 int levelTendency = (((ft == null ? 0 : ft.Level) + (mt == null ? 0 : mt.Level)) / 2)
                     + father.childrenTitleChanceIncrease + mother.childrenTitleChanceIncrease;
 
@@ -10463,7 +10426,7 @@ namespace GameObjects
                     List<Title> lesserCandidates = new List<Title>();
                     List<Title> leastCandidates = new List<Title>();
 
-                    foreach (Title t in i.Value)
+                    foreach (var t in titles)
                     {
                         if (t.Level == targetLevel && t.CanBeBorn(r))
                         {
@@ -10497,29 +10460,28 @@ namespace GameObjects
 
         private static void HandleChildrenStunt(Person father, Person mother, Person r)
         {
-            foreach (Stunt i in father.Stunts.GetStuntList())
+            foreach (var i in father.Stunts.Values)
             {
                 if (GameObject.GetChance(50 + father.childrenStuntChanceIncrease) && i.CanBeBorn(r))
                 {
-                    r.Stunts.AddStunt(i);
+                    r.AddStunt(i);
                 }
             }
-            foreach (Stunt i in mother.Stunts.GetStuntList())
+            foreach (var i in mother.Stunts.Values)
             {
                 if (GameObject.GetChance(50 + mother.childrenStuntChanceIncrease) && i.CanBeBorn(r))
                 {
-                    r.Stunts.AddStunt(i);
+                    r.AddStunt(i);
                 }
             }
-            foreach (Stunt i in Session.Current.Scenario.GameCommonData.AllStunts.GetStuntList())
+            foreach (var i in Session.Current.Scenario.GameCommonData.AllStunts.Values)
             {
-                if ((GameObject.Random(Session.Current.Scenario.GameCommonData.AllStunts.GetStuntList().Count * 2) == 0 ||
+                if ((GameObject.Random(Session.Current.Scenario.GameCommonData.AllStunts.Count * 2) == 0 ||
                     GameObject.GetChance(father.childrenStuntChanceIncrease + mother.childrenStuntChanceIncrease)) && i.CanBeBorn(r))
                 {
-                    bool ok = Condition.CheckPersonalityCondition(i.LearnConditions, r);
-                    if (ok)
+                    if (Condition.CheckPersonalityCondition(i.LearnConditions, r))
                     {
-                        r.Stunts.AddStunt(i);
+                        r.AddStunt(i);
                     }
                 }
             }
@@ -10527,39 +10489,38 @@ namespace GameObjects
 
         private static void HandleChildrenSkill(Person father, Person mother, Person r)
         {
-            foreach (Skill i in father.Skills.GetSkillList())
+            foreach (var i in father.Skills.Values)
             {
                 if (GameObject.GetChance(50 + father.childrenSkillChanceIncrease) && i.CanBeBorn(r))
                 {
-                    r.Skills.AddSkill(i);
+                    r.AddSkill(i);
                 }
             }
-            foreach (Skill i in mother.Skills.GetSkillList())
+            foreach (var i in mother.Skills.Values)
             {
                 if (GameObject.GetChance(50 + mother.childrenSkillChanceIncrease) && i.CanBeBorn(r))
                 {
-                    r.Skills.AddSkill(i);
+                    r.AddSkill(i);
                 }
             }
-            foreach (Skill i in Session.Current.Scenario.GameCommonData.AllSkills.GetSkillList())
+
+            var allSkillCount = Session.Current.Scenario.GameCommonData.AllSkills.Count;
+            foreach (var i in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
-                if (((GameObject.Random(Session.Current.Scenario.GameCommonData.AllSkills.GetSkillList().Count / 2) == 0 && GameObject.Random(i.Level * i.Level / 2 + i.Level) == 0)
+                if (((GameObject.Random(allSkillCount / 2) == 0 && GameObject.Random(i.Level * i.Level / 2 + i.Level) == 0)
                     ||
                     GameObject.GetChance(father.childrenSkillChanceIncrease + mother.childrenSkillChanceIncrease)) && i.CanBeBorn(r))
                 {
-                    r.Skills.AddSkill(i);
+                    r.AddSkill(i);
                 }
             }
         }
 
         private static void HandleChildrenCharacter(Person father, Person mother, Person r)
         {
-            int characterId = 0;
-            do
-            {
-                characterId = GameObject.Random(Session.Current.Scenario.GameCommonData.AllCharacterKinds.Count);
-            } while (characterId == 0);
-            r.Character = GameObject.GetChance(84) ? (GameObject.GetChance(50) ? father.Character : mother.Character) : Session.Current.Scenario.GameCommonData.AllCharacterKinds[characterId];
+            var characterKind = StaticMethods.GetRandomItem(Session.Current.Scenario.GameCommonData.AllCharacterKinds.Values.ToList());
+
+            r.Character = GetChance(84) ? (GetChance(50) ? father.Character : mother.Character) : characterKind;
         }
 
         private static Architecture HandleChildrenRegion(Person father, Person mother, Person r)
@@ -10579,7 +10540,7 @@ namespace GameObjects
 
         private static void AdjustChildrenIdeal(Person father, Person mother, Person r)
         {
-            r.IdealTendency = GameObject.GetChance(84) ? (GameObject.GetChance(50) ? father.IdealTendency : mother.IdealTendency) : Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds.GetRandomList()[0] as IdealTendencyKind;
+            r.IdealTendency = GameObject.GetChance(84) ? (GameObject.GetChance(50) ? father.IdealTendency : mother.IdealTendency) : StaticMethods.GetRandomItem(Session.Current.Scenario.GameCommonData.AllIdealTendencyKinds.Values.ToList());
             if (father.BelongedFaction != null || mother.BelongedFaction != null)
             {
                 Person leader = father.BelongedFaction == null ? mother.BelongedFaction.Leader : father.BelongedFaction.Leader;
@@ -10633,10 +10594,10 @@ namespace GameObjects
         {
             r.YearBorn = Session.Current.Scenario.Date.Year;
             r.YearAvailable = Session.Current.Scenario.Date.Year + Session.GlobalVariables.ChildrenAvailableAge;
-            r.YearDead = r.YearBorn + GameObject.Random(Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.dieLo, Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.dieHi);
-            if (r.YearDead - r.YearAvailable < Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.debutAtLeast)
+            r.YearDead = r.YearBorn + GameObject.Random(Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.DieLo, Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.DieHi);
+            if (r.YearDead - r.YearAvailable < Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.DebutAtLeast)
             {
-                r.YearDead = r.YearAvailable + Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.debutAtLeast;
+                r.YearDead = r.YearAvailable + Session.Current.Scenario.GameCommonData.PersonGeneratorSetting.DebutAtLeast;
             }
 
             if (r.Spouse != null && Session.GlobalVariables.PersonNaturalDeath == true && Math.Abs(r.Spouse.YearBorn - r.YearBorn) > 25)
@@ -11790,7 +11751,7 @@ namespace GameObjects
 
         public bool HasInfluenceKind(int id)
         {
-            foreach (Influence influence in Session.Current.Scenario.GameCommonData.AllInfluences.Values)
+            foreach (var influence in Session.Current.Scenario.GameCommonData.AllInfluences.Values)
             {
                 if (influence.Kind.ID == id)
                 {
@@ -11811,7 +11772,7 @@ namespace GameObjects
         public float InfluenceKindValueByTreasure(int id)
         {
             float result = 0;
-            foreach (Influence influence in Session.Current.Scenario.GameCommonData.AllInfluences.Values)
+            foreach (var influence in Session.Current.Scenario.GameCommonData.AllInfluences.Values)
             {
                 if (influence.Kind.ID == id)
                 {
@@ -11891,12 +11852,7 @@ namespace GameObjects
                 return result;
             }
         }
-
-        public TrainPolicyList TrainPolicies()
-        {
-            return Session.Current.Scenario.GameCommonData.AllTrainPolicies;
-        }
-
+        
         public string TrainPolicyString
         {
             get
@@ -12039,7 +11995,7 @@ namespace GameObjects
         {
             if (Session.Current.Scenario.GameCommonData.AllStatusEffects.TryGetValue(statusEffectId, out var statusEffect))
             {
-                statusEffect.Influences.ApplyInfluence(this, Applier.StatusEffect, statusEffect.ID);
+                Influence.ApplyInfluenceListToPerson(statusEffect.Influences, this, Applier.StatusEffect, statusEffect.ID);
             }
         }
 
@@ -12052,8 +12008,18 @@ namespace GameObjects
             // TODO: 用Table替换
             if (Session.Current.Scenario.GameCommonData.AllStatusEffects.TryGetValue(statusEffectId, out var statusEffect))
             {
-                statusEffect.Influences.PurifyInfluence(this, Applier.StatusEffect, statusEffect.ID);
+                Influence.PurifyInfluenceList(statusEffect.Influences, this, Applier.StatusEffect, statusEffect.ID);
             }
+        }
+
+        /// <summary>
+        /// 添加技能
+        /// </summary>
+        /// <param name="skill"></param>
+        /// <returns></returns>
+        public bool AddSkill(Skill skill)
+        {
+            return Skills.TryAdd(skill.ID, skill);
         }
     }
 }

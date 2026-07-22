@@ -1,9 +1,8 @@
-﻿using Microsoft.Xna.Framework;
-using System.Runtime.Serialization;
+﻿using GameEnums;
+using Microsoft.Xna.Framework;
 
 namespace GameObjects.Influences;
 
-[DataContract]
 public class InfluenceKind : GameObject
 {
     #region DataMember
@@ -11,39 +10,34 @@ public class InfluenceKind : GameObject
     /// <summary>
     /// 种类
     /// </summary>
-    [DataMember]
     public InfluenceType Type { get; set; }
 
     /// <summary>
     /// 战斗
     /// </summary>
-    [DataMember]
     public bool Combat { get; set; }
 
     /// <summary>
     /// 武将AI值
     /// </summary>
-    [DataMember]
     public float AIPersonValue { get; set; }
 
     /// <summary>
     /// 武将AI值乘幂
     /// </summary>
-    [DataMember]
     public float AIPersonValuePow { get; set; }
 
     /// <summary>
     /// 主将有效
     /// </summary>
-    [DataMember]
     public bool TroopLeaderValid { get; set; }
 
     #endregion
 
-    private bool AppliesToArchitecture => Type == InfluenceType.建筑 || Type == InfluenceType.建筑战斗;
-    private bool AppliesToTroop => Type == InfluenceType.战斗 || Type == InfluenceType.建筑战斗;
-    private bool AppliesToPerson => Type == InfluenceType.个人;
-    private bool AppliesToFaction => Type == InfluenceType.势力;
+    private bool AppliesToArchitecture => Type == InfluenceType.Architecture || Type == InfluenceType.ArchitectureCombat;
+    private bool AppliesToTroop => Type == InfluenceType.Combat || Type == InfluenceType.ArchitectureCombat;
+    private bool AppliesToPerson => Type == InfluenceType.Person;
+    private bool AppliesToFaction => Type == InfluenceType.Faction;
 
     public virtual void DoWork(Influence influence, Architecture architecture)
     {

@@ -1,11 +1,8 @@
-﻿using System.Runtime.Serialization;
-
-namespace GameObjects.ArchitectureDetail.EventEffect;
+﻿namespace GameObjects.ArchitectureDetail.EventEffect;
 
 /// <summary>
 /// 事件影响种类
 /// </summary>
-[DataContract]
 public class EventEffectKind : GameObject
 {
     protected static Person markedPerson = null;

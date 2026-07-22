@@ -1,18 +1,17 @@
-﻿using GameGlobal;
+﻿using GameDatas;
+using GameEnums;
+using GameGlobal;
 using GameObjects.Conditions;
 using GameObjects.Influences;
-using GameObjects.TroopDetail;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace GameObjects.PersonDetail;
 
 /// <summary>
 /// 技能
 /// </summary>
-[DataContract]
 public class Skill : GameObject
 {
     #region DataMember
@@ -20,60 +19,66 @@ public class Skill : GameObject
     /// <summary>
     /// 显示行
     /// </summary>
-    [DataMember]
     public int DisplayRow { get; set; }
 
     /// <summary>
     /// 显示列
     /// </summary>
-    [DataMember]
     public int DisplayCol { get; set; }
 
     /// <summary>
     /// 类别
     /// </summary>
-    [DataMember]
     public int Kind { get; set; }
 
     /// <summary>
     /// 等级
     /// </summary>
-    [DataMember]
     public int Level { get; set; }
 
     /// <summary>
     /// 战斗
     /// </summary>
-    [DataMember]
     public bool Combat { get; set; }
 
     /// <summary>
     /// 影响列表
     /// </summary>
-    [DataMember]
     public string InfluencesString { get; set; }
 
     /// <summary>
     /// 条件列表
     /// </summary>
-    [DataMember]
     public string ConditionTableString { get; set; }
 
     /// <summary>
     /// 不同生成武将类型获得机率
     /// </summary>
-    [DataMember]
     public int[] GenerationChance { get; set; } = new int[10];
 
     /// <summary>
     /// 此技能的相关能力、0-4为武统智政魅
     /// </summary>
-    [DataMember]
     public int RelatedAbility { get; set; }
 
     #endregion
 
-    public InfluenceTable Influences { get; set; } = new();
+    public Skill(SkillConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        DisplayRow = config.DisplayRow;
+        DisplayCol = config.DisplayCol;
+        Kind = config.Kind;
+        Level = config.Level;
+        Combat = config.Combat;
+        InfluencesString = config.InfluencesString;
+        ConditionTableString = config.ConditionTableString;
+        GenerationChance = config.GenerationChance;
+        RelatedAbility = config.RelatedAbility;
+    }
+
+    public Dictionary<int, Influence> Influences { get; set; } = new();
 
     public List<Condition> Conditions { get; set; } = new();
 
@@ -98,12 +103,12 @@ public class Skill : GameObject
         {
             foreach (var influence in Influences.Values)
             {
-                if (influence.Kind.ID == 290)
+                if (influence.KindId == 290)
                 {
                     return (MilitaryType)Enum.Parse(typeof(MilitaryType), influence.Parameter);
                 }
             }
-            return MilitaryType.其他;
+            return MilitaryType.Other;
         }
     }
 
@@ -132,7 +137,7 @@ public class Skill : GameObject
                 int subofficerInfluences = 0;
                 foreach (var influence in Influences.Values)
                 {
-                    if (influence.Kind.ID == 281) break;
+                    if (influence.KindId == 281) break;
 
                     if (influence.Kind.Combat)
                     {

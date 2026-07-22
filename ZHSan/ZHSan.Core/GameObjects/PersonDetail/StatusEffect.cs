@@ -1,5 +1,6 @@
 
 using System.Collections.Generic;
+using GameDatas;
 using GameObjects.Conditions;
 using GameObjects.Influences;
 
@@ -43,11 +44,11 @@ public class StatusEffect
 
     public List<Condition> TriggerConditions { get; set; } = new();
 
-    public InfluenceTable Influences { get; set; } = new();
+    public List<Influence> Influences { get; set; } = new();
 
     public StatusEffect(StatusEffectConfig config)
     {
-        ID = config.ID;
+        ID = config.Id;
         Name = config.Name;
         Duration = config.Duration;
         StatusType = config.StatusType;

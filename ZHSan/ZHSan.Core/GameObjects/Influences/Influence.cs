@@ -1,12 +1,12 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using GameManager;
+using GameEnums;
+using GameDatas;
 
 namespace GameObjects.Influences;
 
-[DataContract]
 public class Influence : GameObject
 {
     #region DataMember
@@ -14,13 +14,13 @@ public class Influence : GameObject
     /// <summary>
     /// 影响类型
     /// </summary>
-    [DataMember]
     public InfluenceKind Kind { get; set; }
+
+    public int KindId { get; set; }
 
     /// <summary>
     /// 描述
     /// </summary>
-    [DataMember]
     public string Description { get; set; }
 
     private string parameter;
@@ -30,7 +30,6 @@ public class Influence : GameObject
     /// <summary>
     /// 参数1
     /// </summary>
-    [DataMember]
     public string Parameter
     {
         get => parameter;
@@ -49,7 +48,6 @@ public class Influence : GameObject
     /// <summary>
     /// 参数2
     /// </summary>
-    [DataMember]
     public string Parameter2
     {
         get => parameter2;
@@ -62,6 +60,16 @@ public class Influence : GameObject
     }
 
     #endregion
+
+    public Influence(InfluenceConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        KindId = config.KindId;
+        Description = config.Description;
+        Parameter = config.Parameter;
+        Parameter2 = config.Parameter2;
+    }
 
     /// <summary>
     /// 获取参数1解析的int值
@@ -131,6 +139,69 @@ public class Influence : GameObject
         ApplyTroops = new();
     }
 
+    public static void ApplyInfluenceListToPerson(IEnumerable<Influence> influences, Person person, Applier applier, int id)
+    {
+        bool flag = false;
+        bool flag2 = false;
+        foreach (var influence in influences)
+        {
+            if ((influence.Type != InfluenceType.Prerequisite) && (influence.Type != InfluenceType.Exclusive))
+            {
+                if (!flag || flag2)
+                {
+                    influence.ApplyInfluence(person, applier, id);
+                }
+                continue;
+            }
+            if (!(flag || (influence.Type != InfluenceType.Exclusive)))
+            {
+                flag = true;
+            }
+            if (influence.IsVaild(person))
+            {
+                if (influence.Type == InfluenceType.Exclusive)
+                {
+                    flag2 = true;
+                    continue;
+                }
+            }
+            else if (influence.Type == InfluenceType.Prerequisite)
+            {
+                break;
+            }
+        }
+    }
+
+    public static void ApplyInfluenceList<T>(IEnumerable<Influence> influences, T target, Applier applier, int id) where T : GameObject
+    {
+        foreach (var influence in influences)
+        {
+            influence.ApplyInfluence(target, applier, id);
+        }
+    }
+
+    public void ApplyInfluence(GameObject target, Applier applier, int id)
+    {
+        switch (target)
+        {
+            case Faction faction:
+                Kind.ApplyFromEntry(faction, this, applier, id);
+                break;
+            case Architecture arch:
+                Kind.ApplyFromEntry(arch, this, applier, id);
+                break;
+            case Person person:
+                Kind.ApplyFromEntry(person, this, applier, id);
+                break;
+            case Troop troop:
+                Kind.ApplyFromEntry(troop, this, applier, id);
+                break;
+            default:
+                throw new NotSupportedException($"不支持的影响对象: {target.GetType().Name}");
+        }
+    }
+
+
     public void ApplyInfluence(Architecture arch, Applier applier, int id)
     {
         Kind.ApplyFromEntry(arch, this, applier, id);
@@ -176,6 +247,35 @@ public class Influence : GameObject
     public bool IsVaild(Troop troop)
     {
         return Kind.IsVaild(this, troop);
+    }
+
+    public static void PurifyInfluenceList<T>(IEnumerable<Influence> influences, T target, Applier applier, int id) where T : GameObject
+    {
+        foreach (var influence in influences)
+        {
+            influence.PurifyInfluence(target, applier, id);
+        }
+    }
+
+    public void PurifyInfluence(GameObject target, Applier applier, int id)
+    {
+        switch (target)
+        {
+            case Faction faction:
+                Kind.PurifyFromEntry(faction, this, applier, id);
+                break;
+            case Architecture arch:
+                Kind.PurifyFromEntry(arch, this, applier, id);
+                break;
+            case Person person:
+                Kind.PurifyFromEntry(person, this, applier, id);
+                break;
+            case Troop troop:
+                Kind.PurifyFromEntry(troop, this, applier, id);
+                break;
+            default:
+                throw new NotSupportedException($"不支持的影响对象: {target.GetType().Name}");
+        }
     }
 
     public void PurifyInfluence(Architecture architecture, Applier applier, int applierID)
@@ -232,11 +332,38 @@ public class Influence : GameObject
             switch (Kind.ID)
             {
                 case 320:
-                    return value * commonData.AllCombatMethods.GetCombatMethod(i1).Combativity * pow;
+                    {
+                        if (commonData.AllCombatMethods.TryGetValue(i1, out var combatMethod))
+                        {
+                            return value * combatMethod.Combativity * pow;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
                 case 330:
-                    return value * commonData.AllStunts.GetStunt(i1).Combativity * pow;
+                    {
+                        if (commonData.AllStunts.TryGetValue(i1, out var stunt))
+                        {
+                            return value * stunt.Combativity * pow;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
                 case 860:
-                    return value * commonData.AllStratagems.GetStratagem(i1).Combativity * pow;
+                    {
+                        if (commonData.AllStratagems.TryGetValue(i1, out var stratagem))
+                        {
+                            return value * stratagem.Combativity * pow;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
                 case 800:
                 case 802:
                 case 804:

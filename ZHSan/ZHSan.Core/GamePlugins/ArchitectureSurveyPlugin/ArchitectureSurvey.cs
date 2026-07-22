@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 using GameFreeText;
 using GameObjects;
 using GameManager;
+using GameEnums;
 
 namespace ArchitectureSurveyPlugin
 {
@@ -307,7 +308,7 @@ namespace ArchitectureSurveyPlugin
                 //this.ArmyText.Text = this.ArchitectureToSurvey.ArmyQuantityInInformationLevel(this.Level);
 
                 //////////////////////////////////////////////////////////临时代码 ，合理的应该恢复上句并修改GameObjects.Architecture
-                if (this.Level == InformationLevel.未知 || this.Level == InformationLevel.无 || this.Level == InformationLevel.低)
+                if (this.Level == InformationLevel.Unknown || this.Level == InformationLevel.None || this.Level == InformationLevel.Low)
                 {
                     this.ArmyText.Text = this.ArchitectureToSurvey.ArmyQuantityInInformationLevel(this.Level);
                 }

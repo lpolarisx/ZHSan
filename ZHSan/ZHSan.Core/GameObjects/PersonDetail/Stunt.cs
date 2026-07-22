@@ -1,18 +1,17 @@
-﻿using GameGlobal;
+﻿using GameDatas;
+using GameEnums;
+using GameGlobal;
 using GameObjects.Conditions;
 using GameObjects.Influences;
-using GameObjects.TroopDetail;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace GameObjects.PersonDetail;
 
 /// <summary>
 /// 特技
 /// </summary>
-[DataContract]
 public class Stunt : GameObject
 {
     #region DataMember
@@ -20,66 +19,72 @@ public class Stunt : GameObject
     /// <summary>
     /// 消耗战意
     /// </summary>
-    [DataMember]
     public int Combativity { get; set; }
 
     /// <summary>
     /// 延续天数
     /// </summary>
-    [DataMember]
     public int Period { get; set; }
 
     /// <summary>
     /// 动画
     /// </summary>
-    [DataMember]
     public int Animation { get; set; }
 
     /// <summary>
     /// 影响列表
     /// </summary>
-    [DataMember]
     public string InfluencesString { get; set; }
 
     /// <summary>
     /// 使用条件列表
     /// </summary>
-    [DataMember]
     public string CastConditionsString { get; set; }
 
     /// <summary>
     /// 修习条件列表
     /// </summary>
-    [DataMember]
     public string LearnConditionsString { get; set; }
 
     /// <summary>
     /// AI触发条件
     /// </summary>
-    [DataMember]
     public string AIConditionsString { get; set; }
 
     /// <summary>
     /// 生成武将条件
     /// </summary>
-    [DataMember]
     public string GenerateConditionsString { get; set; }
 
     /// <summary>
     /// 不同生成武将类型获得机率
     /// </summary>
-    [DataMember]
     public int[] GenerationChance { get; set; } = new int[10];
     
     /// <summary>
     /// 此技能的相关能力、0-4为武统智政魅
     /// </summary>
-    [DataMember]
     public int RelatedAbility { get; set; }
 
     #endregion
 
-    public InfluenceTable Influences { get; set; } = new();
+    public Stunt(StuntConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        Combativity = config.Combativity;
+        Period = config.Period;
+        Animation = config.Animation;
+        InfluencesString = config.InfluencesString;
+        CastConditionsString = config.CastConditionsString;
+        LearnConditionsString = config.LearnConditionsString;
+        AIConditionsString = config.AIConditionsString;
+        GenerateConditionsString = config.GenerateConditionsString;
+        GenerationChance = config.GenerationChance;
+        RelatedAbility = config.RelatedAbility;
+    }
+
+    public Dictionary<int, Influence> Influences { get; set; } = new();
 
     public List<Condition> CastConditions { get; set; } = new();
 
@@ -113,7 +118,7 @@ public class Stunt : GameObject
                     return (MilitaryType)Enum.Parse(typeof(MilitaryType), influence.Parameter);
                 }
             }
-            return MilitaryType.其他;
+            return MilitaryType.Other;
         }
     }
 

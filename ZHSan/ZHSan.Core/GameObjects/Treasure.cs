@@ -80,7 +80,7 @@ public class Treasure : GameObject
 
     public Architecture HidePlace;
 
-    public InfluenceTable Influences { get; set; } = new();
+    public Dictionary<int, Influence> Influences { get; set; } = new();
 
     public string BelongedPersonString => BelongedPerson?.Name ?? "----";
 

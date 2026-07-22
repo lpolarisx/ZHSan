@@ -16,6 +16,7 @@ using WorldOfTheThreeKingdoms;
 using Platforms;
 using GameManager;
 using Tools;
+using GameEnums;
 
 namespace tupianwenziPlugin
 {
@@ -134,17 +135,11 @@ namespace tupianwenziPlugin
         public void SetGameObjectBranch(object person, object gameObject, Enum kind, string branchName, string tupian, string shengyin)
         {
             GameObject p = (GameObject) person;
-            TextMessageKind k = (TextMessageKind) kind;
+            var textMessageKind = (TextMessageKind) kind;
+            var messages = CommonData.GetPersonMessage(p.ID, textMessageKind);
 
-            List<String> msg = Session.Current.Scenario.GameCommonData.AllTextMessages.GetTextMessage(p.ID, k);
-            if (msg.Count > 0)
-            {
-                SetGameObjectBranch(p, gameObject, msg[GameObject.Random(msg.Count)], tupian, shengyin);
-            }
-            else
-            {
-                SetGameObjectBranch(p, gameObject, branchName, tupian, shengyin);
-            }
+            var msg = messages.Count > 0 ? StaticMethods.GetRandomItem(messages) : branchName;
+            SetGameObjectBranch(p, gameObject, msg, tupian, shengyin);
         }
 
         public void SetGameObjectBranch(object person, object gameObject, string branchName, string tupian, string shengyin ,string TryToShowString="")

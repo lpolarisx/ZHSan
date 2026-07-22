@@ -19,6 +19,7 @@ using System.Runtime.Serialization;
 using GameManager;
 using Platforms;
 using System.Linq;
+using GameEnums;
 
 namespace GameObjects
 {
@@ -39,14 +40,10 @@ namespace GameObjects
 
             currentCombatMethodID = -1;
 
-           // currentStratagemID = -1;
-
-            direction = TroopDirection.正东;
-
             EnterList = new ArchitectureList();
 
-            EventInfluences = new InfluenceList();
-            
+            EventInfluences = new();
+
             moveFrameIndex = 0;
 
             moveStayCount = 0;
@@ -66,9 +63,7 @@ namespace GameObjects
 
             InfluencesApplying = new List<Influence>();
 
-            CombatMethods = new CombatMethodTable();
-
-            Stunts = new StuntTable();
+            Stunts = new();
 
             BaseRateOfQibingDamage = 1;
 
@@ -207,7 +202,7 @@ namespace GameObjects
         public bool CombativityNoChanceAfterAttacked;
         public bool CombatMethodApplied;
 
-        public CombatMethodTable CombatMethods = new CombatMethodTable();
+        public Dictionary<int, CombatMethod> CombatMethods { get; set; } = new();
 
         public string CombatMethodsString { get; set; }
 
@@ -242,7 +237,6 @@ namespace GameObjects
         //private Person CurrentSourceChallengePerson;
         private Person CurrentSourceControversyPerson;
         private Stratagem currentStratagem;
-        private int currentStratagemID = -1;
 
         [DataMember]
         public int CurrentStuntIDString { get; set; }
@@ -286,7 +280,6 @@ namespace GameObjects
         private Point destination;
         [DataMember]
         public bool Destroyed;
-        private TroopDirection direction = TroopDirection.正东;
         private double DistanceToWillArchitecture;
 
         public int DominationDecrementOfCriticalStrike;
@@ -301,7 +294,7 @@ namespace GameObjects
         [DataMember]
         public string EventInfluencesString { get; set; }
 
-        public InfluenceList EventInfluences = new InfluenceList();
+        public List<Influence> EventInfluences = new();
 
         [DataMember]
         public List<Point> FirstTierPath;
@@ -489,7 +482,6 @@ namespace GameObjects
         private TroopStatus status;
         private int statusTileAnimationIndex;
         private int statusTileStayIndex;
-        private bool stepNotFinished = true;
         private int stoppedTroopAnimationIndex;
         private int stoppedTroopStayIndex;
         private bool StratagemApplyed;
@@ -504,7 +496,12 @@ namespace GameObjects
         private int stuntDayLeft;
         public bool StuntMustSurround;
         public bool StuntRecoverFromChaos;
-        public StuntTable Stunts = new StuntTable();
+
+        /// <summary>
+        /// 特技
+        /// </summary>
+        public Dictionary<int, Stunt> Stunts { get; set; } = new();
+
         private int stuntTileAnimationIndex;
         private int stuntTileStayIndex;
         public bool Surrounding;
@@ -1104,7 +1101,7 @@ namespace GameObjects
             {
                 this.BelongedLegion = this.BelongedFaction.GetLegion(this.WillArchitecture == null ? this.StartingArchitecture : this.WillArchitecture);
             }
-            
+
             if (this.ControlAvail() && !this.Destroyed && !this.ManualControl)
             {
                 if (!this.IsRobber && this.BelongedLegion != null)
@@ -1157,13 +1154,13 @@ namespace GameObjects
                             if (stuckedFor >= 8)
                             {
                                 this.RealDestination = new Point(stuckPosition.X + Random(5) - 2, stuckPosition.Y + Random(5) - 2);
-                                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                                 return false;
                             }
                             else
                             {
                                 this.GoBack();
-                                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                                 return false;
                             }
                         }
@@ -1178,7 +1175,7 @@ namespace GameObjects
                 if (this.WillArchitecture.BelongedFaction != this.BelongedFaction && this.Army.Kind.IsTransport)
                 {
                     this.GoBack();
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     return false;
                 }
                 //retreat if target has too much food/fund that further transfer will fill up there, for transport troop
@@ -1187,7 +1184,7 @@ namespace GameObjects
                     this.Army.Kind.IsTransport && !this.StartingArchitecture.HasHostileTroopsInView())
                 {
                     this.GoBack();
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     return false;
                 }
                 //retreat if morale < 45 or has more injured troop than working troops, with 80 + 2 x calmness chance
@@ -1197,11 +1194,11 @@ namespace GameObjects
                     this.GoBack();
                     if (GameObject.GetChance(50))
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattack;
                     }
                     else
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     }
                     return false;
                 }
@@ -1217,11 +1214,11 @@ namespace GameObjects
                         this.GoBack();
                         if (GameObject.GetChance(50))
                         {
-                            this.AttackTargetKind = TroopAttackTargetKind.无反;
+                            this.AttackTargetKind = TroopAttackTargetKind.NoCounterattack;
                         }
                         else
                         {
-                            this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                            this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         }
                         return false;
                     }
@@ -1234,7 +1231,7 @@ namespace GameObjects
                         (this.Morale <= 40 && this.BelongedLegion.Kind == LegionKind.Defensive && this.StartingArchitecture.Endurance > 30)))
                     {
                         this.GoBack();
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.WillTroop = null;
                         this.TargetTroop = null;
                         this.TargetArchitecture = null;
@@ -1246,7 +1243,7 @@ namespace GameObjects
                         (this.BelongedLegion.Kind == LegionKind.Defensive && this.StartingArchitecture.Endurance > 30)))
                 {
                     this.GoBack();
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
 
                     return false;
                 }
@@ -1256,7 +1253,7 @@ namespace GameObjects
                     if (!(this.IsFriendly(this.WillArchitecture.BelongedFaction) || (this.BelongedLegion.Kind != LegionKind.Defensive)))
                     {
                         this.GoBack();
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         return false;
                     }
                 }
@@ -1266,10 +1263,10 @@ namespace GameObjects
                 //3. the target arch does not belong to own faction, and
                 //4. the target arch cannot see this troop
                 //then retreat
-                /*if (!(((!GameObject.Chance(10 + this.Leader.Calmness) || !this.HasHostileTroopInView()) 
+                /*if (!(((!GameObject.Chance(10 + this.Leader.Calmness) || !this.HasHostileTroopInView())
                     || (this.WillArchitecture.BelongedFaction == this.BelongedFaction)) || this.WillArchitecture.ViewTroop(this)))
                 {
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     return false;
                 }*/
                 //if
@@ -1278,7 +1275,7 @@ namespace GameObjects
                 if (!(((this.WillArchitecture.BelongedFaction == this.BelongedFaction) ||
                     !this.IsFriendly(this.WillArchitecture.BelongedFaction)) || this.WillArchitecture.HasHostileTroopsInView()))
                 {
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     this.GoBack();
                     return false;
                 }
@@ -1289,7 +1286,7 @@ namespace GameObjects
                         !this.StartingArchitecture.GetFriendlyTroopsInView().GameObjects.Contains(this) &&
                         (this.WillArchitecture.Endurance >= 30 || this.StartingArchitecture.Endurance <= 30) && !this.IsTransport)
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.GoBack();
                         return false;
                     }
@@ -1299,7 +1296,7 @@ namespace GameObjects
                 {
                     if (p.TooTiredToBattle && GameObject.GetChance(20))
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.GoBack();
                         return false;
                     }
@@ -1333,9 +1330,9 @@ namespace GameObjects
                     if (GameObject.GetChance((int)((hostileToFriendlyRatio - 1) * 10)) &&
                         (GameObject.GetChance((int)((this.Leader.Calmness - this.Leader.Braveness + 10) * 4 * hostileToFriendlyRatio)) &&
                         (GameObject.GetChance((int)(((this.Experience + (this.Army.FollowedLeader != null ? 1000 : this.Army.LeaderExperience)) / 2000 + 10) * hostileToFriendlyRatio))) ||
-                            !this.BelongedFaction.AvailableMilitaryKinds.GetMilitaryKindList().GameObjects.Contains(this.Army.Kind)))
+                            !BelongedFaction.AvailableMilitaryKinds.ContainsKey(Army.Kind.ID)))
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.GoBack();
                         return false;
                     }
@@ -1387,8 +1384,8 @@ namespace GameObjects
             }*/
 
             // legion did not see will arch, do not see an enemy
-            /*if (!this.IsRobber && !this.ViewingWillArchitecture && this.Army.Kind.Type != MilitaryType.水军 && this.Morale > 0x4b && this.BelongedLegion.Kind == LegionKind.Offensive && 
-                this.WillArchitecture.BelongedFaction != this.BelongedFaction && !this.HasHostileTroopInView() && !this.BelongedLegion.HasTroopViewingWillArchitecture && 
+            /*if (!this.IsRobber && !this.ViewingWillArchitecture && this.Army.Kind.Type != MilitaryType.Navy && this.Morale > 0x4b && this.BelongedLegion.Kind == LegionKind.Offensive &&
+                this.WillArchitecture.BelongedFaction != this.BelongedFaction && !this.HasHostileTroopInView() && !this.BelongedLegion.HasTroopViewingWillArchitecture &&
                 this.WillArchitecture.BelongedFaction != null)
             {
                 foreach (Point point in dayArea.Area)
@@ -1406,18 +1403,18 @@ namespace GameObjects
             }*/
             this.OffenceOnlyBeforeMoveFlag = false;
 
-            if (this.BelongedLegion != null && this.BelongedLegion.PreferredRouteway != null && 
-                !this.BelongedLegion.PreferredRouteway.Developing && this.BelongedLegion.PreferredRouteway.LastPoint != null 
+            if (this.BelongedLegion != null && this.BelongedLegion.PreferredRouteway != null &&
+                !this.BelongedLegion.PreferredRouteway.Developing && this.BelongedLegion.PreferredRouteway.LastPoint != null
                 && this.BelongedLegion.PreferredRouteway.LastPoint.Index < this.BelongedLegion.PreferredRouteway.RoutePoints.Count - 1)
             {
                 if (this.CurrentCombatMethod == null)
                 {
-                    this.AttackDefaultKind = TroopAttackDefaultKind.防最弱;
-                    this.AttackTargetKind = TroopAttackTargetKind.目标默认;
+                    this.AttackDefaultKind = TroopAttackDefaultKind.WeakestDefense;
+                    this.AttackTargetKind = TroopAttackTargetKind.TargetDefault;
                 }
                 if (this.CurrentStratagem == null)
                 {
-                    this.CastTargetKind = TroopCastTargetKind.特定默认;
+                    this.CastTargetKind = TroopCastTargetKind.SpecificDefault;
                 }
                 this.RealDestination = this.BelongedLegion.PreferredRouteway.LastPoint.Position;
                 return true;
@@ -1452,11 +1449,11 @@ namespace GameObjects
             Point? nullable = null;
             Point? nullable2 = null;
             Session.Current.Scenario.GetClosestPointsBetweenTwoAreas(dayArea, this.WillArchitecture.ArchitectureArea, out nullable, out nullable2);
-            if ((this.CurrentStunt != null) || (GameObject.Random(this.Stunts.Count + 3) < 3))
+            if ((this.CurrentStunt != null) || (StaticMethods.Random(Stunts.Count + 3) < 3))
             {
                 if (hasTargetTroopFlag && ((credit < 500) || (GameObject.GetChance(this.Combativity) && GameObject.GetChance(90))))
-                { //Label_0712:
-                    foreach (CombatMethod method in this.CombatMethods.CombatMethods.Values.ToArray())//ToArray()添加防止集合已修改;可能无法执行枚举操作
+                {
+                    foreach (var method in CombatMethods.Values)
                     {
                         if (!this.HasCombatMethod(method.ID))
                         {
@@ -1503,7 +1500,7 @@ namespace GameObjects
                 }
                 if ((((this.Morale <= 90) || hasTargetTroopFlag) || ((hasUnAttackableTroop || GameObject.GetChance(10)) || this.HasHostileArchitectureInView())) && ((credit < 500) || (GameObject.GetChance(this.Combativity) && GameObject.GetChance(30))))
                 {
-                    foreach (Stratagem stratagem in this.Stratagems.Stratagems.Values)
+                    foreach (var stratagem in Session.Current.Scenario.GameCommonData.AllStratagems.Values)
                     {
                         if (this.HasStratagem(stratagem.ID))
                         {
@@ -1565,7 +1562,7 @@ namespace GameObjects
                                 {
                                     foreach (Troop troop in hostileTroopList)
                                     {
-                                       
+
                                         moveCreditByPosition = this.GetStratagemCreditByPosition(stratagem, troop);
 
                                         foreach (KeyValuePair<Condition, float> weight in stratagem.AIConditionWeightSelf)
@@ -1618,7 +1615,7 @@ namespace GameObjects
             }
             if (credit < 0)
             {
-                this.AttackTargetKind = TroopAttackTargetKind.攻防皆弱默认;
+                this.AttackTargetKind = TroopAttackTargetKind.AttackAndDefenseWeakDefault;
                 this.TargetTroop = null;
                 this.TargetArchitecture = null;
                 return false;
@@ -1695,7 +1692,7 @@ namespace GameObjects
             }
             if (pack3 == null)
             {
-                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                 this.GoBack();
                 return false;
             }
@@ -1719,29 +1716,29 @@ namespace GameObjects
             {
                 if (this.CurrentCombatMethod == null)
                 {
-                    this.AttackDefaultKind = TroopAttackDefaultKind.防最弱;
-                    this.AttackTargetKind = TroopAttackTargetKind.目标默认;
+                    this.AttackDefaultKind = TroopAttackDefaultKind.WeakestDefense;
+                    this.AttackTargetKind = TroopAttackTargetKind.TargetDefault;
                 }
                 if (this.CurrentStratagem == null)
                 {
-                    this.CastTargetKind = TroopCastTargetKind.特定默认;
+                    this.CastTargetKind = TroopCastTargetKind.SpecificDefault;
                 }
                 this.TargetTroop = pack3.TargetTroop;
                 this.TargetArchitecture = null;
             }
             else if (pack3.TargetArchitecture != null)
             {
-                this.AttackDefaultKind = TroopAttackDefaultKind.耐最低;
-                this.AttackTargetKind = TroopAttackTargetKind.目标默认;
-                this.CastTargetKind = TroopCastTargetKind.智低默认;
+                this.AttackDefaultKind = TroopAttackDefaultKind.LowestEndurance;
+                this.AttackTargetKind = TroopAttackTargetKind.TargetDefault;
+                this.CastTargetKind = TroopCastTargetKind.IntelligenceLowDefault;
                 this.TargetTroop = null;
                 this.TargetArchitecture = pack3.TargetArchitecture;
             }
             else
             {
-                this.AttackDefaultKind = TroopAttackDefaultKind.防最弱;
-                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
-                this.CastTargetKind = TroopCastTargetKind.智低默认;
+                this.AttackDefaultKind = TroopAttackDefaultKind.WeakestDefense;
+                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
+                this.CastTargetKind = TroopCastTargetKind.IntelligenceLowDefault;
                 this.TargetTroop = null;
                 this.TargetArchitecture = null;
             }
@@ -1762,14 +1759,11 @@ namespace GameObjects
 
         public bool AmbushAvail(int id)
         {
-            if (this.Status != TroopStatus.埋伏)
+            if (Status != TroopStatus.埋伏)
             {
-                if (this.ProhibitAllAction || this.ProhibitStratagem)
-                {
-                    return false;
-                }
-                Stratagem stratagem = this.Stratagems.GetStratagem(id);
-                if (stratagem != null)
+                if (ProhibitAllAction || ProhibitStratagem) return false;
+
+                if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
                 {
                     if (stratagem.Combativity <= (this.Combativity + this.DecrementOfStratagemCombativityConsuming))
                     {
@@ -1856,7 +1850,7 @@ namespace GameObjects
         private void SetOngoingBattle(Troop other, int selfDamage)
         {
             OngoingBattle ob;
-            if (this.Leader.Battle != null && other.Leader.Battle != null) 
+            if (this.Leader.Battle != null && other.Leader.Battle != null)
             {
                 ob = this.Leader.Battle;
 
@@ -1865,7 +1859,7 @@ namespace GameObjects
                 {
                     p.Battle = ob;
                 }
-            } 
+            }
             else if (this.Leader.Battle != null)
             {
                 ob = this.Leader.Battle;
@@ -2010,7 +2004,7 @@ namespace GameObjects
 
         public void ApplyEventEffectInfluences()
         {
-            foreach (Influence influence in this.EventInfluences)
+            foreach (var influence in EventInfluences)
             {
                 influence.ApplyInfluence(this, Applier.Event, 0);
             }
@@ -2074,7 +2068,7 @@ namespace GameObjects
         {
             if ((this.CurrentStunt != null) && (this.StuntDayLeft > 0))
             {
-                foreach (Influence influence in this.CurrentStunt.Influences.Influences.Values)
+                foreach (var influence in this.CurrentStunt.Influences.Values)
                 {
                     influence.ApplyInfluence(this.Leader, Applier.Stunt, 0);
                 }
@@ -2717,7 +2711,7 @@ namespace GameObjects
                 if (((destinationArchitecture != null) && (destinationArchitecture.BelongedFaction != this.BelongedFaction)) && this.IsBaseViewingArchitecture(destinationArchitecture))
                 {
                     Point? routewayWaterOrientation;
-                    if ((this.Army.Kind.Type == MilitaryType.水军) && destinationArchitecture.IsBesideWater)
+                    if ((this.Army.Kind.Type == MilitaryType.Navy) && destinationArchitecture.IsBesideWater)
                     {
                         routewayWaterOrientation = this.GetRoutewayWaterOrientation(this.BelongedLegion.PreferredRouteway, destinationArchitecture);
                         if (routewayWaterOrientation.HasValue)
@@ -3025,8 +3019,8 @@ namespace GameObjects
                     {
                         personlist.Add(person);
                     }
-                    else if (!person.ImmunityOfCaptive && 
-                        GameObject.GetChance(this.captureChance * 
+                    else if (!person.ImmunityOfCaptive &&
+                        GameObject.GetChance(this.captureChance *
                         ((int) (!Session.Current.Scenario.IsPlayer(this.BelongedFaction) && Session.Current.Scenario.IsPlayer(troop.BelongedFaction) ? Session.Parameters.AIExtraPerson : 1))))
                     {
                         personlist.Add(person);
@@ -3089,7 +3083,7 @@ namespace GameObjects
                         personlist.Add(person);
                     }
                     else if (!person.ImmunityOfCaptive &&
-                        GameObject.GetChance(this.captureChance * 
+                        GameObject.GetChance(this.captureChance *
                         ((int)(!Session.Current.Scenario.IsPlayer(this.BelongedFaction) && Session.Current.Scenario.IsPlayer(a.BelongedFaction) ? Session.Parameters.AIExtraPerson : 1))))
                     {
                         personlist.Add(person);
@@ -3397,9 +3391,9 @@ namespace GameObjects
                         {
                             for (int si = 0; si < i.Value; ++si)
                             {
-                                if (receiving.Leader.Skills.Skills.Count > 0)
+                                if (receiving.Leader.Skills.Count > 0)
                                 {
-                                    receiving.Leader.Skills.Skills.Remove(GameObject.Random(receiving.Leader.Skills.Skills.Count));
+                                    receiving.Leader.Skills.Remove(GameObject.Random(receiving.Leader.Skills.Count));
                                 }
                             }
                         }
@@ -3531,22 +3525,22 @@ namespace GameObjects
         {
             switch (level)
             {
-                case InformationLevel.未知:
+                case InformationLevel.Unknown:
                     return "----";
 
-                case InformationLevel.无:
+                case InformationLevel.None:
                     return "----";
 
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     return StaticMethods.GetNumberStringByGranularity(this.Combativity, 20);
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     return StaticMethods.GetNumberStringByGranularity(this.Combativity, 10);
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     return StaticMethods.GetNumberStringByGranularity(this.Combativity, 5);
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     return this.Combativity.ToString();
             }
             return "----";
@@ -4326,7 +4320,7 @@ namespace GameObjects
         public void DetectAmbush(Troop troop)
         {
             int chance = ((15 + (this.TroopIntelligence / 10)) + this.Leader.Calmness) - troop.Leader.Calmness;
-            if (this.ScoutLevel <= InformationLevel.中)
+            if (this.ScoutLevel <= InformationLevel.Medium)
             {
                 if (troop.OnlyBeDetectedByHighLevelInformation)
                 {
@@ -4414,10 +4408,10 @@ namespace GameObjects
         {
             if (this.EnterList.Count > 0 )
             {
-              
+
                     Architecture a = this.EnterList[GameObject.Random(this.EnterList.Count)] as Architecture;
                     this.Enter(a);
-                
+
             }
             /*else if (this.WillArchitecture != null && this.WillArchitecture.BelongedFaction == this.BelongedFaction)
             {
@@ -4781,37 +4775,37 @@ namespace GameObjects
             bool flag = true;
             switch (this.AttackDefaultKind)
             {
-                case TroopAttackDefaultKind.防最弱:
+                case TroopAttackDefaultKind.WeakestDefense:
                     minDefenceTroop = attackPossibleTroops.GetMinDefenceTroop(this.TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.防最强:
+                case TroopAttackDefaultKind.StrongestDefense:
                     minDefenceTroop = attackPossibleTroops.GetMaxDefenceTroop(this.TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.攻最弱:
+                case TroopAttackDefaultKind.WeakestAttack:
                     minDefenceTroop = attackPossibleTroops.GetMinOffenceTroop(this.TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.攻最强:
+                case TroopAttackDefaultKind.StrongestAttack:
                     minDefenceTroop = attackPossibleTroops.GetMaxOffenceTroop(this.TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.耐最低:
+                case TroopAttackDefaultKind.LowestEndurance:
                     flag = false;
                     minEnduranceArchitecture = attackPossibleArchitectures.GetMinEnduranceArchitecture(this.TargetArchitecture);
                     break;
 
-                case TroopAttackDefaultKind.耐最高:
+                case TroopAttackDefaultKind.HighestEndurance:
                     flag = false;
                     minEnduranceArchitecture = attackPossibleArchitectures.GetMaxEnduranceArchitecture(this.TargetArchitecture);
                     break;
 
-                case TroopAttackDefaultKind.抗暴最低:
+                case TroopAttackDefaultKind.LowestCritResistance:
                     minDefenceTroop = attackPossibleTroops.GetMinAntiCriticalAttackTroop(this.TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.抗暴最高:
+                case TroopAttackDefaultKind.HighestCritResistance:
                     minDefenceTroop = attackPossibleTroops.GetMaxAntiCriticalAttackTroop(this.TargetTroop);
                     break;
             }
@@ -5047,19 +5041,19 @@ namespace GameObjects
             Troop minIntelligenceTroop = null;
             switch (this.CastDefaultKind)
             {
-                case TroopCastDefaultKind.智最弱:
+                case TroopCastDefaultKind.IntelligenceWeakest:
                     minIntelligenceTroop = castPossibleTroops.GetMinIntelligenceTroop(this.TargetTroop);
                     break;
 
-                case TroopCastDefaultKind.智最强:
+                case TroopCastDefaultKind.IntelligenceStrongest:
                     minIntelligenceTroop = castPossibleTroops.GetMaxIntelligenceTroop(this.TargetTroop);
                     break;
 
-                case TroopCastDefaultKind.士最低:
+                case TroopCastDefaultKind.MoraleLowest:
                     minIntelligenceTroop = castPossibleTroops.GetMinMoraleTroop(this.TargetTroop);
                     break;
 
-                case TroopCastDefaultKind.士最高:
+                case TroopCastDefaultKind.MoraleHighest:
                     minIntelligenceTroop = castPossibleTroops.GetMaxMoraleTroop(this.TargetTroop);
                     break;
             }
@@ -5158,12 +5152,11 @@ namespace GameObjects
 
         public string GetCombatMethodDisplayName(int id)
         {
-            CombatMethod combatMethod = this.CombatMethods.GetCombatMethod(id);
-            if (combatMethod != null)
+            if (CombatMethods.TryGetValue(id, out var combatMethod))
             {
-                int num = combatMethod.Combativity - this.DecrementOfCombatMethodCombativityConsuming;
-                return (combatMethod.Name + "(" + num.ToString() + ")");
+                return $"{combatMethod.Name}({combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming})";
             }
+
             return "----";
         }
 
@@ -5537,7 +5530,7 @@ namespace GameObjects
                 result *= 1 + (4 - ms) * (4 - ms) * 0.1;
             }
 
-            
+
 
             return result;
         }
@@ -5701,7 +5694,7 @@ namespace GameObjects
                 {
                     if (this.OrientationTroop == troop)
                     {
-                        this.WaitForDeepChaos = !troop.NeverBeIntoChaos && 
+                        this.WaitForDeepChaos = !troop.NeverBeIntoChaos &&
                             (GameObject.GetChance(this.ChaosAfterStratagemSuccessChance) || GameObject.GetChance((this.TroopIntelligence - troop.TroopIntelligence) / 2));
                         this.WaitForDeepChaosFrameCount = 100;
                     }
@@ -6133,7 +6126,7 @@ namespace GameObjects
             {
                 if (this != this.BelongedLegion.CoreTroop)
                 {
-                    if ((((this.Army.Kind.Type == MilitaryType.水军) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.水军) && (terrainKindByPosition != TerrainKind.水域))) && ((((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.Position == p)) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.GetChance((20 + this.Leader.Calmness) - this.Leader.Braveness)))
+                    if ((((this.Army.Kind.Type == MilitaryType.Navy) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.Navy) && (terrainKindByPosition != TerrainKind.水域))) && ((((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.Position == p)) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.GetChance((20 + this.Leader.Calmness) - this.Leader.Braveness)))
                     {
                         pack.Credit += 10000;
                         return pack;
@@ -6143,7 +6136,7 @@ namespace GameObjects
                         pack.Credit += 1 + ((int)((this.DistanceToWillArchitecture - distance) * 100.0));
                     }
                 }
-                else if (((this.Position == p) && (((this.Army.Kind.Type == MilitaryType.水军) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.水军) && (terrainKindByPosition != TerrainKind.水域)))) && (((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.GetChance((50 + this.Leader.Calmness) - this.Leader.Braveness)))
+                else if (((this.Position == p) && (((this.Army.Kind.Type == MilitaryType.Navy) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.Navy) && (terrainKindByPosition != TerrainKind.水域)))) && (((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.GetChance((50 + this.Leader.Calmness) - this.Leader.Braveness)))
                 {
                     pack.Credit += 10000;
                     return pack;
@@ -6159,7 +6152,7 @@ namespace GameObjects
                 {
                     return pack;
                 }
-                if ((GameObject.Random(this.RationDaysLeft) == 0) && (((this.Army.Kind.Type == MilitaryType.水军) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.水军) && (terrainKindByPosition != TerrainKind.水域))))
+                if ((GameObject.Random(this.RationDaysLeft) == 0) && (((this.Army.Kind.Type == MilitaryType.Navy) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.Navy) && (terrainKindByPosition != TerrainKind.水域))))
                 {
                     foreach (RoutePoint point in supplyRoutePointsByPositionAndFaction)
                     {
@@ -6289,23 +6282,23 @@ namespace GameObjects
             }
             switch (troop.Army.Kind.Type)
             {
-                case MilitaryType.步兵:
+                case MilitaryType.Infantry:
                     num = (int)(num * this.OffenceRateOnSubdueBubing);
                     break;
 
-                case MilitaryType.弩兵:
+                case MilitaryType.Crossbow:
                     num = (int)(num * this.OffenceRateOnSubdueNubing);
                     break;
 
-                case MilitaryType.骑兵:
+                case MilitaryType.Cavalry:
                     num = (int)((num * this.OffenceRateOnSubdueQibing) * ((this.RateOfQibingDamage > this.BaseRateOfQibingDamage) ? this.RateOfQibingDamage : this.BaseRateOfQibingDamage));
                     break;
 
-                case MilitaryType.水军:
+                case MilitaryType.Navy:
                     num = (int)(num * this.OffenceRateOnSubdueShuijun);
                     break;
 
-                case MilitaryType.器械:
+                case MilitaryType.SiegeEquipment:
                     num = (int)(num * this.OffenceRateOnSubdueQixie);
                     break;
             }
@@ -6415,13 +6408,24 @@ namespace GameObjects
             return this.GetCentrePointInThirdTierPosition(this.GetThirdTierDestination());
         }
 
+        private bool HasInfluenceKind(IEnumerable<Influence> influences, int kindId)
+        {
+            foreach (var influence in influences)
+            {
+                if (influence.KindId == kindId) return true;
+            }
+
+            return false;
+        }
+
         private CreditPack GetSelfStratagemCredit(Stratagem stratagem)
         {
+            var influenceKindId = 398;
             int creditWithPosition = 0;
             Point? position = null;
             if (stratagem.IsValid(this))
             {
-                if (!stratagem.Influences.HasInfluenceKind(398) || Session.Current.Scenario.Troops.Count < GameObject.Random(30) + 20)
+                if (!HasInfluenceKind(stratagem.Influences, influenceKindId) || Session.Current.Scenario.Troops.Count < GameObject.Random(30) + 20)
                 {
                     creditWithPosition = stratagem.GetCreditWithPosition(this, out position);
                 }
@@ -6463,7 +6467,7 @@ namespace GameObjects
             GameArea area = new GameArea();
             foreach (Point point in this.StratagemArea.Area)
             {
-                if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.步兵))
+                if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
                 {
                     area.AddPoint(point);
                 }
@@ -6515,12 +6519,12 @@ namespace GameObjects
 
         public string GetStratagemDisplayName(int id)
         {
-            Stratagem stratagem = this.Stratagems.GetStratagem(id);
-            if (stratagem != null)
+            if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
             {
-                int num = stratagem.Combativity - this.DecrementOfStratagemCombativityConsuming;
-                return (stratagem.Name + "(" + num.ToString() + ")");
+                int num = stratagem.Combativity - DecrementOfStratagemCombativityConsuming;
+                return $"{stratagem.Name}({num})";
             }
+
             return "----";
         }
 
@@ -6577,11 +6581,11 @@ namespace GameObjects
 
         public string GetStuntDisplayName(int id)
         {
-            Stunt stunt = this.Stunts.GetStunt(id);
-            if (stunt != null)
+            if (Stunts.TryGetValue(id, out var stunt))
             {
-                return (stunt.Name + "(" + stunt.Combativity.ToString() + ")");
+                return $"{stunt.Name}({stunt.Combativity})";
             }
+
             return "----";
         }
 
@@ -6711,7 +6715,7 @@ namespace GameObjects
         private int GetTerrainCredit(Point position)
         {
             int waterDecredit = 0;
-            if (this.Army.RealMilitaryKind.Type != MilitaryType.水军 && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域)
+            if (this.Army.RealMilitaryKind.Type != MilitaryType.Navy && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域)
             {
                 waterDecredit = -300;
             }
@@ -6863,30 +6867,33 @@ namespace GameObjects
 
         private PlatformTexture GetTroopTexture()
         {
-            if (this.IsTransport && Session.Current.Scenario.GetTerrainKindByPosition(this.Position) == TerrainKind.水域)
+            // 运兵船种类Id
+            var transportKindId = 28;
+            var scenario = Session.Current.Scenario;
+            var militaryKinds = scenario.GameCommonData.AllMilitaryKinds;
+
+            if (IsTransport && scenario.GetTerrainKindByPosition(Position) == TerrainKind.水域 && militaryKinds.TryGetValue(transportKindId, out var militaryKind))
             {
                 switch (this.Action)
                 {
                     case TroopAction.Stop:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28 ).Textures.MoveTexture;
+                        return militaryKind.Textures.MoveTexture;
 
                     case TroopAction.Move:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.MoveTexture;
+                        return militaryKind.Textures.MoveTexture;
 
                     case TroopAction.Attack:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.AttackTexture;
+                        return militaryKind.Textures.AttackTexture;
 
                     case TroopAction.BeAttacked:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.BeAttackedTexture;
+                        return militaryKind.Textures.BeAttackedTexture;
 
                     case TroopAction.Cast:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.CastTexture;
+                        return militaryKind.Textures.CastTexture;
 
                     case TroopAction.BeCasted:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.BeCastedTexture;
+                        return militaryKind.Textures.BeCastedTexture;
                 }
-
-
             }
             else
             {
@@ -7210,7 +7217,7 @@ namespace GameObjects
                 }
 
 
-                if (damage.OnFire && Session.Current.Scenario.IsFireVaild(damage.DestinationTroop.Position, false, MilitaryType.步兵))
+                if (damage.OnFire && Session.Current.Scenario.IsFireVaild(damage.DestinationTroop.Position, false, MilitaryType.Infantry))
                 {
                     Session.Current.Scenario.SetPositionOnFire(damage.DestinationTroop.Position);
                 }
@@ -7324,14 +7331,15 @@ namespace GameObjects
 
         public bool HasCombatMethod(int id)
         {
-            if (!this.ProhibitAllAction && !this.ProhibitCombatMethod)
+            if (ProhibitAllAction || ProhibitCombatMethod) return false;
+
+            if (CombatMethods.TryGetValue(id, out var combatMethod))
             {
-                CombatMethod combatMethod = this.CombatMethods.GetCombatMethod(id);
-                if (combatMethod != null)
-                {
-                    return (combatMethod.IsCastable(this) && (combatMethod.Combativity <= (this.Combativity + this.DecrementOfCombatMethodCombativityConsuming)));
-                }
+                var result = combatMethod.IsCastable(this) && combatMethod.Combativity <= (Combativity + DecrementOfCombatMethodCombativityConsuming);
+
+                return result;
             }
+
             return false;
         }
 
@@ -7363,42 +7371,31 @@ namespace GameObjects
 
         public bool HasStratagem(int id)
         {
-            if (this.Status != TroopStatus.埋伏)
+            if (Status != TroopStatus.埋伏)
             {
-                if (this.ProhibitAllAction || this.ProhibitStratagem)
+                if (ProhibitAllAction || ProhibitStratagem) return false;
+
+                if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
                 {
-                    return false;
-                }
-                Stratagem stratagem = this.Stratagems.GetStratagem(id);
-                if (stratagem != null)
-                {
-                    if (stratagem.RequireInfluenceToUse)
-                    {
-                        if (!this.AllowedStrategems.Contains(id))
-                        {
-                            return false;
-                        }
-                    }
-                    return (stratagem.Combativity <= (this.Combativity + this.DecrementOfStratagemCombativityConsuming) && stratagem.IsCastable(this));
+                    if (stratagem.RequireInfluenceToUse && !AllowedStrategems.Contains(id)) return false;
+
+                    return stratagem.Combativity <= (Combativity + DecrementOfStratagemCombativityConsuming) && stratagem.IsCastable(this);
                 }
             }
+
             return false;
         }
 
         public bool HasStunt(int id)
         {
-            if ((this.CurrentStunt == null) || (this.StuntDayLeft <= 0))
+            if ((CurrentStunt == null || StuntDayLeft <= 0)
+                && Stunts.TryGetValue(id, out var stunt)
+                && stunt.Combativity <= Combativity
+                && stunt.IsCastable(this))
             {
-                Stunt stunt = this.Stunts.GetStunt(id);
-                if (stunt != null)
-                {
-                    if (!((stunt.Combativity <= this.Combativity) && stunt.IsCastable(this)))
-                    {
-                        return false;
-                    }
-                    return true;
-                }
+                return true;
             }
+
             return false;
         }
 
@@ -7418,37 +7415,37 @@ namespace GameObjects
         {
             switch (this.AttackTargetKind)
             {
-                case TroopAttackTargetKind.遇敌:
+                case TroopAttackTargetKind.EncounterEnemy:
                     return true;
 
-                case TroopAttackTargetKind.无反:
+                case TroopAttackTargetKind.NoCounterattack:
                     return (architecture.BelongedFaction == null);
 
-                case TroopAttackTargetKind.目标:
+                case TroopAttackTargetKind.Target:
                     return (architecture == this.TargetArchitecture);
 
-                case TroopAttackTargetKind.攻弱:
+                case TroopAttackTargetKind.AttackWeak:
                     return true;
 
-                case TroopAttackTargetKind.防弱:
+                case TroopAttackTargetKind.DefenseWeak:
                     return true;
 
-                case TroopAttackTargetKind.攻防皆弱:
+                case TroopAttackTargetKind.AttackAndDefenseWeak:
                     return true;
 
-                case TroopAttackTargetKind.无反默认:
+                case TroopAttackTargetKind.NoCounterattackDefault:
                     return (last || (architecture.BelongedFaction == null));
 
-                case TroopAttackTargetKind.目标默认:
+                case TroopAttackTargetKind.TargetDefault:
                     return (last || (architecture == this.TargetArchitecture));
 
-                case TroopAttackTargetKind.攻弱默认:
+                case TroopAttackTargetKind.AttackWeakDefault:
                     return true;
 
-                case TroopAttackTargetKind.防弱默认:
+                case TroopAttackTargetKind.DefenseWeakDefault:
                     return true;
 
-                case TroopAttackTargetKind.攻防皆弱默认:
+                case TroopAttackTargetKind.AttackAndDefenseWeakDefault:
                     return true;
             }
             return false;
@@ -7458,37 +7455,37 @@ namespace GameObjects
         {
             switch (this.AttackTargetKind)
             {
-                case TroopAttackTargetKind.遇敌:
+                case TroopAttackTargetKind.EncounterEnemy:
                     return true;
 
-                case TroopAttackTargetKind.无反:
+                case TroopAttackTargetKind.NoCounterattack:
                     return !this.CounterAttackAvail(troop);
 
-                case TroopAttackTargetKind.目标:
+                case TroopAttackTargetKind.Target:
                     return (troop == this.TargetTroop);
 
-                case TroopAttackTargetKind.攻弱:
+                case TroopAttackTargetKind.AttackWeak:
                     return (troop.Offence < this.Offence);
 
-                case TroopAttackTargetKind.防弱:
+                case TroopAttackTargetKind.DefenseWeak:
                     return (troop.Defence < this.Defence);
 
-                case TroopAttackTargetKind.攻防皆弱:
+                case TroopAttackTargetKind.AttackAndDefenseWeak:
                     return ((troop.Offence < this.Offence) && (troop.Defence < this.Defence));
 
-                case TroopAttackTargetKind.无反默认:
+                case TroopAttackTargetKind.NoCounterattackDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || !this.CounterAttackAvail(troop));
 
-                case TroopAttackTargetKind.目标默认:
+                case TroopAttackTargetKind.TargetDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || (troop == this.TargetTroop));
 
-                case TroopAttackTargetKind.攻弱默认:
+                case TroopAttackTargetKind.AttackWeakDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || (troop.Offence < this.Offence));
 
-                case TroopAttackTargetKind.防弱默认:
+                case TroopAttackTargetKind.DefenseWeakDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || (troop.Defence < this.Defence));
 
-                case TroopAttackTargetKind.攻防皆弱默认:
+                case TroopAttackTargetKind.AttackAndDefenseWeakDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || ((troop.Offence < this.Offence) && (troop.Defence < this.Defence)));
             }
             return false;
@@ -7498,19 +7495,19 @@ namespace GameObjects
         {
             switch (this.CastTargetKind)
             {
-                case TroopCastTargetKind.可能:
+                case TroopCastTargetKind.Possible:
                     return true;
 
-                case TroopCastTargetKind.特定:
+                case TroopCastTargetKind.Specific:
                     return (troop == this.TargetTroop);
 
-                case TroopCastTargetKind.智低:
+                case TroopCastTargetKind.IntelligenceLow:
                     return (troop.TroopIntelligence < this.TroopIntelligence);
 
-                case TroopCastTargetKind.特定默认:
+                case TroopCastTargetKind.SpecificDefault:
                     return (last || (troop == this.TargetTroop));
 
-                case TroopCastTargetKind.智低默认:
+                case TroopCastTargetKind.IntelligenceLowDefault:
                     return (last || (troop.TroopIntelligence < this.TroopIntelligence));
             }
             return false;
@@ -7604,7 +7601,7 @@ namespace GameObjects
         {
             switch (this.Army.Kind.Type)
             {
-                case MilitaryType.步兵:
+                case MilitaryType.Infantry:
                     foreach (Person person in this.Persons)
                     {
                         if (person == this.Leader)
@@ -7618,7 +7615,7 @@ namespace GameObjects
                     }
                     break;
 
-                case MilitaryType.弩兵:
+                case MilitaryType.Crossbow:
                     foreach (Person person in this.Persons)
                     {
                         if (person == this.Leader)
@@ -7632,7 +7629,7 @@ namespace GameObjects
                     }
                     break;
 
-                case MilitaryType.骑兵:
+                case MilitaryType.Cavalry:
                     foreach (Person person in this.Persons)
                     {
                         if (person == this.Leader)
@@ -7646,7 +7643,7 @@ namespace GameObjects
                     }
                     break;
 
-                case MilitaryType.水军:
+                case MilitaryType.Navy:
                     foreach (Person person in this.Persons)
                     {
                         if (person == this.Leader)
@@ -7660,7 +7657,7 @@ namespace GameObjects
                     }
                     break;
 
-                case MilitaryType.器械:
+                case MilitaryType.SiegeEquipment:
                     foreach (Person person in this.Persons)
                     {
                         if (person == this.Leader)
@@ -7868,28 +7865,26 @@ namespace GameObjects
 
         public void PurifyFactionInfluences()
         {
-            if (this.BelongedFaction != null)
+            if (BelongedFaction == null) return;
+
+            foreach (var technique in BelongedFaction.AvailableTechniques.Values)
             {
-                foreach (Technique t in this.BelongedFaction.AvailableTechniques.Techniques.Values)
+                foreach (var influence in technique.Influences)
                 {
-                    foreach (Influences.Influence i in t.Influences.Influences.Values)
-                    {
-                        i.PurifyInfluence(this, Applier.Technique, t.ID);
-                    }
+                    influence.PurifyInfluence(this, Applier.Technique, technique.ID);
                 }
             }
         }
 
         public void ApplyFactionInfluences()
         {
-            if (this.BelongedFaction != null)
+            if (BelongedFaction == null) return;
+
+            foreach (var technique in BelongedFaction.AvailableTechniques.Values)
             {
-                foreach (Technique t in this.BelongedFaction.AvailableTechniques.Techniques.Values)
+                foreach (var influence in technique.Influences)
                 {
-                    foreach (Influences.Influence i in t.Influences.Influences.Values)
-                    {
-                        i.ApplyInfluence(this, Applier.Technique, t.ID);
-                    }
+                    influence.ApplyInfluence(this, Applier.Technique, technique.ID);
                 }
             }
         }
@@ -7899,7 +7894,7 @@ namespace GameObjects
             if (this.Army != null)
             {
                 this.Army.ApplyFollowedLeader(this);
-                foreach (Influence influence in this.Army.Kind.Influences.Influences.Values)
+                foreach (var influence in this.Army.Kind.Influences)
                 {
                     influence.ApplyInfluence(this, Applier.MilitaryKind, 0);
                 }
@@ -7940,7 +7935,12 @@ namespace GameObjects
             if (this.AutoCombatMethodID != -1)
             {
                 this.CurrentStratagem = null;
-                this.CurrentCombatMethod = Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(this.AutoCombatMethodID);
+
+                if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(AutoCombatMethodID, out var combatMethod))
+                {
+                    CurrentCombatMethod = combatMethod;
+                }
+
                 //this.CurrentCombatMethod.Apply(this);
                 //this.RefreshAllData();
             }
@@ -8180,35 +8180,6 @@ namespace GameObjects
 
         }
 
-        public List<string> LoadCombatMethodFromString(CombatMethodTable combats, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.CombatMethods = new CombatMethodTable();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    CombatMethod combat = null;
-                    combats.CombatMethods.TryGetValue(int.Parse(str), out combat);
-                    if (combat != null)
-                    {
-                        this.CombatMethods.AddCombatMethod(combat);
-                    }
-                    else
-                    {
-                        errorMsg.Add("战法ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("戰法列表應為半型空格分隔的俘虜ID");
-            }
-            return errorMsg;
-        }
-
         public List<string> LoadCaptivesFromString(CaptiveList captives, string dataString)
         {
             List<string> errorMsg = new List<string>();
@@ -8310,22 +8281,22 @@ namespace GameObjects
         {
             switch (level)
             {
-                case InformationLevel.未知:
+                case InformationLevel.Unknown:
                     return "----";
 
-                case InformationLevel.无:
+                case InformationLevel.None:
                     return "----";
 
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     return StaticMethods.GetNumberStringByGranularity(this.Morale, 20);
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     return StaticMethods.GetNumberStringByGranularity(this.Morale, 10);
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     return StaticMethods.GetNumberStringByGranularity(this.Morale, 5);
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     return this.Morale.ToString();
             }
             return "----";
@@ -8340,23 +8311,23 @@ namespace GameObjects
             {
                 flag = this.TryToStepForward();
             }
-            else if (this.Position != this.RealDestination && !(this.TargetArchitecture != null && this.CanAttack(this.TargetArchitecture) 
+            else if (this.Position != this.RealDestination && !(this.TargetArchitecture != null && this.CanAttack(this.TargetArchitecture)
                 && this.TargetArchitecture.ArchitectureArea.HasPoint(this.RealDestination)))
             {
                flag = this.TryToStepForward();
                 // this.Destination = this.RealDestination;
             }
             else
-            { 
+            {
                 if(this.TargetArchitecture != null && this.TargetArchitecture.Endurance <= 0)
-                { 
-                    flag = this.TryToStepForward(); 
+                {
+                    flag = this.TryToStepForward();
                 }
                 else
                 {
                     this.MovabilityLeft = -1;
                     this.chongshemubiaoshujuqingling();
-                }              
+                }
             }
 
             /*if (!flag && this.MovabilityLeft < 0)
@@ -8365,7 +8336,7 @@ namespace GameObjects
             }*/
 
             if (this.mingling == "Enter" &&
-                this.TargetArchitecture != null && this.TargetArchitecture.BelongedFaction == this.BelongedFaction && 
+                this.TargetArchitecture != null && this.TargetArchitecture.BelongedFaction == this.BelongedFaction &&
                 this.TargetArchitecture.GetTroopEnterableArea(this).Area.Contains(this.Position))
             {
                 this.Enter(this.TargetArchitecture);
@@ -8701,7 +8672,7 @@ namespace GameObjects
                     currentArchitecture.ResetFaction(this.BelongedFaction);
                     if (
                             currentArchitecture.huangdisuozai &&
-                           (this.BelongedFaction.IsAlien || this.BelongedFaction.guanjue >= Session.Current.Scenario.GameCommonData.suoyouguanjuezhonglei.Count - 1)
+                           (this.BelongedFaction.IsAlien || this.BelongedFaction.guanjue >= Session.Current.Scenario.GameCommonData.AllOfficialTitleKinds.Count - 1)
                         )  //已称帝的势力或异族占了献帝所在城池
                     {
                         Session.Current.Scenario.BecomeNoEmperor();
@@ -8860,9 +8831,9 @@ namespace GameObjects
             return this.ControlAvail() && this.Army.Kind.MorphTo != null;
         }
 
-        private void preResetArmyKindData() 
+        private void preResetArmyKindData()
         {
-            foreach (Influence i in this.Army.Kind.Influences.Influences.Values)
+            foreach (var i in this.Army.Kind.Influences)
             {
                 i.PurifyInfluence(this, Applier.MilitaryKind, 0);
             }
@@ -8875,7 +8846,7 @@ namespace GameObjects
 
         private void postResetArmyKindData()
         {
-            foreach (Influence i in this.Army.Kind.Influences.Influences.Values)
+            foreach (var i in this.Army.Kind.Influences)
             {
                 i.ApplyInfluence(this, Applier.MilitaryKind, 0);
             }
@@ -8896,7 +8867,7 @@ namespace GameObjects
                 preResetArmyKindData();
                 this.Operated = true;
                 this.Army.Kind = target;
-                postResetArmyKindData();   
+                postResetArmyKindData();
             }
         }
 
@@ -8910,14 +8881,14 @@ namespace GameObjects
                     this.LevyFood();
                 }
             }
-            if (this.ControlAvail() && ((this.Stunts.Count > 0) && (this.CurrentStunt == null)))
+            if (ControlAvail() && Stunts.Count > 0 && (CurrentStunt == null))
             {
-                foreach (Stunt stunt in this.Stunts.GetStuntList().GetRandomList())
+                foreach (var stunt in StaticMethods.GetRandomList(Stunts.Values.ToList()))
                 {
-                    if (this.HasStunt(stunt.ID) && stunt.IsAIable(this))
+                    if (HasStunt(stunt.ID) && stunt.IsAIable(this))
                     {
-                        this.CurrentStunt = stunt;
-                        this.ApplyCurrentStunt();
+                        CurrentStunt = stunt;
+                        ApplyCurrentStunt();
                         break;
                     }
                 }
@@ -9010,22 +8981,22 @@ namespace GameObjects
         {
             switch (level)
             {
-                case InformationLevel.未知:
+                case InformationLevel.Unknown:
                     return "----";
 
-                case InformationLevel.无:
+                case InformationLevel.None:
                     return "----";
 
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     return StaticMethods.GetNumberStringByGranularity(this.Quantity, 0x1388);
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     return StaticMethods.GetNumberStringByGranularity(this.Quantity, 0x3e8);
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     return StaticMethods.GetNumberStringByGranularity(this.Quantity, 100);
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     return this.Quantity.ToString();
             }
             return "----";
@@ -9042,27 +9013,27 @@ namespace GameObjects
             {
                 switch (receivedDamage.SourceTroop.Army.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         damage = (int)(damage * this.DefenceRateOnSubdueBubing);
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         damage = (int)(damage * this.DefenceRateOnSubdueNubing);
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         damage = (int)(damage * this.DefenceRateOnSubdueQibing);
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         damage = (int)(damage * this.DefenceRateOnSubdueShuijun);
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         damage = (int)(damage * this.DefenceRateOnSubdueQixie);
                         break;
 
-                    case MilitaryType.其他:
+                    case MilitaryType.Other:
                         break;
                 }
             }
@@ -9238,23 +9209,23 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfBubing;
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfNubing;
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfQibing;
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfShuijun;
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfQixie;
                             break;
                     }
@@ -9315,23 +9286,23 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfBubing;
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfNubing;
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfQibing;
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfShuijun;
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfQixie;
                             break;
                     }
@@ -9390,7 +9361,7 @@ namespace GameObjects
             {
                 this.defence = (int)(this.defence * (1 + (Math.Log10(Math.Max(1,this.Leader.Reputation) / 100) * IncrementDefenceRate))); //名声加防御改用Log函数
             }
-            
+
             if (this.OutburstDefenceMultiple > 1)
             {
                 this.defence *= this.OutburstDefenceMultiple;
@@ -9401,30 +9372,30 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfBubing));
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfNubing));
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfQibing));
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfShuijun));
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfQixie));
                             break;
                     }
                 }
                 switch (this.Army.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfBubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9432,7 +9403,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfNubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9440,7 +9411,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfQibing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9448,7 +9419,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfShuijun));
                         if (this.StartingArchitecture != null)
                         {
@@ -9456,7 +9427,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfQixie));
                         if (this.StartingArchitecture != null)
                         {
@@ -9491,8 +9462,8 @@ namespace GameObjects
             {
                 this.defence = 1;
             }
-           
-                
+
+
         }
 
         public void RefreshOffence()
@@ -9528,7 +9499,7 @@ namespace GameObjects
             {
                 this.offence = (int)(this.offence * (1 + (Math.Log10(Math.Max (1,this.Leader.Reputation) / 100) * IncrementOffenceRate)));  //名声加攻击改用Log函数
             }
-            
+
             if (this.OutburstOffenceMultiple > 1)
             {
                 this.offence *= this.OutburstOffenceMultiple;
@@ -9539,30 +9510,30 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfBubing));
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfNubing));
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfQibing));
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfShuijun));
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfQixie));
                             break;
                     }
                 }
                 switch (this.Army.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfBubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9570,7 +9541,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfNubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9578,7 +9549,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfQibing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9586,7 +9557,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfShuijun));
                         if (this.StartingArchitecture != null)
                         {
@@ -9594,7 +9565,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfQixie));
                         if (this.StartingArchitecture != null)
                         {
@@ -9630,8 +9601,8 @@ namespace GameObjects
             {
                 this.offence = 1;
             }
-           
-            
+
+
         }
 
         private void RefreshStratagemChanceIncrement()
@@ -9785,7 +9756,7 @@ namespace GameObjects
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
                         captive.CaptivePerson.LocationArchitecture = captive.CaptiveFaction.Capital;
                         captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital);
-                        
+
                     }
                     ExtensionInterface.call("TroopReleaseCaptive", new Object[] { Session.Current.Scenario, this, captive });
                 }
@@ -10214,23 +10185,23 @@ namespace GameObjects
             int num4 = (int)(Math.Pow(damage.SourceOffence / (float)defence, 0.62) * 1.16 * 500 * Session.Parameters.TroopDamageRate);
             switch (troop.Army.Kind.Type)
             {
-                case MilitaryType.步兵:
+                case MilitaryType.Infantry:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueBubing);
                     break;
 
-                case MilitaryType.弩兵:
+                case MilitaryType.Crossbow:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueNubing);
                     break;
 
-                case MilitaryType.骑兵:
+                case MilitaryType.Cavalry:
                     num4 = (int)((num4 * this.OffenceRateOnSubdueQibing) * ((this.RateOfQibingDamage > this.BaseRateOfQibingDamage) ? this.RateOfQibingDamage : this.BaseRateOfQibingDamage));
                     break;
 
-                case MilitaryType.水军:
+                case MilitaryType.Navy:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueShuijun);
                     break;
 
-                case MilitaryType.器械:
+                case MilitaryType.SiegeEquipment:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueQixie);
                     break;
             }
@@ -10449,45 +10420,33 @@ namespace GameObjects
             }
         }
 
-        public void SetCurrentCombatMethod(CombatMethod cm)
+        public void SetCurrentCombatMethod(CombatMethod combatMethod)
         {
-            this.currentCombatMethod = cm;
-            if (cm != null)
+            currentCombatMethod = combatMethod;
+            if (combatMethod != null)
             {
-                this.currentCombatMethodID = cm.ID;
-                if (cm.AttackDefault != null)
-                {
-                    this.AttackDefaultKind = (TroopAttackDefaultKind)cm.AttackDefault.ID;
-                }
-                if (cm.AttackTarget != null)
-                {
-                    this.AttackTargetKind = (TroopAttackTargetKind)cm.AttackTarget.ID;
-                }
+                currentCombatMethodID = combatMethod.ID;
+                AttackDefaultKind = (TroopAttackDefaultKind)combatMethod.AttackDefaultString;
+                attackTargetKind = (TroopAttackTargetKind)combatMethod.AttackTargetString;
             }
             else
             {
-                this.currentCombatMethodID = -1;
+                currentCombatMethodID = -1;
             }
         }
 
-        public void SetCurrentStratagem(Stratagem s)
+        public void SetCurrentStratagem(Stratagem stratagem)
         {
-            this.currentStratagem = s;
-            if (s != null)
+            currentStratagem = stratagem;
+            if (stratagem != null)
             {
-                if (s.CastDefault != null)
-                {
-                    this.CastDefaultKind = (TroopCastDefaultKind)s.CastDefault.ID;
-                }
-                if (s.CastTarget != null)
-                {
-                    this.CastTargetKind = (TroopCastTargetKind)s.CastTarget.ID;
-                }
-                this.currentStratagemID = s.ID;
+                CurrentStratagemID = stratagem.ID;
+                CastDefaultKind = (TroopCastDefaultKind)stratagem.CastDefaultString;
+                CastTargetKind = (TroopCastTargetKind)stratagem.CastTargetString;
             }
             else
             {
-                this.currentStratagemID = -1;
+                CurrentStratagemID = -1;
             }
         }
 
@@ -10550,29 +10509,22 @@ namespace GameObjects
 
         public bool SetFireAvail(int id)
         {
-            if (this.Status != TroopStatus.埋伏)
+            if (Status == TroopStatus.埋伏) return false;
+
+            if (ProhibitAllAction || ProhibitStratagem) return false;
+
+            if (!Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem)) return false;
+
+            if (stratagem.Combativity > Combativity + DecrementOfStratagemCombativityConsuming) return false;
+
+            foreach (var point in StratagemArea.Area)
             {
-                if (this.ProhibitAllAction || this.ProhibitStratagem)
+                if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
                 {
-                    return false;
-                }
-                Stratagem stratagem = this.Stratagems.GetStratagem(id);
-                if (stratagem != null)
-                {
-                    if (stratagem.Combativity <= (this.Combativity + this.DecrementOfStratagemCombativityConsuming))
-                    {
-                        foreach (Point point in this.StratagemArea.Area)
-                        {
-                            if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.步兵))
-                            {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                    return false;
+                    return true;
                 }
             }
+
             return false;
         }
 
@@ -10726,7 +10678,7 @@ namespace GameObjects
         public void SetOnFire(float scale)
         {
             this.ReceiveFireDamage(scale);
-            if (Session.Current.Scenario.IsFireVaild(this.Position, false, MilitaryType.步兵))
+            if (Session.Current.Scenario.IsFireVaild(this.Position, false, MilitaryType.Infantry))
             {
                 Session.Current.Scenario.SetPositionOnFire(this.Position);
             }
@@ -10902,10 +10854,10 @@ namespace GameObjects
                 {
                     if (!damage.Counter)
                     {
-                        bool meiyouyouPersonTextMessage = Session.Current.Scenario.GameCommonData.AllTextMessages.GetTextMessage(this.Leader.ID, TextMessageKind.Critical).Count > 0;
+                        var personMessages = CommonData.GetPersonMessage(Leader.ID, TextMessageKind.Critical);
 
                         //if ((this.CombatMethodApplied && !damage.Surround) && (!damage.Critical || (this.Leader.PersonTextMessage.CriticalStrike.Count == 0)))
-                        if ((this.CombatMethodApplied && !damage.Surround) && (!damage.Critical || meiyouyouPersonTextMessage))
+                        if ((this.CombatMethodApplied && !damage.Surround) && (!damage.Critical || personMessages.Count > 0))
                         {
                             if (this.OnCombatMethodAttack != null)
                             {
@@ -11063,7 +11015,7 @@ namespace GameObjects
         public bool TargetAvail()
         {
             return !SelectedAttack;
-            //return ((((this.AttackTargetKind == TroopAttackTargetKind.目标) || (this.AttackTargetKind == TroopAttackTargetKind.目标默认)) || (this.CastTargetKind == TroopCastTargetKind.特定)) || (this.CastTargetKind == TroopCastTargetKind.特定默认));
+            //return ((((this.AttackTargetKind == TroopAttackTargetKind.Target) || (this.AttackTargetKind == TroopAttackTargetKind.TargetDefault)) || (this.CastTargetKind == TroopCastTargetKind.特定)) || (this.CastTargetKind == TroopCastTargetKind.SpecificDefault));
         }
 
         public bool ToDoCombatAction()
@@ -11210,7 +11162,7 @@ namespace GameObjects
                 }
 
          */
-         
+
 
         public bool TryToStepForward()
         {
@@ -11365,8 +11317,8 @@ namespace GameObjects
                     if (GameObject.GetChance((int) ((double) x / y * 100.0)) )
                     {
                         this.Position = new Point(this.Position.X + 1, this.Position.Y);
-                    } 
-                    else 
+                    }
+                    else
                     {
                         this.Position = new Point(this.Position.X, this.Position.Y + 1);
                     }
@@ -11570,7 +11522,7 @@ namespace GameObjects
                     !this.HasHostileTroopInView() && !this.HasHostileArchitectureInView())
                 {
                     this.Morph();
-                } 
+                }
             }
         }
 
@@ -12108,7 +12060,12 @@ namespace GameObjects
         {
             get
             {
-                return Session.Current.Scenario.GameCommonData.AllTroopAnimations.GetAnimation((int)this.Action);
+                if (Session.Current.Scenario.GameCommonData.AllTroopAnimations.TryGetValue((int)Action, out var animation))
+                {
+                    return animation;
+                }
+
+                return null;
             }
         }
 
@@ -12140,10 +12097,11 @@ namespace GameObjects
         {
             get
             {
-                if ((this.currentCombatMethod == null) && (this.currentCombatMethodID >= 0))
+                if (currentCombatMethod == null && CombatMethods.TryGetValue(currentCombatMethodID, out var combatMethod))
                 {
-                    this.currentCombatMethod = this.CombatMethods.GetCombatMethod(this.currentCombatMethodID);
+                    currentCombatMethod = combatMethod;
                 }
+
                 return this.currentCombatMethod;
             }
             set
@@ -12230,18 +12188,19 @@ namespace GameObjects
         {
             get
             {
-                if ((this.currentStratagem == null) && (this.currentStratagemID >= 0))
+                if (currentStratagem == null && CurrentStratagemID >= 0 && Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(CurrentStratagemID, out var stratagem))
                 {
-                    this.currentStratagem = Session.Current.Scenario.GameCommonData.AllStratagems.GetStratagem(this.currentStratagemID);
+                    currentStratagem = stratagem;
                 }
-                return this.currentStratagem;
+
+                return currentStratagem;
             }
             set
             {
                 this.currentStratagem = value;
                 if (this.currentStratagem != null)
                 {
-                    this.currentStratagemID = value.ID;
+                    CurrentStratagemID = value.ID;
                     if (this.OnSetStratagem != null)
                     {
                         this.OnSetStratagem(this, this.currentStratagem);
@@ -12249,23 +12208,13 @@ namespace GameObjects
                 }
                 else
                 {
-                    this.currentStratagemID = -1;
+                    CurrentStratagemID = -1;
                 }
             }
         }
 
         [DataMember]
-        public int CurrentStratagemID
-        {
-            get
-            {
-                return this.currentStratagemID;
-            }
-            set
-            {
-                this.currentStratagemID = value;
-            }
-        }
+        public int CurrentStratagemID { get; set; } = -1;
 
         public string CurrentStuntString
         {
@@ -12318,7 +12267,7 @@ namespace GameObjects
                 float leaderRate = 1;
                 if (BuffAvail())
                 {
-                    
+
                     mayorRate = (1 + this.Leader.Command * 0.007f * mayorFactor + this.Leader.Calmness * 0.03f * mayorFactor);
                 }
                 if (this.BelongedFaction != null && this.BelongedFaction.Leader != null && this.BelongedFaction.Leader.Status != PersonStatus.Captive)
@@ -12377,17 +12326,7 @@ namespace GameObjects
         }
 
         [DataMember]
-        public TroopDirection Direction
-        {
-            get
-            {
-                return this.direction;
-            }
-            set
-            {
-                this.direction = value;
-            }
-        }
+        public TroopDirection Direction { get; set; } = TroopDirection.正东;
 
         public string DisplayName
         {
@@ -12418,10 +12357,11 @@ namespace GameObjects
         {
             get
             {
-                if (this.Effect == TroopEffect.被包围)
+                if (Effect == TroopEffect.被包围 && Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue(15, out var animation))
                 {
-                    return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(15);
+                    return animation;
                 }
+
                 return null;
             }
         }
@@ -12454,18 +12394,18 @@ namespace GameObjects
         {
             get
             {
-                return Math.Max(1, (this.Offence + this.Defence) * 
-                    (1 
-                        + (this.CurrentArchitecture != null && this.CurrentArchitecture.Endurance > 0 ? 10 : 0) 
-                        + this.TroopIntelligence / 2 + this.Quantity / 500 + this.Combativity / 4 + this.Leader.TitleFightingMerit 
-                        + this.CombatMethods.Count * 5 + this.Stunts.Count * 20 
-                        + this.CriticalStrikeChance + this.AntiCriticalStrikeChance + this.ChaosAfterCriticalStrikeChance 
-                        + this.AvoidSurroundedChance / 2 + this.ChaosAfterSurroundAttackChance 
-                        + this.StratagemChanceIncrement + this.AntiStratagemChanceIncrement + this.ChaosAfterStratagemSuccessChance 
-                        + this.ChanceIncrementOfCriticalStrikeInViewArea * 4 + this.ChanceDecrementOfCriticalStrikeInViewArea * 4 
+                return Math.Max(1, (this.Offence + this.Defence) *
+                    (1
+                        + (this.CurrentArchitecture != null && this.CurrentArchitecture.Endurance > 0 ? 10 : 0)
+                        + this.TroopIntelligence / 2 + this.Quantity / 500 + this.Combativity / 4 + this.Leader.TitleFightingMerit
+                        + this.CombatMethods.Count * 5 + Stunts.Count * 20
+                        + this.CriticalStrikeChance + this.AntiCriticalStrikeChance + this.ChaosAfterCriticalStrikeChance
+                        + this.AvoidSurroundedChance / 2 + this.ChaosAfterSurroundAttackChance
+                        + this.StratagemChanceIncrement + this.AntiStratagemChanceIncrement + this.ChaosAfterStratagemSuccessChance
+                        + this.ChanceIncrementOfCriticalStrikeInViewArea * 4 + this.ChanceDecrementOfCriticalStrikeInViewArea * 4
                         + this.CombativityIncrementPerDayInViewArea * 4 + this.CombativityDecrementPerDayInViewArea * 4
                         + this.ChanceIncrementOfStratagemInViewArea * 4 + this.ChanceDecrementOfStratagemInViewArea * 4
-                        + (int)(this.OffenceRateIncrementInViewArea * 100f) + (int)(this.OffenceRateDecrementInViewArea * 100f) 
+                        + (int)(this.OffenceRateIncrementInViewArea * 100f) + (int)(this.OffenceRateDecrementInViewArea * 100f)
                         + (int)(this.DefenceRateIncrementInViewArea * 100f) + (int)(this.DefenceRateDecrementInViewArea * 100f)
                         + this.chanceTirednessStopIncrease / 10
                         + (int)(this.reduceInjuredOnAttack * 20f)
@@ -12675,9 +12615,9 @@ namespace GameObjects
             {
                 if (this.HighLevelInformationOnInvestigate)
                 {
-                    return InformationLevel.高;
+                    return InformationLevel.High;
                 }
-                return InformationLevel.中;
+                return InformationLevel.Medium;
             }
         }
 
@@ -12697,19 +12637,19 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfBubing);
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfNubing);
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfQibing);
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfShuijun);
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfQixie);
                     }
                 }
@@ -12729,19 +12669,19 @@ namespace GameObjects
                     }
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfBubing);
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfNubing);
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfQibing);
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfShuijun);
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfQixie);
                     }
                 }
@@ -12807,11 +12747,11 @@ namespace GameObjects
         {
             get
             {
-                if(this.Army.Kind.Type==MilitaryType.步兵){return 0;}
-                else if(this.Army.Kind.Type==MilitaryType.弩兵){return 1;}
-                else if(this.Army.Kind.Type==MilitaryType.骑兵){return 2;}
-                else if(this.Army.Kind.Type==MilitaryType.水军){return 3;}
-                else if(this.Army.Kind.Type==MilitaryType.器械){return 4;}
+                if(this.Army.Kind.Type==MilitaryType.Infantry){return 0;}
+                else if(this.Army.Kind.Type==MilitaryType.Crossbow){return 1;}
+                else if(this.Army.Kind.Type==MilitaryType.Cavalry){return 2;}
+                else if(this.Army.Kind.Type==MilitaryType.Navy){return 3;}
+                else if(this.Army.Kind.Type==MilitaryType.SiegeEquipment){return 4;}
                 else{return 5;}
             }
         }
@@ -12989,7 +12929,7 @@ namespace GameObjects
             set
             {
                 this.tiredness = value;
-                
+
             }
         }
 
@@ -13045,7 +12985,7 @@ namespace GameObjects
                     leaderRate = (1 + (this.BelongedFaction.Leader.Strength * 0.007f * mayorFactor + this.BelongedFaction.Leader.Braveness * 0.03f * mayorFactor) * 0.2f);
                 }
                 return (int)(this.offence * this.TirednessFactor * mayorRate * leaderRate);
-               
+
             }
         }
 
@@ -13084,19 +13024,19 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfBubing;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfNubing;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfQibing;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfShuijun;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfQixie;
                     }
                 }
@@ -13120,19 +13060,19 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfBubing + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfNubing + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfQibing + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfShuijun + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfQixie + this.AttackRangeIncreaseByInfluence);
                     }
                 }
@@ -13317,8 +13257,14 @@ namespace GameObjects
                 }
                 if (this.preAction != TroopPreAction.无 && Session.Current.Scenario != null)
                 {
-                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position)))
-                        this.TryToPlaySound(this.Position, this.getSoundPath(Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation((int)this.CurrentTileAnimationKind)), false);
+                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(Position)
+                        && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(Position)))
+                    {
+                        if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
+                        {
+                            TryToPlaySound(Position, getSoundPath(animation), false);
+                        }
+                    }
                 }
             }
         }
@@ -13327,7 +13273,7 @@ namespace GameObjects
         {
             get
             {
-                return Math.Max(1, (((1 + this.Offence) + this.Defence) * (((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleFightingMerit) + (this.CombatMethods.Count * 5)) + (this.Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance)));
+                return Math.Max(1, (((1 + this.Offence) + this.Defence) * (((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleFightingMerit) + (this.CombatMethods.Count * 5)) + (Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance)));
             }
         }
         [DataMember]
@@ -13428,17 +13374,17 @@ namespace GameObjects
             {
                 if (this.BelongedFaction != null)
                 {
-                    if (this.BelongedFaction.LevelOfView < InformationLevel.高)
+                    if (this.BelongedFaction.LevelOfView < InformationLevel.High)
                     {
-                        return InformationLevel.中;
+                        return InformationLevel.Medium;
                     }
                     return this.BelongedFaction.LevelOfView;
                 }
                 if (this.HighLevelInformationOnScout)
                 {
-                    return InformationLevel.高;
+                    return InformationLevel.High;
                 }
-                return InformationLevel.中;
+                return InformationLevel.Medium;
             }
         }
         [DataMember]
@@ -13513,7 +13459,7 @@ namespace GameObjects
         {
             get
             {
-                return (((1 + this.Offence) + this.Defence) * ((((((((((((((((((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.TroopIntelligence / 2)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleMerit)) + (this.CombatMethods.Count * 5)) + (this.Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance) + this.StratagemChanceIncrement) + this.AntiStratagemChanceIncrement) + this.ChaosAfterStratagemSuccessChance) + (this.ChanceIncrementOfCriticalStrikeInViewArea * 4)) + (this.ChanceDecrementOfCriticalStrikeInViewArea * 4)) + (this.CombativityIncrementPerDayInViewArea * 4)) + (this.CombativityDecrementPerDayInViewArea * 4)) + (this.ChanceIncrementOfStratagemInViewArea * 4)) + (this.ChanceDecrementOfStratagemInViewArea * 4)) + ((int)(this.OffenceRateIncrementInViewArea * 100f))) + ((int)(this.OffenceRateDecrementInViewArea * 100f))) + ((int)(this.DefenceRateIncrementInViewArea * 100f))) + ((int)(this.DefenceRateDecrementInViewArea * 100f))
+                return (((1 + this.Offence) + this.Defence) * ((((((((((((((((((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.TroopIntelligence / 2)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleMerit)) + (this.CombatMethods.Count * 5)) + (Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance) + this.StratagemChanceIncrement) + this.AntiStratagemChanceIncrement) + this.ChaosAfterStratagemSuccessChance) + (this.ChanceIncrementOfCriticalStrikeInViewArea * 4)) + (this.ChanceDecrementOfCriticalStrikeInViewArea * 4)) + (this.CombativityIncrementPerDayInViewArea * 4)) + (this.CombativityDecrementPerDayInViewArea * 4)) + (this.ChanceIncrementOfStratagemInViewArea * 4)) + (this.ChanceDecrementOfStratagemInViewArea * 4)) + ((int)(this.OffenceRateIncrementInViewArea * 100f))) + ((int)(this.OffenceRateDecrementInViewArea * 100f))) + ((int)(this.DefenceRateIncrementInViewArea * 100f))) + ((int)(this.DefenceRateDecrementInViewArea * 100f))
                         + this.chanceTirednessStopIncrease / 10
                         + (int)(this.reduceInjuredOnAttack * 20f)
                         + (int)(this.reduceInjuredOnCritical * 10f)
@@ -13578,7 +13524,12 @@ namespace GameObjects
                 if (this.CurrentTileAnimationKind != TileAnimationKind.无 && Session.Current.Scenario != null)
                 {
                     if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position)))
-                        this.TryToPlaySound(this.Position, this.getSoundPath(Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation((int)this.CurrentTileAnimationKind)), false);
+                    {
+                        if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
+                        {
+                            TryToPlaySound(Position, getSoundPath(animation), false);
+                        }
+                    }
                 }
             }
         }
@@ -13587,36 +13538,24 @@ namespace GameObjects
         {
             get
             {
-                switch (this.Status)
+                var dict = new Dictionary<TroopStatus, int>()
                 {
-                    case TroopStatus.混乱:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(7);
+                    { TroopStatus.混乱, 7 },
+                    { TroopStatus.埋伏, 4 },
+                    { TroopStatus.伪报, 27 },
+                    { TroopStatus.挑衅, 28 },
+                };
 
-                    case TroopStatus.埋伏:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(4);
-
-                    case TroopStatus.伪报:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(27);
-
-                    case TroopStatus.挑衅:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(28);
-
+                if (dict.TryGetValue(Status, out var animationId) && Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue(animationId, out var animation))
+                {
+                    return animation;
                 }
+
                 return null;
             }
         }
         [DataMember]
-        public bool StepNotFinished
-        {
-            get
-            {
-                return this.stepNotFinished;
-            }
-            set
-            {
-                this.stepNotFinished = value;
-            }
-        }
+        public bool StepNotFinished { get; set; }
 
         public GameArea StratagemArea
         {
@@ -13650,13 +13589,6 @@ namespace GameObjects
             }
         }
 
-        public StratagemTable Stratagems
-        {
-            get
-            {
-                return Session.Current.Scenario.GameCommonData.AllStratagems;
-            }
-        }
         [DataMember]
         public int StuntDayLeft
         {
@@ -13674,10 +13606,11 @@ namespace GameObjects
         {
             get
             {
-                if (this.CurrentStunt != null)
+                if (CurrentStunt != null && Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue(CurrentStunt.Animation, out var animation))
                 {
-                    return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(this.CurrentStunt.Animation);
+                    return animation;
                 }
+
                 return null;
             }
         }
@@ -13864,7 +13797,12 @@ namespace GameObjects
         {
             get
             {
-                return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation((int)this.CurrentTileAnimationKind);
+                if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
+                {
+                    return animation;
+                }
+
+                return null;
             }
         }
 
@@ -14037,14 +13975,14 @@ namespace GameObjects
             {
                 int num = 1;
                 int num2 = 1;
-                if (this.ChanceIncrementOfCriticalStrikeInViewArea > 0 || this.ChanceDecrementOfCriticalStrikeInViewArea > 0 || 
-                    this.CombativityIncrementPerDayInViewArea > 0 || this.CombativityDecrementPerDayInViewArea > 0 || 
-                    this.ChanceIncrementOfStratagemInViewArea > 0 || this.ChanceDecrementOfStratagemInViewArea > 0 || 
-                    this.OffenceRateIncrementInViewArea > 0f || this.OffenceRateDecrementInViewArea > 0f || 
+                if (this.ChanceIncrementOfCriticalStrikeInViewArea > 0 || this.ChanceDecrementOfCriticalStrikeInViewArea > 0 ||
+                    this.CombativityIncrementPerDayInViewArea > 0 || this.CombativityDecrementPerDayInViewArea > 0 ||
+                    this.ChanceIncrementOfStratagemInViewArea > 0 || this.ChanceDecrementOfStratagemInViewArea > 0 ||
+                    this.OffenceRateIncrementInViewArea > 0f || this.OffenceRateDecrementInViewArea > 0f ||
                     this.DefenceRateIncrementInViewArea > 0f || this.DefenceRateDecrementInViewArea > 0f ||
                     this.MoraleIncreaseInViewArea > 0 || this.MoraleDecreaseInViewArea > 0 ||
                     this.TirednessDecreaseChanceInViewArea > 0 || this.TirednessIncreaseChanceInViewArea > 0 ||
-                    this.InjuryRecoverInViewArea > 0 || this.InjuryLostInViewArea > 0 || 
+                    this.InjuryRecoverInViewArea > 0 || this.InjuryLostInViewArea > 0 ||
                     this.TroopRecoverInViewArea > 0 || this.TroopLostInViewArea > 0 ||
                     this.ChaosInViewArea > 0 || this.ChaosRecoverInViewArea > 0)
                 {
@@ -14366,7 +14304,7 @@ namespace GameObjects
         public float InfluenceKindValue(int id)
         {
             float result = 0;
-            foreach (Influence i in Session.Current.Scenario.GameCommonData.AllInfluences.Influences.Values)
+            foreach (var i in Session.Current.Scenario.GameCommonData.AllInfluences.Values)
             {
                 if (i.Kind.ID == id)
                 {
@@ -14385,6 +14323,26 @@ namespace GameObjects
 
         public bool SelectedMove = false;
         public bool SelectedAttack = false;
+
+        /// <summary>
+        /// 添加特技
+        /// </summary>
+        /// <param name="stunt"></param>
+        /// <returns></returns>
+        public bool AddStunt(Stunt stunt)
+        {
+            return Stunts.TryAdd(stunt.ID, stunt);
+        }
+
+        /// <summary>
+        /// 移除特技
+        /// </summary>
+        /// <param name="stunt"></param>
+        /// <returns></returns>
+        public bool RemoveStunt(Stunt stunt)
+        {
+            return Stunts.Remove(stunt.ID);
+        }
     }
 }
 

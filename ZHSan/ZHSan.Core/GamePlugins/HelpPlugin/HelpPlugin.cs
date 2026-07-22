@@ -101,7 +101,7 @@ namespace HelpPlugin
 
         public void SetScenario()
         {
-            foreach (GameObjects.TroopDetail.CombatMethod m in Session.Current.Scenario.GameCommonData.AllCombatMethods.CombatMethods.Values)
+            foreach (var m in Session.Current.Scenario.GameCommonData.AllCombatMethods.Values)
             {
                 if (!this.help.TextTree.HasItem("TroopCombatMethod_" + m.ID))
                 {
@@ -110,7 +110,7 @@ namespace HelpPlugin
                     branch.AddLeaf(m.Name, this.help.RichText.TitleColor.PackedValue);
                     branch.AddLeaf("\\n", this.help.RichText.DefaultColor.PackedValue);
                     branch.AddLeaf("\\n", this.help.RichText.DefaultColor.PackedValue);
-                    foreach (var influence in m.Influences.Values)
+                    foreach (var influence in m.Influences)
                     {
                         branch.AddLeaf(influence.Description, this.help.RichText.SubTitleColor.PackedValue);
                         branch.AddLeaf("\\n", this.help.RichText.DefaultColor.PackedValue);
@@ -118,7 +118,7 @@ namespace HelpPlugin
                     this.help.TextTree.AddItem("TroopCombatMethod_" + m.ID, branch);
                 }
             }
-            foreach (GameObjects.TroopDetail.Stratagem m in Session.Current.Scenario.GameCommonData.AllStratagems.Stratagems.Values)
+            foreach (var m in Session.Current.Scenario.GameCommonData.AllStratagems.Values)
             {
                 if (!this.help.TextTree.HasItem("TroopStratagem_" + m.ID))
                 {
@@ -127,7 +127,7 @@ namespace HelpPlugin
                     branch.AddLeaf(m.Name, this.help.RichText.TitleColor.PackedValue);
                     branch.AddLeaf("\\n", this.help.RichText.DefaultColor.PackedValue);
                     branch.AddLeaf("\\n", this.help.RichText.DefaultColor.PackedValue);
-                    foreach (GameObjects.Influences.Influence i in m.Influences.Influences.Values)
+                    foreach (var i in m.Influences)
                     {
                         branch.AddLeaf(i.Description, this.help.RichText.SubTitleColor.PackedValue);
                         branch.AddLeaf("\\n", this.help.RichText.DefaultColor.PackedValue);
@@ -135,7 +135,7 @@ namespace HelpPlugin
                     this.help.TextTree.AddItem("TroopStratagem_" + m.ID, branch);
                 }
             }
-            foreach (GameObjects.PersonDetail.Stunt m in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+            foreach (var m in Session.Current.Scenario.GameCommonData.AllStunts.Values)
             {
                 if (!this.help.TextTree.HasItem("TroopStunt_" + m.ID))
                 {

@@ -10,14 +10,16 @@ public class EventEffect330 : EventEffectKind
     public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
         var titleId = eventEffect.GetIntParam();
-        var title = Session.Current.Scenario.GameCommonData.AllTitles.GetTitle(titleId);
 
-        foreach (var t in person.RealTitles)
+        if (Session.Current.Scenario.GameCommonData.AllTitles.TryGetValue(titleId, out var title))
         {
-            if (t.Kind.Equals(title.Kind))
+            foreach (var t in person.RealTitles)
             {
-                title.Influences.PurifyInfluence(person, Applier.Title, titleId);
-                person.RealTitles.Remove(title);
+                if (t.KindId == title.KindId)
+                {
+                    Influence.PurifyInfluenceList(title.Influences.Values, person, Applier.Title, titleId);
+                    person.RealTitles.Remove(title);
+                }
             }
         }
     }

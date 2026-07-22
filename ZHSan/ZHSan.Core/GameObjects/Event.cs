@@ -580,16 +580,22 @@ namespace GameObjects
 
         public bool IsStart()
         {
-            Condition cstart = Session.Current.Scenario.GameCommonData.AllConditions.Get(9998);
-            if (cstart == null) return false;
-            return this.architectureCond.Contains(cstart) || this.factionCond.Contains(cstart);
+            if (Session.Current.Scenario.GameCommonData.AllConditions.TryGetValue(9998, out var condition))
+            {
+                return architectureCond.Contains(condition) || factionCond.Contains(condition);
+            }
+
+            return false;
         }
 
         public bool IsEnd()
         {
-            Condition cend = Session.Current.Scenario.GameCommonData.AllConditions.Get(9999);
-            if (cend == null) return false;
-            return this.architectureCond.Contains(cend) || this.factionCond.Contains(cend);
+            if (Session.Current.Scenario.GameCommonData.AllConditions.TryGetValue(9999, out var condition))
+            {
+                return architectureCond.Contains(condition) || factionCond.Contains(condition);
+            }
+
+            return false;
         }
 
         public void LoadPersonIdFromString(PersonList persons, string data)
@@ -617,51 +623,6 @@ namespace GameObjects
             }
         }
 
-        public string SavePersonIdToString()
-        {
-            string result = "";
-            foreach (KeyValuePair<int, List<Person>> i in this.person)
-            {
-                foreach (Person j in i.Value)
-                {
-                    result += i.Key + " " + (j == null ? - 1 : j.ID) + " ";
-                }
-            }
-            return result;
-        }
-
-        public void LoadPersonCondFromString(ConditionTable allConds, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.personCond = new Dictionary<int, List<Condition>>();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                int n = int.Parse(strArray[i]);
-                int id = int.Parse(strArray[i + 1]);
-                if (!allConds.Conditions.ContainsKey(id)) continue;
-                if (!this.personCond.ContainsKey(n))
-                {
-                    this.personCond[n] = new List<Condition>();
-                }
-                this.personCond[n].Add(allConds.Conditions[id]);
-            }
-        }
-
-        public string SavePersonCondToString()
-        {
-            string result = "";
-            foreach (KeyValuePair<int, List<Condition>> i in this.personCond)
-            {
-                foreach (Condition j in i.Value)
-                {
-                    result += i.Key + " " + j.ID + " ";
-                }
-            }
-            return result;
-        }
-
         public void LoadArchitectureFromString(ArchitectureList archs, string data)
         {
             char[] separator = new char[] { ' ', '\n', '\r', '\t' };
@@ -674,29 +635,6 @@ namespace GameObjects
             }
         }
 
-        public void LoadArchitctureCondFromString(ConditionTable c, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.architectureCond = new List<Condition>();
-            foreach (string i in strArray)
-            {
-                if (!c.Conditions.ContainsKey(int.Parse(i))) continue;
-                this.architectureCond.Add(c.Conditions[int.Parse(i)]);
-            }
-        }
-
-        public string SaveArchitecureCondToString()
-        {
-            string result = "";
-            foreach (Condition i in this.architectureCond)
-            {
-                result += i.ID + " ";
-            }
-            return result;
-        }
-
         public void LoadFactionFromString(FactionList factions, string data)
         {
             char[] separator = new char[] { ' ', '\n', '\r', '\t' };
@@ -707,29 +645,6 @@ namespace GameObjects
             {
                 this.faction.Add(factions.GetGameObject(int.Parse(i)) as Faction);
             }
-        }
-
-        public void LoadFactionCondFromString(ConditionTable c, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.factionCond = new List<Condition>();
-            foreach (string i in strArray)
-            {
-                if (!c.Conditions.ContainsKey(int.Parse(i))) continue;
-                this.factionCond.Add(c.Conditions[int.Parse(i)]);
-            }
-        }
-
-        public string SaveFactionCondToString()
-        {
-            string result = "";
-            foreach (Condition i in this.factionCond)
-            {
-                result += i.ID + " ";
-            }
-            return result;
         }
 
         public void LoadDialogFromString(string data)
@@ -831,194 +746,6 @@ namespace GameObjects
             }
             return result;
         }
-
-        public void LoadEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.effect = new Dictionary<int, List<EventEffect>>();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                int n = int.Parse(strArray[i]);
-                int id = int.Parse(strArray[i + 1]);
-                if (!allEffect.EventEffects.ContainsKey(id)) continue;
-                if (!this.effect.ContainsKey(n))
-                {
-                    this.effect[n] = new List<EventEffect>();
-                }
-                this.effect[n].Add(allEffect.EventEffects[id]);
-            }
-        }
-
-        public string SaveEventEffectToString()
-        {
-            string result = "";
-            foreach (KeyValuePair<int, List<EventEffect>> i in this.effect)
-            {
-                foreach (EventEffect j in i.Value)
-                {
-                    result += i.Key + " " + j.ID + " ";
-                }
-            }
-            return result;
-        }
-
-        public void LoadYesEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.yesEffect = new Dictionary<int, List<EventEffect>>();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                int n = int.Parse(strArray[i]);
-                int id = int.Parse(strArray[i + 1]);
-                if (!allEffect.EventEffects.ContainsKey(id)) continue;
-                if (!this.yesEffect.ContainsKey(n))
-                {
-                    this.yesEffect[n] = new List<EventEffect>();
-                }
-                this.yesEffect[n].Add(allEffect.EventEffects[id]);
-            }
-        }
-
-        public string SaveYesEffectToString()
-        {
-            string result = "";
-            foreach (KeyValuePair<int, List<EventEffect>> i in this.yesEffect)
-            {
-                foreach (EventEffect j in i.Value)
-                {
-                    result += i.Key + " " + j.ID + " ";
-                }
-            }
-            return result;
-        }
-
-        public void LoadNoEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.noEffect = new Dictionary<int, List<EventEffect>>();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                int n = int.Parse(strArray[i]);
-                int id = int.Parse(strArray[i + 1]);
-                if (!allEffect.EventEffects.ContainsKey(id)) continue;
-                if (!this.noEffect.ContainsKey(n))
-                {
-                    this.noEffect[n] = new List<EventEffect>();
-                }
-                this.noEffect[n].Add(allEffect.EventEffects[id]);
-            }
-        }
-
-        public string SaveNoEffectToString()
-        {
-            string result = "";
-            foreach (KeyValuePair<int, List<EventEffect>> i in this.noEffect)
-            {
-                foreach (EventEffect j in i.Value)
-                {
-                    result += i.Key + " " + j.ID + " ";
-                }
-            }
-            return result;
-        }
-
-        public void LoadArchitectureEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.architectureEffect = new List<EventEffect>();
-            foreach (string i in strArray)
-            {
-                if (!allEffect.EventEffects.ContainsKey(int.Parse(i))) continue;
-                this.architectureEffect.Add(allEffect.EventEffects[int.Parse(i)]);
-            }
-        }
-
-        public string SaveArchitectureEffectToString()
-        {
-            string result = "";
-            foreach (EventEffect i in this.architectureEffect)
-            {
-                result += i.ID + " ";
-            }
-            return result;
-        }
-
-        public void LoadYesArchitectureEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.yesArchitectureEffect = new List<EventEffect>();
-            foreach (string i in strArray)
-            {
-                if (!allEffect.EventEffects.ContainsKey(int.Parse(i))) continue;
-                this.yesArchitectureEffect.Add(allEffect.EventEffects[int.Parse(i)]);
-            }
-        }
-
-        public string SaveYesArchitectureEffectToString()
-        {
-            string result = "";
-            foreach (EventEffect i in this.yesArchitectureEffect)
-            {
-                result += i.ID + " ";
-            }
-            return result;
-        }
-
-        public void LoadNoArchitectureEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.noArchitectureEffect = new List<EventEffect>();
-            foreach (string i in strArray)
-            {
-                if (!allEffect.EventEffects.ContainsKey(int.Parse(i))) continue;
-                this.noArchitectureEffect.Add(allEffect.EventEffects[int.Parse(i)]);
-            }
-        }
-
-        public string SaveNoArchitectureEffectToString()
-        {
-            string result = "";
-            foreach (EventEffect i in this.noArchitectureEffect)
-            {
-                result += i.ID + " ";
-            }
-            return result;
-        }
-
-        public void LoadFactionEffectFromString(EventEffectTable allEffect, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.factionEffect = new List<EventEffect>();
-            foreach (string i in strArray)
-            {
-                if (!allEffect.EventEffects.ContainsKey(int.Parse(i))) continue;
-                this.factionEffect.Add(allEffect.EventEffects[int.Parse(i)]);
-            }
-        }
-
-        public string SaveFactionEffectToString()
-        {
-            string result = "";
-            foreach (EventEffect i in this.factionEffect)
-            {
-                result += i.ID + " ";
-            }
-            return result;
-        }
         
        /*
         public bool CheckFactionEvent(Architecture a)
@@ -1031,6 +758,5 @@ namespace GameObjects
         }
         */
         public delegate void ApplyEvent(Event te, Architecture a, Screen screen);
-
     }
 }

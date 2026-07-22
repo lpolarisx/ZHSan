@@ -24,6 +24,7 @@ using Platforms;
 using GameManager;
 using System.Diagnostics;
 using youcelanPlugin;
+using GameEnums;
 
 //using GameObjects.PersonDetail.PersonMessages;
 
@@ -129,8 +130,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         if (faction.FirstSection != null)
                         {
-                            //faction.FirstSection.AIDetail = Session.Current.Scenario.GameCommonData.AllSectionAIDetails.GetSectionAIDetailsByConditions(0, false, false, false, false, false)[0] as SectionAIDetail;
-                            faction.FirstSection.AIDetail = Session.Current.Scenario.GameCommonData.AllSectionAIDetails.GetSectionAIDetailsByConditions(SectionOrientationKind.无, false, false, false, false, false)[0] as SectionAIDetail;
+                            var sectionAIDetails = CommonData.GetSectionAIDetailsByConditions(
+                                SectionOrientationKind.None,
+                                autoRun: false,
+                                valueOffensiveCampaign: false,
+                                allowOffensiveCampaign: false,
+                                allowMilitaryTransfer: false,
+                                valueRecruitment: false);
+
+                            faction.FirstSection.AIDetail = sectionAIDetails.First();
                         }
                     }
                     foreach (Architecture jianzhu in Session.Current.Scenario.Architectures)
@@ -426,174 +434,172 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 GameScenario.ProcessCommonData(scenario.GameCommonData);
 
-                // 所有建筑类型
-                var architectureKinds = scenario.GameCommonData.AllArchitectureKinds;
-                if (architectureKinds == null || architectureKinds.ArchitectureKinds == null || architectureKinds.ArchitectureKinds.Count == 0)
+                if (scenario.GameCommonData.AllArchitectureKinds.Count == 0)
                 {
-                    architectureKinds = CommonData.Current.AllArchitectureKinds;
+                    scenario.GameCommonData.AllArchitectureKinds = CommonData.Current.AllArchitectureKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllAttackDefaultKinds == null || scenario.GameCommonData.AllAttackDefaultKinds.Count == 0)
+                if (scenario.GameCommonData.AllAttackDefaultKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllAttackDefaultKinds = CommonData.Current.AllAttackDefaultKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllAttackTargetKinds == null || scenario.GameCommonData.AllAttackTargetKinds.Count == 0)
+                if (scenario.GameCommonData.AllAttackTargetKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllAttackTargetKinds = CommonData.Current.AllAttackTargetKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllCastDefaultKinds == null || scenario.GameCommonData.AllCastDefaultKinds.Count == 0)
+                if (scenario.GameCommonData.AllCastDefaultKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllCastDefaultKinds = CommonData.Current.AllCastDefaultKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllCastTargetKinds == null || scenario.GameCommonData.AllCastTargetKinds.Count == 0)
+                if (scenario.GameCommonData.AllCastTargetKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllCastTargetKinds = CommonData.Current.AllCastTargetKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllCharacterKinds == null || scenario.GameCommonData.AllCharacterKinds.Count == 0)
+                if (scenario.GameCommonData.AllCharacterKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllCharacterKinds = CommonData.Current.AllCharacterKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllColors == null || scenario.GameCommonData.AllColors.Count == 0)
+                if (scenario.GameCommonData.AllColors.Count == 0)
                 {
                     scenario.GameCommonData.AllColors = CommonData.Current.AllColors;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllCombatMethods == null || scenario.GameCommonData.AllCombatMethods.Count == 0)
+                if (scenario.GameCommonData.AllCombatMethods.Count == 0)
                 {
                     scenario.GameCommonData.AllCombatMethods = CommonData.Current.AllCombatMethods;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllConditionKinds == null || scenario.GameCommonData.AllConditionKinds.Count == 0)
+                if (scenario.GameCommonData.AllConditionKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllConditionKinds = CommonData.Current.AllConditionKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllConditions == null || scenario.GameCommonData.AllConditions.Count == 0)
+                if (scenario.GameCommonData.AllConditions.Count == 0)
                 {
                     scenario.GameCommonData.AllConditions = CommonData.Current.AllConditions;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllFacilityKinds == null || scenario.GameCommonData.AllFacilityKinds.Count == 0)
+                if (scenario.GameCommonData.AllFacilityKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllFacilityKinds = CommonData.Current.AllFacilityKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.suoyouzainanzhonglei == null || scenario.GameCommonData.suoyouzainanzhonglei.Count == 0)
+                if (scenario.GameCommonData.AllDisasterKinds.Count == 0)
                 {
-                    scenario.GameCommonData.suoyouzainanzhonglei = CommonData.Current.suoyouzainanzhonglei;
+                    scenario.GameCommonData.AllDisasterKinds = CommonData.Current.AllDisasterKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.suoyouguanjuezhonglei == null || scenario.GameCommonData.suoyouguanjuezhonglei.Count == 0)
+                if (scenario.GameCommonData.AllOfficialTitleKinds.Count == 0)
                 {
-                    scenario.GameCommonData.suoyouguanjuezhonglei = CommonData.Current.suoyouguanjuezhonglei;
+                    scenario.GameCommonData.AllOfficialTitleKinds = CommonData.Current.AllOfficialTitleKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllIdealTendencyKinds == null || scenario.GameCommonData.AllIdealTendencyKinds.Count == 0)
+                if (scenario.GameCommonData.AllIdealTendencyKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllIdealTendencyKinds = CommonData.Current.AllIdealTendencyKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllInfluenceKinds == null || scenario.GameCommonData.AllInfluenceKinds.Count == 0)
+                if (scenario.GameCommonData.AllInfluenceKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllInfluenceKinds = CommonData.Current.AllInfluenceKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllInfluences == null || scenario.GameCommonData.AllInfluences.Count == 0)
+                if (scenario.GameCommonData.AllInfluences.Count == 0)
                 {
                     scenario.GameCommonData.AllInfluences = CommonData.Current.AllInfluences;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllInformationKinds == null || scenario.GameCommonData.AllInformationKinds.Count == 0)
+                if (scenario.GameCommonData.AllInformationKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllInformationKinds = CommonData.Current.AllInformationKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllMilitaryKinds == null || scenario.GameCommonData.AllMilitaryKinds.MilitaryKinds == null || scenario.GameCommonData.AllMilitaryKinds.MilitaryKinds.Count == 0)
+                if (scenario.GameCommonData.AllMilitaryKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllMilitaryKinds = CommonData.Current.AllMilitaryKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllSectionAIDetails == null || scenario.GameCommonData.AllSectionAIDetails.Count == 0)
+                if (scenario.GameCommonData.AllSectionAIDetails.Count == 0)
                 {
                     scenario.GameCommonData.AllSectionAIDetails = CommonData.Current.AllSectionAIDetails;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllSkills == null || scenario.GameCommonData.AllSkills.Count == 0)
+                if (scenario.GameCommonData.AllSkills.Count == 0)
                 {
                     scenario.GameCommonData.AllSkills = CommonData.Current.AllSkills;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllStratagems == null || scenario.GameCommonData.AllStratagems.Stratagems == null || scenario.GameCommonData.AllStratagems.Stratagems.Count == 0)
+                if (scenario.GameCommonData.AllStratagems.Count == 0)
                 {
                     scenario.GameCommonData.AllStratagems = CommonData.Current.AllStratagems;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllStunts == null || scenario.GameCommonData.AllStunts.Count == 0)
+                if (scenario.GameCommonData.AllStunts.Count == 0)
                 {
                     scenario.GameCommonData.AllStunts = CommonData.Current.AllStunts;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTechniques == null || scenario.GameCommonData.AllTechniques.Count == 0)
+                if (scenario.GameCommonData.AllTechniques.Count == 0)
                 {
                     scenario.GameCommonData.AllTechniques = CommonData.Current.AllTechniques;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTerrainDetails == null || scenario.GameCommonData.AllTerrainDetails.Count == 0)
+                if (scenario.GameCommonData.AllTerrainDetails.Count == 0)
                 {
                     scenario.GameCommonData.AllTerrainDetails = CommonData.Current.AllTerrainDetails;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTextMessages == null || scenario.GameCommonData.AllTextMessages.Count == 0)
+                if (scenario.GameCommonData.AllTextMessages.Count == 0)
                 {
                     scenario.GameCommonData.AllTextMessages = CommonData.Current.AllTextMessages;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTileAnimations == null || scenario.GameCommonData.AllTileAnimations.Animations == null || scenario.GameCommonData.AllTileAnimations.Animations.Count == 0)
+                if (scenario.GameCommonData.AllTileAnimations.Count == 0)
                 {
                     scenario.GameCommonData.AllTileAnimations = CommonData.Current.AllTileAnimations;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTitles == null || scenario.GameCommonData.AllTitles.Count == 0)
+                if (scenario.GameCommonData.AllTitles.Count == 0)
                 {
                     scenario.GameCommonData.AllTitles = CommonData.Current.AllTitles;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTitleKinds == null || scenario.GameCommonData.AllTitleKinds.Count == 0)
+                if (scenario.GameCommonData.AllTitleKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllTitleKinds = CommonData.Current.AllTitleKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTroopAnimations == null || scenario.GameCommonData.AllTroopAnimations == null || scenario.GameCommonData.AllTroopAnimations.Animations.Count == 0)
+                if (scenario.GameCommonData.AllTroopAnimations.Count == 0)
                 {
                     scenario.GameCommonData.AllTroopAnimations = CommonData.Current.AllTroopAnimations;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTroopEventEffectKinds == null || scenario.GameCommonData.AllTroopEventEffectKinds.Count == 0)
+                if (scenario.GameCommonData.AllTroopEventEffectKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllTroopEventEffectKinds = CommonData.Current.AllTroopEventEffectKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTroopEventEffects == null || scenario.GameCommonData.AllTroopEventEffects.Count == 0)
+                if (scenario.GameCommonData.AllTroopEventEffects.Count == 0)
                 {
                     scenario.GameCommonData.AllTroopEventEffects = CommonData.Current.AllTroopEventEffects;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllEventEffectKinds == null || scenario.GameCommonData.AllEventEffectKinds.Count == 0)
+                if (scenario.GameCommonData.AllEventEffectKinds.Count == 0)
                 {
                     scenario.GameCommonData.AllEventEffectKinds = CommonData.Current.AllEventEffectKinds;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllEventEffects == null || scenario.GameCommonData.AllEventEffects.Count == 0)
+                if (scenario.GameCommonData.AllEventEffects.Count == 0)
                 {
                     scenario.GameCommonData.AllEventEffects = CommonData.Current.AllEventEffects;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllBiographyAdjectives == null || scenario.GameCommonData.AllBiographyAdjectives.Count == 0)
+                if (scenario.GameCommonData.AllBiographyAdjectives.Count == 0)
                 {
                     scenario.GameCommonData.AllBiographyAdjectives = CommonData.Current.AllBiographyAdjectives;
                     scenario.UsingOwnCommonData = false;
@@ -603,17 +609,17 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     scenario.GameCommonData.PersonGeneratorSetting = CommonData.Current.PersonGeneratorSetting;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllPersonGeneratorTypes == null)
+                if (scenario.GameCommonData.AllPersonGeneratorTypes.Count == 0)
                 {
                     scenario.GameCommonData.AllPersonGeneratorTypes = CommonData.Current.AllPersonGeneratorTypes;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTrainPolicies == null || scenario.GameCommonData.AllTrainPolicies.Count == 0)
+                if (scenario.GameCommonData.AllTrainPolicies.Count == 0)
                 {
                     scenario.GameCommonData.AllTrainPolicies = CommonData.Current.AllTrainPolicies;
                     scenario.UsingOwnCommonData = false;
                 }
-                if (scenario.GameCommonData.AllTreasureCreationSettings == null || scenario.GameCommonData.AllTreasureCreationSettings.Count == 0)
+                if (scenario.GameCommonData.AllTreasureCreationSettings.Count == 0)
                 {
                     scenario.GameCommonData.AllTreasureCreationSettings = CommonData.Current.AllTreasureCreationSettings;
                     scenario.UsingOwnCommonData = false;

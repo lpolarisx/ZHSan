@@ -8,11 +8,11 @@ class ConditionKind2910 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        Condition c = Session.Current.Scenario.GameCommonData.AllConditions.Get(condition.GetIntParam());
+        var conditionId = condition.GetIntParam();
 
-        if (c != null && arch.Mayor != null)
+        if (Session.Current.Scenario.GameCommonData.AllConditions.TryGetValue(conditionId, out var matchCondition) && arch.Mayor != null)
         {
-            return c.CheckCondition(arch.Mayor);
+            return matchCondition.CheckCondition(arch.Mayor);
         }
 
         return false;

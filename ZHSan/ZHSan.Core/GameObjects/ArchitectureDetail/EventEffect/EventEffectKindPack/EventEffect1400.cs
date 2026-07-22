@@ -8,6 +8,11 @@ public class EventEffect1400 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        arch.Kind = Session.Current.Scenario.GameCommonData.AllArchitectureKinds.Get(eventEffect.GetIntParam());
+        var id = eventEffect.GetIntParam();
+
+        if (Session.Current.Scenario.GameCommonData.AllArchitectureKinds.TryGetValue(id, out var architectureKind))
+        {
+            arch.Kind = architectureKind;
+        }
     }
 }
