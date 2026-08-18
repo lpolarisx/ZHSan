@@ -392,10 +392,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             //thread = null;
         }
 
-        public static GameScenario LoadScenarioData(string scenarioName, bool fromScenario, MainGameScreen mainGameScreen, bool editing = false)
+        public static GameScenario LoadScenarioData(string scenarioName, bool fromScenario)
         {
-            GameScenario scenario = null;
-
             Session.Current.IsWorking = true;
 
             //bool zip = true;
@@ -405,18 +403,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             //    zip = false;
             //}
 
-            if (fromScenario)
-            {
-                scenario = Tools.SimpleSerializer.DeserializeJsonFile<GameScenario>(scenarioName, false, false);
-            }
-            else
-            {
-                scenario = Tools.SimpleSerializer.DeserializeJsonFile<GameScenario>(scenarioName, true, false);
+            var isUserFile = !fromScenario;
+            var scenario = Tools.SimpleSerializer.DeserializeJsonFile<GameScenario>(scenarioName, isUserFile);
 
-                if (scenario == null)
-                {
-                    scenario = Tools.SimpleSerializer.DeserializeJsonFile<GameScenario>(scenarioName, true, true);
-                }
+            if (scenario == null)
+            {
+                scenario = Tools.SimpleSerializer.DeserializeJsonFile<GameScenario>(scenarioName, true, true);
             }
 
             Session.Current.IsWorking = false;
@@ -432,234 +424,243 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
             else
             {
-                GameScenario.ProcessCommonData(scenario.GameCommonData);
+                var commonData = scenario.GameCommonData;
 
-                if (scenario.GameCommonData.AllArchitectureKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllArchitectureKinds = CommonData.Current.AllArchitectureKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllAttackDefaultKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllAttackDefaultKinds = CommonData.Current.AllAttackDefaultKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllAttackTargetKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllAttackTargetKinds = CommonData.Current.AllAttackTargetKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllCastDefaultKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllCastDefaultKinds = CommonData.Current.AllCastDefaultKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllCastTargetKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllCastTargetKinds = CommonData.Current.AllCastTargetKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllCharacterKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllCharacterKinds = CommonData.Current.AllCharacterKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllColors.Count == 0)
-                {
-                    scenario.GameCommonData.AllColors = CommonData.Current.AllColors;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllCombatMethods.Count == 0)
-                {
-                    scenario.GameCommonData.AllCombatMethods = CommonData.Current.AllCombatMethods;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllConditionKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllConditionKinds = CommonData.Current.AllConditionKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllConditions.Count == 0)
-                {
-                    scenario.GameCommonData.AllConditions = CommonData.Current.AllConditions;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllFacilityKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllFacilityKinds = CommonData.Current.AllFacilityKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllDisasterKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllDisasterKinds = CommonData.Current.AllDisasterKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllOfficialTitleKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllOfficialTitleKinds = CommonData.Current.AllOfficialTitleKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllIdealTendencyKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllIdealTendencyKinds = CommonData.Current.AllIdealTendencyKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllInfluenceKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllInfluenceKinds = CommonData.Current.AllInfluenceKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllInfluences.Count == 0)
-                {
-                    scenario.GameCommonData.AllInfluences = CommonData.Current.AllInfluences;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllInformationKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllInformationKinds = CommonData.Current.AllInformationKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllMilitaryKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllMilitaryKinds = CommonData.Current.AllMilitaryKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllSectionAIDetails.Count == 0)
-                {
-                    scenario.GameCommonData.AllSectionAIDetails = CommonData.Current.AllSectionAIDetails;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllSkills.Count == 0)
-                {
-                    scenario.GameCommonData.AllSkills = CommonData.Current.AllSkills;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllStratagems.Count == 0)
-                {
-                    scenario.GameCommonData.AllStratagems = CommonData.Current.AllStratagems;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllStunts.Count == 0)
-                {
-                    scenario.GameCommonData.AllStunts = CommonData.Current.AllStunts;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTechniques.Count == 0)
-                {
-                    scenario.GameCommonData.AllTechniques = CommonData.Current.AllTechniques;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTerrainDetails.Count == 0)
-                {
-                    scenario.GameCommonData.AllTerrainDetails = CommonData.Current.AllTerrainDetails;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTextMessages.Count == 0)
-                {
-                    scenario.GameCommonData.AllTextMessages = CommonData.Current.AllTextMessages;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTileAnimations.Count == 0)
-                {
-                    scenario.GameCommonData.AllTileAnimations = CommonData.Current.AllTileAnimations;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTitles.Count == 0)
-                {
-                    scenario.GameCommonData.AllTitles = CommonData.Current.AllTitles;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTitleKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllTitleKinds = CommonData.Current.AllTitleKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTroopAnimations.Count == 0)
-                {
-                    scenario.GameCommonData.AllTroopAnimations = CommonData.Current.AllTroopAnimations;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTroopEventEffectKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllTroopEventEffectKinds = CommonData.Current.AllTroopEventEffectKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTroopEventEffects.Count == 0)
-                {
-                    scenario.GameCommonData.AllTroopEventEffects = CommonData.Current.AllTroopEventEffects;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllEventEffectKinds.Count == 0)
-                {
-                    scenario.GameCommonData.AllEventEffectKinds = CommonData.Current.AllEventEffectKinds;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllEventEffects.Count == 0)
-                {
-                    scenario.GameCommonData.AllEventEffects = CommonData.Current.AllEventEffects;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllBiographyAdjectives.Count == 0)
-                {
-                    scenario.GameCommonData.AllBiographyAdjectives = CommonData.Current.AllBiographyAdjectives;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.PersonGeneratorSetting == null)
-                {
-                    scenario.GameCommonData.PersonGeneratorSetting = CommonData.Current.PersonGeneratorSetting;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllPersonGeneratorTypes.Count == 0)
-                {
-                    scenario.GameCommonData.AllPersonGeneratorTypes = CommonData.Current.AllPersonGeneratorTypes;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTrainPolicies.Count == 0)
-                {
-                    scenario.GameCommonData.AllTrainPolicies = CommonData.Current.AllTrainPolicies;
-                    scenario.UsingOwnCommonData = false;
-                }
-                if (scenario.GameCommonData.AllTreasureCreationSettings.Count == 0)
-                {
-                    scenario.GameCommonData.AllTreasureCreationSettings = CommonData.Current.AllTreasureCreationSettings;
-                    scenario.UsingOwnCommonData = false;
-                }
+                GameScenario.ProcessCommonData(commonData);
 
+                #region 处理CommonData
+
+                if (commonData.AllArchitectureKinds.Count == 0)
+                {
+                    commonData.AllArchitectureKinds = CommonData.Current.AllArchitectureKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllAttackDefaultKinds.Count == 0)
+                {
+                    commonData.AllAttackDefaultKinds = CommonData.Current.AllAttackDefaultKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllAttackTargetKinds.Count == 0)
+                {
+                    commonData.AllAttackTargetKinds = CommonData.Current.AllAttackTargetKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllCastDefaultKinds.Count == 0)
+                {
+                    commonData.AllCastDefaultKinds = CommonData.Current.AllCastDefaultKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllCastTargetKinds.Count == 0)
+                {
+                    commonData.AllCastTargetKinds = CommonData.Current.AllCastTargetKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllCharacterKinds.Count == 0)
+                {
+                    commonData.AllCharacterKinds = CommonData.Current.AllCharacterKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllColors.Count == 0)
+                {
+                    commonData.AllColors = CommonData.Current.AllColors;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllCombatMethods.Count == 0)
+                {
+                    commonData.AllCombatMethods = CommonData.Current.AllCombatMethods;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllConditionKinds.Count == 0)
+                {
+                    commonData.AllConditionKinds = CommonData.Current.AllConditionKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllConditions.Count == 0)
+                {
+                    commonData.AllConditions = CommonData.Current.AllConditions;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllFacilityKinds.Count == 0)
+                {
+                    commonData.AllFacilityKinds = CommonData.Current.AllFacilityKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.GroupedFacilityKindLevels.Count == 0)
+                {
+                    commonData.GroupedFacilityKindLevels = CommonData.Current.GroupedFacilityKindLevels;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllDisasterKinds.Count == 0)
+                {
+                    commonData.AllDisasterKinds = CommonData.Current.AllDisasterKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllOfficialTitleKinds.Count == 0)
+                {
+                    commonData.AllOfficialTitleKinds = CommonData.Current.AllOfficialTitleKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllIdealTendencyKinds.Count == 0)
+                {
+                    commonData.AllIdealTendencyKinds = CommonData.Current.AllIdealTendencyKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllInfluenceKinds.Count == 0)
+                {
+                    commonData.AllInfluenceKinds = CommonData.Current.AllInfluenceKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllInfluences.Count == 0)
+                {
+                    commonData.AllInfluences = CommonData.Current.AllInfluences;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllInformationKinds.Count == 0)
+                {
+                    commonData.AllInformationKinds = CommonData.Current.AllInformationKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllMilitaryKinds.Count == 0)
+                {
+                    commonData.AllMilitaryKinds = CommonData.Current.AllMilitaryKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllSectionAIDetails.Count == 0)
+                {
+                    commonData.AllSectionAIDetails = CommonData.Current.AllSectionAIDetails;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllSkills.Count == 0)
+                {
+                    commonData.AllSkills = CommonData.Current.AllSkills;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllStratagems.Count == 0)
+                {
+                    commonData.AllStratagems = CommonData.Current.AllStratagems;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllStunts.Count == 0)
+                {
+                    commonData.AllStunts = CommonData.Current.AllStunts;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTechniques.Count == 0)
+                {
+                    commonData.AllTechniques = CommonData.Current.AllTechniques;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTerrainDetails.Count == 0)
+                {
+                    commonData.AllTerrainDetails = CommonData.Current.AllTerrainDetails;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTextMessages.Count == 0)
+                {
+                    commonData.AllTextMessages = CommonData.Current.AllTextMessages;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTileAnimations.Count == 0)
+                {
+                    commonData.AllTileAnimations = CommonData.Current.AllTileAnimations;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTitles.Count == 0)
+                {
+                    commonData.AllTitles = CommonData.Current.AllTitles;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTitleKinds.Count == 0)
+                {
+                    commonData.AllTitleKinds = CommonData.Current.AllTitleKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTroopAnimations.Count == 0)
+                {
+                    commonData.AllTroopAnimations = CommonData.Current.AllTroopAnimations;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTroopEventEffectKinds.Count == 0)
+                {
+                    commonData.AllTroopEventEffectKinds = CommonData.Current.AllTroopEventEffectKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTroopEventEffects.Count == 0)
+                {
+                    commonData.AllTroopEventEffects = CommonData.Current.AllTroopEventEffects;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllEventEffectKinds.Count == 0)
+                {
+                    commonData.AllEventEffectKinds = CommonData.Current.AllEventEffectKinds;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllEventEffects.Count == 0)
+                {
+                    commonData.AllEventEffects = CommonData.Current.AllEventEffects;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllBiographyAdjectives.Count == 0)
+                {
+                    commonData.AllBiographyAdjectives = CommonData.Current.AllBiographyAdjectives;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.PersonGeneratorSetting == null)
+                {
+                    commonData.PersonGeneratorSetting = CommonData.Current.PersonGeneratorSetting;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllPersonGeneratorTypes.Count == 0)
+                {
+                    commonData.AllPersonGeneratorTypes = CommonData.Current.AllPersonGeneratorTypes;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTrainPolicies.Count == 0)
+                {
+                    commonData.AllTrainPolicies = CommonData.Current.AllTrainPolicies;
+                    scenario.UsingOwnCommonData = false;
+                }
+                if (commonData.AllTreasureCreationSettings.Count == 0)
+                {
+                    commonData.AllTreasureCreationSettings = CommonData.Current.AllTreasureCreationSettings;
+                    scenario.UsingOwnCommonData = false;
+                }
+                #endregion
             }
             
             Session.Current.Scenario = scenario;
 
-            scenario.ProcessScenarioData(fromScenario, editing);
+            scenario.ProcessScenarioData(fromScenario);
 
             return scenario;
         }
 
         public void LoadScenario(string filename, List<int> playerFactions, bool fromScenario, MainGameScreen mainGameScreen)
         {
-            List<string> errorMsg = new List<string>();
-
             while (CommonData.CurrentReady == false)
             {
                 Platform.Sleep(100);
             }
 
-            string scenarioName = "";
+            string scenarioName;
 
             if (fromScenario)
             {
-                scenarioName = String.Format(@"Content\Data\Scenario\{0}.json", filename);
+                scenarioName = $@"Content\Data\Scenario\{filename}.json";
             }
             else
             {
-                if (!Platform.Current.UserDirectoryExist("Save"))
+                const string saveDirectory = "Save";
+
+                if (!PlatformBase.Current.UserDirectoryExist(saveDirectory))
                 {
-                    Platform.Current.UserDirectoryCreate("Save");
+                    PlatformBase.Current.UserDirectoryCreate(saveDirectory);
                 }
 
-                scenarioName = String.Format(@"Save\{0}.json", filename);
+                scenarioName = $@"{saveDirectory}\{filename}.json";
             }
 
-            LoadScenarioData(scenarioName, fromScenario, mainGameScreen, false);
+            LoadScenarioData(scenarioName, fromScenario);
 
             var scenario = Session.Current.Scenario;
 
@@ -668,9 +669,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 scenario.PlayerList = playerFactions;
             }
 
-            if (String.IsNullOrEmpty(scenario.CurrentPlayerID) && scenario.PlayerList.Count > 0)
+            if (string.IsNullOrEmpty(scenario.CurrentPlayerID) && scenario.PlayerList.Count > 0)
             {
-                scenario.CurrentPlayerID = scenario.PlayerList[0].ToString();
+                scenario.CurrentPlayerID = scenario.PlayerList.FirstOrDefault().ToString();
             }
 
             if (scenario.PlayerList.Count > 0)
@@ -679,11 +680,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     scenario.PlayerFactions.Add(scenario.Factions.GetGameObject(i));
                 }
-                if (!String.IsNullOrEmpty(scenario.CurrentPlayerID))
+                if (!string.IsNullOrEmpty(scenario.CurrentPlayerID))
                 {
-                    scenario.CurrentPlayer = scenario.Factions.GetGameObject(int.Parse(scenario.CurrentPlayerID)) as Faction;
-                    scenario.CurrentFaction = scenario.CurrentPlayer;
-                    scenario.Factions.RunningFaction = scenario.CurrentPlayer;
+                    var currentPlayer = scenario.Factions.GetGameObject(int.Parse(scenario.CurrentPlayerID)) as Faction;
+                    scenario.CurrentFaction = currentPlayer;
+                    scenario.Factions.RunningFaction = currentPlayer;
                 }
             }
 

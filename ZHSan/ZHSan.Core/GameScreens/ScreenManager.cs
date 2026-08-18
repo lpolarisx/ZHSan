@@ -236,20 +236,23 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        private void FrameFunction_Architecture_AfterGetFacilityToBuild() // 建设设施
+        /// <summary>
+        /// 建设设施
+        /// </summary>
+        private void FrameFunction_Architecture_AfterGetFacilityToBuild()
         {
-            this.CurrentGameObjects = this.CurrentArchitecture.BuildableFacilityKindList.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var facilityLevel = CurrentArchitecture.GetBuildableFacilities().FirstOrDefault(x => x.Selected);
+
+            if (facilityLevel != null)
             {
-                FacilityKind facilityKind = this.CurrentGameObjects[0] as FacilityKind;
-                this.CurrentArchitecture.BeginToBuildAFacility(facilityKind);
+                CurrentArchitecture.BeginToBuildAFacility(facilityLevel);
             }
         }
 
         /// <summary>
-        /// 拆除勾选的设施
+        /// 拆除设施
         /// </summary>
-        private void FrameFunction_Architecture_AfterGetFacilityToDemolish() // 拆除设施
+        private void FrameFunction_Architecture_AfterGetFacilityToDemolish()
         {
             var facilityToRemove = CurrentArchitecture.Facilities.Where(x => x.Selected).ToList();
 
@@ -716,18 +719,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetAutoCampaignMilitaries() //自动出征
         {
-            if (this.CurrentArchitecture != null)
+            if (CurrentArchitecture == null) return;
+            
+            var military = CurrentArchitecture.GetCampaignMilitaryList().FirstOrDefault(x => x.Selected);
+            if (military != null)
             {
-                this.CurrentGameObjects = this.CurrentArchitecture.GetCampaignMilitaryList().GetSelectedList();
-                if (this.CurrentGameObjects != null)
-                {
-                    this.CurrentMilitaries = this.CurrentGameObjects.GetList();
-                    this.CurrentMilitary= this.CurrentMilitaries[0] as Military;
-                    Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.ArchitectureAvailableContactArea));
-                }
+                CurrentMilitary= military;
+                Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.ArchitectureAvailableContactArea));
             }
         }
-
 
         private void FrameFunction_Architecture_AfterGetTransferMilitary() //运输编队
         {

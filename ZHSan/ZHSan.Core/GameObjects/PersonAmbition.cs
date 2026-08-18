@@ -1,7 +1,4 @@
-﻿using System;
-
-
-namespace GameObjects
+﻿namespace GameObjects
 {
 
     public enum PersonAmbition

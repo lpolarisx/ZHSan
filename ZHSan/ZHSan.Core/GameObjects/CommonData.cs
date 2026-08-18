@@ -13,7 +13,6 @@ using Microsoft.Xna.Framework;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -83,7 +82,14 @@ namespace GameObjects
         /// 设施种类
         /// </summary>
         [DataMember]
-        public FacilityKindTable AllFacilityKinds = new FacilityKindTable();
+        public Dictionary<int, FacilityKind> AllFacilityKinds { get; set; } = new();
+
+        /// <summary>
+        /// 设施种类等级
+        /// </summary>
+        public Dictionary<int, List<FacilityKindLevel>> GroupedFacilityKindLevels { get; set; } = new();
+        
+        public Dictionary<int, FacilityKindLevel> AllFacilityKindLevels { get; set; } = new();
 
         /// <summary>
         /// 灾难种类
@@ -228,7 +234,7 @@ namespace GameObjects
         /// </summary>
         public static void Init()
         {
-            logger = Log.ForContext<GameScenario>();
+            logger = Log.ForContext<CommonData>();
 
             try
             {
@@ -311,9 +317,13 @@ namespace GameObjects
                 var colorStore = new JsonStore<Color>(Path.Combine(dirPath, "Colors.json"));
                 Current.AllColors = colorStore.Load();
 
-                // var facilityKindStore = new JsonStore<FacilityKindConfig>(Path.Combine(dirPath, "FacilityKinds.json"));
-                // var facilityKinds = facilityKindStore.Load();
-                // Current.AllFacilityKinds = facilityKinds.Select(x => new FacilityKind(x)).ToDictionary(x => x.ID);
+                var facilityKindStore = new JsonStore<FacilityKindConfig>(Path.Combine(dirPath, "FacilityKinds.json"));
+                var facilityKinds = facilityKindStore.Load();
+                Current.AllFacilityKinds = facilityKinds.Select(x => new FacilityKind(x)).ToDictionary(x => x.ID);
+
+                var facilityKindLevelStore = new JsonStore<FacilityKindLevelConfig>(Path.Combine(dirPath, "FacilityKindLevels.json"));
+                var facilityKindLevels = facilityKindLevelStore.Load();;
+                Current.AllFacilityKindLevels = facilityKindLevels.Select(x => new FacilityKindLevel(x)).ToDictionary(x => x.Id);
 
                 var disasterKindStore = new JsonStore<DisasterKindConfig>(Path.Combine(dirPath, "DisasterKinds.json"));
                 var disasterKinds = disasterKindStore.Load();

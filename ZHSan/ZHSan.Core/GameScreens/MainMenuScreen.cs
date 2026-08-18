@@ -2567,9 +2567,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 Platform.Sleep(100);
                             }
 
-                            var scenarioName = String.Format(@"Content\Data\Scenario\{0}.json", CurrentScenario.Name);
+                            var scenarioName = $@"Content\Data\Scenario\{CurrentScenario.Name}.json";
 
-                            scenario = MainGameScreen.LoadScenarioData(scenarioName, true, null);
+                            scenario = MainGameScreen.LoadScenarioData(scenarioName, true);
 
                             var factions = scenario.Factions;
 

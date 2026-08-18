@@ -18,7 +18,6 @@ namespace GameObjects
         private int combativity;
         private float experience;
         private Person followedLeader;
-        private int followedLeaderID = -1;
         private int injuryQuantity;
         private MilitaryKind kind;
         [DataMember]
@@ -26,10 +25,8 @@ namespace GameObjects
         private Person leader;
         [DataMember]
         private int leaderExperience;
-        private int leaderID = -1;
         private int morale;
         private int quantity;
-        private Person recruitmentPerson;
         public Military ShelledMilitary;
 
         [DataMember]
@@ -37,14 +34,8 @@ namespace GameObjects
 
         public Military ShellingMilitary;
 
-        private int tiredness;
-
-        private int arrivingDays;
         private Architecture startingArchitecture;
         private Architecture targetArchitecture;
-        private int startingArchitectureID = -1;
-        private int targetArchitectureID = -1;
-
         public void Init()
         {
         }
@@ -109,17 +100,7 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int Tiredness
-        {
-            get
-            {
-                return tiredness;
-            }
-            set
-            {
-                tiredness = value;
-            }
-        }
+        public int Tiredness { get; set; }
 
         public int Merit
         {
@@ -129,13 +110,7 @@ namespace GameObjects
             }
         }
 
-        public bool IsTransport
-        {
-            get
-            {
-                return this.Kind.IsTransport;
-            }
-        }
+        public bool IsTransport => Kind.IsTransport;
 
         public void ApplyFollowedLeader(Troop troop)
         {
@@ -174,32 +149,28 @@ namespace GameObjects
             return military;
         }
 
-        public int DecreaseCombativity(int decrement)
+        public int DecreaseCombativity(int value)
         {
-            if (this.Combativity < decrement)
-            {
-                decrement = this.Combativity;
-            }
-            this.Combativity -= decrement;
+            var decrement = Math.Min(Combativity, value);
+
+            Combativity -= decrement;
+
             return decrement;
         }
 
         public void DecreaseInjuryQuantity(int decrement)
         {
-            this.InjuryQuantity -= decrement;
-            if (this.InjuryQuantity < 0)
-            {
-                this.InjuryQuantity = 0;
-            }
+            InjuryQuantity -= decrement;
+
+            InjuryQuantity = Math.Max(InjuryQuantity, 0);
         }
 
-        public int DecreaseMorale(int decrement)
+        public int DecreaseMorale(int value)
         {
-            if (this.Morale < decrement)
-            {
-                decrement = this.Morale;
-            }
-            this.Morale -= decrement;
+            var decrement = Math.Min(Morale, value);
+          
+            Morale -= decrement;
+
             return decrement;
         }
 
@@ -254,13 +225,12 @@ namespace GameObjects
             return 0xdac;
         }
 
-        public int IncreaseCombativity(int increment)
+        public int IncreaseCombativity(int value)
         {
-            if ((this.Combativity + increment) > this.CombativityCeiling)
-            {
-                increment = this.CombativityCeiling - this.Combativity;
-            }
-            this.Combativity += increment;
+            var increment = Math.Min(CombativityCeiling - Combativity, value);
+
+            Combativity += increment;
+
             return increment;
         }
 
@@ -288,7 +258,7 @@ namespace GameObjects
         {
             if (increment > 0)
             {
-                this.InjuryQuantity += increment;
+                InjuryQuantity += increment;
             }
         }
 
@@ -307,13 +277,12 @@ namespace GameObjects
             return false;
         }
 
-        public int IncreaseMorale(int increment)
+        public int IncreaseMorale(int value)
         {
-            if ((this.Morale + increment) > this.MoraleCeiling)
-            {
-                increment = this.MoraleCeiling - this.Morale;
-            }
-            this.Morale += increment;
+            var increment = Math.Min(MoraleCeiling - Morale, value);
+
+            Morale += increment;
+
             return increment;
         }
 
@@ -342,7 +311,7 @@ namespace GameObjects
 
         public bool IsFollowedLeader(Person person)
         {
-            return (person.ID == this.FollowedLeaderID);
+            return person.ID == FollowedLeaderID;
         }
 
         public void ModifyAreaByTerrainAdaptablity(GameArea area)
@@ -442,12 +411,12 @@ namespace GameObjects
                 if (this.ShelledMilitary == null)
                 {
                     this.leader = person;
-                    this.leaderID = person.ID;
+                    LeaderID = person.ID;
                 }
                 else
                 {
                     this.ShelledMilitary.leader = person;
-                    this.ShelledMilitary.leaderID = person.ID;
+                    this.ShelledMilitary.LeaderID = person.ID;
                 }
             }
         }
@@ -465,31 +434,22 @@ namespace GameObjects
             }
         }
 
-        public override string ToString()
-        {
-            return string.Concat(new object[] { base.Name, " ", this.Kind.Name, " ", this.Quantity });
-        }
+        public override string ToString() => $"{Name} {Kind.Name} {Quantity}";
+       
 
         [DataMember]
         public int Combativity
         {
-            get
-            {
-                if (this.ShelledMilitary == null)
-                {
-                    return this.combativity;
-                }
-                return this.ShelledMilitary.Combativity;
-            }
+            get => ShelledMilitary?.Combativity ?? combativity;
             set
             {
-                if (this.ShelledMilitary == null)
+                if (ShelledMilitary == null)
                 {
-                    this.combativity = value;
+                    combativity = value;
                 }
                 else
                 {
-                    this.ShelledMilitary.Combativity = value;
+                    ShelledMilitary.Combativity = value;
                 }
             }
         }
@@ -524,41 +484,21 @@ namespace GameObjects
         [DataMember]
         public int Experience
         {
-            get
-            {
-                if (this.ShelledMilitary == null)
-                {
-                    return (int) this.experience;
-                }
-                return this.ShelledMilitary.Experience;
-            }
+            get => ShelledMilitary?.Experience ?? (int)experience;
             set
             {
-                if (this.ShelledMilitary == null)
+                if (ShelledMilitary == null)
                 {
-                    this.experience = value;
+                    experience = value;
                 }
                 else
                 {
-                    this.ShelledMilitary.Experience = value;
+                    ShelledMilitary.Experience = value;
                 }
             }
         }
 
-        public String ExperienceWithLimit
-        {
-            get
-            {
-                if (this.CanLevelUp)
-                {
-                    return this.Experience + "/" + this.Kind.LevelUpExperience;
-                }
-                else
-                {
-                    return this.Experience.ToString();
-                }
-            }
-        }
+        public string ExperienceWithLimit => CanLevelUp ? $"{Experience}/{Kind.LevelUpExperience}" : Experience.ToString();
 
         public Person FollowedLeader
         {
@@ -568,7 +508,7 @@ namespace GameObjects
                 {
                     if (this.followedLeader == null)
                     {
-                        this.followedLeader = Session.Current.Scenario.Persons.GetGameObject(this.followedLeaderID) as Person;
+                        this.followedLeader = Session.Current.Scenario.Persons.GetGameObject(FollowedLeaderID) as Person;
                     }
                     return this.followedLeader;
                 }
@@ -579,14 +519,7 @@ namespace GameObjects
                 if (this.ShelledMilitary == null)
                 {
                     this.followedLeader = value;
-                    if (this.followedLeader != null)
-                    {
-                        this.followedLeaderID = this.followedLeader.ID;
-                    }
-                    else
-                    {
-                        this.followedLeaderID = -1;
-                    }
+                    FollowedLeaderID = followedLeader?.ID ?? -1;
                 }
                 else
                 {
@@ -594,58 +527,20 @@ namespace GameObjects
                 }
             }
         }
+
+        /// <summary>
+        /// 追随将领ID
+        /// </summary>
         [DataMember]
-        public int FollowedLeaderID
-        {
-            get
-            {
-                return this.followedLeaderID;
-            }
-            set
-            {
-                this.followedLeaderID = value;
-            }
-        }
+        public int FollowedLeaderID { get; set; } = -1;
 
-        public string FollowedLeaderName
-        {
-            get
-            {
-                if (this.FollowedLeader == null)
-                {
-                    return "----";
-                }
-                return this.FollowedLeader.Name;
-            }
-        }
+        public string FollowedLeaderName => FollowedLeader?.Name ?? "----";
 
-        public int FoodCostPerDay
-        {
-            get
-            {
-                return (this.Kind.FoodPerSoldier * this.TotalQuantity);
-            }
-        }
+        public int FoodCostPerDay => Kind.FoodPerSoldier * TotalQuantity;
 
-        public int FoodMax
-        {
-            get
-            {
-                return (this.FoodCostPerDay * this.RationDays);
-            }
-        }
+        public int FoodMax => FoodCostPerDay * RationDays;
 
-        public int InjuryChance
-        {
-            get
-            {
-                if (this.ShelledMilitary == null)
-                {
-                    return this.Kind.InjuryChance;
-                }
-                return this.ShelledMilitary.InjuryChance;
-            }
-        }
+        public int InjuryChance => ShelledMilitary?.InjuryChance ?? Kind.InjuryChance;
 
         [DataMember]
         public int InjuryQuantity
@@ -660,18 +555,16 @@ namespace GameObjects
             }
             set
             {
-                if (this.ShelledMilitary == null)
+                if (ShelledMilitary == null)
                 {
-                    this.injuryQuantity = value;
+                    injuryQuantity = value;
                 }
                 else
                 {
-                    this.ShelledMilitary.InjuryQuantity = value;
+                    ShelledMilitary.InjuryQuantity = value;
                 }
-                if (this.injuryQuantity < 0)
-                {
-                    this.injuryQuantity = 0;
-                }
+               
+                injuryQuantity = Math.Max(injuryQuantity, 0);
             }
         }
 
@@ -719,21 +612,9 @@ namespace GameObjects
             }
         }
 
-        public int RealKindID  
-        {
-            get
-            {
-                return this.kindID;
-            }
-        }
+        public int RealKindID => kindID;
 
-        public MilitaryKind RealMilitaryKind
-        {
-            get
-            {
-                return this.kind;
-            }
-        }
+        public MilitaryKind RealMilitaryKind => kind;
 
         public string RealKind
         {
@@ -742,23 +623,20 @@ namespace GameObjects
                 if (this.ShelledMilitary == null)  //没包裹军队
                 {
                     return this.kind.Name;
-
-
                 }
                 else   //包裹军队，部队改为进入水中自动切换运兵船之后已经没有这种情况，保留代码是为了和以前的存档兼容。
                 {
                     return this.ShelledMilitary.kind.Name;
                 }
-
-
-
             }
         }
 
         public bool bushiShuijunBingqieChuyuShuiyu(Point position)
         {
-            if (Session.GlobalVariables.LandArmyCanGoDownWater && kind != null && kind.Type != MilitaryType.Navy &&
-                Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域)
+            if (Session.GlobalVariables.LandArmyCanGoDownWater 
+                && kind != null 
+                && kind.Type != MilitaryType.Navy 
+                && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域)
             {
                 return true;
             }
@@ -773,21 +651,9 @@ namespace GameObjects
             return bushiShuijunBingqieChuyuShuiyu(this.Position);
         }
 
-        public string KindString
-        {
-            get
-            {
-                return this.Kind.Name;
-            }
-        }
+        public string KindString => Kind.Name;
 
-        public int LeaderFightingForce
-        {
-            get
-            {
-                return this.Leader == null ? 0 : this.Leader.FightingForce;
-            }
-        }
+        public int LeaderFightingForce => leader?.FightingForce ?? 0;
 
         public Person Leader
         {
@@ -797,7 +663,7 @@ namespace GameObjects
                 {
                     if (this.leader == null)
                     {
-                        this.leader = Session.Current.Scenario.Persons.GetGameObject(this.leaderID) as Person;
+                        this.leader = Session.Current.Scenario.Persons.GetGameObject(LeaderID) as Person;
                     }
                     return this.leader;
                 }
@@ -810,15 +676,15 @@ namespace GameObjects
                     this.leader = value;
                     if (this.leader != null)
                     {
-                        if (this.leaderID != this.leader.ID)
+                        if (LeaderID != this.leader.ID)
                         {
                             this.LeaderExperience = 0;
-                            this.leaderID = this.leader.ID;
+                            LeaderID = this.leader.ID;
                         }
                     }
                     else
                     {
-                        this.leaderID = -1;
+                        LeaderID = -1;
                     }
                 }
                 else
@@ -830,23 +696,16 @@ namespace GameObjects
 
         public int LeaderExperience
         {
-            get
-            {
-                if (this.ShelledMilitary == null)
-                {
-                    return this.leaderExperience;
-                }
-                return this.ShelledMilitary.LeaderExperience;
-            }
+            get => ShelledMilitary?.LeaderExperience ?? leaderExperience;
             set
             {
-                if (this.ShelledMilitary == null)
+                if (ShelledMilitary == null)
                 {
-                    this.leaderExperience = value;
+                    leaderExperience = value;
                 }
                 else
                 {
-                    this.ShelledMilitary.LeaderExperience = value;
+                    ShelledMilitary.LeaderExperience = value;
                 }
             }
         }
@@ -854,18 +713,11 @@ namespace GameObjects
         [DataMember]
         public int RecruitmentPersonID { get; set; }
 
+        /// <summary>
+        /// 队长ID
+        /// </summary>
         [DataMember]
-        public int LeaderID
-        {
-            get
-            {
-                return this.leaderID;
-            }
-            set
-            {
-                this.leaderID = value;
-            }
-        }
+        public int LeaderID { get; set; } = -1;
 
         public string LeaderName
         {
@@ -907,66 +759,38 @@ namespace GameObjects
             }
         }
 
-        public int MaxRecruitmentWeighing
-        {
-            get
-            {
-                return (this.Kind.MaxScale * (this.Kind.PointsPerSoldier + 1));
-            }
-        }
+        public int MaxRecruitmentWeighing => Kind.MaxScale * (Kind.PointsPerSoldier + 1);
 
-        public int MaxTrainingWeighing
-        {
-            get
-            {
-                return ((this.Kind.MaxScale * this.MoraleCeiling) * this.CombativityCeiling);
-            }
-        }
+        public int MaxTrainingWeighing => Kind.MaxScale * MoraleCeiling * CombativityCeiling;
 
-
+        /// <summary>
+        /// 士气
+        /// </summary>
         [DataMember]
         public int Morale
         {
             get
             {
-                if (this.morale > this.MoraleCeiling)
-                {
-                    this.morale = this.MoraleCeiling;
-                }
-                if (this.ShelledMilitary == null)
-                {
-                    return this.morale;
-                }
-                return this.ShelledMilitary.Morale;
+                morale = Math.Min(morale, MoraleCeiling);
+
+                return ShelledMilitary?.Morale ?? morale;
             }
             set
             {
-                if (this.ShelledMilitary == null)
+                if (ShelledMilitary == null)
                 {
-                    this.morale = value;
+                    morale = value;
                 }
                 else
                 {
-                    this.ShelledMilitary.Morale = value;
+                    ShelledMilitary.Morale = value;
                 }
             }
         }
 
-        public int EncourageMoraleCeiling
-        {
-            get
-            {
-                return 100;
-            }
-        }
+        public int EncourageMoraleCeiling => 100;
 
-        public int MoraleCeiling
-        {
-            get
-            {
-                return this.BelongedTroop != null && this.BelongedArchitecture == null ? 120 : 100;
-            }
-        }
+        public int MoraleCeiling => BelongedTroop != null && BelongedArchitecture == null ? 120 : 100;
 
         public int Offence
         {
@@ -995,59 +819,32 @@ namespace GameObjects
                 return Point.Zero;
             }
         }
+
+        /// <summary>
+        /// 人数
+        /// </summary>
         [DataMember]
         public int Quantity
         {
-            get
-            {
-                if (this.ShelledMilitary == null)
-                {
-                    return this.quantity;
-                }
-                return this.ShelledMilitary.Quantity;
-            }
+            get => ShelledMilitary?.Quantity ?? quantity;
             set
             {
-                if (this.ShelledMilitary == null)
+                if (ShelledMilitary == null)
                 {
-                    this.quantity = value;
+                    quantity = value;
                 }
                 else
                 {
-                    this.ShelledMilitary.Quantity = value;
+                    ShelledMilitary.Quantity = value;
                 }
             }
         }
 
-        public int RationDays
-        {
-            get
-            {
-                return this.Kind.RationDays;
-            }
-        }
+        public int RationDays => Kind.RationDays;
 
-        public int zijinzuidazhi
-        {
-            get
-            {
-                return this.Kind.zijinshangxian ;
-            }
-        }
+        public int zijinzuidazhi => Kind.zijinshangxian;
 
-
-
-        public Person RecruitmentPerson
-        {
-            get
-            {
-                return recruitmentPerson;
-            }
-            set
-            {
-                recruitmentPerson = value;
-            }
-        }
+        public Person RecruitmentPerson { get; set; }
 
         public string RecruitmentString
         {
@@ -1061,29 +858,11 @@ namespace GameObjects
             }
         }
 
-        public int RecruitmentWeighing
-        {
-            get
-            {
-                return this.Quantity;
-            }
-        }
+        public int RecruitmentWeighing => Quantity;
 
-        public int Scales
-        {
-            get
-            {
-                return (this.Quantity / this.Kind.MinScale);
-            }
-        }
+        public int Scales => Quantity / Kind.MinScale;
 
-        public int TotalQuantity
-        {
-            get
-            {
-                return (this.Quantity + this.InjuryQuantity);
-            }
-        }
+        public int TotalQuantity => Quantity + InjuryQuantity;
 
         public string TrainingString
         {
@@ -1104,13 +883,7 @@ namespace GameObjects
             }
         }
 
-        public int TrainingWeighing
-        {
-            get
-            {
-                return (((this.Kind.MaxScale - this.Scales) * this.Morale) * this.Combativity);
-            }
-        }
+        public int TrainingWeighing => (Kind.MaxScale - Scales) * Morale * Combativity;
 
         public int Weighing
         {
@@ -1120,15 +893,15 @@ namespace GameObjects
             }
         }
 
-        public String  BuchongZhuangtai
+        public string BuchongZhuangtai
         {
             get
             {
-                if (this.TotalQuantity >= this.Kind.MaxScale)
+                if (TotalQuantity >= Kind.MaxScale)
                 {
                     return "√";
                 }
-                else if ((this.BelongedArchitecture != null) && (this.RecruitmentPerson != null))
+                else if (BelongedArchitecture != null && RecruitmentPerson != null)
                 {
                     return "↑";
                 }
@@ -1139,15 +912,15 @@ namespace GameObjects
             }
         }
 
-        public String  YijingXunlianHao
+        public string YijingXunlianHao
         {
             get
             {
-                if (this.Morale>=this.MoraleCeiling && this.Combativity>=this.CombativityCeiling)
+                if (Morale >= MoraleCeiling && Combativity >= CombativityCeiling)
                 {
                     return "√";
                 }
-                else if (this.BelongedArchitecture != null && this.BelongedArchitecture.TrainingWorkingPersons.Count > 0)
+                else if (BelongedArchitecture != null && BelongedArchitecture.TrainingWorkingPersons.Count > 0)
                 {
                     return "↑";
                 }
@@ -1186,15 +959,15 @@ namespace GameObjects
         {
             get
             {
-                if (this.BelongedFaction == null) return false;
-                if (this.IsTransport) return false;
-                if (this.IsShell)
+                if (BelongedFaction == null || IsTransport) return false;
+
+                if (IsShell)
                 {
-                    return this.Quantity / this.RealMilitaryKind.MinScale < this.RetreatScale;
+                    return Quantity / RealMilitaryKind.MinScale < RetreatScale;
                 }
                 else
                 {
-                    return this.Scales < this.RetreatScale;
+                    return Scales < RetreatScale;
                 }
             }
         }
@@ -1250,567 +1023,153 @@ namespace GameObjects
             }
         }
 
-        public float FireDamageRate
-        {
-            get
-            {
-                return this.Kind.FireDamageRate;
-            }
-        }
-
-        public bool AirOffence
-        {
-            get
-            {
-                return this.Kind.AirOffence;
-            }
-        }
-
-        public float ArchitectureCounterDamageRate
-        {
-            get
-            {
-                return this.Kind.ArchitectureCounterDamageRate;
-            }
-        }
-
-        public float ArchitectureDamageRate
-        {
-            get
-            {
-                return this.Kind.ArchitectureDamageRate;
-            }
-        }
-
-        public bool ArrowOffence
-        {
-            get
-            {
-                return this.Kind.ArrowOffence;
-            }
-        }
-
-        public string ArrowOffenceString
-        {
-            get
-            {
-                return (this.Kind.ArrowOffence ? "○" : "×");
-            }
-        }
-
-        public TroopAttackDefaultKind AttackDefaultKind
-        {
-            get
-            {
-                return this.Kind.AttackDefaultKind;
-            }
-        }
-
-        public TroopAttackTargetKind AttackTargetKind
-        {
-            get
-            {
-                return this.Kind.AttackTargetKind;
-            }
-        }
-
-        public bool BeCountered
-        {
-            get
-            {
-                return this.Kind.BeCountered;
-            }
-        }
-
-        public string BeCounteredString
-        {
-            get
-            {
-                return (this.Kind.BeCountered ? "○" : "×");
-            }
-        }
-
-        public bool CanLevelUp
-        {
-            get
-            {
-                return this.Kind.CanLevelUp;
-            }
-        }
-
-        public string CanLevelUpString
-        {
-            get
-            {
-                return (this.Kind.CanLevelUp ? "○" : "×");
-            }
-        }
-
-        public TroopCastDefaultKind CastDefaultKind
-        {
-            get
-            {
-                return this.Kind.CastDefaultKind;
-            }
-        }
-
-        public TroopCastTargetKind CastTargetKind
-        {
-            get
-            {
-                return this.Kind.CastTargetKind;
-            }
-        }
-
-        public int CliffAdaptability
-        {
-            get
-            {
-                return this.Kind.CliffAdaptability;
-            }
-        }
-
-        public float CliffRate
-        {
-            get
-            {
-                return this.Kind.CliffRate;
-            }
-        }
-
-        public bool ContactOffence
-        {
-            get
-            {
-                return this.Kind.ContactOffence;
-            }
-        }
-
-        public string ContactOffenceString
-        {
-            get
-            {
-                return (this.Kind.ContactOffence ? "○" : "×");
-            }
-        }
-
-        public bool CounterOffence
-        {
-            get
-            {
-                return this.Kind.CounterOffence;
-            }
-        }
-
-        public string CounterOffenceString
-        {
-            get
-            {
-                return (this.Kind.CounterOffence ? "○" : "×");
-            }
-        }
-
-        public bool CreateBesideWater
-        {
-            get
-            {
-                return this.Kind.CreateBesideWater;
-            }
-        }
-
-        public string CreateBesideWaterString
-        {
-            get
-            {
-                return (this.Kind.CreateBesideWater ? "○" : "×");
-            }
-        }
-
-        public int CreateCost
-        {
-            get
-            {
-                return this.Kind.CreateCost;
-            }
-        }
-
-        public int CreateTechnology
-        {
-            get
-            {
-                return this.Kind.CreateTechnology;
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return this.Kind.Description;
-            }
-        }
-
-        public int DesertAdaptability
-        {
-            get
-            {
-                return this.Kind.DesertAdaptability;
-            }
-        }
-
-        public float DesertRate
-        {
-            get
-            {
-                return this.Kind.DesertRate;
-            }
-        }
-
-        public int FoodPerSoldier
-        {
-            get
-            {
-                return this.Kind.FoodPerSoldier;
-            }
-        }
-
-        public int ForrestAdaptability
-        {
-            get
-            {
-                return this.Kind.ForrestAdaptability;
-            }
-        }
-
-        public float ForrestRate
-        {
-            get
-            {
-                return this.Kind.ForrestRate;
-            }
-        }
-
-        public int GrasslandAdaptability
-        {
-            get
-            {
-                return this.Kind.GrasslandAdaptability;
-            }
-        }
-
-        public float GrasslandRate
-        {
-            get
-            {
-                return this.Kind.GrasslandRate;
-            }
-        }
-
-        public int InfluenceCount
-        {
-            get
-            {
-                return this.Kind.Influences.Count;
-            }
-        }
-
-        public bool IsShell
-        {
-            get
-            {
-                return this.Kind.IsShell;
-            }
-        }
-
-        public string IsShellString
-        {
-            get
-            {
-                return (this.Kind.IsShell ? "○" : "×");
-            }
-        }
-
-        public int LevelUpExperience
-        {
-            get
-            {
-                return this.Kind.LevelUpExperience;
-            }
-        }
-
-        public int MarshAdaptability
-        {
-            get
-            {
-                return this.Kind.MarshAdaptability;
-            }
-        }
-
-        public float MarshRate
-        {
-            get
-            {
-                return this.Kind.MarshRate;
-            }
-        }
-
-        public int MaxScale
-        {
-            get
-            {
-                return this.Kind.MaxScale;
-            }
-        }
-
-        public int MinScale
-        {
-            get
-            {
-                return this.Kind.MinScale;
-            }
-        }
-
-        public int MountainAdaptability
-        {
-            get
-            {
-                return this.Kind.MountainAdaptability;
-            }
-        }
-
-        public float MountainRate
-        {
-            get
-            {
-                return this.Kind.MountainRate;
-            }
-        }
-
-        public int Movability
-        {
-            get
-            {
-                return this.Kind.Movability;
-            }
-        }
-
-        public bool ObliqueOffence
-        {
-            get
-            {
-                return this.Kind.ObliqueOffence;
-            }
-        }
-
-        public string ObliqueOffenceString
-        {
-            get
-            {
-                return (this.Kind.ObliqueOffence ? "○" : "×");
-            }
-        }
-
-        public bool ObliqueStratagem
-        {
-            get
-            {
-                return this.Kind.ObliqueStratagem;
-            }
-        }
-
-        public string ObliqueStratagemString
-        {
-            get
-            {
-                return (this.Kind.ObliqueStratagem ? "○" : "×");
-            }
-        }
-
-        public bool ObliqueView
-        {
-            get
-            {
-                return this.Kind.ObliqueView;
-            }
-        }
-
-        public string ObliqueViewString
-        {
-            get
-            {
-                return (this.Kind.ObliqueView ? "○" : "×");
-            }
-        }
-
-        public bool OffenceOnlyBeforeMove
-        {
-            get
-            {
-                return this.Kind.OffenceOnlyBeforeMove;
-            }
-        }
-
-        public string OffenceOnlyBeforeMoveString
-        {
-            get
-            {
-                return (this.Kind.OffenceOnlyBeforeMove ? "○" : "×");
-            }
-        }
-
-        public int OffenceRadius
-        {
-            get
-            {
-                return this.Kind.OffenceRadius;
-            }
-        }
-
-        public int OneAdaptabilityKind
-        {
-            get
-            {
-                return this.Kind.OneAdaptabilityKind;
-            }
-        }
-
-        public int PlainAdaptability
-        {
-            get
-            {
-                return this.Kind.PlainAdaptability;
-            }
-        }
-
-        public float PlainRate
-        {
-            get
-            {
-                return this.Kind.PlainRate;
-            }
-        }
-
-        public int PointsPerSoldier
-        {
-            get
-            {
-                return this.Kind.PointsPerSoldier;
-            }
-        }
-
-        public int RidgeAdaptability
-        {
-            get
-            {
-                return this.Kind.RidgeAdaptability;
-            }
-        }
-
-        public float RidgeRate
-        {
-            get
-            {
-                return this.Kind.RidgeRate;
-            }
-        }
-
-        public int Speed
-        {
-            get
-            {
-                return this.Kind.Speed;
-            }
-        }
-
-        public int StratagemRadius
-        {
-            get
-            {
-                return this.Kind.StratagemRadius;
-            }
-        }
-
-        public int TitleInfluence
-        {
-            get
-            {
-                return this.Kind.TitleInfluence;
-            }
-        }
-
-        public MilitaryType Type
-        {
-            get
-            {
-                return this.Kind.Type;
-            }
-        }
-
-        public int RecruitLimit
-        {
-            get
-            {
-                return this.Kind.RecruitLimit;
-            }
-        }
-
-        public int ViewRadius
-        {
-            get
-            {
-                return this.Kind.ViewRadius;
-            }
-        }
-
-        public int WastelandAdaptability
-        {
-            get
-            {
-                return this.Kind.WastelandAdaptability;
-            }
-        }
-
-        public float WastelandRate
-        {
-            get
-            {
-                return this.Kind.WastelandRate;
-            }
-        }
-
-        public int WaterAdaptability
-        {
-            get
-            {
-                return this.Kind.WaterAdaptability;
-            }
-        }
-
-        public float WaterRate
-        {
-            get
-            {
-                return this.Kind.WaterRate;
-            }
-        }
-
-        public int MorphToKindId
-        {
-            get
-            {
-                return this.Kind.MorphToKindId;
-            }
-        }
+        public float FireDamageRate => Kind.FireDamageRate;
+
+        public bool AirOffence => Kind.AirOffence;
+
+        public float ArchitectureCounterDamageRate => Kind.ArchitectureCounterDamageRate;
+
+        public float ArchitectureDamageRate => Kind.ArchitectureDamageRate;
+
+        public bool ArrowOffence => Kind.ArrowOffence;
+
+        public string ArrowOffenceString => StaticMethods.ToMark(Kind.ArrowOffence);
+
+        public TroopAttackDefaultKind AttackDefaultKind => Kind.AttackDefaultKind;
+
+        public TroopAttackTargetKind AttackTargetKind => Kind.AttackTargetKind;
+
+        public bool BeCountered => Kind.BeCountered;
+
+        public string BeCounteredString => StaticMethods.ToMark(Kind.BeCountered);
+
+        public bool CanLevelUp => Kind.CanLevelUp;
+
+        public string CanLevelUpString => StaticMethods.ToMark(Kind.CanLevelUp);
+
+        public TroopCastDefaultKind CastDefaultKind => Kind.CastDefaultKind;
+
+        public TroopCastTargetKind CastTargetKind => Kind.CastTargetKind;
+
+        public int CliffAdaptability => Kind.CliffAdaptability;
+
+        public float CliffRate => Kind.CliffRate;
+
+        public bool ContactOffence => Kind.ContactOffence;
+
+        public string ContactOffenceString => StaticMethods.ToMark(Kind.ContactOffence);
+
+        public bool CounterOffence => Kind.CounterOffence;
+
+        public string CounterOffenceString => StaticMethods.ToMark(Kind.CounterOffence);
+
+        public bool CreateBesideWater => Kind.CreateBesideWater;
+
+        public string CreateBesideWaterString => StaticMethods.ToMark(Kind.CreateBesideWater);
+
+        public int CreateCost => Kind.CreateCost;
+
+        public int CreateTechnology => Kind.CreateTechnology;
+
+        public string Description => Kind.Description;
+
+        public int DesertAdaptability => Kind.DesertAdaptability;
+
+        public float DesertRate => Kind.DesertRate;
+
+        public int FoodPerSoldier => Kind.FoodPerSoldier;
+
+        public int ForrestAdaptability => Kind.ForrestAdaptability;
+
+        public float ForrestRate => Kind.ForrestRate;
+
+        public int GrasslandAdaptability => Kind.GrasslandAdaptability;
+
+        public float GrasslandRate => Kind.GrasslandRate;
+
+        public int InfluenceCount => Kind.Influences.Count;
+
+        public bool IsShell => Kind.IsShell;
+
+        public string IsShellString => StaticMethods.ToMark(Kind.IsShell);
+
+        public int LevelUpExperience => Kind.LevelUpExperience;
+
+        public int MarshAdaptability => Kind.MarshAdaptability;
+
+        public float MarshRate => Kind.MarshRate;
+
+        public int MaxScale => Kind.MaxScale;
+
+        public int MinScale => Kind.MinScale;
+
+        public int MountainAdaptability => Kind.MountainAdaptability;
+
+        public float MountainRate => Kind.MountainRate;
+
+        public int Movability => Kind.Movability;
+
+        public bool ObliqueOffence => Kind.ObliqueOffence;
+
+        public string ObliqueOffenceString => StaticMethods.ToMark(Kind.ObliqueOffence);
+
+        public bool ObliqueStratagem => Kind.ObliqueStratagem;
+
+        public string ObliqueStratagemString => StaticMethods.ToMark(Kind.ObliqueStratagem);
+
+        public bool ObliqueView => Kind.ObliqueView;
+
+        public string ObliqueViewString => StaticMethods.ToMark(Kind.ObliqueView);
+
+        public bool OffenceOnlyBeforeMove => Kind.OffenceOnlyBeforeMove;
+
+        public string OffenceOnlyBeforeMoveString => StaticMethods.ToMark(Kind.OffenceOnlyBeforeMove);
+
+        public int OffenceRadius => Kind.OffenceRadius;
+
+        public int OneAdaptabilityKind => Kind.OneAdaptabilityKind;
+
+        public int PlainAdaptability => Kind.PlainAdaptability;
+
+        public float PlainRate => Kind.PlainRate;
+
+        public int PointsPerSoldier => Kind.PointsPerSoldier;
+
+        public int RidgeAdaptability => Kind.RidgeAdaptability;
+
+        public float RidgeRate => Kind.RidgeRate;
+
+        public int Speed => Kind.Speed;
+
+        public int StratagemRadius => Kind.StratagemRadius;
+
+        public int TitleInfluence => Kind.TitleInfluence;
+
+        public MilitaryType Type => Kind.Type;
+
+        public int RecruitLimit => Kind.RecruitLimit;
+
+        public int ViewRadius => Kind.ViewRadius;
+
+        public int WastelandAdaptability => Kind.WastelandAdaptability;
+
+        public float WastelandRate => Kind.WastelandRate;
+
+        public int WaterAdaptability => Kind.WaterAdaptability;
+
+        public float WaterRate => Kind.WaterRate;
+
+        public int MorphToKindId => Kind.MorphToKindId;
 
         public Architecture TargetArchitecture
         {
             get
             {
-                if (this.targetArchitectureID == -1) return null;
+                if (TargetArchitectureID == -1) return null;
                 
                 if (this.targetArchitecture == null)
                 {
-                    this.targetArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.targetArchitectureID) as Architecture;
+                    this.targetArchitecture = Session.Current.Scenario.Architectures.GetGameObject(TargetArchitectureID) as Architecture;
                 }
                 return this.targetArchitecture;
             }
@@ -1821,48 +1180,32 @@ namespace GameObjects
                 
                 if (value != null)
                 {
-                    this.targetArchitectureID = value.ID;
+                    TargetArchitectureID = value.ID;
                 }
                 else
                 {
-                    this.targetArchitectureID = -1;
+                    TargetArchitectureID = -1;
                 }
-            }
-        }
-        [DataMember]
-        public int TargetArchitectureID
-        {
-            get
-            {
-                return this.targetArchitectureID;
-            }
-            set
-            {
-                this.targetArchitectureID = value;
             }
         }
 
-        public string TargetArchitectureString
-        {
-            get
-            {
-                if (this.targetArchitectureID < 0)
-                {
-                    return "----";
-                }
-                return this.TargetArchitecture.Name;
-            }
-        }
+        /// <summary>
+        /// 目标建筑
+        /// </summary>
+        [DataMember]
+        public int TargetArchitectureID { get; set; } = -1;
+
+        public string TargetArchitectureString => TargetArchitectureID > 0 ? TargetArchitecture.Name : "----";
 
         public Architecture StartingArchitecture
         {
             get
             {
-                if (this.startingArchitectureID == -1) return null;
+                if (StartingArchitectureID == -1) return null;
 
                 if (this.startingArchitecture == null)
                 {
-                    this.startingArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.startingArchitectureID) as Architecture;
+                    this.startingArchitecture = Session.Current.Scenario.Architectures.GetGameObject(StartingArchitectureID) as Architecture;
                 }
                 return this.startingArchitecture;
             }
@@ -1870,54 +1213,23 @@ namespace GameObjects
             {
                 if (this.startingArchitecture == null && value == null) return;
                 this.startingArchitecture = value;
-
-                if (value != null)
-                {
-                    this.startingArchitectureID = value.ID;
-                }
-                else
-                {
-                    this.startingArchitectureID = -1;
-                }
-            }
-        }
-        [DataMember]
-        public int StartingArchitectureID
-        {
-            get
-            {
-                return this.startingArchitectureID;
-            }
-            set
-            {
-                this.startingArchitectureID = value;
+                StartingArchitectureID = value?.ID ?? -1;
             }
         }
 
-        public string StartingArchitectureString
-        {
-            get
-            {
-                if (this.startingArchitectureID < 0)
-                {
-                    return "----";
-                }
-                return this. StartingArchitecture.Name;
-            
-            }
-        }
+        /// <summary>
+        /// 出发建筑
+        /// </summary>
         [DataMember]
-        public int ArrivingDays
-        {
-            get
-            {
-                return this.arrivingDays;
-            }
-            set
-            {
-                this.arrivingDays = value;
-            }
-        }
+        public int StartingArchitectureID { get; set; }
+
+        public string StartingArchitectureString => StartingArchitectureID > 0 ? StartingArchitecture.Name : "----";
+        
+        /// <summary>
+        /// 到达时间
+        /// </summary>
+        [DataMember]
+        public int ArrivingDays { get; set; }
 
         public string Travel
         {
@@ -1955,8 +1267,5 @@ namespace GameObjects
         {
             return (int)(TransferDays(distance) * this.Kind.FoodPerSoldier * this.Quantity);
         }
-
-
     }
 }
-

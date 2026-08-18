@@ -8,8 +8,11 @@ public class EventEffect1210 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        var facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(eventEffect.GetIntParam());
+        var facilityLevelId = eventEffect.GetIntParam();
 
-        arch.BeginToBuildAFacility(facilityKind);
+        if (Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.TryGetValue(facilityLevelId, out var facilityKindLevel))
+        {
+            arch.BeginToBuildAFacility(facilityKindLevel);
+        }
     }
 }

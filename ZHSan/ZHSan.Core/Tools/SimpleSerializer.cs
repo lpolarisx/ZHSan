@@ -196,7 +196,7 @@ namespace Tools
         {
             try
             {
-                string content = isUserFile ? Platform.Current.GetUserText(file) : Platform.Current.LoadText(file);
+                string content = isUserFile ? PlatformBase.Current.GetUserText(file) : PlatformBase.Current.LoadText(file);
                 content = content.NullToString().Trim().Replace("\n", "").Replace("\r", "");
 
                 //string str = WordTools.ConvertJsonString(content);

@@ -2,7 +2,6 @@
 using GameGlobal;
 using GameManager;
 using Microsoft.Xna.Framework;
-using System;
 using System.Runtime.Serialization;
 
 namespace GameObjects
@@ -13,13 +12,6 @@ namespace GameObjects
         private GameArea area;
         public Faction BelongedFaction; // informations belonging to faction will naturally expire
         public Architecture BelongedArchitecture; // informations belonging to architecture will not expire
-        private InformationLevel level;
-        private bool oblique;
-        private Point position;
-        private int radius;
-        private int dayCost;
-        private int daysLeft;
-        private int daysStarted = 0;
 
         public void Apply()
         {
@@ -39,27 +31,29 @@ namespace GameObjects
 
         public void CheckAmbushTroop()
         {
-            foreach (Point point in this.Area.Area)
+            foreach (var point in Area.Area)
             {
-                this.CheckAmbushTroop(point);
+                CheckAmbushTroop(point);
             }
         }
 
         private void CheckAmbushTroop(Point p)
         {
             Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(p);
-            if (troopByPosition != null && troopByPosition.Status == TroopStatus.埋伏 && 
-                ((this.BelongedArchitecture != null && !this.BelongedArchitecture.IsFriendly(troopByPosition.BelongedFaction)) || 
-                (this.BelongedFaction != null && !this.BelongedFaction.IsFriendly(troopByPosition.BelongedFaction))))
+            if (troopByPosition != null 
+                && troopByPosition.Status == TroopStatus.埋伏 
+                && ((BelongedArchitecture != null && !BelongedArchitecture.IsFriendly(troopByPosition.BelongedFaction)) 
+                    || (BelongedFaction != null && !BelongedFaction.IsFriendly(troopByPosition.BelongedFaction))))
             {
-                this.DetectAmbush(troopByPosition);
+                DetectAmbush(troopByPosition);
             }
         }
 
         private void DetectAmbush(Troop troop)
         {
-            int chance = 40 - troop.Leader.Calmness;
-            if (this.Level <= InformationLevel.Medium)
+            var chance = 40 - troop.Leader.Calmness;
+
+            if (Level <= InformationLevel.Medium)
             {
                 if (troop.OnlyBeDetectedByHighLevelInformation)
                 {
@@ -78,15 +72,15 @@ namespace GameObjects
 
         public void Initialize()
         {
-            foreach (Point point in this.Area.Area)
+            foreach (var point in Area.Area)
             {
-                if (this.BelongedArchitecture != null && this.BelongedArchitecture.BelongedFaction != null)
+                if (BelongedArchitecture != null && BelongedArchitecture.BelongedFaction != null)
                 {
-                    this.BelongedArchitecture.BelongedFaction.AddPositionInformation(point, this.Level);
+                    BelongedArchitecture.BelongedFaction.AddPositionInformation(point, Level);
                 }
-                else if (this.BelongedFaction != null)
+                else if (BelongedFaction != null)
                 {
-                    this.BelongedFaction.AddPositionInformation(point, this.Level);
+                    BelongedFaction.AddPositionInformation(point, Level);
                 }
             }
         }
@@ -113,140 +107,46 @@ namespace GameObjects
         {
             get
             {
-                if (this.area == null)
+                if (area == null)
                 {
-                    this.area = GameArea.GetViewArea(this.position, this.radius, this.oblique, null);
+                    area = GameArea.GetViewArea(Position, Radius, Oblique, null);
                 }
-                return this.area;
+
+                return area;
             }
             set
             {
-                this.area = value;
+                area = value;
             }
         }
 
         [DataMember]
-        public InformationLevel Level
-        {
-            get
-            {
-                return this.level;
-            }
-            set
-            {
-                this.level = value;
-            }
-        }
+        public InformationLevel Level { get; set; }
 
-        public string LevelString
-        {
-            get
-            {
-                return this.level.ToString();
-            }
-        }
+        public string LevelString => Level.ToString();
 
         [DataMember]
-        public bool Oblique
-        {
-            get
-            {
-                return this.oblique;
-            }
-            set
-            {
-                this.oblique = value;
-            }
-        }
+        public bool Oblique { get; set; }
 
         [DataMember]
-        public int DayCost
-        {
-            get
-            {
-                return this.dayCost;
-            }
-            set
-            {
-                this.dayCost = value;
-            }
-        }
+        public int DayCost { get; set; }
 
         [DataMember]
-        public int DaysLeft
-        {
-            get
-            {
-                return this.daysLeft;
-            }
-            set
-            {
-                this.daysLeft = value;
-            }
-        }
+        public int DaysLeft { get; set; }
 
         [DataMember]
-        public int DaysStarted
-        {
-            get
-            {
-                return this.daysStarted;
-            }
-            set
-            {
-                this.daysStarted = value;
-            }
-        }
+        public int DaysStarted { get; set; }
 
-        public string ObliqueString
-        {
-            get
-            {
-                return (this.Oblique ? "○" : "×");
-            }
-        }
+        public string ObliqueString => StaticMethods.ToMark(Oblique);
 
         [DataMember]
-        public Point Position
-        {
-            get
-            {
-                return this.position;
-            }
-            set
-            {
-                this.position = value;
-            }
-        }
+        public Point Position { get; set; }
 
-        public string PositionString
-        {
-            get
-            {
-                return this.position.X + ", " + this.position.Y;
-            }
-        }
+        public string PositionString => $"{Position.X}, {Position.Y}";
 
         [DataMember]
-        public int Radius
-        {
-            get
-            {
-                return this.radius;
-            }
-            set
-            {
-                this.radius = value;
-            }
-        }
+        public int Radius { get; set; }
 
-        public string BelongedArchitectureName
-        {
-            get
-            {
-                return this.BelongedArchitecture != null ? this.BelongedArchitecture.Name : "－－－－";
-            }
-        }
+        public string BelongedArchitectureName => BelongedArchitecture?.Name ?? "----";
     }
 }
-

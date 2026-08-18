@@ -755,14 +755,14 @@ namespace GameObjects
         {
             get
             {
-                if (this.RoutePoints.Count == 0)
+                if (RoutePoints.Count == 0)
                 {
                     throw new Exception("Empty Routeway Error!");
                 }
                 GameArea area = new GameArea();
                 GameArea area2 = new GameArea();
-                area2.AddPoint(this.LastPoint.Position);
-                foreach (Point point in area2.GetContactArea(false).Area)
+                area2.AddPoint(LastPoint.Position);
+                foreach (var point in area2.GetContactArea().Area)
                 {
                     if (this.IsPositionPossible(point) && !this.ContainsPoint(point))
                     {

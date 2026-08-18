@@ -141,7 +141,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Architecture_Facilities:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.GetFacilityList(), null, "", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.GetFacilityList()], null, "", "");
                     break;
 
                 case ContextMenuResult.Architecture_Captive:
@@ -323,11 +323,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Internal_Facility_Build:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.GetFacilityToBuild, false, true, true, false, this.CurrentArchitecture.GetBuildableFacilityKindList(), null, "选择设施", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.GetFacilityToBuild, false, true, true, false, [.. CurrentArchitecture.GetBuildableFacilities()], null, "选择设施", "");
                     break;
 
                 case ContextMenuResult.Internal_Facility_Demolish:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.GetFacilityToDemolish, false, true, true, true, CurrentArchitecture.GetCanRemoveFacilities(), null, "选择设施", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.GetFacilityToDemolish, false, true, true, true, [.. CurrentArchitecture.GetCanRemoveFacilities()], null, "选择设施", "");
                     break;
                     
                 case ContextMenuResult.Internal_Facility_StopBuilding:
@@ -370,7 +370,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 case ContextMenuResult.Military_CampaignAuto://自动出征
 
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetAutoCampaignMilitaries, false, true, true, true, this.CurrentArchitecture.GetCampaignMilitaryList(), null, "选择编队", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetAutoCampaignMilitaries, false, true, true, true, [.. CurrentArchitecture.GetCampaignMilitaryList()], null, "选择编队", "");
                     break;
 
                 case ContextMenuResult.Military_Campaign:
@@ -644,7 +644,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Monarch_MakeMarriage:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectMarryablePerson, false, true, true, false, this.CurrentArchitecture.makeMarryablePersons(), null, "赐婚", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectMarryablePerson, false, true, true, false, [.. CurrentArchitecture.GetMarryablePersons()], null, "赐婚", "");
                     break;
 
                 case ContextMenuResult.Monarch_MakeMarriage2:
@@ -688,7 +688,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.ShowFactionTechniques(this.CurrentArchitecture.BelongedFaction, this.CurrentArchitecture);
                     break;
                 case ContextMenuResult.Faction_KillRelease_ReleaseSelfPerson:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.ReleaseSelfPerson, false, true, true, false, this.CurrentArchitecture.CanKilledPersons(), null, "流放下属", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.ReleaseSelfPerson, false, true, true, false, [.. CurrentArchitecture.CanKilledPersons()], null, "流放下属", "");
                     break;
                 case ContextMenuResult.Faction_KillRelease_ReleaseCaptive:
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Captive, FrameFunction.GetReleaseCaptive, false, true, true, true, this.CurrentArchitecture.BelongedFaction.Captives, null, "释放俘虏", "");
@@ -699,7 +699,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Faction_KillRelease_KillPerson:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.KillPerson, false, true, true,false , this.CurrentArchitecture.CanKilledPersons(), null, "处斩下属", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.KillPerson, false, true, true,false , [.. CurrentArchitecture.CanKilledPersons()], null, "处斩下属", "");
                     break;
 
                 case ContextMenuResult.Faction_KillRelease_KillCaptive:
@@ -973,7 +973,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Information_AllFacilities:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKindList(), null, "设施种类", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllFacilityKinds.Values], null, "设施种类", "");
                     break;
 
                 case ContextMenuResult.Information_AllTerrainDetails:

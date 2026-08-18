@@ -1,9 +1,7 @@
 ﻿using GameObjects.MapDetail;
-using GameObjects.ArchitectureDetail;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.Serialization;
 using GameManager;
 
@@ -70,7 +68,7 @@ namespace GameObjects
 
         public void CombineArea(GameArea AreaToCombine, Dictionary<Point, object> ClosedList)
         {
-            foreach (Point point in AreaToCombine.Area)
+            foreach (var point in AreaToCombine.Area)
             {
                 if (!ClosedList.ContainsKey(point))
                 {
@@ -79,9 +77,11 @@ namespace GameObjects
             }
         }
 
-        public bool Contact(Point p, bool oblique)
+        public bool Contact(Point point, bool oblique)
         {
-            return this.GetContactArea(oblique).HasPoint(p);
+            var area = GetContactArea(oblique);
+
+            return area.HasPoint(point);
         }
 
         public override bool Equals(object obj)
@@ -196,7 +196,7 @@ namespace GameObjects
             return area2;
         }
 
-        public GameArea GetContactArea(bool oblique)
+        public GameArea GetContactArea(bool oblique = false)
         {
             return GetContactArea(oblique, false, false);
         }
@@ -280,9 +280,9 @@ namespace GameObjects
 
         public int GetPointIndex(Point point)
         {
-            for (int i = 0; i < this.Area.Count; i++)
+            for (int i = 0; i < Area.Count; i++)
             {
-                if (this.Area[i] == point)
+                if (Area[i] == point)
                 {
                     return i;
                 }
@@ -355,7 +355,7 @@ namespace GameObjects
 
         public bool HasPoint(Point point)
         {
-            foreach (Point point2 in this.Area)
+            foreach (Point point2 in Area)
             {
                 if (point2 == point)
                 {
@@ -445,13 +445,7 @@ namespace GameObjects
             }
         }
 
-        public int Count
-        {
-            get
-            {
-                return this.Area.Count;
-            }
-        }
+        public int Count => Area.Count;
 
         public Point this[int index]
         {
@@ -476,8 +470,6 @@ namespace GameObjects
                 return this.topleft.Value;
             }
         }
-
-
     }
 }
 

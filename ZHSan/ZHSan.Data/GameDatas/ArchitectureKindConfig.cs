@@ -1,12 +1,8 @@
 
 namespace GameDatas;
 
-public class ArchitectureKindConfig
+public class ArchitectureKindConfig : BaseConfig
 {
-    public int Id { get; set; }
-
-    public string Name { get; set; }
-
     /// <summary>
     /// 农业
     /// </summary>

@@ -1167,58 +1167,59 @@ namespace GameObjects
         {
             if (Session.Current.Scenario.IsPlayer(this)) return;
 
-            int uncruelty = this.Leader.Uncruelty;
-            int unAmbition = Enum.GetNames(typeof(PersonAmbition)).Length - (int)this.Leader.Ambition;
+            int uncruelty = Leader.Uncruelty;
+            int unAmbition = Enum.GetNames(typeof(PersonAmbition)).Length - (int)Leader.Ambition;
 
             // move
-            foreach (Architecture a in this.Architectures)
+            foreach (Architecture a in Architectures)
             {
                 if (a.Feiziliebiao.Count > 0)
                 {
                     Architecture dest = null;
                     int maxPop = 0;
-                    foreach (Architecture b in this.Architectures)
+
+                    foreach (Architecture b in Architectures)
                     {
-                        if (!b.withoutTruceFrontline && !b.JustAttacked && !b.HasHostileTroopsInView() &&
-                            (b.Meinvkongjian > b.Feiziliebiao.Count || b.BelongedFaction.IsAlien))
+                        if (!b.withoutTruceFrontline 
+                            && !b.JustAttacked 
+                            && !b.HasHostileTroopsInView() 
+                            && (b.Meinvkongjian > b.Feiziliebiao.Count || b.BelongedFaction.IsAlien)
+                            && b.Endurance > maxPop)
                         {
-                            if (b.Endurance > maxPop)
+                            maxPop = b.Endurance;
+                            dest = b;
+                        }
+                    }
+
+                    if (dest == null)
+                    {
+                        foreach (Architecture b in Architectures)
+                        {
+                            if (b.RecentlyAttacked <= 0 
+                                && b.RecentlyBreaked <= 0 
+                                && (b.Meinvkongjian > b.Feiziliebiao.Count || b.BelongedFaction.IsAlien)
+                                && b.Endurance > maxPop)
                             {
                                 maxPop = b.Endurance;
                                 dest = b;
                             }
                         }
                     }
+
                     if (dest == null)
                     {
-                        foreach (Architecture b in this.Architectures)
+                        foreach (Architecture b in Architectures)
                         {
-                            if (b.RecentlyAttacked <= 0 && b.RecentlyBreaked <= 0 &&
-                                (b.Meinvkongjian > b.Feiziliebiao.Count || b.BelongedFaction.IsAlien))
+                            if (b.Endurance > 30 
+                                && (b.Meinvkongjian > b.Feiziliebiao.Count || b.BelongedFaction.IsAlien)
+                                && b.Endurance > maxPop)
                             {
-                                if (b.Endurance > maxPop)
-                                {
-                                    maxPop = b.Endurance;
-                                    dest = b;
-                                }
+                                maxPop = b.Endurance;
+                                dest = b;
                             }
                         }
                     }
-                    if (dest == null)
-                    {
-                        foreach (Architecture b in this.Architectures)
-                        {
-                            if (b.Endurance > 30 &&
-                                (b.Meinvkongjian > b.Feiziliebiao.Count || b.BelongedFaction.IsAlien))
-                            {
-                                if (b.Endurance > maxPop)
-                                {
-                                    maxPop = b.Endurance;
-                                    dest = b;
-                                }
-                            }
-                        }
-                    }
+
                     if (dest != null)
                     {
                         int cnt = dest.BelongedFaction.IsAlien ? 9999 : dest.Meinvkongjian - dest.Feiziliebiao.Count;
@@ -1244,13 +1245,13 @@ namespace GameObjects
             if (GameObject.Random(10) == 0)
             {
                 //release
-                foreach (Architecture a in this.Architectures)
+                foreach (Architecture a in Architectures)
                 {
                     foreach (Person p in a.ReleasableFeizis)
                     {
                         if (!IsPersonForHouGong(p, true))
                         {
-                            if (!this.Leader.suoshurenwuList.HasGameObject(p) && (uncruelty <= 4 || !p.Hates(this.Leader)) && (uncruelty <= 8 || p.RecruitableBy(this, 0)))
+                            if (!Leader.suoshurenwuList.HasGameObject(p) && (uncruelty <= 4 || !p.Hates(Leader)) && (uncruelty <= 8 || p.RecruitableBy(this, 0)))
                             {
                                 p.feiziRelease();
                             }
@@ -1259,30 +1260,34 @@ namespace GameObjects
                 }
             }
 
-            if (this.Leader.NumberOfChildren >= Session.GlobalVariables.OfficerChildrenLimit) return;
+            if (Leader.NumberOfChildren >= Session.GlobalVariables.OfficerChildrenLimit) return;
 
-            if (this.Leader.Age <= 12) return;
+            if (Leader.Age <= 12) return;
 
-            if (this.hougongValid)
+            if (hougongValid)
             {
+                var positionLeft = meinvkongjian();
+                var rate = (int)(GameObject.Square(unAmbition) * Session.Parameters.AIBuildHougongUnambitionProbWeight + GameObject.Square(positionLeft) * unAmbition * Session.Parameters.AIBuildHougongSpaceBuiltProbWeight);
 
                 // build hougong
-                if (this.meinvkongjian() - this.feiziCount() <= 0 && !this.isAlien && TotalFeiziSpaceCount() < Session.Current.Scenario.Parameters.AIMaxFeizi &&
-                    GameObject.Random((int)(GameObject.Square(unAmbition) * Session.Parameters.AIBuildHougongUnambitionProbWeight + GameObject.Square(this.meinvkongjian()) * unAmbition * Session.Parameters.AIBuildHougongSpaceBuiltProbWeight)) == 0)
+                if (positionLeft - feiziCount() <= 0 
+                    && !isAlien 
+                    && TotalFeiziSpaceCount() < Session.Current.Scenario.Parameters.AIMaxFeizi 
+                    && GameObject.Random(rate) == 0)
                 {
                     Architecture buildAt = null;
                     bool planned = false;
-                    foreach (Architecture a in this.Architectures)
+                    foreach (Architecture a in Architectures)
                     {
                         if (a.FrontLine) continue;
                         if (a.ExpectedFund - a.EnoughFund <= 50 * 30) continue;
                         if (a.Kind.FacilityPositionUnit <= 0) continue;
-                        if (a.PlanFacilityKind != null && a.PlanFacilityKind.rongna > 0)
+                        if (a.PlanFacilityKind != null && a.PlanFacilityKind.ConcubineCapacity > 0)
                         {
                             planned = true;
                             break;
                         }
-                        if (a.BuildingFacility >= 0 && Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(a.BuildingFacility).rongna > 0)
+                        if (a.BuildingFacility >= 0 && Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.TryGetValue(a.BuildingFacility, out var facilityLevel) && facilityLevel.ConcubineCapacity > 0)
                         {
                             planned = true;
                             break;
@@ -1297,16 +1302,21 @@ namespace GameObjects
                     if (!planned && buildAt != null)
                     {
                         int maxHgSize = (12 - uncruelty) + Math.Max(0, buildAt.FacilityPositionCount / buildAt.Kind.FacilityPositionUnit - 5) + Session.Parameters.AIBuildHougongMaxSizeAdd;
-                        FacilityKind hougong = null;
-                        foreach (FacilityKind fk in Session.Current.Scenario.GameCommonData.AllFacilityKinds.FacilityKinds.Values)
+                        FacilityKindLevel hougong = null;
+
+                        foreach (var item in Session.Current.Scenario.GameCommonData.GroupedFacilityKindLevels)
                         {
-                            if (!fk.CanBuild(buildAt)) continue;
-                            if (fk.FundCost > buildAt.Fund) continue;
-                            if (fk.rongna > 0 && fk.rongna < maxHgSize && GameObject.GetChance(Session.Parameters.AIBuildHougongSkipSizeChance))
+                            var facilityLevel = item.Value.FirstOrDefault();
+
+                            if (facilityLevel == null) continue;
+
+                            if (!facilityLevel.CanBuild(buildAt) || facilityLevel.FundCost > buildAt.Fund) continue;
+                            
+                            if (facilityLevel.ConcubineCapacity > 0 && facilityLevel.ConcubineCapacity < maxHgSize && GameObject.GetChance(Session.Parameters.AIBuildHougongSkipSizeChance))
                             {
-                                if (hougong == null || hougong.rongna < fk.rongna)
+                                if (hougong == null || hougong.ConcubineCapacity < facilityLevel.ConcubineCapacity)
                                 {
-                                    hougong = fk;
+                                    hougong = facilityLevel;
                                 }
                             }
                         }
@@ -1331,7 +1341,7 @@ namespace GameObjects
                                 {
                                     int removePositionOccupied = 0;
                                     var facilityToRemove = new List<Facility>();
-                                    var sortedByAiValue = facilities.OrderBy((Facility x) => x.AIValue(buildAt)).ToList();
+                                    var sortedByAiValue = facilities.OrderBy((Facility x) => x.AiValue(buildAt)).ToList();
 
                                     foreach (Facility facility in sortedByAiValue)
                                     {
@@ -3876,22 +3886,16 @@ namespace GameObjects
 
         public void DepositTechniquePointForFacility(int deposit)
         {
-            if (deposit > this.techniquePointForFacility)
-            {
-                deposit = this.techniquePointForFacility;
-            }
-            this.techniquePointForFacility -= deposit;
-            this.techniquePoint += deposit;
+            deposit = Math.Min(deposit, techniquePointForFacility);
+            techniquePointForFacility -= deposit;
+            techniquePoint += deposit;
         }
 
         public void DepositTechniquePointForTechnique(int deposit)
         {
-            if (deposit > this.techniquePointForTechnique)
-            {
-                deposit = this.techniquePointForTechnique;
-            }
-            this.techniquePointForTechnique -= deposit;
-            this.techniquePoint += deposit;
+            deposit = Math.Min(deposit, techniquePointForTechnique);
+            techniquePointForTechnique -= deposit;
+            techniquePoint += deposit;
         }
 
         public void Destroy()
@@ -4380,33 +4384,34 @@ namespace GameObjects
 
         public bool IsFriendly(Faction faction)
         {
-            if (faction == null)
-            {
-                return false;
-            }
-            return ((faction == this) || (Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID) >= Session.GlobalVariables.FriendlyDiplomacyThreshold) || (Session.Current.Scenario.GetDiplomaticRelationTruce(base.ID, faction.ID) > 0));
+            if (faction == null) return false;
+
+            if (faction == this) return true;
+
+            var relation = Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID);
+            var truceRelation = Session.Current.Scenario.GetDiplomaticRelationTruce(base.ID, faction.ID);
+
+            return relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold || truceRelation > 0;
         }
 
         public bool IsFriendlyWithoutTruce(Faction faction)
         {
-            if (faction == null)
-            {
-                return false;
-            }
-            return (faction == this) || (Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID) >= Session.GlobalVariables.FriendlyDiplomacyThreshold);
+            if (faction == null) return false;
+
+            if (faction == this) return true;
+
+            var relation = Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID);
+
+            return relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold;
         }
 
         public bool IsHostile(Faction faction)
         {
-            if (faction == null)
-            {
-                return false;
-            }
-            if (faction == this)
-            {
-                return false;
-            }
-            return (Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID) < 0);
+            if (faction == null || faction == this) return false;
+
+            var relation = Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID);
+            
+            return relation < 0;
         }
 
         public bool IsPositionKnown(Point position)

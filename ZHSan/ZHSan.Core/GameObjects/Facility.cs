@@ -1,57 +1,57 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameManager;
 using GameObjects.ArchitectureDetail;
 using GameObjects.Conditions;
 using GameObjects.Influences;
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
+using System.Linq;
 
 namespace GameObjects
 {
     /// <summary>
     /// 设施
     /// </summary>
-    [DataContract]
     public class Facility : GameObject
     {
-        # region DataMember
-
         /// <summary>
         /// 种类ID
         /// </summary>
-        [DataMember]
-        public int KindID { get; private set; }
+        public int KindID => facilityLevel.KindId;
+
+        public int LevelId { get; set; }
 
         /// <summary>
         /// 耐久
         /// </summary>
-        [DataMember]
         public int Endurance { get; private set; }
 
-        # endregion
+        public Facility(FacilityConfig config)
+        {
+            ID = config.Id;
+            LevelId = config.LevelId;
+            facilityLevel = Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.GetValueOrDefault(config.LevelId);
+            Endurance = config.Endurance;
+        }
 
-        public Facility(int id, int kindId, int endurance)
+        public FacilityConfig ToConfig()
+        {
+            return new FacilityConfig
+            {
+                Id = ID,
+                LevelId = LevelId,
+                Endurance = Endurance,
+            };
+        }
+
+        public Facility(int id, FacilityKindLevel level)
         {
             ID = id;
-            KindID = kindId;
-            Endurance = endurance;
+            Endurance = level.Endurance;
+            facilityLevel = level;
         }
 
-        private FacilityKind _kind;
-
-        private FacilityKind Kind
-        {
-            get
-            {
-                // 懒加载
-                if (_kind == null)
-                {
-                    _kind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(KindID);
-                }
-
-                return _kind;
-            }
-        }
+        private FacilityKindLevel facilityLevel;
 
         /// <summary>
         /// 耐久下降
@@ -71,7 +71,7 @@ namespace GameObjects
             // 耐久小于上限时才需要恢复
             if (Endurance < EnduranceCeiling)
             {
-                int increase = EnduranceCeiling / Kind.Days / 2 + extraInc;
+                int increase = EnduranceCeiling / facilityLevel.Days / 2 + extraInc;
 
                 Endurance += Math.Max(1, increase);
 
@@ -81,49 +81,58 @@ namespace GameObjects
 
         public void DoWork(Architecture architecture)
         {
-            foreach (var influence in Kind.Influences)
+            foreach (var influence in facilityLevel.Influences)
             {
                 influence.DoWork(architecture);
             }
         }
 
-        public int DaysText => Kind.Days * Session.Parameters.DayInTurn;
+        public int DaysText => facilityLevel.DaysText;
 
-        public string Description => Kind.Description;
+        public string Description => facilityLevel.Description;
 
-        public int EnduranceCeiling => Kind.Endurance;
+        public int EnduranceCeiling => facilityLevel.Endurance;
 
-        public List<Influence> Influences => Kind.Influences;
+        public List<Influence> Influences => facilityLevel.Influences;
         
-        public int MaintenanceCost => Kind.MaintenanceCost;
+        public int MaintenanceCost => facilityLevel.MaintenanceCost;
 
-        public new string Name => Kind.Name;
+        public new string Name => facilityLevel.Name;
 
-        public int PositionOccupied => Kind.PositionOccupied;
+        public int PositionOccupied => facilityLevel.PositionOccupied;
 
-        public int ArchitectureLimit => Kind.ArchitectureLimit;
+        public int ArchitectureLimit => facilityLevel.ArchitectureLimit;
 
-        public bool bukechaichu => Kind.bukechaichu;
+        public int FactionLimit => facilityLevel.FactionLimit;
 
-        public double AIValue(Architecture architecture) => Kind.AIValue(architecture);
+        public bool IsDemolishable => facilityLevel.IsDemolishable;
 
-        public Dictionary<Condition, float> AIBuildConditionWeight => Kind.AIBuildConditionWeight;
+        public Dictionary<Condition, float> AIBuildConditionWeight => facilityLevel.AIBuildConditionWeight;
 
-        public int rongna => Kind.rongna;
+        public int rongna => facilityLevel.ConcubineCapacity;
 
-        public bool IsProfitable => Kind.IsProfitable;
+        public bool IsProfitable => facilityLevel.IsProfitable;
+
+        public float AILevel => facilityLevel.AILevel;
+
+        public float AiValue(Architecture architecture) => facilityLevel.AiValue(architecture);
+
+        public int TechnologyNeeded => facilityLevel.TechnologyNeeded;
+
+        public int PointCost => facilityLevel.PointCost;
+
+        public int FundCost => facilityLevel.FundCost;
+
+        public string ConditionString => facilityLevel.ConditionString;
     }
 
     public class FacilityFactory
     {
-        public Facility Create(int kindId)
+        public Facility Create(FacilityKindLevel facilityLevel)
         {
-            var facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.Get(kindId) 
-                               ?? throw new Exception($"未找到id为{kindId}的设施种类，无法建造设施！");
+            var id = Session.Current.Scenario.Facilities.Keys.Max() + 1;
 
-            var id = Session.Current.Scenario.Facilities.GetFreeGameObjectID();
-
-            var facility = new Facility(id, kindId, facilityKind.Endurance);
+            var facility = new Facility(id, facilityLevel);
 
             return facility;
         }

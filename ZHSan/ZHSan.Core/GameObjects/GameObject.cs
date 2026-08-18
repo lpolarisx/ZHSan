@@ -17,7 +17,6 @@ namespace GameObjects
     [KnownType(typeof(Event))]
     [KnownType(typeof(Person))]
     [KnownType(typeof(Architecture))]
-    [KnownType(typeof(Facility))]
     [KnownType(typeof(Information))]
     [KnownType(typeof(Legion))]
     [KnownType(typeof(Military))]

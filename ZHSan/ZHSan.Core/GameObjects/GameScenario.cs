@@ -24,11 +24,10 @@ using Serilog.Core;
 using Serilog;
 using GameEnums;
 using System.Text;
+using GameDatas;
 
 namespace GameObjects
 {
-    //using GameObjects.PersonDetail.PersonMessages;
-    //using GameFreeText;
     [DataContract]
     public class GameScenario
     {
@@ -99,9 +98,11 @@ namespace GameObjects
 
         [DataMember]
         public DiplomaticRelationTable DiplomaticRelations = new DiplomaticRelationTable();
-
-        [DataMember]
-        public FacilityList Facilities = new FacilityList();
+        
+        /// <summary>
+        /// 设施
+        /// </summary>
+        public Dictionary<int, Facility> Facilities { get; set; } = new();
 
         [DataMember]
         public FactionListWithQueue Factions = new FactionListWithQueue();
@@ -1073,7 +1074,6 @@ namespace GameObjects
             this.AvailablePersons.Clear();
             this.PreparedAvailablePersons.Clear();
             this.Captives.Clear();
-            this.Facilities.Clear();
             this.Militaries.Clear();
             this.Treasures.Clear();
             this.Informations.Clear();
@@ -2250,11 +2250,9 @@ namespace GameObjects
 
         public Troop GetTroopByPosition(Point position)
         {
-            if (this.PositionOutOfRange(position))
-            {
-                return null;
-            }
-            return this.MapTileData[position.X, position.Y].TileTroop;
+            if (PositionOutOfRange(position)) return null;
+            
+            return MapTileData[position.X, position.Y].TileTroop;
         }
 
         public Troop GetTroopByPositionNoCheck(Point position)
@@ -2818,15 +2816,9 @@ namespace GameObjects
             return true;
         }
 
-        public bool SaveAvail()
-        {
-            return (this.IsPlayerControlling() && this.EnableLoadAndSave && !Session.GlobalVariables.HardcoreMode);
-        }
-
-        public bool LoadAvail()
-        {
-            return (this.IsPlayerControlling() && this.EnableLoadAndSave && !Session.GlobalVariables.HardcoreMode);
-        }
+        public bool SaveAvail() => IsPlayerControlling() && EnableLoadAndSave && !Session.GlobalVariables.HardcoreMode;
+       
+        public bool LoadAvail() => IsPlayerControlling() && EnableLoadAndSave && !Session.GlobalVariables.HardcoreMode;
 
         public bool isInCaptiveList(int personId)
         {
@@ -2871,12 +2863,17 @@ namespace GameObjects
                 influence.Init();
             }
 
-            foreach (var facilityKind in commonData.AllFacilityKinds?.FacilityKinds?.Values ?? Enumerable.Empty<FacilityKind>())
+            foreach (var facilityKind in commonData.AllFacilityKinds.Values)
             {
-                facilityKind.Influences = StaticMethods.LoadFromString(allInfluences, facilityKind.InfluencesString).Values.ToList();
-                facilityKind.Conditions = StaticMethods.LoadFromString(allConditions, facilityKind.ConditionTableString).Values.ToList();
                 facilityKind.AIBuildConditionWeight = Condition.LoadConditionWeightFromString(allConditions, facilityKind.AIBuildConditionWeightString);
             }
+
+            foreach (var facilityLevel in commonData.AllFacilityKindLevels.Values)
+            {
+                facilityLevel.Influences = StaticMethods.LoadFromString(allInfluences, facilityLevel.InfluencesString).Values.ToList();
+                facilityLevel.Conditions = StaticMethods.LoadFromString(allConditions, facilityLevel.ConditionTableString).Values.ToList();
+            }
+            commonData.GroupedFacilityKindLevels = commonData.AllFacilityKindLevels.Values.GroupBy(x => x.KindId).ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var technique in commonData.AllTechniques.Values)
             {
@@ -2947,7 +2944,7 @@ namespace GameObjects
 
         public List<string> ProcessScenarioData(bool fromScenario, bool editing = false)  //读剧本和读存档都调用了此函数
         {
-            List<string> errorMsg = new List<string>();
+            var errorMsg = new List<string>();
 
             Init();
             
@@ -3313,14 +3310,12 @@ namespace GameObjects
 
             this.InitializeMilitaryData();
 
-            foreach (Facility facility in this.Facilities)
-            {
-                if (this.GameCommonData.AllFacilityKinds.Get(facility.KindID) == null)
-                {
-                    errorMsg.Add("设施ID" + facility.ID + "：设施种类ID" + facility.KindID + "不存在");
-                    continue;
-                }
-            }
+            var dirPath = @"Content\Save";
+            var facilityStore = new JsonStore<FacilityConfig>(Path.Combine(dirPath, "Facilities.json"));
+            var facilities = facilityStore.Load();
+
+            Facilities = facilities.Select(x => new Facility(x)).ToDictionary(x => x.ID);
+
 
             //foreach (Information information in this.Informations)
             //{
@@ -3398,10 +3393,8 @@ namespace GameObjects
 
                 //architecture.MilitariesString = reader["Militaries"].ToString();
 
-                //architecture.FacilitiesString = reader["Facilities"].ToString();
-
                 e.AddRange(architecture.LoadMilitariesFromString(this.Militaries, architecture.MilitariesString));
-                architecture.LoadFacilitiesFromString(Facilities, architecture.FacilitiesString);
+                architecture.Facilities = StaticMethods.LoadFromString(Facilities, architecture.FacilitiesString).Values.ToList();
 
                 //architecture.FundPacksString = reader["FundPacks"].ToString();
 
@@ -4666,11 +4659,16 @@ namespace GameObjects
             ClearPersonStatusCache();
             ClearPersonWorkCache();
 
+            var dirPath = @"Content\Save";
+            var facilityStore = new JsonStore<FacilityConfig>(Path.Combine(dirPath, "Facilities.json"));
+            var facilities = Facilities.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+
+            facilityStore.Save(facilities);
+
             this.Architectures.GameObjects = this.Architectures.GameObjects.OrderBy(x => x.ID).ToList();
             this.AllBiographies.Biographys = this.AllBiographies.Biographys.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
             this.Captives.GameObjects = this.Captives.GameObjects.OrderBy(x => x.ID).ToList();
             this.AllEvents.GameObjects = this.AllEvents.GameObjects.OrderBy(x => x.ID).ToList();
-            this.Facilities.GameObjects = this.Facilities.GameObjects.OrderBy(x => x.ID).ToList();
             this.Factions.GameObjects = this.Factions.GameObjects.OrderBy(x => x.ID).ToList();
             this.Informations.GameObjects = this.Informations.GameObjects.OrderBy(x => x.ID).ToList();
             this.Legions.GameObjects = this.Legions.GameObjects.OrderBy(x => x.ID).ToList();
@@ -4761,7 +4759,7 @@ namespace GameObjects
                     architecture.MilitariesString = architecture.Militaries.SaveToString();
                     architecture.FacilitiesString = StaticMethods.SaveIdToString(architecture.Facilities);
 
-                    architecture.PlanFacilityKindID = (architecture.PlanFacilityKind != null) ? architecture.PlanFacilityKind.ID : -1;
+                    architecture.PlanFacilityKindID = architecture.PlanFacilityKind?.ID ?? -1;
 
                     architecture.FundPacksString = architecture.SaveFundPacksToString();
                     architecture.FoodPacksString = architecture.SaveFoodPacksToString();
@@ -5127,14 +5125,11 @@ namespace GameObjects
 
             var scenarioClone = this.Clone();            
 
-            if (saveCommonData || UsingOwnCommonData)
-            {
-                SaveGameCommonData(scenarioClone);
-            }
-            else
+            if (!saveCommonData && !UsingOwnCommonData)
             {
                 scenarioClone.GameCommonData = null;
             }
+            
 
 
             if (saveSettings)
@@ -5270,16 +5265,6 @@ namespace GameObjects
                     logger.Error($"部队事件影响类型Id:[{kindId}]不存在");
                 }
             }
-        }
-
-        public static void SaveGameCommonData(GameScenario scenario)
-        {
-            var commonData = scenario.GameCommonData.Clone();
-            commonData.AllFacilityKinds.FacilityKinds = commonData.AllFacilityKinds.FacilityKinds.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-
-            // TODO: 保存数据也需要重新匹配？
-
-            scenario.GameCommonData = commonData;
         }
 
         public static List<Scenario> LoadScenarioSaves()

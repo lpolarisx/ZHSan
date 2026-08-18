@@ -267,28 +267,20 @@ namespace CreateTroopPlugin
 
         private void InitialCreateingTroop()
         {
-            if (this.ShellMilitaryKind == null)
+            if (ShellMilitaryKind != null)
             {
-                if (this.CreatingArchitecture.GetCampaignMilitaryList().Count == 1)
-                {
-                    this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, this.CreatingPersons, this.CreatingLeader, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
-                    this.MoveCandidatesToPersons();
-                    this.CreatingMilitary = this.CreatingArchitecture.CampaignMilitaryList[0] as Military;
-                    this.AfterSelectMilitary();
-                }
+                CreatingMilitary = Military.SimCreate(CreatingArchitecture, ShellMilitaryKind);
             }
-            else
+
+            if (CreatingArchitecture.GetCampaignMilitaryList().Count == 1)
             {
-                this.CreatingMilitary = Military.SimCreate(this.CreatingArchitecture, this.ShellMilitaryKind);
-                if (this.CreatingArchitecture.GetCampaignMilitaryList().Count == 1)
-                {
-                    this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, this.CreatingPersons, this.CreatingLeader, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
-                    this.MoveCandidatesToPersons();
-                    this.CreatingMilitary.SetShelledMilitary(this.CreatingArchitecture.CampaignMilitaryList[0] as Military);
-                    this.AfterSelectMilitary();
-                }
+                CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, CreatingPersons, CreatingLeader, CreatingMilitary, RationDays, CreatingArchitecture.Position);
+                MoveCandidatesToPersons();
+                CreatingMilitary = CreatingArchitecture.CampaignMilitaryList[0] as Military;
+                AfterSelectMilitary();
             }
-            this.RefreshDetailDisplay();
+
+            RefreshDetailDisplay();
         }
 
         internal void Initialize()
@@ -840,7 +832,7 @@ namespace CreateTroopPlugin
             }
             if (this.ShellMilitaryKind == null)
             {
-                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, this.CreatingArchitecture.GetCampaignMilitaryList(), (this.CreatingMilitary == null) ? null : this.CreatingMilitary.GetGameObjectList(), "选择编队", "");
+                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, [.. CreatingArchitecture.GetCampaignMilitaryList()], (this.CreatingMilitary == null) ? null : this.CreatingMilitary.GetGameObjectList(), "选择编队", "");
             }
             else
             {
