@@ -449,15 +449,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetInformationToStop()
         {
-            this.CurrentGameObjects = this.CurrentArchitecture.Informations.GetSelectedList();
-            if (this.CurrentGameObjects != null)
+            var informations = CurrentArchitecture.Informations.Where(x => x.Selected).ToList();
+
+            foreach (var information in informations)
             {
-                foreach (Information i in this.CurrentGameObjects)
-                {
-                    i.Purify();
-                    this.CurrentArchitecture.RemoveInformation(i);
-                    Session.Current.Scenario.Informations.Remove(i);
-                }
+                information.Purify();
+                CurrentArchitecture.RemoveInformation(information);
+                Session.Current.Scenario.Informations.Remove(information.ID);
             }
         }
 

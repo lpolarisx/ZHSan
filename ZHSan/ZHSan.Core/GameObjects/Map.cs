@@ -125,7 +125,7 @@ namespace GameObjects
 
         public bool PositionOutOfRange(Point mapPosition)
         {
-            return ((((mapPosition.X < 0) || (mapPosition.Y < 0)) || (mapPosition.X >= this.mapDimensions.X)) || (mapPosition.Y >= this.mapDimensions.Y));
+            return mapPosition.X < 0 || mapPosition.Y < 0 || mapPosition.X >= mapDimensions.X || mapPosition.Y >= mapDimensions.Y;
         }
 
         public void Replace(int terrainID1, int terrainID2)

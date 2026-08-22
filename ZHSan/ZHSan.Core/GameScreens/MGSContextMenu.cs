@@ -157,7 +157,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.Feiziliebiao, null, "", "");
                     break;
                 case ContextMenuResult.Architecture_Informations:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.Informations, null, "", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.Informations], null, "", "");
                     break;
                 case ContextMenuResult.Architecture_LandLink:
                     this.mapEdited = true;
@@ -278,7 +278,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case ContextMenuResult.Faction_Informations:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.BelongedFaction.GetAllInformationList(), null, "", "");
+                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.GetAllInformationList()], null, "", "");
                     }
                     break;
                 case ContextMenuResult.Internal_StopWork:
@@ -591,7 +591,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Tactics_StopInformation:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.GetInformationToStop, false, true, true, true, this.CurrentArchitecture.Informations, null, "停止情报", "情报");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.GetInformationToStop, false, true, true, true, [.. CurrentArchitecture.Informations], null, "停止情报", "情报");
                     break;
                     /*
                 case ContextMenuResult.Tactics_Spy:

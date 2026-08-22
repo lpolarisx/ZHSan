@@ -688,7 +688,7 @@ namespace GameGlobal
 
             if (noExistsIds.Count > 0)
             {
-                logger.Error($"[{typeof(T).Name}] {string.Join(",", noExistsIds)}不存在。");
+                logger.Error($"[{typeof(T).Name}], Id:{string.Join(",", noExistsIds)}不存在。");
             }
 
             return result;

@@ -4,6 +4,7 @@ using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
+using GameDatas.Converts;
 
 namespace GameDatas;
 
@@ -15,7 +16,8 @@ public class JsonStore<T>
     {
         WriteIndented = true,
         PropertyNameCaseInsensitive = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new PointJsonConverter() } 
     };
 
     public JsonStore(string filePath) => _filePath = filePath;

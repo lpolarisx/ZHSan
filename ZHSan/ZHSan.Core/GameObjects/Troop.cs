@@ -20,6 +20,7 @@ using GameManager;
 using Platforms;
 using System.Linq;
 using GameEnums;
+using Extensions;
 
 namespace GameObjects
 {
@@ -8007,16 +8008,18 @@ namespace GameObjects
 
         public void Investigate(int days)
         {
-            Information information = new Information();
-            information.ID = Session.Current.Scenario.Informations.GetFreeGameObjectID();
-            information.Level = this.InvestigateLevel;
-            information.Radius = this.InvestigateRadius;
-            information.Position = this.SelfCastPosition;
-            information.Oblique = false;
-            //information.DaysLeft = days;
-            information.DaysLeft = days * Session.Parameters.DayInTurn;
-            Session.Current.Scenario.Informations.AddInformation(information);
-            this.BelongedFaction.AddInformation(information);
+            var information = new Information
+            {
+                ID = Session.Current.Scenario.Informations.GetNewId(),
+                Level = InvestigateLevel,
+                Radius = InvestigateRadius,
+                Position = SelfCastPosition,
+                Oblique = false,
+                DaysLeft = days * Session.Parameters.DayInTurn,
+            };
+            
+            Session.Current.Scenario.Informations.Add(information.ID, information);
+            BelongedFaction.AddInformation(information);
             information.Apply();
         }
 
@@ -8559,36 +8562,38 @@ namespace GameObjects
                         //CheckTroopRout(troopByPositionNoCheck);
                     }
                 }
-                if (this.BelongedFaction != null)
+                if (BelongedFaction != null)
                 {
-                    List<Information> toRemove = new List<Information>();
-                    foreach (Architecture a in this.BelongedFaction.Architectures)
+                    var points = currentArchitecture.ArchitectureArea.Area;
+                    var toRemove = new List<Information>();
+
+                    foreach (Architecture arch in BelongedFaction.Architectures)
                     {
-                        foreach (Information i in a.Informations)
+                        foreach (var information in arch.Informations)
                         {
-                            foreach (Point p in currentArchitecture.ArchitectureArea.Area)
+                            foreach (var point in points)
                             {
-                                if (i.Area.Area.Contains(p))
+                                if (information.Area.Area.Contains(point))
                                 {
-                                    toRemove.Add(i);
+                                    toRemove.Add(information);
                                     break;
                                 }
                             }
                         }
                     }
-                    while (toRemove.Count > 0)
+
+                    foreach (var information in toRemove)
                     {
-                        toRemove[0].Purify();
-                        if (toRemove[0].BelongedArchitecture != null)
+                        information.Purify();
+                        if (information.BelongedArchitecture != null)
                         {
-                            toRemove[0].BelongedArchitecture.RemoveInformation(toRemove[0]);
+                            information.BelongedArchitecture.RemoveInformation(information);
                         }
-                        else if (toRemove[0].BelongedFaction != null)
+                        else if (information.BelongedFaction != null)
                         {
-                            toRemove[0].BelongedFaction.RemoveInformation(toRemove[0]);
+                            information.BelongedFaction.RemoveInformation(information);
                         }
-                        Session.Current.Scenario.Informations.Remove(toRemove[0]);
-                        toRemove.Remove(toRemove[0]);
+                        Session.Current.Scenario.Informations.Remove(information.ID);
                     }
                 }
 

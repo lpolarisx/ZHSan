@@ -1,4 +1,5 @@
-﻿using GameEnums;
+﻿using Extensions;
+using GameEnums;
 using GameGlobal;
 using GameManager;
 using GameObjects.Animations;
@@ -3726,18 +3727,18 @@ namespace GameObjects
         {
             if (this.CurrentInformationKind != null && (!Session.Current.Scenario.IsPlayer(this.BelongedFaction) || (this.InformationAbility > 90 && GameObject.Random(280) < this.InformationAbility)))
             {
-                Information information = new Information();
-                information.ID = Session.Current.Scenario.Informations.GetFreeGameObjectID();
-                information.Level = this.CurrentInformationKind.Level;
-                information.Radius = this.CurrentInformationKind.Radius + this.RadiusIncrementOfInformation +
-                    (this.InformationAbility + GameObject.Random(100) - 50) / 200;
-                information.Position = this.OutsideDestination.Value;
-                information.Oblique = this.CurrentInformationKind.Oblique;
-                information.DayCost = (int)(240.0 / this.InformationAbility * this.CurrentInformationKind.CostFund *
-                    Math.Max(1.0, Session.Current.Scenario.GetDistance(information.Position, this.BelongedArchitecture.Position) / 20.0));
+                var information = new Information
+                {
+                    ID = Session.Current.Scenario.Informations.GetNewId(),
+                    Level = CurrentInformationKind.Level,
+                    Oblique = CurrentInformationKind.Oblique,
+                    Radius = CurrentInformationKind.Radius + RadiusIncrementOfInformation + (InformationAbility + GameObject.Random(100) - 50) / 200,
+                    Position = OutsideDestination.Value,
+                    DayCost = (int)(240.0 / InformationAbility * CurrentInformationKind.CostFund * Math.Max(1.0, Session.Current.Scenario.GetDistance(OutsideDestination.Value, BelongedArchitecture.Position) / 20.0))
+                };
 
-                Session.Current.Scenario.Informations.AddInformation(information);
-                this.BelongedArchitecture.AddInformation(information);
+                Session.Current.Scenario.Informations.Add(information.ID, information);
+                BelongedArchitecture.AddInformation(information);
 
                 information.Apply();
                 this.BelongedArchitecture.DecreaseFund(information.DayCost);

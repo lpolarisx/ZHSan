@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
 using GameManager;
+using GameEnums;
 
 namespace GameObjects
 {

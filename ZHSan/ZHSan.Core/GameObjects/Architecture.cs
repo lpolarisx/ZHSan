@@ -83,7 +83,6 @@ namespace GameObjects
 
             Militaries = new MilitaryList();
 
-            Informations = new InformationList();
             LevelUpMilitaryList = new MilitaryList();
 
             OtherArchitectureList = new ArchitectureList();
@@ -224,7 +223,11 @@ namespace GameObjects
 
         public MilitaryList Militaries = new MilitaryList();
 
-        public InformationList Informations = new InformationList();
+        /// <summary>
+        /// 情报
+        /// </summary>
+        public List<Information> Informations { get; set; } = new();
+
         public MilitaryList LevelUpMilitaryList = new MilitaryList();
 
         [DataMember]
@@ -2751,22 +2754,25 @@ namespace GameObjects
                 }
             }
 
-            InformationList toRemove = new InformationList();
-            int dayCost = this.InformationDayCost;
-            foreach (Information i in this.Informations)
+            var toRemove = new List<Information>();
+            int dayCost = InformationDayCost;
+
+            foreach (var information in Informations)
             {
-                bool stop = true;
-                if (i.DaysStarted <= 3 * Session.Parameters.DayInTurn)
+                var stop = true;
+                var daysStarted = information.DaysStarted;
+                var points = information.Area.Area;
+
+                if (daysStarted <= 3 * Session.Parameters.DayInTurn)
                 {
                     stop = false;
                 }
-                else if (i.DaysStarted < GameObject.Random(10) + 30 && this.IsFundIncomeEnough && this.IsFundEnough
-                    && dayCost < 500)
+                else if (daysStarted < GameObject.Random(10) + 30 && IsFundIncomeEnough && IsFundEnough && dayCost < 500)
                 {
-                    foreach (Point p in i.Area.Area)
+                    foreach (var point in points)
                     {
-                        Architecture a = Session.Current.Scenario.GetArchitectureByPosition(p);
-                        if (a != null && !this.IsFriendly(a.BelongedFaction))
+                        var architecture = Session.Current.Scenario.GetArchitectureByPosition(point);
+                        if (architecture != null && !IsFriendly(architecture.BelongedFaction))
                         {
                             stop = false;
                             break;
@@ -2776,16 +2782,17 @@ namespace GameObjects
 
                 if (stop)
                 {
-                    bool hasEnemy = false;
-                    bool hasOwn = false;
-                    foreach (Point p in i.Area.Area)
+                    var hasEnemy = false;
+                    var hasOwn = false;
+                    foreach (var point in points)
                     {
-                        Troop t = Session.Current.Scenario.GetTroopByPosition(p);
-                        if (t != null && !this.IsFriendly(t.BelongedFaction))
+                        var troop = Session.Current.Scenario.GetTroopByPosition(point);
+
+                        if (troop != null && !IsFriendly(troop.BelongedFaction))
                         {
                             hasEnemy = true;
                         }
-                        if (t != null && t.BelongedFaction == this.BelongedFaction)
+                        if (troop != null && troop.BelongedFaction == BelongedFaction)
                         {
                             hasOwn = true;
                         }
@@ -2797,12 +2804,12 @@ namespace GameObjects
                     }
                 }
 
-                if (stop && this.PlanArchitecture != null)
+                if (stop && PlanArchitecture != null)
                 {
-                    foreach (Point p in i.Area.Area)
+                    foreach (var point in points)
                     {
-                        Architecture a = Session.Current.Scenario.GetArchitectureByPosition(p);
-                        if (a == this.PlanArchitecture)
+                        var architecture = Session.Current.Scenario.GetArchitectureByPosition(point);
+                        if (architecture == PlanArchitecture)
                         {
                             stop = false;
                             break;
@@ -2812,11 +2819,11 @@ namespace GameObjects
 
                 if (!stop)
                 {
-                    foreach (Information j in this.Informations)
+                    foreach (var othreInfo in Informations)
                     {
-                        if (i == j) continue;
-                        if (toRemove.GameObjects.Contains(i)) continue;
-                        if (j.Position == i.Position && j.Radius >= i.Radius && j.DayCost < i.DayCost)
+                        if (information == othreInfo) continue;
+
+                        if (othreInfo.Position == information.Position && othreInfo.Radius >= information.Radius && othreInfo.DayCost < information.DayCost)
                         {
                             stop = true;
                             break;
@@ -2826,15 +2833,24 @@ namespace GameObjects
 
                 if (stop)
                 {
-                    toRemove.Add(i);
-                    dayCost -= i.DayCost;
+                    toRemove.Add(information);
+                    dayCost -= information.DayCost;
                 }
             }
-            foreach (Information i in toRemove)
+            RemoveInformations(toRemove);
+        }
+
+        /// <summary>
+        /// 移除情报
+        /// </summary>
+        /// <param name="informations"></param>
+        private void RemoveInformations(List<Information> informations)
+        {
+            foreach (var information in informations)
             {
-                i.Purify();
-                this.RemoveInformation(i);
-                Session.Current.Scenario.Informations.Remove(i);
+                information.Purify();
+                RemoveInformation(information);
+                Session.Current.Scenario.Informations.Remove(information.ID);
             }
         }
 
@@ -9323,15 +9339,9 @@ namespace GameObjects
             return list;
         }
 
-        public bool HasInformation()
-        {
-            return this.Informations.Count > 0;
-        }
+        public bool HasInformation() => Informations.Count > 0;
 
-        public bool FactionHasInformation()
-        {
-            return this.BelongedFaction != null && this.BelongedFaction.HasInformation();
-        }
+        public bool FactionHasInformation() => BelongedFaction?.HasInformation() ?? false;
 
         public int ShuijunMilitaryCount
         {
@@ -9606,40 +9616,15 @@ namespace GameObjects
             return false;
         }
 
-        public bool StopInformationAvail()
-        {
-            return this.Informations.Count > 0;
-        }
+        public bool StopInformationAvail() => Informations.Count > 0;
 
-        public int InformationDayCost
-        {
-            get
-            {
-                int sum = 0;
-                foreach (Information i in this.Informations)
-                {
-                    sum += i.DayCost;
-                }
-                return sum;
-            }
-        }
+        public int InformationDayCost => Informations.Sum(x => x.DayCost);
 
-        public string InformationCostString
-        {
-            get
-            {
-                return this.InformationDayCost * 30 + "/月";
-            }
-        }
+        public string InformationCostString => $"{InformationDayCost * 30}/月";
 
         public void RemoveAllInformations()
         {
-            foreach (Information information in this.Informations.GetList())
-            {
-                information.Purify();
-                this.RemoveInformation(information);
-                Session.Current.Scenario.Informations.Remove(information);
-            }
+            RemoveInformations(Informations.ToList());
         }
 
         private void InformationDayEvent()
@@ -10391,34 +10376,6 @@ namespace GameObjects
             }
         }
         */
-
-        public List<string> LoadInformationsFromString(InformationList informations, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.Informations.Clear();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    Information gameObject = informations.GetGameObject(int.Parse(str)) as Information;
-                    if (gameObject != null)
-                    {
-                        this.AddInformation(gameObject);
-                    }
-                    else
-                    {
-                        errorMsg.Add("情報" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("情報一欄應為半型空格分隔的情報ID");
-            }
-            return errorMsg;
-        }
 
         public bool MergeAvail()
         {
@@ -14850,13 +14807,13 @@ namespace GameObjects
 
         public void AddInformation(Information information)
         {
-            this.Informations.AddInformation(information);
+            Informations.Add(information);
             information.BelongedArchitecture = this;
         }
 
         public void RemoveInformation(Information information)
         {
-            this.Informations.Remove(information);
+            Informations.Remove(information);
             information.BelongedArchitecture = null;
         }
 

@@ -115,8 +115,10 @@ namespace GameObjects
         
         public TileAnimationGenerator GeneratorOfTileAnimation;
 
-        [DataMember]
-        public InformationList Informations = new InformationList();
+        /// <summary>
+        /// 情报
+        /// </summary>
+        public Dictionary<int, Information> Informations { get; set; } = new();
 
         [DataMember]
         public LegionList Legions = new LegionList();
@@ -1076,7 +1078,6 @@ namespace GameObjects
             this.Captives.Clear();
             this.Militaries.Clear();
             this.Treasures.Clear();
-            this.Informations.Clear();
             //this.SpyMessages.Clear();
             this.Routeways.Clear();
             GameObjectList t1 = this.Troops.GetList();
@@ -3316,11 +3317,11 @@ namespace GameObjects
 
             Facilities = facilities.Select(x => new Facility(x)).ToDictionary(x => x.ID);
 
+            var informationStore = new JsonStore<InformationConfig>(Path.Combine(dirPath, "Informations.json"));
+            var informations = informationStore.Load();
 
-            //foreach (Information information in this.Informations)
-            //{
-
-            //}
+            Informations = informations.Select(x => new Information(x)).ToDictionary(x => x.ID);
+            var data = new List<InformationConfig>();
 
             // 处理建筑数据
             foreach (Architecture architecture in this.Architectures)
@@ -3427,15 +3428,14 @@ namespace GameObjects
                     architecture.youzainan = false;
                 }
 
+                // 初始化情报
+                var formations = StaticMethods.LoadFromString(Informations, architecture.InformationsString).Values.ToList();
 
-                try
+                foreach (var item in formations)
                 {
-                    //architecture.InformationsString = (string)reader["Informations"];
-                    e.AddRange(architecture.LoadInformationsFromString(this.Informations, architecture.InformationsString));
+                    item.BelongedArchitecture = architecture;
                 }
-                catch
-                {
-                }
+                architecture.Informations = formations;
 
                 architecture.AIBattlingArchitectures = new ArchitectureList();
 
@@ -3619,8 +3619,14 @@ namespace GameObjects
                 //faction.TroopListString = reader["Troops"].ToString();
                 e.AddRange(faction.LoadTroopsFromString(this.Troops, faction.TroopListString));
 
-                //faction.InformationsString = reader["Informations"].ToString();
-                e.AddRange(faction.LoadInformationsFromString(this.Informations, faction.InformationsString));
+                // 初始化情报
+                var formations = StaticMethods.LoadFromString(Informations, faction.InformationsString).Values.ToList();
+
+                foreach (var item in formations)
+                {
+                    item.BelongedFaction = faction;
+                }
+                faction.Informations = formations;
 
                 //faction.RoutewaysString = reader["Routeways"].ToString();
                 e.AddRange(faction.LoadRoutewaysFromString(this.Routeways, faction.RoutewaysString));
@@ -3879,9 +3885,9 @@ namespace GameObjects
 
         private void ApplyInformations()
         {
-            foreach (Information i in this.Informations)
+            foreach (var information in Informations.Values)
             {
-                i.Apply();
+                information.Apply();
             }
         }
 
@@ -4662,15 +4668,17 @@ namespace GameObjects
             var dirPath = @"Content\Save";
             var facilityStore = new JsonStore<FacilityConfig>(Path.Combine(dirPath, "Facilities.json"));
             var facilities = Facilities.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
-
             facilityStore.Save(facilities);
+
+            var informationStore = new JsonStore<InformationConfig>(Path.Combine(dirPath, "Informations.json"));
+            var informations = Informations.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            informationStore.Save(informations);
 
             this.Architectures.GameObjects = this.Architectures.GameObjects.OrderBy(x => x.ID).ToList();
             this.AllBiographies.Biographys = this.AllBiographies.Biographys.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
             this.Captives.GameObjects = this.Captives.GameObjects.OrderBy(x => x.ID).ToList();
             this.AllEvents.GameObjects = this.AllEvents.GameObjects.OrderBy(x => x.ID).ToList();
             this.Factions.GameObjects = this.Factions.GameObjects.OrderBy(x => x.ID).ToList();
-            this.Informations.GameObjects = this.Informations.GameObjects.OrderBy(x => x.ID).ToList();
             this.Legions.GameObjects = this.Legions.GameObjects.OrderBy(x => x.ID).ToList();
             this.Militaries.GameObjects = this.Militaries.GameObjects.OrderBy(x => x.ID).ToList();
             this.Persons.GameObjects = this.Persons.GameObjects.OrderBy(x => x.ID).ToList();
@@ -4704,7 +4712,7 @@ namespace GameObjects
                     faction.SectionsString = faction.Sections.SaveToString();
                     faction.ArchitecturesString = faction.Architectures.SaveToString();
                     faction.TroopListString = faction.Troops.SaveToString(); ;
-                    faction.InformationsString = faction.Informations.SaveToString();
+                    faction.InformationsString = StaticMethods.SaveIdToString(faction.Informations);
                     faction.RoutewaysString = faction.Routeways.SaveToString();
                     faction.LegionsString = faction.Legions.SaveToString();
                     faction.BaseMilitaryKindsString = StaticMethods.SaveIdToString(faction.GetMilitaryKinds());
@@ -4784,7 +4792,7 @@ namespace GameObjects
                     //row["zainanleixing"] = architecture.zainan.zainanzhonglei.ID;
                     //row["zainanshengyutianshu"] = architecture.zainan.shengyutianshu;
 
-                    architecture.InformationsString = architecture.Informations.SaveToString();
+                    architecture.InformationsString = StaticMethods.SaveIdToString(architecture.Informations);
 
                     //string s = "";
                     //foreach (Architecture i in architecture.AIBattlingArchitectures)

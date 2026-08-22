@@ -3,10 +3,10 @@ using GameObjects.MapDetail;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Text;
 using GameManager;
+using GameEnums;
 
 
 namespace GameObjects

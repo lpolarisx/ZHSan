@@ -79,7 +79,6 @@ namespace GameObjects
 
             Sections = new SectionList();
 
-            Informations = new InformationList();
             KnownTroops = new Dictionary<int, Troop>();
 
             Legions = new LegionList();
@@ -195,7 +194,11 @@ namespace GameObjects
         [DataMember]
         public string InformationsString { get; set; }
 
-        public InformationList Informations = new InformationList();
+        /// <summary>
+        /// 情报
+        /// </summary>
+        public List<Information> Informations { get; set; } = new();
+
         private Dictionary<Point, InformationTile> knownAreaData;
         public Dictionary<int, Troop> KnownTroops = new Dictionary<int, Troop>();
         private Person leader = null;
@@ -719,7 +722,7 @@ namespace GameObjects
 
         public void AddInformation(Information information)
         {
-            this.Informations.AddInformation(information);
+            Informations.Add(information);
             information.BelongedFaction = this;
         }
 
@@ -747,7 +750,7 @@ namespace GameObjects
         {
             if (!Session.Current.Scenario.PositionOutOfRange(position))
             {
-                this.AddKnownAreaData(position, level);
+                AddKnownAreaData(position, level);
             }
         }
 
@@ -4336,32 +4339,41 @@ namespace GameObjects
 
         private void InformationDayEvent()
         {
-            InformationList list = new InformationList();
-            foreach (Information information in this.Informations)
+            var dayInTurn = Session.Parameters.DayInTurn;
+            var toRemove = new List<Information>();
+
+            foreach (var information in Informations)
             {
-                information.DaysLeft -= Session.Parameters.DayInTurn;
-                information.DaysStarted += Session.Parameters.DayInTurn;
+                information.DaysLeft -= dayInTurn;
+                information.DaysStarted += dayInTurn;
                 if (information.DaysLeft <= 0)
                 {
-                    list.Add(information);
+                    toRemove.Add(information);
                 }
                 else
                 {
                     information.CheckAmbushTroop();
                 }
             }
-            foreach (Architecture a in this.Architectures)
+
+            foreach (Architecture arch in Architectures)
             {
-                foreach (Information info in a.Informations)
+                foreach (var information in arch.Informations)
                 {
-                    info.DaysStarted += Session.Parameters.DayInTurn;
+                    information.DaysStarted += dayInTurn;
                 }
             }
-            foreach (Information information in list)
+
+            RemoveInformations(toRemove);
+        }
+
+        private void RemoveInformations(List<Information> informations)
+        {
+            foreach (var information in informations)
             {
                 information.Purify();
-                this.RemoveInformation(information);
-                Session.Current.Scenario.Informations.Remove(information);
+                RemoveInformation(information);
+                Session.Current.Scenario.Informations.Remove(information.ID);
             }
         }
 
@@ -4432,35 +4444,6 @@ namespace GameObjects
         {
             return (id == this.UpgradingTechnique);
         }
-
-        public List<string> LoadInformationsFromString(InformationList informations, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.Informations.Clear();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    Information gameObject = informations.GetGameObject(int.Parse(str)) as Information;
-                    if (gameObject != null)
-                    {
-                        this.AddInformation(gameObject);
-                    }
-                    else
-                    {
-                        errorMsg.Add("情报ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("情报列表应为半型空格分隔的情报ID");
-            }
-            return errorMsg;
-        }
-
         public List<string> LoadLegionsFromString(LegionList legions, string dataString)
         {
             List<string> errorMsg = new List<string>();
@@ -4721,12 +4704,12 @@ namespace GameObjects
             this.PrepareSecondTierMapCost();
             this.PrepareThirdTierMapCost();
             this.PrepareKnownAreaData();
-            this.PrepareInformations();
+            PrepareInformations();
         }
 
         public void PrepareInformations()
         {
-            foreach (Information information in this.Informations)
+            foreach (var information in Informations)
             {
                 information.Initialize();
             }
@@ -4855,7 +4838,7 @@ namespace GameObjects
 
         public void RemoveInformation(Information information)
         {
-            this.Informations.Remove(information);
+            Informations.Remove(information);
             information.BelongedFaction = null;
         }
 
@@ -4896,7 +4879,7 @@ namespace GameObjects
         {
             if (!Session.Current.Scenario.PositionOutOfRange(position))
             {
-                this.RemoveKnownAreaData(position, level);
+                RemoveKnownAreaData(position, level);
             }
         }
 
@@ -6709,16 +6692,10 @@ namespace GameObjects
             }
             return r;
         }
-
-        public int InformationCount
-        {
-            get
-            {
-                return this.Informations.Count;
-            }
-        }
+        public int InformationCount => Informations.Count;
 
         private float InternalSurplusRateCache = -1;
+
         public float InternalSurplusRate
         {
             get
@@ -7272,20 +7249,18 @@ namespace GameObjects
             }
         }
 
-        public InformationList GetAllInformationList()
+        public List<Information> GetAllInformationList()
         {
-            InformationList result = new InformationList();
-            foreach (Information i in this.Informations)
+            var result = new List<Information>(Informations);
+
+            foreach (Architecture arch in Architectures)
             {
-                result.Add(i);
-            }
-            foreach (Architecture a in this.Architectures)
-            {
-                foreach (Information i in a.Informations)
+                foreach (var information in arch.Informations)
                 {
-                    result.Add(i);
+                    result.Add(information);
                 }
             }
+
             return result;
         }
 
