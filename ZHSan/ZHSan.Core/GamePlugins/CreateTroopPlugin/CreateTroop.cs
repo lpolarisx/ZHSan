@@ -31,7 +31,7 @@ namespace CreateTroopPlugin
         internal Architecture CreatingArchitecture;
         internal Person CreatingLeader;
         internal Military CreatingMilitary;
-        internal GameObjectList CreatingPersons;
+        internal List<Person> CreatingPersons;
 #pragma warning disable CS0649 // Field 'CreateTroop.CreatingShelledMilitary' is never assigned to, and will always have its default value null
         internal Military CreatingShelledMilitary;
 #pragma warning restore CS0649 // Field 'CreateTroop.CreatingShelledMilitary' is never assigned to, and will always have its default value null
@@ -92,15 +92,15 @@ namespace CreateTroopPlugin
 
         private void AddLeaderPreferredPersons()
         {
-            if (this.CreatingLeader == null) return;
-            if (this.CreatingLeader.preferredTroopPersons.Count > 0)
+            if (CreatingLeader == null) return;
+
+            var architecturePersons = CreatingArchitecture.GetPersonsExcludeNvGuan();
+
+            foreach (var person in CreatingLeader.PreferredTroopPersons)
             {
-                foreach (Person p in this.CreatingLeader.preferredTroopPersons)
+                if (architecturePersons.Contains(person) && !CreatingPersons.Contains(person))
                 {
-                    if (this.CreatingArchitecture.PersonsExcludeNvGuan.GameObjects.Contains(p) && !this.CreatingPersons.GameObjects.Contains(p))
-                    {
-                        this.CreatingPersons.Add(p);
-                    }
+                    CreatingPersons.Add(person);
                 }
             }
         }
@@ -141,41 +141,43 @@ namespace CreateTroopPlugin
             this.zijin = 0;
             this.CreatingTroop.zijin = 0;
 
+            var followedLeader = CreatingMilitary.FollowedLeader;
+            var leader = CreatingMilitary.Leader;
+            var persons = CreatingArchitecture.GetPersonsExcludeNvGuan();
 
-
-            if (this.CreatingArchitecture.PersonCount == 1)
+            if (CreatingArchitecture.PersonCount == 1)
             {
-                this.CreatingPersons = this.CreatingArchitecture.PersonsExcludeNvGuan;
-                this.CreatingLeader = this.CreatingPersons[0] as Person;
+                CreatingPersons = persons;
+                CreatingLeader = persons[0];
             }
-            else if (this.CreatingArchitecture.PersonsExcludeNvGuan.HasGameObject(this.CreatingMilitary.FollowedLeader))
+            else if (persons.Contains(followedLeader))
             {
-                if (this.CreatingPersons == null)
+                if (CreatingPersons == null)
                 {
-                    this.CreatingPersons = new GameObjectList();
+                    CreatingPersons = new List<Person>();
                 }
                 else
                 {
-                    this.CreatingPersons.Clear();
+                    CreatingPersons.Clear();
                 }
-                this.CreatingPersons.Add(this.CreatingMilitary.FollowedLeader);
-                this.CreatingLeader = this.CreatingMilitary.FollowedLeader;
+                CreatingPersons.Add(followedLeader);
+                CreatingLeader = followedLeader;
             }
-            else if (this.CreatingArchitecture.PersonsExcludeNvGuan.HasGameObject(this.CreatingMilitary.Leader))
+            else if (persons.Contains(leader))
             {
-                if (this.CreatingPersons == null)
+                if (CreatingPersons == null)
                 {
-                    this.CreatingPersons = new GameObjectList();
+                    CreatingPersons = new List<Person>();
                 }
                 else
                 {
-                    this.CreatingPersons.Clear();
+                    CreatingPersons.Clear();
                 }
-                this.CreatingPersons.Add(this.CreatingMilitary.Leader);
-                this.CreatingLeader = this.CreatingMilitary.Leader;
+                CreatingPersons.Add(leader);
+                CreatingLeader = leader;
             }
 
-            this.AddLeaderPreferredPersons();
+            AddLeaderPreferredPersons();
         }
 
         internal void Draw()
@@ -274,9 +276,9 @@ namespace CreateTroopPlugin
 
             if (CreatingArchitecture.GetCampaignMilitaryList().Count == 1)
             {
-                CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, CreatingPersons, CreatingLeader, CreatingMilitary, RationDays, CreatingArchitecture.Position);
+                CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, [.. CreatingPersons], CreatingLeader, CreatingMilitary, RationDays, CreatingArchitecture.Position);
                 MoveCandidatesToPersons();
-                CreatingMilitary = CreatingArchitecture.CampaignMilitaryList[0] as Military;
+                CreatingMilitary = CreatingArchitecture.GetCampaignMilitaryList()[0];
                 AfterSelectMilitary();
             }
 
@@ -365,7 +367,7 @@ namespace CreateTroopPlugin
                         }
                     }
                 }
-                this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, this.CreatingPersons, this.CreatingLeader, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
+                this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, [.. CreatingPersons], this.CreatingLeader, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
                 this.MoveCandidatesToPersons();
                 if ((!this.shezhizijin && !this.setttingRation && (this.CreatingMilitary != null)) && (this.CreatingPersons != null))
                 {
@@ -436,7 +438,7 @@ namespace CreateTroopPlugin
 
                 }
                 */
-                this.MilitaryButtonEnabled = this.CreatingArchitecture.CampaignMilitaryList.Count > 1;
+                this.MilitaryButtonEnabled = CreatingArchitecture.GetCampaignMilitaryList().Count > 1;
                 this.PersonButtonEnabled = (this.CreatingMilitary != null) && (this.CreatingArchitecture.PersonCount > 1);
                 this.LeaderButtonEnabled = (this.CreatingPersons != null) && (this.CreatingPersons.Count > 1);
                 this.CreateButtonEnabled = ((this.CreatingTroop.PersonCount > 0) && (this.CreatingTroop.Leader != null)) && (this.CreatingTroop.Army != null);
@@ -814,7 +816,7 @@ namespace CreateTroopPlugin
 
         private void SelectLeader()
         {
-            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, false, this.CreatingPersons, this.CreatingLeader.GetGameObjectList(), "出征人物", "");
+            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, false, [.. CreatingPersons], this.CreatingLeader.GetGameObjectList(), "出征人物", "");
             this.GameFramePlugin.SetOKFunction(delegate {
                 this.CreatingLeader = this.TabListPlugin.SelectedItem as Person;
                 this.RefreshDetailDisplay();
@@ -836,7 +838,7 @@ namespace CreateTroopPlugin
             }
             else
             {
-                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, this.CreatingArchitecture.GetShelledMilitaryList(this.ShellMilitaryKind.Type), (this.CreatingMilitary.ShelledMilitary == null) ? null : this.CreatingMilitary.ShelledMilitary.GetGameObjectList(), "选择编队", "");
+                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, [.. CreatingArchitecture.GetShelledMilitaryList(ShellMilitaryKind.Type)], (this.CreatingMilitary.ShelledMilitary == null) ? null : this.CreatingMilitary.ShelledMilitary.GetGameObjectList(), "选择编队", "");
             }
             this.GameFramePlugin.SetOKFunction(delegate {
                 if (this.ShellMilitaryKind == null)
@@ -854,7 +856,7 @@ namespace CreateTroopPlugin
 
         private void SelectPersons()
         {
-            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, true, this.CreatingArchitecture.PersonsExcludeNvGuan, this.CreatingPersons, "出征人物", "");
+            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, true, [.. CreatingArchitecture.GetPersonsExcludeNvGuan()], [.. CreatingPersons], "出征人物", "");
             this.GameFramePlugin.SetOKFunction(delegate {
                 if (this.CreatingPersons != null)
                 {
@@ -864,7 +866,7 @@ namespace CreateTroopPlugin
                     }
                 }
 
-                this.CreatingPersons = this.TabListPlugin.SelectedItemList as GameObjectList;
+                this.CreatingPersons = this.TabListPlugin.SelectedItemList as List<Person>;
                 if (this.CreatingPersons.Count > 0)
                 {
                     Person selectedLeader = this.CreatingPersons[0] as Person;
@@ -873,7 +875,7 @@ namespace CreateTroopPlugin
                         int maxFightingAbility = 0;
                         foreach (Person p in this.CreatingPersons)
                         {
-                            this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, this.CreatingPersons, p, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
+                            this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, [.. CreatingPersons], p, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
                             this.MoveCandidatesToPersons();
                             if (this.CreatingTroop.FightingForce > maxFightingAbility)
                             {
@@ -890,14 +892,19 @@ namespace CreateTroopPlugin
 
         private void SelectTroopStartPosition()
         {
-            this.CreatingTroop.Leader.preferredTroopPersons.Clear();
-            foreach (Person p in this.CreatingPersons)
+            var leader = CreatingTroop.Leader;
+
+            var persons = new List<Person>();
+            foreach (Person person in CreatingPersons)
             {
-                if (p != this.CreatingTroop.Leader)
+                if (person != leader)
                 {
-                    this.CreatingTroop.Leader.preferredTroopPersons.Add(p);
+                    persons.Add(person);
                 }
             }
+
+            leader.PreferredTroopPersons = persons;
+
             if (this.CreateFunction != null)
             {
                 this.CreateFunction();

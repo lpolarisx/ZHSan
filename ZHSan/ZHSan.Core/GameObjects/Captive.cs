@@ -5,6 +5,9 @@ using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
 using GameManager;
 using GameEnums;
+using System.Linq;
+using GameObjects.PersonDetail;
+using System.Collections.Generic;
 
 namespace GameObjects
 {
@@ -43,13 +46,14 @@ namespace GameObjects
         public int CaptiveFactionID;
 
         private Person captivePerson;
+        
         public Person CaptivePerson
         {
             get
             {
                 if (captivePerson == null)
                 {
-                    captivePerson = (Person)Session.Current.Scenario.Persons.GetGameObject(CaptivePersonID);
+                    captivePerson = Session.Current.Scenario.AllPersons.GetValueOrDefault(CaptivePersonID);
                 }
                 return captivePerson;
             }
@@ -91,18 +95,17 @@ namespace GameObjects
 
         public static Captive Create(Person person, Faction capturingFaction)
         {
-            if (person.BelongedFaction == capturingFaction)
-            {
-                return null;
-            }
+            if (person.BelongedFaction == capturingFaction) return null;
+
             Captive captive = new Captive();
-            captive.ID = Session.Current.Scenario.Captives.GetFreeGameObjectID();
+            captive.ID = Session.Current.Scenario.GetCaptives().Max(x => x.ID) + 1;
             captive.CaptivePerson = person;
             person.DecreaseReputation(50);
             captive.CaptiveFaction = person.BelongedFaction;
-            person.SetBelongedCaptive(captive, GameObjects.PersonDetail.PersonStatus.Captive);
+            person.SetBelongedCaptive(captive, PersonStatus.Captive);
             person.HeldCaptiveCount++;
-            Session.Current.Scenario.Captives.AddCaptiveWithEvent(captive);
+            // Session.Current.Scenario.Captives.AddCaptiveWithEvent(captive);
+
             return captive;
         }
 

@@ -533,6 +533,8 @@ public class MilitaryKind : GameObject
 
     public MilitaryKind findSuccessorCreatable(List<MilitaryKind> kinds, Dictionary<int, MilitaryKind> newKinds)
     {
+        kinds = kinds.Distinct().ToList();
+
         foreach (var militaryKind in kinds)
         {
             militaryKind.findSuccessor_visited = false;

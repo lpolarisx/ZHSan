@@ -235,10 +235,10 @@ public class Title : GameObject
             }
             if (cnt >= this.FactionLimit) return false;
         }
-        if (Session.Current.Scenario.Persons.Count > this.MapLimit)
+        if (Session.Current.Scenario.AllPersons.Count > this.MapLimit)
         {
             int cnt = 0;
-            foreach (Person p in Session.Current.Scenario.Persons)
+            foreach (var p in Session.Current.Scenario.AllPersons.Values)
             {
                 if ((p.Alive || p.Available) && p.Titles.Contains(this))
                 {

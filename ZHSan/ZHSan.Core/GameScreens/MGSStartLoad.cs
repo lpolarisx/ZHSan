@@ -141,13 +141,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             faction.FirstSection.AIDetail = sectionAIDetails.First();
                         }
                     }
-                    foreach (Architecture jianzhu in Session.Current.Scenario.Architectures)
+                    foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                     {
-                        jianzhu.youzainan = false;
-                        if (Session.Current.Scenario.IsPlayer(jianzhu.BelongedFaction))
+                        architecture.youzainan = false;
+                        if (Session.Current.Scenario.IsPlayer(architecture.BelongedFaction))
                         {
-                            jianzhu.AutoHiring = true;
-                            jianzhu.AutoRewarding = true;
+                            architecture.AutoHiring = true;
+                            architecture.AutoRewarding = true;
                         }
                     }
                     /*
@@ -252,7 +252,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (Session.Current.Scenario.CurrentPlayer != null)
             {
-                this.Showyoucelan(UndoneWorkKind.None, FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures, null, "", "");
+                this.Showyoucelan(UndoneWorkKind.None, FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, [.. Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures], null, "", "");
                 //this.Plugins.youcelanPlugin.IsShowing = true;
                 ((this.Plugins.youcelanPlugin as youcelanPlugin.TabListPlugin).TabList as TabListInFrame).SetMouseEvent(this, true);
             }
@@ -283,35 +283,35 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             //qizidezi = new FreeText(new System.Drawing.Font("方正北魏楷书繁体", 30f), new Color(1f, 1f, 1f));
 
-            foreach (Architecture jianzhu in Session.Current.Scenario.Architectures)
+            foreach (var architecture in Session.Current.Scenario.Architectures.Values)
             {
-                //jianzhu.jianzhubiaoti = new FreeText(fontjianzhu, colorjianzhu);
-                ///////jianzhu.jianzhubiaoti.DisplayOffset = new Point(0, -mainMapLayer.TileWidth / 2);
-                //jianzhu.jianzhubiaoti.Text = jianzhu.Name;
-                //jianzhu.jianzhubiaoti.Align = TextAlign.Left;
-                jianzhu.jianzhuqizi = new qizi();
-                //jianzhu.jianzhuqizi.qizidezi = new FreeText(font1, color1);
+                //architecture.jianzhubiaoti = new FreeText(fontjianzhu, colorjianzhu);
+                ///////architecture.jianzhubiaoti.DisplayOffset = new Point(0, -mainMapLayer.TileWidth / 2);
+                //architecture.jianzhubiaoti.Text = architecture.Name;
+                //architecture.jianzhubiaoti.Align = TextAlign.Left;
+                architecture.jianzhuqizi = new qizi();
+                //architecture.jianzhuqizi.qizidezi = new FreeText(font1, color1);
 
                 try
                 {
-                    jianzhu.CaptionTexture = CacheManager.GetTempTexture("Content/Textures/Resources/Architecture/Caption/" + jianzhu.CaptionID + ".png");
-                    jianzhu.CaptionTexture.Width = 120;
-                    jianzhu.CaptionTexture.Height = 28;
+                    architecture.CaptionTexture = CacheManager.GetTempTexture("Content/Textures/Resources/Architecture/Caption/" + architecture.CaptionID + ".png");
+                    architecture.CaptionTexture.Width = 120;
+                    architecture.CaptionTexture.Height = 28;
                 }
                 catch
                 {
-                    jianzhu.CaptionTexture = CacheManager.GetTempTexture("Content/Textures/Resources/Architecture/Caption/None.png");
+                    architecture.CaptionTexture = CacheManager.GetTempTexture("Content/Textures/Resources/Architecture/Caption/None.png");
                 }
 
                 /*
-                if (jianzhu.BelongedFaction != null)
+                if (architecture.BelongedFaction != null)
                 {
-                    jianzhu.jianzhuqizi.qizidezi.Text = jianzhu.BelongedFaction.ToString().Substring(0, 1);
+                    architecture.jianzhuqizi.qizidezi.Text = architecture.BelongedFaction.ToString().Substring(0, 1);
                 }*/
 
                 //this.qizidezi.Align = TextAlign.Middle;
 
-                jianzhu.jianzhuqizi.qizipoint = new Point(jianzhu.dingdian.X, jianzhu.dingdian.Y - 1);
+                architecture.jianzhuqizi.qizipoint = new Point(architecture.dingdian.X, architecture.dingdian.Y - 1);
 
             }
         }

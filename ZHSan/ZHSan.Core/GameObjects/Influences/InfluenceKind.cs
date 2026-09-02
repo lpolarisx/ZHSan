@@ -1,4 +1,5 @@
-﻿using GameEnums;
+﻿using System.Collections.Generic;
+using GameEnums;
 using Microsoft.Xna.Framework;
 
 namespace GameObjects.Influences;
@@ -150,11 +151,11 @@ public class InfluenceKind : GameObject
         }
     }
 
-    private void ApplyToArchitectures(Influence influence, ArchitectureList archs, Applier applier, int id)
+    private void ApplyToArchitectures(Influence influence, List<Architecture> architectures, Applier applier, int id)
     {
-        foreach (Architecture arch in archs)
+        foreach (var architecture in architectures)
         {
-            ApplyFromEntry(arch, influence, applier, id);
+            ApplyFromEntry(architecture, influence, applier, id);
         }
     }
 
@@ -288,11 +289,11 @@ public class InfluenceKind : GameObject
         }
     }
 
-    private void PurifyFromArchitectures(Influence influence, ArchitectureList archs, Applier applier, int id)
+    private void PurifyFromArchitectures(Influence influence, List<Architecture> architectures, Applier applier, int id)
     {
-        foreach (Architecture arch in archs)
+        foreach (var architecture in architectures)
         {
-            PurifyFromArchitecture(influence, arch, applier, id);
+            PurifyFromArchitecture(influence, architecture, applier, id);
         }
     }
 

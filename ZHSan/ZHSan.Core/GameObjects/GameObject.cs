@@ -1,5 +1,4 @@
 ﻿using GameGlobal;
-using GameObjects.ArchitectureDetail;
 using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
 using System;
@@ -20,10 +19,7 @@ namespace GameObjects
     [KnownType(typeof(Information))]
     [KnownType(typeof(Legion))]
     [KnownType(typeof(Military))]
-    [KnownType(typeof(Region))]
     [KnownType(typeof(Routeway))]
-    [KnownType(typeof(Section))]
-    [KnownType(typeof(State))]
     [KnownType(typeof(Treasure))]
     [KnownType(typeof(TroopEvent))]
     [KnownType(typeof(Troop))]

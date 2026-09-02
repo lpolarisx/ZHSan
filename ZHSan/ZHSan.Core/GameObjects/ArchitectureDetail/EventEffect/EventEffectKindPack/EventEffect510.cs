@@ -1,4 +1,6 @@
-﻿using GameManager;
+﻿using GameGlobal;
+using GameManager;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace GameObjects.ArchitectureDetail.EventEffect;
@@ -12,11 +14,9 @@ public class EventEffect510 : EventEffectKind
 
         if (treasure.BelongedPerson != null && treasure.BelongedPerson == person)
         {
-            var random = Random(Session.Current.Scenario.Architectures.GameObjects.Count);
-
             person.LoseTreasure(treasure);
             treasure.Available = false;
-            treasure.HidePlace = Session.Current.Scenario.Architectures.GameObjects[random] as Architecture;
+            treasure.HidePlace = StaticMethods.GetRandomItem(Session.Current.Scenario.Architectures.Values.ToList());
         }
     }
 }

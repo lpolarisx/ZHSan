@@ -28,7 +28,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         public void Draw(Point viewportSize, GameTime gameTime)
         {
-            foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+            foreach (var architecture in Session.Current.Scenario.Architectures.Values)
             {
                 if (Session.MainGame.mainGameScreen.ShowArchitectureConnectedLine && Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(architecture.zhongxindian))
                 {
@@ -154,30 +154,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         private void drawArchitectureConnectedLine(Architecture architecture)
         {
             int linkType;
-            foreach (Architecture connectedArchitecture in architecture.AILandLinks)
+            foreach (var connectedArchitecture in architecture.AILandLinks)
             {
-                if (connectedArchitecture.AILandLinks.GameObjects.Contains(architecture))
-                {
-                    linkType = 0;
-                }
-                else
-                {
-                    linkType = 2;
-                }
-                this.drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
+                linkType = connectedArchitecture.AILandLinks.Contains(architecture) ? 0 : 2;
+                drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
 
             }
-            foreach (Architecture connectedArchitecture in architecture.AIWaterLinks)
+            foreach (var connectedArchitecture in architecture.AIWaterLinks)
             {
-                if (connectedArchitecture.AIWaterLinks.GameObjects.Contains(architecture))
-                {
-                    linkType = 1;
-                }
-                else
-                {
-                    linkType = 2;
-                }
-                this.drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
+                linkType = connectedArchitecture.AIWaterLinks.Contains(architecture) ? 1 : 2;
+                drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
             }
         }
 

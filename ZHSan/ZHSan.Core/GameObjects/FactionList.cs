@@ -94,7 +94,7 @@ namespace GameObjects
         {
             if (base.HasGameObject(faction))
             {
-                foreach (Architecture architecture in faction.Architectures.GetList())
+                foreach (var architecture in faction.Architectures)
                 {
                     faction.RemoveArchitecture(architecture);
                 }
@@ -106,7 +106,7 @@ namespace GameObjects
                 {
                     faction.RemoveLegion(legion);
                 }
-                foreach (Section section in faction.Sections.GetList())
+                foreach (var section in faction.Sections)
                 {
                     faction.RemoveSection(section);
                 }
@@ -115,4 +115,3 @@ namespace GameObjects
         }
     }
 }
-

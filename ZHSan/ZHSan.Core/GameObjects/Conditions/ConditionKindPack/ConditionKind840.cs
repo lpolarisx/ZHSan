@@ -10,7 +10,7 @@ public class ConditionKind840 : ConditionKind
     public override bool CheckConditionKind(Condition condition, Person person)
     {
         HashSet<Person> relatedPersons = new HashSet<Person>();
-        foreach (Person p in Session.Current.Scenario.Persons)
+        foreach (var p in Session.Current.Scenario.AllPersons.Values)
         {
             if (p.Father == person)
             {

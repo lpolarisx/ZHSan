@@ -46,8 +46,12 @@ namespace GameObjects
             }
         }
 
-        private Dictionary<int, Architecture> AllArchitectures = new Dictionary<int, Architecture>();
-        private Dictionary<int, Person> AllPersons = new Dictionary<int, Person>();
+        public Dictionary<int, Person> AllPersons { get; set; } = new();
+
+        /// <summary>
+        /// 已出场武将
+        /// </summary>
+        public Dictionary<int, Person> AvailablePersons { get; set; } = new();
 
         public FactionList PlayerFactions = new FactionList();
         public PersonList PreparedAvailablePersons = new PersonList();
@@ -88,7 +92,7 @@ namespace GameObjects
         /// 建筑列表
         /// </summary>
         [DataMember]
-        public ArchitectureList Architectures = new ArchitectureList();
+        public Dictionary<int, Architecture> Architectures { get; set; } = new();
         
         public Faction CurrentFaction;
         public Faction CurrentPlayer;
@@ -125,10 +129,11 @@ namespace GameObjects
 
         public TileData[,] MapTileData;
 
-        [DataMember]
-        public MilitaryList Militaries = new MilitaryList();
+        /// <summary>
+        /// 军队
+        /// </summary>
+        public Dictionary<int, Military> Militaries { get; set; } = new();
 
-        private Person neutralPerson;
         public bool NewInfluence;
 
         [DataMember]
@@ -138,6 +143,7 @@ namespace GameObjects
 
         [DataMember]
         public Dictionary<int, int> FatherIds = new Dictionary<int, int>();
+
         [DataMember]
         public Dictionary<int, int> MotherIds = new Dictionary<int, int>();
         [DataMember]
@@ -156,8 +162,8 @@ namespace GameObjects
         [DataMember]
         public List<PersonIDRelation> PersonRelationIds = new List<PersonIDRelation>();
 
-        [DataMember]
-        public PersonList Persons = new PersonList();
+        // [DataMember]
+        // public PersonList Persons = new PersonList();
 
         [DataMember]
         public List<int> PlayerList { get; set; }  
@@ -168,8 +174,10 @@ namespace GameObjects
         [DataMember]
         public string PlayerInfo { get; set; }        
 
-        [DataMember]
-        public RegionList Regions = new RegionList();
+        /// <summary>
+        /// 地区
+        /// </summary>
+        public Dictionary<int, Region> Regions { get; set; } = new();
 
         [DataMember]
         public RoutewayList Routeways = new RoutewayList();
@@ -183,12 +191,18 @@ namespace GameObjects
         [DataMember]
         public string ScenarioTitle;
 
+        /// <summary>
+        /// 军区
+        /// </summary>
         [DataMember]
-        public SectionList Sections = new SectionList();
+        public Dictionary<int, Section> Sections { get; set; } = new();
+
         //public GameMessageList SpyMessages = new GameMessageList();
 
-        [DataMember]
-        public StateList States = new StateList();
+        /// <summary>
+        /// 州域
+        /// </summary>
+        public Dictionary<int, State> States { get; set; } = new();
 
         public int[] TerrainAdaptability;
         public bool Threading;
@@ -272,8 +286,8 @@ namespace GameObjects
             this.GeneratorOfTileAnimation = new TileAnimationGenerator();
 
             //public static readonly string SCENARIO_ERROR_TEXT_FILE = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/GameData/ScenarioErrors.txt";
-            AllArchitectures = new Dictionary<int, Architecture>();
-            AllPersons = new Dictionary<int, Person>();
+
+            AvailablePersons = new();
 
             PlayerFactions = new FactionList();
             PreparedAvailablePersons = new PersonList();
@@ -458,7 +472,7 @@ namespace GameObjects
             EndurancePLCache = new Dictionary<Architecture, PersonList>();
             TrainingPLCache = new Dictionary<Architecture, PersonList>();
 
-            foreach (Person i in this.AvailablePersons)
+            foreach (var i in this.AvailablePersons.Values.ToList())
             {
                 if (i.Status == PersonStatus.Normal && i.WorkKind == ArchitectureWorkKind.赈灾 && (i.LocationTroop == null || !this.Troops.GameObjects.Contains(i.LocationTroop)))
                 {
@@ -536,7 +550,7 @@ namespace GameObjects
             PrincessPLCache = new Dictionary<Architecture, PersonList>();
             CaptivePLCache = new Dictionary<Architecture, CaptiveList>();
 
-            foreach (Person i in this.AvailablePersons)
+            foreach (var i in AvailablePersons.Values.ToList())
             {
                 if (i.Status == PersonStatus.Normal && i.LocationArchitecture != null && (i.LocationTroop == null || i.LocationTroop.Destroyed || !this.Troops.GameObjects.Contains(i.LocationTroop)))
                 {
@@ -579,15 +593,19 @@ namespace GameObjects
                     PrincessPLCache[i.LocationArchitecture].Add(i);
                 }
             }
-            foreach (Captive i in this.Captives)
+
+            var captives = GetCaptives();
+            foreach (var captive in captives)
             {
-                if (i.LocationArchitecture != null && i.CaptivePerson != null)
+                var architecture = captive.LocationArchitecture;
+
+                if (architecture != null && captive.CaptivePerson != null)
                 {
-                    if (!this.CaptivePLCache.ContainsKey(i.LocationArchitecture))
+                    if (!CaptivePLCache.ContainsKey(architecture))
                     {
-                        this.CaptivePLCache[i.LocationArchitecture] = new CaptiveList();
+                        CaptivePLCache[architecture] = new CaptiveList();
                     }
-                    CaptivePLCache[i.LocationArchitecture].Add(i);
+                    CaptivePLCache[architecture].Add(captive);
                 }
             }
         }
@@ -607,56 +625,50 @@ namespace GameObjects
         [DataMember]
         public CaptiveList captiveData = new CaptiveList();
 
-        public CaptiveList Captives
+        /// <summary>
+        /// 获取所有俘虏
+        /// </summary>
+        /// <returns></returns>
+        public List<Captive> GetCaptives()
         {
-            get
+            var result = new List<Captive>();
+            foreach (var person in AllPersons.Values)
             {
-                CaptiveList result = new CaptiveList();
-                foreach (Person i in this.Persons)
+                if (person.Status == PersonStatus.Captive && person.BelongedCaptive != null)
                 {
-                    if (i.Status == PersonStatus.Captive)
-                    {
-                        if (i.BelongedCaptive == null)
-                        {
-                            continue;
-                        }
-                        result.Add(i.BelongedCaptive);
-                    }
+                    result.Add(person.BelongedCaptive);
                 }
-                return result;
             }
+            return result;
         }
 
-        public PersonList AvailablePersons
-        {
-            get
-            {
-                PersonList result = new PersonList();
-                foreach (Person i in this.Persons)
-                {
-                    if (i.Status != PersonStatus.None && i.Alive && i.Available)
-                    {
-                        result.Add(i);
-                    }
-                }
-                return result;
-            }
-        }
+        // public PersonList AvailablePersons
+        // {
+        //     get
+        //     {
+        //         PersonList result = new PersonList();
+        //         foreach (Person i in this.Persons)
+        //         {
+        //             if (i.Status != PersonStatus.None && i.Alive && i.Available)
+        //             {
+        //                 result.Add(i);
+        //             }
+        //         }
+        //         return result;
+        //     }
+        // }
 
-        public PersonList DeadPersons
+        public List<Person> GetDeadPersons()
         {
-            get
+            var result = new List<Person>();
+            foreach (var person in AllPersons.Values)
             {
-                PersonList result = new PersonList();
-                foreach (Person i in this.Persons)
+                if (person.Status != PersonStatus.None && !person.Alive && person.Available)
                 {
-                    if (i.Status != PersonStatus.None && !i.Alive && i.Available)
-                    {
-                        result.Add(i);
-                    }
+                    result.Add(person);
                 }
-                return result;
             }
+            return result;
         }
 
         public void AddPositionAreaInfluence(Troop troop, Point position, AreaInfluenceKind kind, int offset, float rate)
@@ -795,7 +807,7 @@ namespace GameObjects
                 candidates.AddRange(person.Brothers.GameObjects);
                 candidates.Add(person.Father);
                 candidates.Add(person.Mother);
-                candidates.AddRange(person.Siblings.GameObjects);
+                candidates.AddRange(person.GetSiblings());
                 candidates.Add(person.Spouse?.Father);
                 candidates.Add(person.Spouse?.Mother);
 
@@ -845,7 +857,7 @@ namespace GameObjects
                         person.BelongedFaction.ConsiderPromoteNvGuan(person);
                     }
 
-                    this.AvailablePersons.Add(person);
+                    AvailablePersons.Add(person.ID, person);
                     if (joinToPerson.BelongedFactionWithPrincess != null) { 
                         Session.MainGame.mainGameScreen.haizizhangdachengren(joinToPerson, person, false);
                     }
@@ -860,7 +872,7 @@ namespace GameObjects
                     Faction f = (Faction)this.Factions.GetGameObject(id);
                     if (f != null)
                     {
-                        this.AvailablePersons.Add(person);
+                        AvailablePersons.Add(person.ID, person);
                         person.LocationArchitecture = f.Capital;
                         person.Status = PersonStatus.Normal;
                         person.YearJoin = this.Date.Year;
@@ -880,14 +892,7 @@ namespace GameObjects
                 }
 
                 if (joined) continue;
-                if (Setting.Current.Chuchangsuiji)
-                {
-                    person.LocationArchitecture = this.Architectures.GetRandomObject() as Architecture;
-                }
-                else
-                {
-                    person.LocationArchitecture = this.Architectures.GetGameObject(person.AvailableLocation) as Architecture;
-                }
+                person.LocationArchitecture = Setting.Current.Chuchangsuiji ? StaticMethods.GetRandomItem(Architectures.Values.ToList()) : Architectures.GetValueOrDefault(person.AvailableLocation);
                 person.Status = PersonStatus.NoFaction;
             }
             this.PreparedAvailablePersons.Clear();
@@ -1072,11 +1077,7 @@ namespace GameObjects
         {
             this.AllEvents.Clear();
             this.TroopEvents.Clear();
-            this.Persons.Clear();
-            this.AvailablePersons.Clear();
             this.PreparedAvailablePersons.Clear();
-            this.Captives.Clear();
-            this.Militaries.Clear();
             this.Treasures.Clear();
             //this.SpyMessages.Clear();
             this.Routeways.Clear();
@@ -1087,11 +1088,7 @@ namespace GameObjects
             }
             this.Troops.Clear();
             this.Legions.Clear();
-            this.Architectures.Clear();
-            this.Sections.Clear();
             this.Factions.Clear();
-            this.Regions.Clear();
-            this.States.Clear();
             this.ScenarioMap.Clear();
             this.PlayerFactions.Clear();
             this.FireTable.Clear();
@@ -1243,34 +1240,37 @@ namespace GameObjects
                 leader.DecreaseKarma(Math.Max(12, 12 + 5 * oldFactionLoyalty + oldFaction.Leader.Karma / 2));
             }
 
-            foreach (Person p in this.AvailablePersons)
+            foreach (var p in AvailablePersons.Values)
             {
-                if ((p.BelongedFaction == null || p.BelongedFaction == oldFaction) && !p.IsCaptive && p.Status != PersonStatus.Princess && p != leader)
+                if ((p.BelongedFaction != null && p.BelongedFaction != oldFaction)
+                    || p.IsCaptive || p.Status == PersonStatus.Princess || p == leader)
                 {
-                    int offset = Person.GetIdealOffset(leader, p);
-                    if (p.HasCloseStrainTo(leader) || p.IsVeryCloseTo(leader) || (GameObject.GetChance(100 - offset * 20) && p.BelongedFaction == oldFaction))
+                    continue;
+                }
+                
+                int offset = Person.GetIdealOffset(leader, p);
+                if (p.HasCloseStrainTo(leader) || p.IsVeryCloseTo(leader) || (GameObject.GetChance(100 - offset * 20) && p.BelongedFaction == oldFaction))
+                {
+                    if (p.BelongedFaction == null || p.IsVeryCloseTo(leader) || (GameObject.GetChance(100 - ((int)p.PersonalLoyalty) * 25 + (5 - offset) * 10)
+                        && GameObject.GetChance(220 - p.Loyalty * 2 + (5 - offset) * 20)))
                     {
-                        if (p.BelongedFaction == null || p.IsVeryCloseTo(leader) || (GameObject.GetChance(100 - ((int)p.PersonalLoyalty) * 25 + (5 - offset) * 10)
-                            && GameObject.GetChance(220 - p.Loyalty * 2 + (5 - offset) * 20)))
+                        if (p.BelongedFaction != null)
                         {
-                            if (p.BelongedFaction != null)
-                            {
-                                p.BelongedFaction.Leader.AdjustRelation(p, -45f - p.PersonalLoyalty * 4.5f, -8);
-                                p.BelongedFaction.Leader.AdjustRelation(newFaction.Leader, -45f, -2.5f);
-                                p.AdjustRelation(p.BelongedFaction.Leader, -7.5f, -2);
-                                p.ChangeFaction(newFaction);
-                                p.DecreaseKarma(5 - p.BelongedFaction.Leader.PersonalLoyalty - Math.Min(0, p.BelongedFaction.Leader.Karma / 2));
-                            }
-                            newFaction.Leader.AdjustRelation(p, 15f, 3);
-                            p.AdjustRelation(newFaction.Leader, 4.5f, 1);
-                            if (p.LocationTroop == null)
-                            {
-                                p.MoveToArchitecture(newFactionCapital, null, true, false, oldFaction);
-                            }
-                            else
-                            {
-                                p.LocationTroop.ChangeFaction(newFaction);
-                            }
+                            p.BelongedFaction.Leader.AdjustRelation(p, -45f - p.PersonalLoyalty * 4.5f, -8);
+                            p.BelongedFaction.Leader.AdjustRelation(newFaction.Leader, -45f, -2.5f);
+                            p.AdjustRelation(p.BelongedFaction.Leader, -7.5f, -2);
+                            p.ChangeFaction(newFaction);
+                            p.DecreaseKarma(5 - p.BelongedFaction.Leader.PersonalLoyalty - Math.Min(0, p.BelongedFaction.Leader.Karma / 2));
+                        }
+                        newFaction.Leader.AdjustRelation(p, 15f, 3);
+                        p.AdjustRelation(newFaction.Leader, 4.5f, 1);
+                        if (p.LocationTroop == null)
+                        {
+                            p.MoveToArchitecture(newFactionCapital, null, true, false, oldFaction);
+                        }
+                        else
+                        {
+                            p.LocationTroop.ChangeFaction(newFaction);
                         }
                     }
                 }
@@ -1368,7 +1368,7 @@ namespace GameObjects
             this.Factions.BuildQueue(false);
 
             this.TrainChildren();
-            this.Architectures.NoFactionDevelop();
+            NoFactionDevelop();
             this.FireDayEvent();
             this.NoFoodPositionDayEvent();
 
@@ -1389,7 +1389,7 @@ namespace GameObjects
             {
                 faction.DayEvent();
             }
-            foreach (Architecture architecture in this.Architectures.GetRandomList())
+            foreach (var architecture in StaticMethods.GetRandomList(Architectures.Values.ToList()))
             {
                 architecture.DayEvent();
             }
@@ -1423,11 +1423,15 @@ namespace GameObjects
 
 
             //this.GameProgressCaution.Text = "运行人物";
-            foreach (Person person in this.AvailablePersons.GetList())
+
+            var persons = AvailablePersons.Values.ToList();
+            var randomPersons = StaticMethods.GetRandomList(persons);
+
+            foreach (var person in persons)
             {
                 person.PreDayEvent();
             }
-            foreach (Person person in this.AvailablePersons.GetRandomList())
+            foreach (var person in randomPersons)
             {
                 person.DayEvent();
             }
@@ -1439,7 +1443,9 @@ namespace GameObjects
                 message.DayEvent();
             }
              */
-            foreach (Captive captive in this.Captives.GetRandomList())
+            
+            var randomCaptives = StaticMethods.GetRandomList(GetCaptives());
+            foreach (var captive in randomCaptives)
             {
                 captive.DayEvent();
             }
@@ -1473,6 +1479,17 @@ namespace GameObjects
             numberOfAmbushTroop = -1; // 缓存有几支部队在埋伏，绝大多数时候地图上根本没有埋伏部队，这时候不需要叫浪费时间的函数detectAmbushTroop
 
             Session.MainGame.mainGameScreen.DisposeMapTileMemory(false, false);
+        }
+
+        private void NoFactionDevelop()
+        {
+            foreach (var architecture in Architectures.Values)
+            {
+                if (architecture.BelongedFaction == null)
+                {
+                    architecture.DevelopDayNoFaction();
+                }
+            }
         }
 
         private void militaryKindEvent()
@@ -1510,7 +1527,7 @@ namespace GameObjects
             {
                 if (t.AutoLearn > 0 && GameObject.Random(t.AutoLearn) == 0)
                 {
-                    PersonList candidates = new PersonList();
+                    var candidates = new List<Person>();
                     if (t.Persons.Count > 0)
                     {
                         foreach (Person p in t.Persons)
@@ -1523,56 +1540,57 @@ namespace GameObjects
                     }
                     else
                     {
-                        candidates = this.AvailablePersons;
+                        candidates = AvailablePersons.Values.ToList();
                     }
-                    foreach (Person p in candidates)
+
+                    foreach (var person in candidates)
                     {
-                        if ((!this.IsPlayer(p.BelongedFaction) || Session.GlobalVariables.PermitManualAwardTitleAutoLearn) && !p.HasHigherLevelTitle(t) && !t.ManualAward && t.CanLearn(p, true))
+                        if ((!IsPlayer(person.BelongedFaction) || Session.GlobalVariables.PermitManualAwardTitleAutoLearn) && !person.HasHigherLevelTitle(t) && !t.ManualAward && t.CanLearn(person, true))
                         {
-                            p.AwardTitle(t);
+                            person.AwardTitle(t);
                         }
                     }
                 }
             }
         }
 
-
-        private static Person courier = null;
         private void titleDayEvent()
         {
-            if (courier == null)
+            var courier = AllPersons.GetValueOrDefault(7200);
+
+            foreach (var title in GameCommonData.AllTitles.Values)
             {
-                courier = (Person)this.Persons.GetGameObject(7200);
-            }
-            foreach (var t in GameCommonData.AllTitles.Values)
-            {
-                if (t.AutoLearn > 0 && GameObject.Random(t.AutoLearn) == 0)
+                var autoLearn = title.AutoLearn;
+                if (autoLearn > 0 && StaticMethods.Random(autoLearn) == 0)
                 {
-                    PersonList candidates = new PersonList();
-                    if (t.Persons.Count > 0)
+                    var persons = title.Persons;
+                    var candidates = new List<Person>();
+                    
+                    if (persons.Count > 0)
                     {
-                        foreach (Person p in t.Persons)
+                        foreach (Person person in persons)
                         {
-                            if (p.Available && p.Alive)
+                            if (person.Available && person.Alive)
                             {
-                                candidates.Add(p);
+                                candidates.Add(person);
                             }
                         }
                     }
                     else
                     {
-                        candidates = this.AvailablePersons;
+                        candidates = AvailablePersons.Values.ToList();
                     }
-                    foreach (Person p in candidates)
+
+                    foreach (var person in candidates)
                     {
-                        if (!p.HasHigherLevelTitle(t) && t.CanLearn(p, true) && !t.ManualAward)
+                        if (!person.HasHigherLevelTitle(title) && title.CanLearn(person, true) && !title.ManualAward)
                         {
-                            p.LearnTitle(t);
-                            Session.MainGame.mainGameScreen.AutoLearnTitle(p, courier, t);
+                            person.LearnTitle(title);
+                            Session.MainGame.mainGameScreen.AutoLearnTitle(person, courier, title);
                         }
-                        else if (p.HasTitle() && t.WillLose(p))
+                        else if (person.HasTitle() && title.WillLose(person))
                         {
-                            p.LoseTitle();
+                            person.LoseTitle();
                         }
                     }
                 }
@@ -1672,12 +1690,12 @@ namespace GameObjects
                 }
             }
             this.Troops.BuildQueue();
-            foreach (Architecture architecture in this.Architectures.GetList())
+
+            foreach (var architecture in Architectures.Values)
             {
                 architecture.HireFinished = false;
                 architecture.HasManualHire = false;
                 architecture.TodayPersonArriveNote = false;
-
             }
         }
 
@@ -2395,27 +2413,28 @@ namespace GameObjects
             this.InitializePersonData();
             //this.InitializeSpyMessageData();
 
-            foreach (Person p in Persons)
+            var persons = AllPersons.Values;
+            foreach (var person in AllPersons.Values)
             {
-                foreach (var t in p.UniqueTitles)
+                foreach (var title in person.UniqueTitles)
                 {
-                    t.Persons.Add(p);
+                    title.Persons.Add(person);
                 }
 
-                foreach (var militaryKind in p.UniqueMilitaryKinds)
+                foreach (var militaryKind in person.UniqueMilitaryKinds)
                 {
-                    militaryKind.Persons.Add(p);
+                    militaryKind.Persons.Add(person);
                 }
             }
 
             if (Session.GlobalVariables.RemoveSpouseIfNotAvailable)
             {
-                foreach (Person p in Persons)
+                foreach (var person in persons)
                 {
-                    if (!p.Available && p.Spouse != null && !p.Spouse.Available)
+                    if (!person.Available && person.Spouse != null && !person.Spouse.Available)
                     {
-                        p.suoshurenwuList.Remove(p.Spouse);
-                        p.Spouse = null;
+                        person.suoshurenwuList.Remove(person.Spouse);
+                        person.Spouse = null;
                     }
                 }
             }
@@ -2431,35 +2450,32 @@ namespace GameObjects
 
         public void InitializeArchitectureMapTile()
         {
-            foreach (Architecture architecture in this.Architectures)
+            var architectures = Architectures.Values;
+
+            foreach (var architecture in Architectures.Values)
             {
-                foreach (Point point in architecture.ArchitectureArea.Area)
+                foreach (var point in architecture.ArchitectureArea.Area)
                 {
-                    this.MapTileData[point.X, point.Y].TileArchitecture = architecture;
+                    MapTileData[point.X, point.Y].TileArchitecture = architecture;
                 }
             }
-            foreach (Architecture architecture in this.Architectures)
+
+            foreach (var architecture in architectures)
             {
-                this.SetMapTileArchitecture(architecture);
+                SetMapTileArchitecture(architecture);
             }
         }
 
         private void InitializeArchitectureData()
         {
-            foreach (Architecture architecture in this.Architectures)
+            var architectures = Architectures.Values;
+
+            foreach (var architecture in architectures)
             {
-                if (architecture.PlanArchitectureID >= 0)
-                {
-                    architecture.PlanArchitecture = this.Architectures.GetGameObject(architecture.PlanArchitectureID) as Architecture;
-                }
-                if (architecture.TransferFundArchitectureID >= 0)
-                {
-                    architecture.TransferFundArchitecture = this.Architectures.GetGameObject(architecture.TransferFundArchitectureID) as Architecture;
-                }
-                if (architecture.TransferFoodArchitectureID >= 0)
-                {
-                    architecture.TransferFoodArchitecture = this.Architectures.GetGameObject(architecture.TransferFoodArchitectureID) as Architecture;
-                }
+                architecture.PlanArchitecture = Architectures.GetValueOrDefault(architecture.PlanArchitectureID);
+                architecture.TransferFundArchitecture = Architectures.GetValueOrDefault(architecture.TransferFundArchitectureID);
+                architecture.TransferFoodArchitecture = Architectures.GetValueOrDefault(architecture.TransferFoodArchitectureID);
+                
                 if (architecture.DefensiveLegionID >= 0)
                 {
                     architecture.DefensiveLegion = this.Legions.GetGameObject(architecture.DefensiveLegionID) as Legion;
@@ -2471,12 +2487,13 @@ namespace GameObjects
             }
 
             bool redoLinks = false;
-            foreach (Architecture architecture2 in this.Architectures)
+            foreach (var architecture in architectures)
             {
-                architecture2.LoadAILandLinksFromString(this.Architectures, architecture2.AILandLinksString);
-                architecture2.LoadAIWaterLinksFromString(this.Architectures, architecture2.AIWaterLinksString);
+                architecture.AILandLinks = StaticMethods.LoadFromString(Architectures, architecture.AILandLinksString).Values.ToList();
+                architecture.AIWaterLinks = StaticMethods.LoadFromString(Architectures, architecture.AIWaterLinksString).Values.ToList();
             }
-            foreach (Architecture architecture2 in this.Architectures)
+
+            foreach (var architecture2 in architectures)
             {
                 if (architecture2.AILandLinks.Count == 0 && architecture2.AIWaterLinks.Count == 0)
                 {
@@ -2484,20 +2501,21 @@ namespace GameObjects
                     break;
                 }
             }
+
             if (redoLinks)
             {
-                foreach (Architecture architecture2 in this.Architectures)
+                foreach (var architecture2 in architectures)
                 {
                     architecture2.AILandLinks.Clear();
                     architecture2.AIWaterLinks.Clear();
                 }
-                foreach (Architecture architecture2 in this.Architectures)
+                foreach (var architecture2 in architectures)
                 {
-                    architecture2.FindLinks(this.Architectures);
+                    architecture2.FindLinks(architectures.ToList());
                 }
             }
 
-            foreach (Architecture architecture in this.Architectures)
+            foreach (var architecture in architectures)
             {
                 if (architecture.BelongedFaction != null)
                 {
@@ -2527,16 +2545,15 @@ namespace GameObjects
 
         private void InitializeCaptiveData()
         {
-            foreach (Captive captive in this.Captives)
+            var captives = GetCaptives();
+            foreach (var captive in captives)
             {
                 if (captive.CaptiveFactionID >= 0)
                 {
-                    captive.CaptiveFaction = this.Factions.GetGameObject(captive.CaptiveFactionID) as Faction;
+                    captive.CaptiveFaction = Factions.GetGameObject(captive.CaptiveFactionID) as Faction;
                 }
-                if (captive.RansomArchitectureID >= 0)
-                {
-                    captive.RansomArchitecture = this.Architectures.GetGameObject(captive.RansomArchitectureID) as Architecture;
-                }
+                
+                captive.RansomArchitecture = Architectures.GetValueOrDefault(captive.RansomArchitectureID);
             }
         }
 
@@ -2556,23 +2573,20 @@ namespace GameObjects
 
         private void InitializeMilitaryData()
         {
-            foreach (Military military in this.Militaries)
+            foreach (var military in Militaries.Values)
             {
                 if (military.ShelledMilitaryID >= 0)
                 {
-                    military.SetShelledMilitary(this.Militaries.GetGameObject(military.ShelledMilitaryID) as Military);
+                    military.SetShelledMilitary(Militaries.GetValueOrDefault(military.ShelledMilitaryID));
                 }
             }
         }
 
         private void InitializePersonData()
         {
-            foreach (Person person in this.Persons)
+            foreach (var person in AllPersons.Values)
             {
-                if (person.ConvincingPersonID >= 0)
-                {
-                    person.ConvincingPerson = this.Persons.GetGameObject(person.ConvincingPersonID) as Person;
-                }
+                person.ConvincingPerson = AllPersons.GetValueOrDefault(person.ConvincingPersonID);
             }
         }
 
@@ -2591,24 +2605,15 @@ namespace GameObjects
 
         private void InitializeSectionData()
         {
-            foreach (Section section in this.Sections)
+            foreach (var section in Sections.Values)
             {
                 if (section.OrientationFactionID >= 0)
                 {
-                    section.OrientationFaction = this.Factions.GetGameObject(section.OrientationFactionID) as Faction;
+                    section.OrientationFaction = Factions.GetGameObject(section.OrientationFactionID) as Faction;
                 }
-                if (section.OrientationSectionID >= 0)
-                {
-                    section.OrientationSection = this.Sections.GetGameObject(section.OrientationSectionID) as Section;
-                }
-                if (section.OrientationStateID >= 0)
-                {
-                    section.OrientationState = this.States.GetGameObject(section.OrientationStateID) as State;
-                }
-                if (section.OrientationArchitectureID >= 0)
-                {
-                    section.OrientationArchitecture = this.Architectures.GetGameObject(section.OrientationArchitectureID) as Architecture;
-                }
+                section.OrientationSection = Sections.GetValueOrDefault(section.OrientationSectionID);
+                section.OrientationState = States.GetValueOrDefault(section.OrientationStateID);
+                section.OrientationArchitecture = Architectures.GetValueOrDefault(section.OrientationArchitectureID);
             }
         }
 
@@ -2667,21 +2672,23 @@ namespace GameObjects
 
         private void InitializeMilitariesData()
         {
-            MilitaryList toRemove = new MilitaryList();
-            foreach (Military military in this.Militaries)
+            var toRemove = new List<Military>();
+
+            foreach (var military in Militaries.Values)
             {
                 if (military.Kind == null)
                 {
                     toRemove.Add(military);
                 }
             }
-            foreach (Military military in toRemove)
+
+            foreach (var military in toRemove)
             {
                 if (military.BelongedArchitecture != null)
                 {
                     military.BelongedArchitecture.RemoveMilitary(military);
                 }
-                this.Militaries.Remove(military);
+                Militaries.Remove(military.ID);
             }
         }
 
@@ -2821,11 +2828,12 @@ namespace GameObjects
        
         public bool LoadAvail() => IsPlayerControlling() && EnableLoadAndSave && !Session.GlobalVariables.HardcoreMode;
 
-        public bool isInCaptiveList(int personId)
+        public bool IsInCaptiveList(int personId)
         {
-            foreach (Captive i in this.Captives)
+            var captives = GetCaptives();
+            foreach (var captive in captives)
             {
-                if (i.CaptivePerson.ID == personId)
+                if (captive.CaptivePerson.ID == personId)
                 {
                     return true;
                 }
@@ -2960,20 +2968,58 @@ namespace GameObjects
                 //ScenarioMap.TileHeight = 50;
             //}
 
-            foreach (State state in this.States)
+            var dirPath = @"Content\Save";
+            var facilityStore = new JsonStore<FacilityConfig>(Path.Combine(dirPath, "Facilities.json"));
+            var facilities = facilityStore.Load();
+            Facilities = facilities.Select(x => new Facility(x)).ToDictionary(x => x.ID);
+
+            var informationStore = new JsonStore<InformationConfig>(Path.Combine(dirPath, "Informations.json"));
+            var informations = informationStore.Load();
+            Informations = informations.Select(x => new Information(x)).ToDictionary(x => x.ID);
+
+            var architectureStore = new JsonStore<ArchitectureConfig>(Path.Combine(dirPath, "Architectures.json"));
+            var architectures = architectureStore.Load();
+            Architectures = architectures.Select(x => new Architecture(x)).ToDictionary(x => x.ID);
+
+            var personStore = new JsonStore<PersonConfig>(Path.Combine(dirPath, "Persons.json"));
+            var persons = personStore.Load();
+            AllPersons = persons.Select(x => new Person(x)).ToDictionary(x => x.ID);
+
+            var stateStore = new JsonStore<StateConfig>(Path.Combine(dirPath, "States.json"));
+            var states = stateStore.Load();
+            States = states.Select(x => new State(x)).ToDictionary(x => x.ID);
+
+            var regionStore = new JsonStore<RegionConfig>(Path.Combine(dirPath, "Regions.json"));
+            var regions = regionStore.Load();
+            Regions = regions.Select(x => new Region(x)).ToDictionary(x => x.ID);
+
+            var sectionStore = new JsonStore<SectionConfig>(Path.Combine(dirPath, "Sections.json"));
+            var sections = sectionStore.Load();
+            Sections = sections.Select(x => new Section(x)).ToDictionary(x => x.ID);
+
+            var militaryStore = new JsonStore<MilitaryConfig>(Path.Combine(dirPath, "Militaries.json"));
+            var militaries = militaryStore.Load();
+            Militaries = militaries.Select(x => new Military(x)).ToDictionary(x => x.ID);
+
+
+            // var legionStore = new JsonStore<LegionConfig>(Path.Combine(dirPath, "Legions.json"));
+
+            foreach (var state in States.Values)
             {
-                state.Init();
-                state.LoadContactStatesFromString(this.States, state.ContactStatesString);
+                state.ContactStates = StaticMethods.LoadFromString(States, state.ContactStatesString).Values.ToList();
             }
 
-            foreach (Region region in this.Regions)
+            foreach (var region in Regions.Values)
             {
-                region.Init();
-                //region.StatesListString = reader["States"].ToString();
-                region.LoadStatesFromString(this.States, region.StatesListString);
+                var regionStates = StaticMethods.LoadFromString(States, region.StatesListString).Values.ToList();
+                foreach (var item in regionStates)
+                {
+                    item.LinkedRegion = region;
+                }
+                region.States = regionStates;
             }
 
-            foreach (Person person in Persons)
+            foreach (var person in AllPersons.Values)
             {
                 List<string> errors = new List<string>();
 
@@ -3033,272 +3079,327 @@ namespace GameObjects
                     person.TrainPolicy = trainPolicy;
                 }
 
-                //person.preferredTroopPersonsString = reader["PreferredTroopPersons"].ToString();
+                person.WaitForFeiZi = AllPersons.GetValueOrDefault(person.waitForFeiziId);
+                person.PreferredTroopPersons = StaticMethods.LoadFromString(AllPersons, person.preferredTroopPersonsString).Values.ToList();
 
-                this.Persons.AddPersonWithEvent(person, false);  //所有武将，并加载武将事件
-
-                this.AllPersons.Add(person.ID, person);   //武将字典
+                // Persons.AddPersonWithEvent(person, false);  //所有武将，并加载武将事件
 
                 // this.AllChildren.Add(person, person.NumberOfChildren);
 
                 if (person.Available && person.Alive)
                 {
-                    this.AvailablePersons.Add(person);  //已出场武将
-                }
-            }
-            
-            foreach (Person p in this.Persons)
-            {
-                p.WaitForFeiZi = this.Persons.GetGameObject(p.waitForFeiziId) as Person;
-                List<string> e = p.preferredTroopPersons.LoadFromString(this.Persons, p.preferredTroopPersonsString);
-                if (e.Count > 0)
-                {
-                    errorMsg.Add("人物ID" + p.ID + "：副将一栏：");
-                    errorMsg.AddRange(e);
+                    AvailablePersons.Add(person.ID, person);
                 }
             }
 
-            foreach (KeyValuePair<int, int> i in FatherIds)
+            foreach (var (childrenId, fatherId) in FatherIds)
             {
-                if (this.Persons.GetGameObject(i.Key) != null)
+                if (AllPersons.ContainsKey(childrenId) && AllPersons.ContainsKey(fatherId))
                 {
-                    (this.Persons.GetGameObject(i.Key) as Person).Father = this.Persons.GetGameObject(i.Value) as Person;
+                    AllPersons[childrenId].Father = AllPersons[fatherId];
                 }
             }
 
-            foreach (KeyValuePair<int, int> i in MotherIds)
+            foreach (var (childrenId, motherId) in MotherIds)
             {
-                if (this.Persons.GetGameObject(i.Key) != null)
+                if (AllPersons.ContainsKey(childrenId) && AllPersons.ContainsKey(motherId))
                 {
-                    (this.Persons.GetGameObject(i.Key) as Person).Mother = this.Persons.GetGameObject(i.Value) as Person;
+                    AllPersons[childrenId].Father = AllPersons[motherId];
                 }
             }
 
-            foreach (KeyValuePair<int, int> i in SpouseIds)
+            foreach (var (key, value) in SpouseIds)
             {
-                Person p = (this.Persons.GetGameObject(i.Key) as Person);
-                Person q = this.Persons.GetGameObject(i.Value) as Person;
-                if (p != null)
+                var person1 = AllPersons.GetValueOrDefault(key);
+                var person2 = AllPersons.GetValueOrDefault(value);
+
+                if (person1 != null && person2 != null)
                 {
-                    p.Spouse = q;
-                    if (q != null && fromScenario)
+                    person1.Spouse = person2;
+
+                    if (fromScenario)
                     {
-                        p.EnsureRelationAtLeast(q, Session.Parameters.VeryCloseThreshold);
+                        person1.EnsureRelationAtLeast(person2, Session.Parameters.VeryCloseThreshold);
                     }
                 }
             }
 
-            foreach (KeyValuePair<int, int[]> i in BrotherIds)
+            foreach (var (key, ids) in BrotherIds)
             {
-                if (i.Value.Length == 1 && i.Value[0] != -1)
+                var person = AllPersons.GetValueOrDefault(key);
+
+                if (person == null)
                 {
-                    foreach (KeyValuePair<int, int[]> j in BrotherIds)
+                    logger.Error($"兄弟关系的人物Id: [{key}]不存在");
+                    continue;
+                }
+
+                foreach (var id in ids)
+                {
+                    var brother = AllPersons.GetValueOrDefault(id);
+
+                    if (brother != null)
                     {
-                        if (j.Value.Length > 0 && i.Value[0] == j.Value[0])
+                        person.Brothers.Add(brother);
+
+                        if (fromScenario)
                         {
-                            Person p = this.Persons.GetGameObject(i.Key) as Person;
-                            Person q = this.Persons.GetGameObject(j.Key) as Person;
-                            if (p != null)
-                            {
-                                p.Brothers.Add(q);
-                                if (q != null && fromScenario)
-                                {
-                                    p.EnsureRelationAtLeast(q, Session.Parameters.VeryCloseThreshold);
-                                }
-                            }
+                            person.EnsureRelationAtLeast(brother, Session.Parameters.VeryCloseThreshold);
                         }
                     }
-                }
-                else
-                {
-                    Person p = this.Persons.GetGameObject(i.Key) as Person;
-                    foreach (int j in i.Value)
-                    {
-                        Person q = this.Persons.GetGameObject(j) as Person;
-                        if (q != null)
-                        {
-                            if (p != null)
-                            {
-                                p.Brothers.Add(q);
-                                if (q != null && fromScenario)
-                                {
-                                    p.EnsureRelationAtLeast(q, Session.Parameters.VeryCloseThreshold);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            errorMsg.Add("人物ID" + p.ID + "：义兄弟ID" + j + "不存在");
-                        }
-                    }
-                }
-            }
-
-            foreach (KeyValuePair<int, int[]> i in CloseIds)
-            {
-                Person p = this.Persons.GetGameObject(i.Key) as Person;
-                foreach (int j in i.Value)
-                {
-                    Person q = this.Persons.GetGameObject(j) as Person;
-                    if (p != null && q != null)
-                    {
-                        p.AddClose(q);
-                    }
-                    else if (p != null)
-                    {
-                        errorMsg.Add("人物ID" + p.ID + "：亲爱武将ID" + j + "不存在");
-                    }
-                }
-            }
-
-            foreach (KeyValuePair<int, int[]> i in HatedIds)
-            {
-                Person p = this.Persons.GetGameObject(i.Key) as Person;
-                foreach (int j in i.Value)
-                {
-                    Person q = this.Persons.GetGameObject(j) as Person;
-                    if (p != null && q != null)
-                    {
-                        p.AddHated(q);
-                    }
-                    else if (p != null)
-                    {
-                        errorMsg.Add("人物ID" + p.ID + "：厌恶武将ID" + j + "不存在");
-                    }
-                }
-            }
-
-            foreach (KeyValuePair<int, int[]> i in SuoshuIds)
-            {
-                Person p = this.Persons.GetGameObject(i.Key) as Person;
-                foreach (int j in i.Value)
-                {
-                    Person q = this.Persons.GetGameObject(j) as Person;
-                    if (p != null && q != null)
-                    {
-                        p.suoshurenwuList.Add(q);
-                    }
-                    else if (p != null)
-                    {
-                        errorMsg.Add("人物ID" + p.ID + "：所属人物表ID" + j + "不存在");
-                    } 
                     else
                     {
-                        errorMsg.Add("人物ID" + p + "：所属人物表ID" + j + "不存在");
+                        logger.Error($"兄弟关系的兄弟人物Id: [{id}]不存在");
+                    }
+                }
+
+                // if (ids.Length == 1 && ids[0] != -1)
+                // {
+                //     foreach (KeyValuePair<int, int[]> j in BrotherIds)
+                //     {
+                //         if (j.Value.Length > 0 && ids[0] == j.Value[0])
+                //         {
+                //             Person p = this.Persons.GetGameObject(i.Key) as Person;
+                //             Person q = this.Persons.GetGameObject(j.Key) as Person;
+                //             if (p != null)
+                //             {
+                //                 p.Brothers.Add(q);
+                //                 if (q != null && fromScenario)
+                //                 {
+                //                     p.EnsureRelationAtLeast(q, Session.Parameters.VeryCloseThreshold);
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+                // else
+                // {
+                //     var person = AllPersons.GetValueOrDefault(key);
+
+                //     if (person == null)
+                //     {
+                //         logger.Error($"兄弟关系的人物Id: [{key}]不存在");
+                //         continue;
+                //     }
+
+                //     foreach (var id in ids)
+                //     {
+                //         var brother = AllPersons.GetValueOrDefault(id);
+
+                //         if (brother != null)
+                //         {
+                //             person.Brothers.Add(brother);
+                            
+                //             if (fromScenario)
+                //             {
+                //                 person.EnsureRelationAtLeast(brother, Session.Parameters.VeryCloseThreshold);
+                //             }
+                //         }
+                //         else
+                //         {
+                //             logger.Error($"兄弟关系的兄弟人物Id: [{id}]不存在");
+                //         }
+                //     }
+                // }
+            }
+
+            foreach (var (key, ids) in CloseIds)
+            {
+                var person = AllPersons.GetValueOrDefault(key);
+
+                if (person == null)
+                {
+                    logger.Error($"亲密关系的人物Id: [{key}]不存在");
+                    continue;
+                }
+
+                foreach (var id in ids)
+                {
+                    var closePerson = AllPersons.GetValueOrDefault(id);
+
+                    if (closePerson != null)
+                    {
+                        person.AddClose(closePerson);
+                    }
+                    else
+                    {
+                        logger.Error($"亲密关系的亲爱人物Id: [{id}]不存在");
                     }
                 }
             }
 
-            foreach (KeyValuePair<int, int> i in MarriageGranterId)
+            foreach (var (key, ids) in HatedIds)
             {
-                if ((this.Persons.GetGameObject(i.Key) as Person) != null)
+                var person = AllPersons.GetValueOrDefault(key);
+
+                if (person == null)
                 {
-                    (this.Persons.GetGameObject(i.Key) as Person).marriageGranter = this.Persons.GetGameObject(i.Value) as Person;
+                    logger.Error($"厌恶关系的人物Id: [{key}]不存在");
+                    continue;
+                }
+
+                foreach (var id in ids)
+                {
+                    var hatedPerson = AllPersons.GetValueOrDefault(id);
+
+                    if (hatedPerson != null)
+                    {
+                        person.AddHated(hatedPerson);
+                    }
+                    else
+                    {
+                        logger.Error($"厌恶关系的厌恶人物Id: [{id}]不存在");
+                    }
                 }
             }
 
-            foreach (Person p in this.Persons)
+            foreach (var (key, ids) in SuoshuIds)
             {
-                if (p.Spouse != null && !p.suoshurenwuList.HasGameObject(p.Spouse))
+                var person = AllPersons.GetValueOrDefault(key);
+
+                if (person == null)
                 {
-                    p.suoshurenwuList.Add(p.Spouse);
-                    p.Spouse.suoshurenwuList.Add(p);
+                    logger.Error($"所属关系的人物Id: [{key}]不存在");
+                    continue;
+                }
+
+                foreach (var id in ids)
+                {
+                    var belongedPerson = AllPersons.GetValueOrDefault(id);
+
+                    if (belongedPerson != null)
+                    {
+                        person.suoshurenwuList.Add(belongedPerson);
+                    }
+                    else
+                    {
+                        logger.Error($"所属关系的所属人物Id: [{id}]不存在");
+                    }
+                }
+            }
+
+            foreach (var (id, otherId) in MarriageGranterId)
+            {
+                var person = AllPersons.GetValueOrDefault(id);
+                var otherPerson = AllPersons.GetValueOrDefault(otherId);
+
+                if (person != null && otherPerson != null)
+                {
+                    person.marriageGranter = otherPerson;
+                }
+            }
+
+            foreach (var person in AllPersons.Values)
+            {
+                var spouse = person.Spouse;
+
+                if (spouse != null && !person.suoshurenwuList.HasGameObject(spouse))
+                {
+                    person.suoshurenwuList.Add(spouse);
+                    person.Spouse.suoshurenwuList.Add(person);
                 }
             }
 
             foreach (var (id, biography) in AllBiographies.Biographys)
             {
-                Person p = (Person)Persons.GetGameObject(id);
-                if (p != null)
-                {
-                    biography.MilitaryKinds = StaticMethods.LoadFromString(GameCommonData.AllMilitaryKinds, biography.MilitaryKindsString).Values.ToList();
+                var person = AllPersons.GetValueOrDefault(id);
 
-                   
-                    if (biography.MilitaryKinds.Count == 0)
-                    {
-                        errorMsg.Add("列传人物ID" + id + "：没有基本兵种。");
-                    }
-                    
-                    p.PersonBiography = biography;
+                if (person == null) continue;
+
+                biography.MilitaryKinds = StaticMethods.LoadFromString(GameCommonData.AllMilitaryKinds, biography.MilitaryKindsString).Values.ToList();
+
+                if (biography.MilitaryKinds.Count == 0)
+                {
+                    logger.Error($"列传人物Id: [{id}]没有基本兵种。");
                 }
+
+                person.PersonBiography = biography;
             }
 
-            foreach (Person p in this.Persons)
+            foreach (var person in AllPersons.Values)
             {
-                if (p.PersonBiography == null)
+                if (person.PersonBiography == null)
                 {
-                    p.PersonBiography = new Biography();
-                    p.PersonBiography.FactionColor = 52;
-                    p.PersonBiography.AddBasicMilitaryKinds();
-                    p.PersonBiography.Brief = "";
-                    p.PersonBiography.History = "";
-                    p.PersonBiography.Romance = "";
-                    p.PersonBiography.InGame = "";
-                    p.PersonBiography.ID = p.ID;
-                    this.AllBiographies.AddBiography(p.PersonBiography);
+                    var biography = new Biography
+                    {
+                        ID = person.ID,
+                        FactionColor = 52,
+                        Brief = "",
+                        History = "",
+                        Romance = "",
+                        InGame = "",
+                    };
+                    biography.AddBasicMilitaryKinds();
+
+                    person.PersonBiography = biography;
+                    AllBiographies.AddBiography(biography);
                 }
             }
 
             foreach (var relation in PersonRelationIds)
             {
-                Person person1 = this.Persons.GetGameObject(relation.PersonID1) as Person;
-                Person person2 = this.Persons.GetGameObject(relation.PersonID2) as Person;
+                var id = relation.PersonID1;
+                var otherId = relation.PersonID2;
 
-                if (person1 == null)
+                var person = AllPersons.GetValueOrDefault(id);
+                var otherPerson = AllPersons.GetValueOrDefault(otherId);
+                
+                if (person != null && otherPerson != null)
                 {
-                    errorMsg.Add("人物关系：武将ID" + relation.PersonID1 + "不存在");
+                    person.SetRelation(otherPerson, relation.Relation);
                 }
-                if (person2 == null)
+
+                if (person == null)
                 {
-                    errorMsg.Add("人物关系：武将ID" + relation.PersonID2 + "不存在");
+                    logger.Error($"人物关系, 人物Id: [{id}]不存在");
                 }
-                if (person1 != null && person2 != null)
+                if (otherPerson == null)
                 {
-                    person1.SetRelation(person2, relation.Relation);
+                    logger.Error($"人物关系, 其他人物Id: [{otherId}]不存在");
                 }
             }
 
-            if (this.captiveData != null && !editing)
+            if (captiveData != null && !editing)
             {
-                foreach (Captive captive in this.captiveData)
+                foreach (Captive captive in captiveData)
                 {
-                    captive.CaptivePerson = this.Persons.GetGameObject(captive.CaptivePersonID) as Person;
-                    if (captive.CaptivePerson == null)
+                    var personId = captive.CaptivePersonID;
+                    var person = AllPersons.GetValueOrDefault(personId);
+                    if (person == null)
                     {
-                        errorMsg.Add("俘虏ID" + captive.ID + "：武将ID" + captive.CaptivePersonID + "不存在");
+                        logger.Error($"俘虏Id: [{captive.ID}], 人物Id: [{personId}]不存在");
                         continue;
                     }
                     else
                     {
-                        captive.CaptivePerson.SetBelongedCaptive(captive, PersonStatus.Captive);
-
-                        captive.CaptivePerson.Status = PersonStatus.Captive;
+                        person.SetBelongedCaptive(captive, PersonStatus.Captive);
+                        person.Status = PersonStatus.Captive;
+                        captive.CaptivePerson = person;
                     }
-
                 }
             }
 
-            this.Captives.BindEvents();
+            // TODO: 俘虏绑定事件
 
-            foreach (Military military in this.Militaries)
+            // Captives.BindEvents();
+
+            foreach (var military in Militaries.Values)
             {
                 military.Init();
 
                 var kindId = military.KindID;
                 if (!GameCommonData.AllMilitaryKinds.ContainsKey(kindId))
                 {
-                    errorMsg.Add($"编队ID:[{military.ID}], 兵种ID:[{kindId}]不存在");
+                    logger.Error($"编队Id: [{military.ID}], 军队Id: [{kindId}]不存在");
                     continue;
                 }
 
-                if (military.RecruitmentPersonID >= 0)
+                var person = AllPersons.GetValueOrDefault(military.RecruitmentPersonID);
+                if (person != null)
                 {
-                    Person person = (Person)this.Persons.GetGameObject(military.RecruitmentPersonID);
-                    if (person != null)
-                    {
-                        person.RecruitMilitary(military);
-                    }
+                    person.RecruitMilitary(military);
                 }
+
                 //foreach (Person p in this.Persons)
                 //{
                 //    if (p.ID == military.RecruitmentPersonID)
@@ -3311,20 +3412,10 @@ namespace GameObjects
 
             this.InitializeMilitaryData();
 
-            var dirPath = @"Content\Save";
-            var facilityStore = new JsonStore<FacilityConfig>(Path.Combine(dirPath, "Facilities.json"));
-            var facilities = facilityStore.Load();
-
-            Facilities = facilities.Select(x => new Facility(x)).ToDictionary(x => x.ID);
-
-            var informationStore = new JsonStore<InformationConfig>(Path.Combine(dirPath, "Informations.json"));
-            var informations = informationStore.Load();
-
-            Informations = informations.Select(x => new Information(x)).ToDictionary(x => x.ID);
-            var data = new List<InformationConfig>();
+            var captiveDict = GetCaptives().ToDictionary(x => x.ID);
 
             // 处理建筑数据
-            foreach (Architecture architecture in this.Architectures)
+            foreach (var architecture in Architectures.Values)
             {
                 List<string> e = new List<string>();
 
@@ -3337,38 +3428,37 @@ namespace GameObjects
                 }
                 else
                 {
-                    var message = $"建筑种类Id：{architecture.KindId}, 不存在";
-                    throw new Exception(message);
+                    logger.Error($"建筑种类Id：{architecture.KindId}, 不存在");
                 }
 
-                architecture.LocationState = this.States.GetGameObject(architecture.StateID) as State;
-                if (architecture.LocationState == null)
+                var architectureId = architecture.ID;
+                var stateId = architecture.StateID;
+
+                var state = States.GetValueOrDefault(stateId);
+                if (state != null)
                 {
-                    e.Add("州域ID" + architecture.KindId + "不存在");
+                    state.Architectures.Add(architecture);
+                    state.LinkedRegion.Architectures.Add(architecture);
+                    
+                    if (state.StateAdminID == architectureId)
+                    {
+                        state.StateAdmin = architecture;
+                    }
+                    if (state.LinkedRegion.RegionCoreID == architectureId)
+                    {
+                        state.LinkedRegion.RegionCore = architecture;
+                    }
+
+                    architecture.LocationState = state;
                 }
                 else
                 {
-                    architecture.LocationState.Architectures.Add(architecture);
-                    architecture.LocationState.LinkedRegion.Architectures.Add(architecture);
-                    if (architecture.LocationState.StateAdminID == architecture.ID)
-                    {
-                        architecture.LocationState.StateAdmin = architecture;
-                    }
-                    if (architecture.LocationState.LinkedRegion.RegionCoreID == architecture.ID)
-                    {
-                        architecture.LocationState.LinkedRegion.RegionCore = architecture;
-                    }
+                    logger.Error($"州域Id: [{stateId}]不存在");
                 }
 
                 architecture.Characteristics = StaticMethods.LoadFromString(GameCommonData.AllInfluences, architecture.CharacteristicsString);
 
-                //architecture.ArchitectureAreaString = reader["Area"].ToString();
-
-                if (architecture.ArchitectureArea == null)
-                {
-                    architecture.ArchitectureArea = new GameArea();
-                    architecture.LoadFromString(architecture.ArchitectureArea, architecture.ArchitectureAreaString);
-                }
+                architecture.LoadFromString(architecture.ArchitectureArea, architecture.ArchitectureAreaString);
 
                 //if (architecture.ArchitectureArea == null)
                 //{
@@ -3386,35 +3476,34 @@ namespace GameObjects
                 //architecture.NoFactionMovingPersonsString = reader["NoFactionMovingPersons"].ToString();
                 //architecture.feiziliebiaoString = reader["feiziliebiao"].ToString();
 
-                e.AddRange(architecture.LoadPersonsFromString(this.AllPersons, architecture.PersonsString, PersonStatus.Normal));
-                e.AddRange(architecture.LoadPersonsFromString(this.AllPersons, architecture.MovingPersonsString, PersonStatus.Moving));
-                e.AddRange(architecture.LoadPersonsFromString(this.AllPersons, architecture.NoFactionPersonsString, PersonStatus.NoFaction));
-                e.AddRange(architecture.LoadPersonsFromString(this.AllPersons, architecture.NoFactionMovingPersonsString, PersonStatus.NoFactionMoving));
-                e.AddRange(architecture.LoadPersonsFromString(this.AllPersons, architecture.feiziliebiaoString, PersonStatus.Princess));
+                e.AddRange(architecture.LoadPersonsFromString(AllPersons, architecture.PersonsString, PersonStatus.Normal));
+                e.AddRange(architecture.LoadPersonsFromString(AllPersons, architecture.MovingPersonsString, PersonStatus.Moving));
+                e.AddRange(architecture.LoadPersonsFromString(AllPersons, architecture.NoFactionPersonsString, PersonStatus.NoFaction));
+                e.AddRange(architecture.LoadPersonsFromString(AllPersons, architecture.NoFactionMovingPersonsString, PersonStatus.NoFactionMoving));
+                e.AddRange(architecture.LoadPersonsFromString(AllPersons, architecture.feiziliebiaoString, PersonStatus.Princess));
 
-                //architecture.MilitariesString = reader["Militaries"].ToString();
+                var architectureMilitaries = StaticMethods.LoadFromString(Militaries, architecture.MilitariesString).Values.ToList();
+                architecture.InitMilitaries(architectureMilitaries);
 
-                e.AddRange(architecture.LoadMilitariesFromString(this.Militaries, architecture.MilitariesString));
                 architecture.Facilities = StaticMethods.LoadFromString(Facilities, architecture.FacilitiesString).Values.ToList();
 
-                //architecture.FundPacksString = reader["FundPacks"].ToString();
-
-                //architecture.FoodPacksString = reader["FoodPacks"].ToString();
-
-                e.AddRange(architecture.LoadFundPacksFromString(architecture.FundPacksString));
-                try
-                {
-                    e.AddRange(architecture.LoadFoodPacksFromString(architecture.FoodPacksString));
-                }
-                catch { }
-
-                //architecture.PopulationPacksString = reader["PopulationPacks"].ToString();
-                e.AddRange(architecture.LoadPopulationPacksFromString(architecture.PopulationPacksString));
+                architecture.InitFundPacks();
+                architecture.InitFoodPacks();
+                architecture.InitPoplationPacks();
 
                 e.AddRange(architecture.LoadMilitaryPopulationPacksFromString(architecture.MilitaryPopulationPacksString));
 
-                //architecture.CaptivesString = reader["Captives"].ToString();
-                e.AddRange(architecture.LoadCaptivesFromString(this.Captives, architecture.CaptivesString));
+                var captives = StaticMethods.LoadFromString(captiveDict, architecture.CaptivesString).Values;
+                foreach (var captive in captives)
+                {
+                    var captivePerson = captive.CaptivePerson;
+
+                    if (captivePerson == null) continue;
+
+                    captivePerson.LocationArchitecture = architecture;
+                    captivePerson.LocationTroop = null;
+                    captivePerson.Status = PersonStatus.Captive;
+                }
 
                 //architecture.AILandLinksString = reader["AILandLinks"].ToString();
                 //architecture.AIWaterLinksString = reader["AIWaterLinks"].ToString();
@@ -3446,18 +3535,20 @@ namespace GameObjects
                 }
                 //else
                 //{
-                    this.Architectures.AddArchitectureWithEvent(architecture, false);
-                //后面宝物的所在地有用到此allar，所以要先将城池加入字典，否则会造成宝物所在地为空
-                this.AllArchitectures.Add(architecture.ID, architecture);
+                    // this.Architectures.AddArchitectureWithEvent(architecture, false);
                 //}
 
             }
 
-            foreach (KeyValuePair<int, int[]> a in AiBattlingArchitectureStrings)
+            foreach (var (key, arrays) in AiBattlingArchitectureStrings)
             {
-                foreach (int i in a.Value)
+                var architecture = Architectures.GetValueOrDefault(key);
+
+                if (architecture == null) continue;
+
+                foreach (int i in arrays)
                 {
-                    (this.Architectures.GetGameObject(a.Key) as Architecture).AIBattlingArchitectures.Add((this.Architectures.GetGameObject(i) as Architecture));
+                    architecture.AIBattlingArchitectures.Add(Architectures.GetValueOrDefault(i));
                 }
             }
 
@@ -3467,8 +3558,7 @@ namespace GameObjects
 
                 routeway.Init();
 
-                //routeway.StartArchitectureString = (int)reader["StartArchitecture"];
-                routeway.StartArchitecture = this.Architectures.GetGameObject(routeway.StartArchitectureString) as Architecture;
+                routeway.StartArchitecture = Architectures.GetValueOrDefault(routeway.StartArchitectureString);
 
                 if (routeway.StartArchitecture != null)
                 {
@@ -3479,11 +3569,9 @@ namespace GameObjects
                     e.Add("建筑ID" + routeway.StartArchitectureString + "不存在");
                 }
 
-                //routeway.EndArchitectureString = (int)reader["EndArchitecture"];
-                routeway.EndArchitecture = this.Architectures.GetGameObject(routeway.EndArchitectureString) as Architecture;
+                routeway.EndArchitecture = Architectures.GetValueOrDefault(routeway.EndArchitectureString);
 
-                //routeway.DestinationArchitectureString = (int)reader["DestinationArchitecture"];
-                routeway.DestinationArchitecture = this.Architectures.GetGameObject(routeway.DestinationArchitectureString) as Architecture;
+                routeway.DestinationArchitecture = Architectures.GetValueOrDefault(routeway.DestinationArchitectureString);
 
                 routeway.BelongedFaction = this.Factions.GetGameObject(routeway.BelongedFactionString) as Faction;
 
@@ -3497,16 +3585,15 @@ namespace GameObjects
                 //this.Routeways.AddRoutewayWithEvent(routeway);
             }
 
-            this.Troops.Init();
+            Troops.Init();
             
-            foreach (Troop troop in this.Troops)
+            foreach (Troop troop in Troops)
             {
                 List<string> errors = new List<string>();
 
                 troop.Init();
 
-                //troop.StartingArchitectureString = (short)reader["StartingArchitecture"];
-                troop.StartingArchitecture = this.Architectures.GetGameObject(troop.StartingArchitectureString) as Architecture;
+                troop.StartingArchitecture = Architectures.GetValueOrDefault(troop.StartingArchitectureString);
 
                 if (troop.StartingArchitecture == null)
                 {
@@ -3524,8 +3611,11 @@ namespace GameObjects
                 //    errors.Add("编队ID" + troop.MilitaryID + "不存在");
                 //}
 
-                //troop.CaptivesString = reader["Captives"].ToString();
-                errors.AddRange(troop.LoadCaptivesFromString(this.Captives, troop.CaptivesString.NullToString("")));
+                var captives = StaticMethods.LoadFromString(captiveDict, troop.CaptivesString).Values;
+                foreach (var captive in captives)
+                {
+                    troop.AddCaptive(captive);
+                }
 
                 troop.EventInfluences = StaticMethods.LoadFromString(GameCommonData.AllInfluences, troop.EventInfluencesString).Values.ToList();
 
@@ -3557,11 +3647,9 @@ namespace GameObjects
             {
                 legion.Init();
 
-                //legion.StartArchitectureString = (int)reader["StartArchitecture"];
-                legion.StartArchitecture = this.Architectures.GetGameObject(legion.StartArchitectureString) as Architecture;
+                legion.StartArchitecture = Architectures.GetValueOrDefault(legion.StartArchitectureString);
 
-                //legion.WillArchitectureString = (int)reader["WillArchitecture"];
-                legion.WillArchitecture = this.Architectures.GetGameObject(legion.WillArchitectureString) as Architecture;
+                legion.WillArchitecture = Architectures.GetValueOrDefault(legion.WillArchitectureString);
 
                 //legion.PreferredRoutewayString = (int)reader["PreferredRouteway"];
                 legion.PreferredRouteway = this.Routeways.GetGameObject(legion.PreferredRoutewayString) as Routeway;
@@ -3577,12 +3665,8 @@ namespace GameObjects
                 //this.Legions.AddLegionWithEvent(legion);
             }
 
-            foreach (Section section in this.Sections)
+            foreach (var section in Sections.Values)
             {
-                section.Init();
-
-                List<string> e = new List<string>();
-
                 if (GameCommonData.AllSectionAIDetails.TryGetValue(section.AIDetailIDString, out var sectionAIDetail))
                 {
                     section.AIDetail = sectionAIDetail;
@@ -3592,29 +3676,25 @@ namespace GameObjects
                     logger.Error($"军区委任类型Id: [{section.AIDetailIDString}]不存在");
                 }
 
-                //section.ArchitecturesString = reader["Architectures"].ToString();
-                e.AddRange(section.LoadArchitecturesFromString(this.Architectures, section.ArchitecturesString));
-
-                if (e.Count > 0)
+                var sectionArchitectures = StaticMethods.LoadFromString(Architectures, section.ArchitecturesString).Values.ToList();
+                foreach (var architecture in sectionArchitectures)
                 {
-                    errorMsg.Add("军区ID" + section.ID + "：");
-                    errorMsg.AddRange(e);
+                    architecture.BelongedSection = section;
                 }
-
-                //this.Sections.AddSectionWithEvent(section);
+                section.Architectures = sectionArchitectures;
             }
 
-            foreach (Faction faction in this.Factions)
+            foreach (Faction faction in Factions)
             {
                 List<string> e = new List<string>();
 
                 faction.Init();
 
-                //faction.ArchitecturesString = reader["Architectures"].ToString();
-                e.AddRange(faction.LoadArchitecturesFromString(this.Architectures, faction.ArchitecturesString));
+                var factionArchitectures = StaticMethods.LoadFromString(Architectures, faction.ArchitecturesString).Values.ToList();
+                faction.InitArchitectures(factionArchitectures);
 
-                //faction.SectionsString = reader["Sections"].ToString();
-                e.AddRange(faction.LoadSectionsFromString(this.Sections, faction.SectionsString));
+                var factionSections = StaticMethods.LoadFromString(Sections, faction.SectionsString).Values.ToList();
+                faction.InitSections(factionSections);
 
                 //faction.TroopListString = reader["Troops"].ToString();
                 e.AddRange(faction.LoadTroopsFromString(this.Troops, faction.TroopListString));
@@ -3650,19 +3730,17 @@ namespace GameObjects
                 {
                     faction.PlanTechnique = technique;
                 }
+                
+                faction.TransferingMilitaries = StaticMethods.LoadFromString(Militaries, faction.TransferingMilitariesString).Values.ToList();
 
-                //faction.TransferingMilitariesString = reader["TransferingMilitaries"].ToString();
-                e.AddRange(faction.LoadTransferingMilitariesFromString(this.Militaries, faction.TransferingMilitariesString.NullToString()));
+                // e.AddRange(faction.LoadMilitariesFromString(this.Militaries, faction.MilitariesString.NullToString()));
 
-                //faction.MilitariesString = reader["Militaries"].ToString();
-                e.AddRange(faction.LoadMilitariesFromString(this.Militaries, faction.MilitariesString.NullToString()));
 
                 //faction.GetGeneratorPersonCountString = reader["GetGeneratorPersonCount"].ToString();
                 e.AddRange(faction.LoadGeneratorPersonCountFromString(faction.GetGeneratorPersonCountString.NullToString()));
-                if (faction.PrinceID != -1 && this.Persons.GetGameObject(faction.PrinceID) as Person != null)//取消储君序列化，原有的方法会导致二次存档后储君为空
-                {
-                    faction.Prince = this.Persons.GetGameObject(faction.PrinceID) as Person;
-                }
+
+                //取消储君序列化，原有的方法会导致二次存档后储君为空
+                var prince = AllPersons.GetValueOrDefault(faction.PrinceID);
                
                 if (e.Count > 0)
                 {
@@ -3677,8 +3755,7 @@ namespace GameObjects
 
             foreach (Treasure treasure in Treasures)
             {
-                //treasure.HidePlaceIDString = (short)reader["HidePlace"];
-                treasure.HidePlace = AllArchitectures.ContainsKey(treasure.HidePlaceIDString) ? AllArchitectures[treasure.HidePlaceIDString] : null;
+                treasure.HidePlace = Architectures.GetValueOrDefault(treasure.HidePlaceIDString);
 
                 //treasure.BelongedPersonIDString = (short)reader["BelongedPerson"];
                 treasure.BelongedPerson = AllPersons.ContainsKey(treasure.BelongedPersonIDString) ? AllPersons[treasure.BelongedPersonIDString] : null;
@@ -3702,8 +3779,7 @@ namespace GameObjects
             {
                 te.Init();
 
-                //te.LaunchPersonString = (short)reader["LaunchPerson"];
-                te.LaunchPerson = this.Persons.GetGameObject(te.LaunchPersonString) as Person;
+                te.LaunchPerson = AllPersons.GetValueOrDefault(te.LaunchPersonString);
 
                 te.Conditions = StaticMethods.LoadFromString(GameCommonData.AllConditions, te.ConditionsString).Values.ToList();
 
@@ -3724,13 +3800,11 @@ namespace GameObjects
             {
                 e.Init();
 
-                //e.personString = reader["PersonId"].ToString();
-                e.LoadPersonIdFromString(this.Persons, e.personString);
+                e.person = e.LoadPersonIdFromString(AllPersons, e.personString);
 
                 e.personCond = StaticMethods.LoadListFromString(GameCommonData.AllConditions, e.PersonCondString);
-
-                //e.architectureString = reader["ArchitectureID"].ToString();
-                e.LoadArchitectureFromString(this.Architectures, e.architectureString);
+                
+                e.Architectures = StaticMethods.LoadFromString(Architectures, e.architectureString).Values.ToList();
 
                 e.architectureCond = StaticMethods.LoadFromString(GameCommonData.AllConditions, e.architectureCondString).Values.ToList();
 
@@ -3775,39 +3849,39 @@ namespace GameObjects
             }
             if(!editing)//这里不加条件的话，用剧本编辑器读取有错剧本时，可能出现游戏主程序能读剧本而编辑器打不开剧本的情况
             {
-                foreach (Person p in this.Persons)
+                foreach (var person in AllPersons.Values)
                 {
-                    if (p.Status == PersonStatus.Normal || p.Status == PersonStatus.Moving)
+                    if (person.Status == PersonStatus.Normal || person.Status == PersonStatus.Moving)
                     {
-                        if (p.LocationArchitecture != null && p.LocationArchitecture.BelongedFaction == null)
+                        if (person.LocationArchitecture != null && person.LocationArchitecture.BelongedFaction == null)
                         {
-                            errorMsg.Add("武将ID" + p.ID + "在一座没有势力的城池仕官");
-                            if (p.Status == PersonStatus.Normal)
+                            logger.Error($"人物Id: [{person.ID}]在一座没有势力的城池仕官");
+                            if (person.Status == PersonStatus.Normal)
                             {
-                                p.Status = PersonStatus.NoFaction;
+                                person.Status = PersonStatus.NoFaction;
                             }
                             else
                             {
-                                p.Status = PersonStatus.NoFactionMoving;
+                                person.Status = PersonStatus.NoFactionMoving;
                             }
                         }
                     }
-                    if (p.Status == PersonStatus.Moving || p.Status == PersonStatus.NoFactionMoving)
+                    if (person.Status == PersonStatus.Moving || person.Status == PersonStatus.NoFactionMoving)
                     {
-                        if (p.ArrivingDays <= 0)
+                        if (person.ArrivingDays <= 0)
                         {
-                            errorMsg.Add("武将ID" + p.ID + "正移动，但没有移动天数");
-                            p.ArrivingDays = 1;
+                            logger.Error($"人物Id: [{person.ID}]正移动，但没有移动天数");
+                            person.ArrivingDays = 1;
                         }
                     }
-                    if (p.Available && p.Alive && p.LocationArchitecture == null && p.LocationTroop == null && (p.ID < 7000 || p.ID >= 8000))
+                    if (person.Available && person.Alive && person.LocationArchitecture == null && person.LocationTroop == null && (person.ID < 7000 || person.ID >= 8000))
                     {
-                        if (p.Status != PersonStatus.Princess)
+                        if (person.Status != PersonStatus.Princess)
                         {
-                            errorMsg.Add("武将ID" + p.ID + "已登场，但没有所属建筑");
-                            p.Available = false;
-                            p.Alive = false;
-                            p.Status = PersonStatus.None;
+                            logger.Error($"人物Id: [{person.ID}]已登场，但没有所属建筑");
+                            person.Available = false;
+                            person.Alive = false;
+                            person.Status = PersonStatus.None;
                         }
                     }
                 }
@@ -3816,9 +3890,6 @@ namespace GameObjects
 
             this.YearTable.Init();
             //this.YearTable = new YearTable();
-
-            this.AllPersons.Clear();
-            this.AllArchitectures.Clear();
 
             this.alterTransportShipAdaptibility();
 
@@ -3914,31 +3985,31 @@ namespace GameObjects
 
         private void MigrateScenario()
         {
-            foreach (Architecture a in this.Architectures)
+            foreach (var architecture in Architectures.Values)
             {
-                if (a.MilitaryPopulation == 0)
+                if (architecture.MilitaryPopulation == 0)
                 {
-                    a.MilitaryPopulation = (int) (a.Population * (0.25 + (500000 - a.Population) / 500000 * 0.25));
+                    architecture.MilitaryPopulation = (int)(architecture.Population * (0.25 + (500000 - architecture.Population) / 500000 * 0.25));
                 }
             }
         }
 
         private void DeleteInvalidRelations()
         {
-            foreach (Person p in Persons)
+            foreach (var person in AllPersons.Values)
             {
-                if (p.Spouse != null && !p.Spouse.Alive)
+                if (person.Spouse != null && !person.Spouse.Alive)
                 {
-                    p.Spouse = null;
+                    person.Spouse = null;
                 }
 
-                if (p.Brothers != null)
+                if (person.Brothers != null)
                 {
-                    foreach (Person b in p.Brothers.GetList())
+                    foreach (Person brother in person.Brothers.GetList())
                     {
-                        if (!b.Alive)
+                        if (!brother.Alive)
                         {
-                            p.Brothers.Remove(b);
+                            person.Brothers.Remove(brother);
                         }
                     }
                 }
@@ -3961,8 +4032,8 @@ namespace GameObjects
             this.Preparing = true;
             this.Factions.BuildQueue(true);
             this.Factions.ApplyInfluences();
-            this.Architectures.ApplyInfluences();
-            this.Persons.ApplyInfluences();
+            ApplyArchitectureInfluences();
+            ApplyPersonInfluences();
             this.Preparing = false;
             this.InitialGameData();
             Session.Parameters.InitBaseRates();
@@ -3991,8 +4062,9 @@ namespace GameObjects
             this.Factions.BuildQueue(true);  //待考慮效果
             
             this.Factions.ApplyInfluences();            
-            this.Architectures.ApplyInfluences();
-            this.Persons.ApplyInfluences();
+            ApplyArchitectureInfluences();
+
+            ApplyPersonInfluences();
 
             this.Preparing = false;
 
@@ -4025,12 +4097,31 @@ namespace GameObjects
             this.sessionStartTime = DateTime.Now;
         }
 
+        private void ApplyArchitectureInfluences()
+        {
+            foreach (var architecture in Architectures.Values)
+            {
+                architecture.ApplyInfluences();
+            }
+        }
+
         public void AfterInit()
         {
             if (this.CurrentPlayer != null)
             {
                 detectCurrentPlayerBattleState(this.CurrentPlayer, true);
                 this.CurrentPlayer.RefreshImportantPerson();
+            }
+        }
+
+        public void ApplyPersonInfluences()
+        {
+            foreach (var person in AllPersons.Values)
+            {
+                person.ApplyTitles();
+                person.ApplySkills();
+                person.ApplyStunts();
+                person.ApplyAllTreasures();
             }
         }
 
@@ -4138,16 +4229,19 @@ namespace GameObjects
             {
                 faction.MonthEvent();
             }
-            foreach (Person person in this.Persons)
+            foreach (var person in AllPersons.Values)
             {
                 person.TryToBeAvailable();
             }
             this.AddPreparedAvailablePersons();
-            foreach (Person person in this.AvailablePersons.GetRandomList())
+
+            var randomPersons = StaticMethods.GetRandomList(AvailablePersons.Values.ToList());
+            foreach (var person in randomPersons)
             {
                 person.MonthEvent();
             }
-            foreach (Architecture architecture in this.Architectures.GetRandomList())
+
+            foreach (var architecture in StaticMethods.GetRandomList(Architectures.Values.ToList()))
             {
                 architecture.MonthEvent();
             }
@@ -4172,38 +4266,42 @@ namespace GameObjects
 
         private void AdjustGlobalPersonRelation()
         {
-            foreach (Person p in this.Persons)
+            var dayInTurn = Session.Parameters.DayInTurn;
+            foreach (var person in AllPersons.Values)
             {
-                if (p.Available && p.Alive && GameObject.Random(120 / Session.Parameters.DayInTurn) == 0)
+                if (person.Available && person.Alive && GameObject.Random(120 / dayInTurn) == 0)
                 {
-                    foreach (Person q in this.Persons)
+                    foreach (var otherPerson in AllPersons.Values)
                     {
-                        if (p == q) continue;
-                        if (!q.Alive)
+                        if (person == otherPerson) continue;
+
+                        if (!otherPerson.Alive)
                         {
-                            p.SetRelation(q, 0);
-                            q.SetRelation(p, 0);
+                            person.SetRelation(otherPerson, 0);
+                            otherPerson.SetRelation(person, 0);
                             continue;
                         }
 
-                        if (q.Available && q.Alive && p.BelongedFactionWithPrincess != null && GameObject.Random(30 / Session.Parameters.DayInTurn) == 0)
+                        if (otherPerson.Available 
+                            && otherPerson.Alive 
+                            && person.BelongedFactionWithPrincess != null 
+                            && GameObject.Random(30 / dayInTurn) == 0)
                         {
-                            float likeability = Person.GetIdealAttraction(p, q) * 8 + q.Glamour * 0.75f + p.Glamour * 0.25f + q.PersonalLoyalty * 7.5f + p.PersonalLoyalty * 2.5f - q.Ambition * 5 - p.Ambition * 5 - 100;
-                            
-                            bool sameWork = p.SameLocationAs(q) &&
-                                    (
-                                        (p.Status == PersonStatus.Normal && q.Status == PersonStatus.Normal &&
-                                            ((p.WorkKind == q.WorkKind) || (p.OutsideTask == q.OutsideTask))
-                                        ) ||
-                                        (p.Status == PersonStatus.Princess && q.Status == PersonStatus.Princess)
-                                    );
+                            float likeability = Person.GetIdealAttraction(person, otherPerson) * 8 + otherPerson.Glamour * 0.75f + person.Glamour * 0.25f + otherPerson.PersonalLoyalty * 7.5f + person.PersonalLoyalty * 2.5f - (otherPerson.Ambition + person.Ambition) * 5 - 100;
+                            bool sameLocation = person.SameLocationAs(otherPerson);
+
+                            bool sameWork = sameLocation
+                                            && ((person.Status == PersonStatus.Normal 
+                                                 && otherPerson.Status == PersonStatus.Normal 
+                                                 && (person.WorkKind == otherPerson.WorkKind || person.OutsideTask == otherPerson.OutsideTask)) 
+                                            || (person.Status == PersonStatus.Princess && otherPerson.Status == PersonStatus.Princess));
                             float factor = 0.0f;
                             
-                            if (p.LocationTroop == q.LocationTroop && p.LocationTroop != null && q.LocationTroop != null)
+                            if (person.LocationTroop == otherPerson.LocationTroop && person.LocationTroop != null && otherPerson.LocationTroop != null)
                             {
                                 factor = 3.0f;
                             }
-                            else if (p.SameLocationAs(q) && p.Hates(q) && p.Spouse == q && GameObject.GetChance(50))
+                            else if (sameLocation && person.Hates(otherPerson) && person.Spouse == otherPerson && GameObject.GetChance(50))
                             {
                                 factor = 3.0f;
                             }
@@ -4211,72 +4309,77 @@ namespace GameObjects
                             {
                                 factor = 1.0f;
                             } 
-                            else if (p.SameLocationAs(q) && GameObject.GetChance(50))
+                            else if (sameLocation && GameObject.GetChance(50))
                             {
                                 factor = 1.0f;
                             }
-                            else if (p.BelongedFactionWithPrincess == q.BelongedFactionWithPrincess && GameObject.GetChance(20))
+                            else if (person.BelongedFactionWithPrincess == otherPerson.BelongedFactionWithPrincess && GameObject.GetChance(20))
                             {
                                 factor = 1.0f;
                             }
 
                             if (factor > 0)
                             {
-                                if (GameObject.GetChance((int) (likeability / 4.0f)))
+                                int chance = (int)(likeability / 4);
+                                float relationFactor = 6 * factor;
+                                float adjust = 2 * factor;
+
+                                if (GameObject.GetChance(chance))
                                 {
-                                    p.AdjustRelation(q, 6f * factor, 2 * factor);
-                                    q.AdjustRelation(p, 6f * factor, 2 * factor);
+                                    person.AdjustRelation(otherPerson, relationFactor, adjust);
+                                    otherPerson.AdjustRelation(person, relationFactor, adjust);
                                 }
-                                else if (GameObject.GetChance((int)(-likeability / 4.0f)))
+                                else if (GameObject.GetChance(-chance))
                                 {
-                                    p.AdjustRelation(q, -6f * factor, -2 * factor);
-                                    q.AdjustRelation(p, -6f * factor, -2 * factor);
+                                    person.AdjustRelation(otherPerson, -relationFactor, -adjust);
+                                    otherPerson.AdjustRelation(person, -relationFactor, -adjust);
                                 }
                             }
                         }
 
-                        if (p.GetRelation(q) > 0)
+                        var relation = person.GetRelation(otherPerson);
+                        if (relation > 0)
                         {
-                            if (!p.Closes(q) && GameObject.GetChance((5 - p.PersonalLoyalty) * 20 - 10))
+                            var chance = (5 - person.PersonalLoyalty) * 20 - 10;
+                            if (!person.Closes(otherPerson) && GameObject.GetChance(chance))
                             {
-                                float d = (float) Session.Parameters.CloseThreshold / Math.Max(10, p.GetRelation(q));
-                                if (p.LocationArchitecture == q.LocationArchitecture || p.LocationTroop == q.LocationTroop)
+                                float d = (float)Session.Parameters.CloseThreshold / Math.Max(10, relation);
+                                if (person.LocationArchitecture == otherPerson.LocationArchitecture || person.LocationTroop == otherPerson.LocationTroop)
                                 {
-                                    p.AdjustRelation(q, -d / 5f, 0);
+                                    person.AdjustRelation(otherPerson, -d / 5f, 0);
                                 }
                                 else
                                 {
-                                    p.AdjustRelation(q, -d / 12.5f, 0);
+                                    person.AdjustRelation(otherPerson, -d / 12.5f, 0);
                                 }
 
-                                if (p.GetRelation(q) < 0)
+                                if (person.GetRelation(otherPerson) < 0)
                                 {
-                                    p.SetRelation(q, 0);
+                                    person.SetRelation(otherPerson, 0);
                                 }
                             }
                         }
-                        else if (p.GetRelation(q) < 0)
+                        else if (relation < 0)
                         {
-                            if (!p.Hates(q))
-                            {
-                                float d = Session.Parameters.HateThreshold / -p.GetRelation(q) / 5f;
-                                if (p.Status == PersonStatus.Princess && q.Status == PersonStatus.Princess)
-                                {
-                                    d *= 4;
-                                }
-                                if (p.LocationArchitecture == q.LocationArchitecture || p.LocationTroop == q.LocationTroop)
-                                {
-                                    p.AdjustRelation(q, -d / 5f, 0);
-                                }
-                                else
-                                {
-                                    p.AdjustRelation(q, -d / 12.5f, 0);
-                                }
+                            if (person.Hates(otherPerson)) continue;
 
-                                if (p.GetRelation(q) > 0)
-                                {
-                                    p.SetRelation(q, 0);
-                                }
+                            float d = Session.Parameters.HateThreshold / -relation / 5f;
+                            if (person.Status == PersonStatus.Princess && otherPerson.Status == PersonStatus.Princess)
+                            {
+                                d *= 4;
+                            }
+                            if (person.LocationArchitecture == otherPerson.LocationArchitecture || person.LocationTroop == otherPerson.LocationTroop)
+                            {
+                                person.AdjustRelation(otherPerson, -d / 5f, 0);
+                            }
+                            else
+                            {
+                                person.AdjustRelation(otherPerson, -d / 12.5f, 0);
+                            }
+
+                            if (person.GetRelation(otherPerson) > 0)
+                            {
+                                person.SetRelation(otherPerson, 0);
                             }
                         }
                     }
@@ -4299,7 +4402,7 @@ namespace GameObjects
                     {
                         faction.SeasonEvent();
                     }
-                    foreach (Architecture architecture in this.Architectures.GetRandomList())
+                    foreach (var architecture in StaticMethods.GetRandomList(Architectures.Values.ToList()))
                     {
                         architecture.DevelopSeason();
                     }
@@ -4316,21 +4419,25 @@ namespace GameObjects
         {
             if (GameObject.Random(15) == 0)
             {
-                this.NewFaction(this.AvailablePersons, false, false);
+                NewFaction(AvailablePersons.Values.ToList());
             }
         }
 
-        public void NewFaction(PersonList candidates, bool leaderChange, bool nonInherited)
+        public void NewFaction(List<Person> candidates, bool leaderChange = false, bool nonInherited = false)
         {
-            if (Session.GlobalVariables.WujiangYoukenengDuli == false) return;
+            if (!Session.GlobalVariables.WujiangYoukenengDuli) return;
 
-            PersonList list = new PersonList();
-            foreach (Person person in candidates)
+            var list = new List<Person>();
+            foreach (var person in candidates)
             {
                 if (person.YoukenengChuangjianXinShili())   //里面包含武将有可能独立的参数
                 {
-                    if ((person.Ambition > 1 && GameObject.Random((5 - person.Ambition) * (5 - person.Ambition) * (5 - person.Ambition)) == 0) ||
-                        (person.BelongedFaction != null && person.Hates(person.BelongedFaction.Leader)))
+                    var ambition = 5 - person.Ambition;
+                    var ambitionChance = ambition * ambition * ambition;
+                    var faction = person.BelongedFaction;
+
+                    if ((person.Ambition > 1 && GameObject.Random(ambitionChance) == 0) 
+                        || (faction != null && person.Hates(faction.Leader)))
                     {
                         list.Add(person);
                     }
@@ -4339,9 +4446,9 @@ namespace GameObjects
 
             if (list.Count == 0) return;
 
-            Person p = (Person)list[GameObject.Random(list.Count)];
+            var p = StaticMethods.GetRandomItem(list);
             int cnt = 0;
-            foreach (Person person8 in list)
+            foreach (var person8 in list)
             {
                 cnt++;
                 if (!leaderChange && cnt > 1)
@@ -4354,8 +4461,8 @@ namespace GameObjects
                     p = person8;
                 }
 
-                Architecture location = p.BelongedArchitecture;
-                Faction faction = p.BelongedFaction;
+                var location = p.BelongedArchitecture;
+                var faction = p.BelongedFaction;
                 if (location == null) continue;
                 if (faction != null && !p.Hates(faction.Leader))
                 {
@@ -4674,16 +4781,35 @@ namespace GameObjects
             var informations = Informations.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
             informationStore.Save(informations);
 
-            this.Architectures.GameObjects = this.Architectures.GameObjects.OrderBy(x => x.ID).ToList();
+            var architectureStore = new JsonStore<ArchitectureConfig>(Path.Combine(dirPath, "Architectures.json"));
+            var architectures = Architectures.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            architectureStore.Save(architectures);
+
+            var personStore = new JsonStore<PersonConfig>(Path.Combine(dirPath, "Persons.json"));
+            var persons = AllPersons.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            personStore.Save(persons);
+
+            var stateStore = new JsonStore<StateConfig>(Path.Combine(dirPath, "States.json"));
+            var states = States.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            stateStore.Save(states);
+
+            var regionStore = new JsonStore<RegionConfig>(Path.Combine(dirPath, "Regions.json"));
+            var regions = Regions.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            regionStore.Save(regions);
+
+            var sectionStore = new JsonStore<SectionConfig>(Path.Combine(dirPath, "Sections.json"));
+            var sections = Sections.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            sectionStore.Save(sections);
+
+            var militaryStore = new JsonStore<MilitaryConfig>(Path.Combine(dirPath, "Militaries.json"));
+            var militaries = Militaries.Values.Select(x => x.ToConfig()).OrderBy(x => x.Id).ToList();
+            militaryStore.Save(militaries);
+
             this.AllBiographies.Biographys = this.AllBiographies.Biographys.OrderBy(x => x.Value.ID).ToDictionary(x => x.Key, y => y.Value);
-            this.Captives.GameObjects = this.Captives.GameObjects.OrderBy(x => x.ID).ToList();
             this.AllEvents.GameObjects = this.AllEvents.GameObjects.OrderBy(x => x.ID).ToList();
             this.Factions.GameObjects = this.Factions.GameObjects.OrderBy(x => x.ID).ToList();
             this.Legions.GameObjects = this.Legions.GameObjects.OrderBy(x => x.ID).ToList();
-            this.Militaries.GameObjects = this.Militaries.GameObjects.OrderBy(x => x.ID).ToList();
-            this.Persons.GameObjects = this.Persons.GameObjects.OrderBy(x => x.ID).ToList();
             this.Routeways.GameObjects = this.Routeways.GameObjects.OrderBy(x => x.ID).ToList();
-            this.Sections.GameObjects = this.Sections.GameObjects.OrderBy(x => x.ID).ToList();
             this.Treasures.GameObjects = this.Treasures.GameObjects.OrderBy(x => x.ID).ToList();
             this.Troops.GameObjects = this.Troops.GameObjects.OrderBy(x => x.ID).ToList();
             this.TroopEvents.GameObjects = this.TroopEvents.GameObjects.OrderBy(x => x.ID).ToList();
@@ -4709,39 +4835,39 @@ namespace GameObjects
             {
                 foreach (Faction faction in this.Factions)
                 {
-                    faction.SectionsString = faction.Sections.SaveToString();
-                    faction.ArchitecturesString = faction.Architectures.SaveToString();
-                    faction.TroopListString = faction.Troops.SaveToString(); ;
+                    faction.SectionsString = StaticMethods.SaveIdToString(faction.Sections);
+                    faction.ArchitecturesString = StaticMethods.SaveIdToString(faction.Architectures);
+                    faction.TroopListString = faction.Troops.SaveToString();
                     faction.InformationsString = StaticMethods.SaveIdToString(faction.Informations);
                     faction.RoutewaysString = faction.Routeways.SaveToString();
                     faction.LegionsString = faction.Legions.SaveToString();
                     faction.BaseMilitaryKindsString = StaticMethods.SaveIdToString(faction.GetMilitaryKinds());
                     faction.AvailableTechniquesString = StaticMethods.SaveIdToString(faction.AvailableTechniques.Values);
-                    faction.PlanTechniqueString = (faction.PlanTechnique != null) ? faction.PlanTechnique.ID : -1;
+                    faction.PlanTechniqueString = faction.PlanTechnique?.ID ?? -1;
                     faction.GetGeneratorPersonCountString = faction.SaveGeneratorPersonCountToString();
-                    faction.TransferingMilitariesString = faction.TransferingMilitaries.SaveToString();
-                    faction.MilitariesString = faction.Militaries.SaveToString();
+                    faction.TransferingMilitariesString = StaticMethods.SaveIdToString(faction.TransferingMilitaries);
+                    faction.MilitariesString = StaticMethods.SaveIdToString(faction.Militaries);
                     faction.PrinceID = faction.Prince != null ? faction.Prince.ID : -1;
                 }
             }
 
-            foreach (Section section in this.Sections)
+            foreach (var section in Sections.Values)
             {
                 section.EnsureSectionArchitecture();
                 if (!editing)
                 {
                     section.AIDetailIDString = section.AIDetail.ID;
-                    section.OrientationFactionID = (section.OrientationFaction != null) ? section.OrientationFaction.ID : -1;
-                    section.OrientationSectionID = (section.OrientationSection != null) ? section.OrientationSection.ID : -1;
-                    section.OrientationStateID = (section.OrientationState != null) ? section.OrientationState.ID : -1;
-                    section.OrientationArchitectureID = (section.OrientationArchitecture != null) ? section.OrientationArchitecture.ID : -1;
-                    section.ArchitecturesString = section.Architectures.SaveToString();
+                    section.OrientationFactionID = section.OrientationFaction?.ID ?? -1;
+                    section.OrientationSectionID = section.OrientationSection?.ID ?? -1;
+                    section.OrientationStateID = section.OrientationState?.ID ?? -1;
+                    section.OrientationArchitectureID = section.OrientationArchitecture?.ID ?? -1;
+                    section.ArchitecturesString = StaticMethods.SaveIdToString(section.Architectures);
                 }
             }
 
             if (!editing)
             {
-                foreach (Architecture architecture in this.Architectures)
+                foreach (var architecture in Architectures.Values)
                 {
                     architecture.KindId = architecture.Kind.ID;
                     architecture.StateID = architecture.LocationState.ID;
@@ -4764,7 +4890,7 @@ namespace GameObjects
                     //row["TrainingWorkingPersons"] = architecture.TrainingWorkingPersons.SaveToString();
 
                     architecture.feiziliebiaoString = architecture.Feiziliebiao.SaveToString();
-                    architecture.MilitariesString = architecture.Militaries.SaveToString();
+                    architecture.MilitariesString = StaticMethods.SaveIdToString(architecture.Militaries);
                     architecture.FacilitiesString = StaticMethods.SaveIdToString(architecture.Facilities);
 
                     architecture.PlanFacilityKindID = architecture.PlanFacilityKind?.ID ?? -1;
@@ -4785,9 +4911,9 @@ namespace GameObjects
 
                     architecture.RobberTroopID = (architecture.RobberTroop != null) ? architecture.RobberTroop.ID : -1;
 
-                    architecture.AILandLinksString = architecture.AILandLinks.SaveToString();
+                    architecture.AILandLinksString = StaticMethods.SaveIdToString(architecture.AILandLinks);
 
-                    architecture.AIWaterLinksString = architecture.AIWaterLinks.SaveToString();
+                    architecture.AIWaterLinksString = StaticMethods.SaveIdToString(architecture.AIWaterLinks);
 
                     //row["zainanleixing"] = architecture.zainan.zainanzhonglei.ID;
                     //row["zainanshengyutianshu"] = architecture.zainan.shengyutianshu;
@@ -4832,7 +4958,7 @@ namespace GameObjects
                 troop.WillTroopID = troop.RealWillTroop == null ? -1 : troop.RealWillTroop.ID;
                 troop.WillArchitectureID = troop.RealWillArchitecture == null ? -1 : troop.RealWillArchitecture.ID;
 
-                if (!editing) troop.CaptivesString = troop.Captives.SaveToString();   //0413剧本编辑器部队可以存储俘虏  
+                if (!editing) troop.CaptivesString = StaticMethods.SaveIdToString(troop.Captives);  //0413剧本编辑器部队可以存储俘虏  
 
                 troop.EventInfluencesString = StaticMethods.SaveIdToString(troop.EventInfluences);
 
@@ -4867,24 +4993,25 @@ namespace GameObjects
                 }
             }
 
-            foreach (Military military in this.Militaries)
+            foreach (var military in Militaries.Values)
             {
-                military.FollowedLeaderID = (military.FollowedLeader != null) ? military.FollowedLeader.ID : -1;
-                military.LeaderID = (military.Leader != null) ? military.Leader.ID : -1;
+                military.FollowedLeaderID = military.FollowedLeader?.ID ?? -1;
+                military.LeaderID = military.Leader?.ID ?? -1;
 
                 //row["LeaderExperience"] = military.LeaderExperience;
 
                 //row["TrainingPersonID"] = -1;
 
-                military.RecruitmentPersonID = military.RecruitmentPerson == null ? -1 : military.RecruitmentPerson.ID;
-                military.ShelledMilitaryID = (military.ShelledMilitary != null) ? military.ShelledMilitary.ID : -1;
+                military.RecruitmentPersonID = military.RecruitmentPerson?.ID ?? -1;
+                military.ShelledMilitaryID = military.ShelledMilitary?.ID ?? -1;
             }
 
-            foreach (Captive captive in this.Captives)
+            var captives = GetCaptives();
+            foreach (var captive in captives)
             {
-                captive.CaptivePersonID = (captive.CaptivePerson != null) ? captive.CaptivePerson.ID : -1;
-                captive.CaptiveFactionID = (captive.CaptiveFaction != null) ? captive.CaptiveFaction.ID : -1;
-                captive.RansomArchitectureID = (captive.RansomArchitecture != null) ? captive.RansomArchitecture.ID : -1;
+                captive.CaptivePersonID = captive.CaptivePerson?.ID ?? -1;
+                captive.CaptiveFactionID = captive.CaptiveFaction?.ID ?? -1;
+                captive.RansomArchitectureID = captive.RansomArchitecture?.ID ?? -1; 
             }
 
             if (!editing)
@@ -4894,7 +5021,7 @@ namespace GameObjects
 
             if (!editing)
             {
-                foreach (Person person in this.Persons)
+                foreach (var person in AllPersons.Values)
                 {
                     person.UniqueTitlesString = StaticMethods.SaveIdToString(person.UniqueTitles);
                     // person.UniqueMilitaryKindsString = person.UniqueMilitaryKinds.SaveToString();
@@ -5022,7 +5149,7 @@ namespace GameObjects
                     person.StudyingStuntString = (person.StudyingStunt != null) ? person.StudyingStunt.ID : -1;
 
                     person.waitForFeiziId = (person.WaitForFeiZi != null) ? person.WaitForFeiZi.ID : -1;
-                    person.preferredTroopPersonsString = person.preferredTroopPersons.SaveToString();
+                    person.preferredTroopPersonsString = StaticMethods.SaveIdToString(person.PreferredTroopPersons);
 
                     person.TrainPolicyIDString = person.TrainPolicy == null ? -1 : person.TrainPolicy.ID;
 
@@ -5040,22 +5167,27 @@ namespace GameObjects
             }
             if(!editing)
             {
-                captiveData = this.Captives;
+                var captiveList = new CaptiveList();
+                foreach (var captive in GetCaptives())
+                {
+                    captiveList.Add(captive);
+                }
+                captiveData = captiveList;
             }
 
             if (saveMap)
             {
                 this.ScenarioMap.MapDataString = ScenarioMap.SaveToString();//修复游戏中编辑地形后无法保存
-                foreach (Region region in this.Regions)
+                foreach (var region in Regions.Values)
                 {
-                    region.StatesListString = region.States.SaveToString();
-                    region.RegionCoreID = (region.RegionCore != null) ? region.RegionCore.ID : -1;
+                    region.StatesListString = StaticMethods.SaveIdToString(region.States);
+                    region.RegionCoreID = region.RegionCore?.ID ?? -1;
                 }
 
-                foreach (State state in this.States)
+                foreach (var state in States.Values)
                 {
-                    state.ContactStatesString = state.ContactStates.SaveToString();
-                    state.StateAdminID = (state.StateAdmin != null) ? state.StateAdmin.ID : -1;
+                    state.ContactStatesString = StaticMethods.SaveIdToString(state.ContactStates);
+                    state.StateAdminID = state.StateAdmin?.ID ?? -1;
                 }
             }
 
@@ -5092,7 +5224,7 @@ namespace GameObjects
                 {
                     e.personString = StaticMethods.SaveKeyToString(e.person);
                     e.PersonCondString = StaticMethods.SaveKeyToString(e.personCond);
-                    e.architectureString = e.architecture.SaveToString();
+                    e.architectureString = StaticMethods.SaveIdToString(e.Architectures);
                     e.architectureCondString = StaticMethods.SaveIdToString(e.architectureCond);
                     e.factionString = e.faction.SaveToString();
                     e.factionCondString = StaticMethods.SaveIdToString(e.factionCond);
@@ -5540,7 +5672,7 @@ namespace GameObjects
         public void YearPassedEvent()
         {
             ExtensionInterface.call("YearEvent", new Object[] { this });
-            foreach (Architecture architecture in this.Architectures.GetRandomList())
+            foreach (var architecture in StaticMethods.GetRandomList(Architectures.Values.ToList()))
             {
                 architecture.YearEvent();
             }
@@ -5549,11 +5681,13 @@ namespace GameObjects
             {
                 faction.YearOfficialLimit = 0;
             }
-            foreach (Person p in this.Persons)
+
+            var minChildrenAge = Session.GlobalVariables.ChildrenAvailableAge;
+            foreach (var person in AllPersons.Values)
             {
-                if (p.Available && p.IsGeneratedChildren && p.Age >= Session.GlobalVariables.ChildrenAvailableAge)
+                if (person.Available && person.IsGeneratedChildren && person.Age >= minChildrenAge)
                 {
-                    p.IsGeneratedChildren = false;
+                    person.IsGeneratedChildren = false;
                 }
             }
         }
@@ -5570,53 +5704,37 @@ namespace GameObjects
             }
         }
 
-        public Person NeutralPerson
-        {
-            get
-            {
-                if (this.neutralPerson == null)
-                {
-                    this.neutralPerson = this.Persons.GetGameObject(0x1b5f) as Person;
-                }
-                return this.neutralPerson;
-            }
-        }
+        public Person NeutralPerson => AllPersons.GetValueOrDefault(7007);
 
-        public bool NoCurrentPlayer
-        {
-            get
-            {
-                return (this.CurrentPlayer == null);
-            }
-        }
+        public bool NoCurrentPlayer => CurrentPlayer == null;
 
-        public TroopAnimation TroopAnimations
-        {
-            get
-            {
-                return this.GameCommonData.TroopAnimations;
-            }
-        }
+        public TroopAnimation TroopAnimations => GameCommonData.TroopAnimations;
 
         private Architecture huangdisuozai = null;
+
         public Architecture huangdisuozaijianzhu()
         {
             if (huangdisuozai == null)
             {
-                foreach (Architecture a in this.Architectures)
+                foreach (var architecture in Architectures.Values)
                 {
-                    if (a.huangdisuozai) huangdisuozai = a;
+                    if (architecture.huangdisuozai)
+                    {
+                        huangdisuozai = architecture;
+                    }
                 }
             }
+
             return huangdisuozai;
         }
 
         public bool youhuangdi()
         {
-            foreach (Architecture a in this.Architectures)
+            foreach (var architecture in Architectures.Values)
             {
-                if (a.huangdisuozai) return true;
+                if (architecture.huangdisuozai) return true;
             }
+
             return false;
         }
 
@@ -5628,29 +5746,28 @@ namespace GameObjects
 
         public void BecomeNoEmperor()
         {
-            foreach (Architecture a in this.Architectures)
+            foreach (var architecture in Architectures.Values)
             {
-                if (a.huangdisuozai)
+                if (architecture.huangdisuozai)
                 {
-                    a.huangdisuozai = false;
-                    this.huangdisuozai = null;
+                    architecture.huangdisuozai = false;
+                    huangdisuozai = null;
                 }
             }
 
-            Person neutralPerson = this.NeutralPerson;
+            var neutralPerson = NeutralPerson;
             if (neutralPerson == null)
             {
-                if (this.CurrentPlayer != null)
+                if (CurrentPlayer != null)
                 {
-                    neutralPerson = this.CurrentPlayer.Leader;
+                    neutralPerson = CurrentPlayer.Leader;
                 }
                 else
                 {
-                    if (this.Factions.Count <= 0)
+                    if (Factions.Count > 0)
                     {
-                        return;
+                        neutralPerson = (Factions[0] as Faction).Leader;
                     }
-                    neutralPerson = (this.Factions[0] as Faction).Leader;
                 }
             }
 
@@ -5783,39 +5900,31 @@ namespace GameObjects
             return ran;
         }
 
-        public PersonList Officers() //野武将列表
+        /// <summary>
+        /// 野武将列表
+        /// </summary>
+        /// <returns></returns>
+        public List<Person> Officers()
         {
-            PersonList result = new PersonList();
-            foreach (Person person in this.Persons)
-            {
-                if (person.Available && person.Alive)
-                {
-                    if (person.ID >= 25000)
-                    {
-                        result.Add(person);
-                    }
-                }
+            var result = new List<Person>();
 
+            foreach (var person in AllPersons.Values)
+            {
+                if (person.Available && person.Alive && person.ID >= 25000)
+                {
+                    result.Add(person);
+                }
             }
 
             return result;
         }
 
-        public int OfficerCount //野武将总数
-        {
-            get
-            {
-                return (this.Officers().Count);
-            }
-        }
+        /// <summary>
+        /// 野武将总数
+        /// </summary>
+        public int OfficerCount => Officers().Count;
 
-        public int OfficerLimit
-        {
-            get
-            {
-                return Session.GlobalVariables.zhaoxianOfficerMax;
-            }
-        }
+        public int OfficerLimit => Session.GlobalVariables.zhaoxianOfficerMax;
 
         public int GetAITroopCount()
         {
@@ -5850,432 +5959,406 @@ namespace GameObjects
             return false;
         }
 
+        /// <summary>
+        /// 获取训练的老师
+        /// </summary>
+        /// <param name="person"></param>
+        /// <returns></returns>
+        private List<Person> GetTeachers(Person person)
+        {
+            var teachers = new List<Person>();
+
+            // 按年龄倒排人物
+            var allPersons = AllPersons.Values.ToList();
+            allPersons.Sort((a, b) => b.Age.CompareTo(a.Age));
+
+            foreach (var candidate in allPersons)
+            {
+                if (candidate.HasCloseStrainTo(person) && candidate.IsValidTeacher(person))
+                {
+                    teachers.Add(candidate);
+
+                    if (teachers.Count > 3) break;
+                }
+            }
+            
+            if (teachers.Count <= 3)
+            {
+                foreach (var candidate in allPersons)
+                {
+                    if (!teachers.Contains(candidate) && candidate.HasMotherStrainTo(person) && candidate.IsValidTeacher(person))
+                    {
+                        teachers.Add(candidate);
+
+                        if (teachers.Count > 3) break;
+                    }
+                }
+            }
+
+            if (teachers.Count == 0)
+            {
+                // 按功绩倒排人物
+                allPersons.Sort((a, b) => b.Merit.CompareTo(a.Merit));
+
+                foreach (var candidate in allPersons)
+                {
+                    if (GameObject.GetChance(10) && candidate.IsValidTeacher(person))
+                    {
+                        teachers.Add(candidate);
+                        break;
+                    }
+                }
+            }
+
+            return teachers;
+        }
+
+        /// <summary>
+        /// 培育子女
+        /// </summary>
         public void TrainChildren()
         {
-            foreach (Person p in this.Persons)
+            var dayInTurn = Session.Parameters.DayInTurn;
+            var aiRate = Session.Current.Scenario.Parameters.AIExtraPerson;
+            var defaultTrainPolicy = GameCommonData.AllTrainPolicies.Values.ToList().FirstOrDefault();
+
+            foreach (var person in AllPersons.Values)
             {
-                //if (p.Trainable && GameObject.Random(30) == 0)
-                if (p.Trainable && GameObject.Random((int)(30 / (IsPlayer(p.Father.BelongedFaction) ? 1 : Session.Current.Scenario.Parameters.AIExtraPerson) / Session.Parameters.DayInTurn)) == 0)
+                if (!ShouldTrainThisTurn(person, dayInTurn, aiRate)) continue;
+
+                var policy = person.TrainPolicy ?? defaultTrainPolicy;
+                var weighting = GetSafePolicyWeighting(policy, person);
+
+                int r = GameObject.WeightedRandom(weighting);
+                var teachers = GetTeachers(person);
+
+                switch (r)
                 {
-                    if (p.TrainPolicy == null && GameCommonData.AllTrainPolicies.TryGetValue(1, out var trainPolicy))
+                    case 1:
+                        TrainAttribute(person, teachers,
+                            p => p.Strength, p => p.StrengthPotential,
+                            t => t.Strength, t => t.childrenAbilityIncrease,
+                            (p, inc) => p.BaseStrength += inc,
+                            ratioNumerator: 6, ratioDenominator: 5);
+                        break;
+                    case 2:
+                        TrainAttribute(person, teachers,
+                            p => p.Command, p => p.CommandPotential,
+                            t => t.Command, t => t.childrenAbilityIncrease,
+                            (p, inc) => p.BaseCommand += inc,
+                            ratioNumerator: 6, ratioDenominator: 5);
+                        break;
+                    case 3:
+                        TrainAttribute(person, teachers,
+                            p => p.Intelligence, p => p.IntelligencePotential,
+                            t => t.Intelligence, t => t.childrenAbilityIncrease,
+                            (p, inc) => p.BaseIntelligence += inc,
+                            ratioNumerator: 6, ratioDenominator: 5);
+                        break;
+                    case 4:
+                        TrainAttribute(person, teachers,
+                            p => p.Politics, p => p.PoliticsPotential,
+                            t => t.Politics, t => t.childrenAbilityIncrease,
+                            (p, inc) => p.BasePolitics += inc,
+                            ratioNumerator: 6, ratioDenominator: 5);
+                        break;
+                    case 5:
+                        TrainAttribute(person, teachers,
+                            p => p.Glamour, p => p.GlamourPotential,
+                            t => t.Glamour, t => t.childrenAbilityIncrease,
+                            (p, inc) => p.BaseGlamour += inc,
+                            ratioNumerator: 6, ratioDenominator: 5);
+                        break;
+                    case 6:
+                        TrainSkill(person, teachers);
+                        break;
+                    case 7:
+                        TrainStunt(person, teachers);
+                        break;
+                    case 8:
+                        TrainTitle(person, teachers);
+                        break;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 本回合是否触发培育
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="dayInTurn"></param>
+        /// <param name="aiRate"></param>
+        /// <returns></returns>
+        private bool ShouldTrainThisTurn(Person person, int dayInTurn, float aiRate)
+        {
+            if (!person.Trainable) return false;
+        
+            float playerRate = IsPlayer(person.Father.BelongedFaction) ? 1 : aiRate;
+        
+            int chance = (int)(30 / playerRate / dayInTurn);
+        
+            return StaticMethods.Random(chance) == 0;
+        }
+
+        /// <summary>
+        /// 安全获取培育策略权重
+        /// </summary>
+        /// <param name="policy"></param>
+        /// <returns></returns>
+        private Dictionary<int, float> GetSafePolicyWeighting(TrainPolicy policy, Person person)
+        {
+            var weighting = new Dictionary<int, float>(policy.Weighting);
+            if (person.Age < 8)
+            {
+                weighting.Remove(8);
+            }
+
+            return weighting;
+        }
+        
+        /// <summary>
+        /// 基本属性培育
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="teachers"></param>
+        /// <param name="getPersonValue"></param>
+        /// <param name="getPersonPotential"></param>
+        /// <param name="getTeacherValue"></param>
+        /// <param name="getTeacherIncrease"></param>
+        /// <param name="addToBase"></param>
+        /// <param name="ratioNumerator"></param>
+        /// <param name="ratioDenominator"></param>
+        private void TrainAttribute(
+            Person person,
+            IEnumerable<Person> teachers,
+            Func<Person, int> getPersonValue,
+            Func<Person, int> getPersonPotential,
+            Func<Person, int> getTeacherValue,
+            Func<Person, int> getTeacherIncrease,
+            Action<Person, int> addToBase,
+            int ratioNumerator,
+            int ratioDenominator)
+        {
+            foreach (var teacher in teachers)
+            {
+                int personValue = getPersonValue(person);
+                if (personValue <= 0) continue; // 防止除零
+
+                int strengthChance = (int)(
+                    (getTeacherValue(teacher) - personValue + 50 + getTeacherIncrease(teacher))
+                    * ((float)getPersonPotential(person) / personValue));
+
+                if (!GameObject.GetChance(strengthChance)) continue;
+
+                var baseIncrement = Math.Max(
+                    (getPersonPotential(person) * ratioNumerator / ratioDenominator - personValue) / 10,
+                    1) + 1;
+
+                addToBase(person, GameObject.Random(baseIncrement));
+                AdjustTeacherRelations(person, teacher);
+            }
+        }
+
+        /// <summary>
+        /// 技能培育
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="teachers"></param>
+        private void TrainSkill(Person person, IEnumerable<Person> teachers)
+        {
+            var father = person.Father;
+            var mother = person.Mother;
+
+            foreach (var teacher in teachers)
+            {
+                var skills = new List<Skill>();
+
+                foreach (var skill in teacher.Skills.Values)
+                {
+                    if (skill.CanBeBorn(person))
                     {
-                        p.TrainPolicy = trainPolicy;
+                        skills.Add(skill);
                     }
-                    Dictionary<int, float> weighting = p.TrainPolicy.Weighting;
-                    if (p.Age < 8) // No attempt to learn title until age 8
+                }
+
+                foreach (var skill in GameCommonData.AllSkills.Values)
+                {
+                    if (!skill.CanBeBorn(person)) continue;
+
+                    var skillChance = (skill.GetRelatedAbility(teacher) - 70) / 5;
+                    var levelChance = 100 / skill.Level;
+
+                    if (GameObject.GetChance(skillChance) && GameObject.GetChance(levelChance))
                     {
-                        weighting.Remove(8);
+                        skills.Add(skill);
                     }
-                    int r = GameObject.WeightedRandom(weighting);
+                }
 
-                    PersonList teachers = new PersonList();
-                    if (p.Father.IsValidTeacher(p))
+                var candidateCount = Math.Min(skills.Count, 3);
+                var candidateSkills = StaticMethods.GetRandomList(skills).GetRange(0, candidateCount);
+
+                foreach (var skill in candidateSkills)
+                {
+                    int skillId = skill.ID;
+                    int skillChance = 100 / skill.Level + teacher.childrenSkillChanceIncrease;
+
+                    // 如果父母有该技能，则提升机率
+                    if ((father != null && father.Skills.ContainsKey(skillId)) || (mother != null && mother.Skills.ContainsKey(skillId)))
                     {
-                        teachers.Add(p.Father);
-                    }
-                    if (p.Mother.IsValidTeacher(p))
-                    {
-                        teachers.Add(p.Mother);
-                    }
-                    
-                    if (teachers.Count <= 3)
-                    {
-                        GameObjectList candidate = new GameObjectList();
-                        foreach (Person q in this.Persons)
-                        {
-                            if (q.IsValidTeacher(p) && ((q.Father == p.Father) || (q.Mother == p.Mother)))
-                            {
-                                candidate.Add(q);
-                            }
-                        }
-                        candidate.PropertyName = "Age";
-                        candidate.IsNumber = true;
-                        candidate.SmallToBig = false;
-                        candidate.ReSort();
-                        foreach (Person q in candidate)
-                        {
-                            teachers.Add(q);
-                            if (teachers.Count > 3) break;
-                        }
-                    }
-                    if (teachers.Count <= 3)
-                    {
-                        GameObjectList candidate = new GameObjectList();
-                        foreach (Person q in this.Persons)
-                        {
-                            if (q.IsValidTeacher(p) && q.HasStrainTo(p))
-                            {
-                                candidate.Add(q);
-                            }
-                        }
-                        candidate.PropertyName = "Age";
-                        candidate.IsNumber = true;
-                        candidate.SmallToBig = false;
-                        candidate.ReSort();
-                        foreach (Person q in candidate)
-                        {
-                            teachers.Add(q);
-                            if (teachers.Count > 3) break;
-                        }
-                    }
-
-                    if (teachers.Count <= 0)
-                    {
-                        GameObjectList candidate = new GameObjectList();
-                        foreach (Person q in this.Persons)
-                        {
-                            if (GameObject.GetChance(10) && q.IsValidTeacher(p) && !q.Hates(p) && !p.Hates(q))
-                            {
-                                candidate.Add(q);
-                            }
-                        }
-                        candidate.PropertyName = "Merit";
-                        candidate.IsNumber = true;
-                        candidate.SmallToBig = false;
-                        candidate.ReSort();
-                        foreach (Person q in candidate)
-                        {
-                            teachers.Add(q);
-                            if (teachers.Count > 0) break;
-                        }
-                    }
-
-                    switch (r)
-                    {
-                        case 1:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    if (GameObject.GetChance((int)((q.Strength - p.Strength + 50 + q.childrenAbilityIncrease) * ((float)p.StrengthPotential / p.Strength))))
-                                    {
-                                        p.Strength += GameObject.Random(Math.Max((p.StrengthPotential * 6 / 5 - p.Strength) / 10, 1) + 1);
-                                        p.AdjustRelation(q, 5, 5);
-                                        q.AdjustRelation(p, 2, 5);
-                                        if (GameObject.GetChance(30))
-                                        {
-                                            Dictionary<Person, int> rels = q.GetAllRelations();
-                                            foreach (KeyValuePair<Person, int> rel in rels)
-                                            {
-                                                if (GameObject.GetChance(100 / rels.Count))
-                                                {
-                                                    p.AdjustRelation(rel.Key, 2, Math.Min(5, rel.Value / 10));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 2:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    if (GameObject.GetChance((int)((q.Command - p.Command + 50 + q.childrenAbilityIncrease) * ((float)p.CommandPotential / p.Command))))
-                                    {
-                                        p.Command += GameObject.Random(Math.Max((p.CommandPotential * 6 / 5 - p.Command) / 10, 1) + 1);
-                                        p.AdjustRelation(q, 5, 5);
-                                        q.AdjustRelation(p, 2, 5);
-                                        if (GameObject.GetChance(30))
-                                        {
-                                            Dictionary<Person, int> rels = q.GetAllRelations();
-                                            foreach (KeyValuePair<Person, int> rel in rels)
-                                            {
-                                                if (GameObject.GetChance(100 / rels.Count))
-                                                {
-                                                    p.AdjustRelation(rel.Key, 2, Math.Min(5, rel.Value / 10));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 3:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    if (GameObject.GetChance((int)((q.Intelligence - p.Intelligence + 50 + q.childrenAbilityIncrease) * ((float)p.IntelligencePotential / p.Intelligence))))
-                                    {
-                                        p.Intelligence += GameObject.Random(Math.Max((p.IntelligencePotential * 6 / 5 - p.Intelligence) / 10, 1) + 1);
-                                        p.AdjustRelation(q, 5, 5);
-                                        q.AdjustRelation(p, 2, 5);
-                                        if (GameObject.GetChance(30))
-                                        {
-                                            Dictionary<Person, int> rels = q.GetAllRelations();
-                                            foreach (KeyValuePair<Person, int> rel in rels)
-                                            {
-                                                if (GameObject.GetChance(100 / rels.Count))
-                                                {
-                                                    p.AdjustRelation(rel.Key, 2, Math.Min(5, rel.Value / 10));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 4:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    if (GameObject.GetChance((int)((q.Politics - p.Politics + 50 + q.childrenAbilityIncrease) * ((float)p.PoliticsPotential / p.Politics))))
-                                    {
-                                        p.Politics += GameObject.Random(Math.Max((p.PoliticsPotential * 6 / 5 - p.Politics) / 10, 1) + 1);
-                                        p.AdjustRelation(q, 5, 5);
-                                        q.AdjustRelation(p, 2, 5);
-                                        if (GameObject.GetChance(30))
-                                        {
-                                            Dictionary<Person, int> rels = q.GetAllRelations();
-                                            foreach (KeyValuePair<Person, int> rel in rels)
-                                            {
-                                                if (GameObject.GetChance(100 / rels.Count))
-                                                {
-                                                    p.AdjustRelation(rel.Key, 2, Math.Min(5, rel.Value / 10));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 5:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    if (GameObject.GetChance((int)((q.Glamour - p.Glamour + 50 + q.childrenAbilityIncrease) * ((float)p.GlamourPotential / p.Glamour))))
-                                    {
-                                        p.Glamour += GameObject.Random(Math.Max((p.GlamourPotential * 6 / 5 - p.Glamour) / 10, 1) + 1);
-                                        p.AdjustRelation(q, 5, 5);
-                                        q.AdjustRelation(p, 2, 5);
-                                        if (GameObject.GetChance(30))
-                                        {
-                                            Dictionary<Person, int> rels = q.GetAllRelations();
-                                            foreach (KeyValuePair<Person, int> rel in rels)
-                                            {
-                                                if (GameObject.GetChance(100 / rels.Count))
-                                                {
-                                                    p.AdjustRelation(rel.Key, 2, Math.Min(5, rel.Value / 10));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 6:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    if (q.Skills.Count <= 0) continue;
-                                    List<Skill> skillToTeach = new List<Skill>();
-                                    foreach (var s in q.Skills.Values)
-                                    {
-                                        if (s.CanBeBorn(p))
-                                        {
-                                            skillToTeach.Add(s);
-                                        }
-                                    }
-                                    List<Skill> candidates = new List<Skill>();
-                                    foreach (var s in GameCommonData.AllSkills.Values)
-                                    {
-                                        if (s.CanBeBorn(p) && GameObject.GetChance((s.GetRelatedAbility(q) - 70) / 5) && GameObject.GetChance(100 / s.Level))
-                                        {
-                                            skillToTeach.Add(s);
-                                        }
-                                    }
-
-                                    List<Skill> realSkillToTeach = new List<Skill>();
-                                    realSkillToTeach.Add(skillToTeach[GameObject.Random(skillToTeach.Count)]);
-                                    realSkillToTeach.Add(skillToTeach[GameObject.Random(skillToTeach.Count)]);
-                                    realSkillToTeach.Add(skillToTeach[GameObject.Random(skillToTeach.Count)]);
-
-                                    foreach (Skill t in realSkillToTeach)
-                                    {
-                                        int extraChance = 0;
-                                        if (p.Father.Skills.ContainsKey(t.ID) || p.Mother.Skills.ContainsKey(t.ID))
-                                        {
-                                            extraChance += 5;
-                                        }
-                                        if (GameObject.GetChance(100 / t.Level + q.childrenSkillChanceIncrease + extraChance))
-                                        {
-                                            p.AddSkill(t);
-                                            p.AdjustRelation(q, 5, 5);
-                                            q.AdjustRelation(p, 2, 5);
-                                            if (GameObject.GetChance(30))
-                                            {
-                                                Dictionary<Person, int> rels = q.GetAllRelations();
-                                                foreach (KeyValuePair<Person, int> rel in rels)
-                                                {
-                                                    if (GameObject.GetChance(100 / rels.Count))
-                                                    {
-                                                        p.AdjustRelation(rel.Key, 2, Math.Min(5, rel.Value / 10));
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 7:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    List<Stunt> stuntToTeach = new List<Stunt>();
-                                    foreach (var s in q.Stunts.Values)
-                                    {
-                                        if (s.CanBeBorn(p))
-                                        {
-                                            stuntToTeach.Add(s);
-                                        }
-                                    }
-
-                                    List<Stunt> candidates = new List<Stunt>();
-                                    foreach (var s in this.GameCommonData.AllStunts.Values)
-                                    {
-                                        if (s.CanBeBorn(p))
-                                        {
-                                            candidates.Add(s);
-                                        }
-                                    }
-                                    if (candidates.Count > 0 && GameObject.GetChance((q.Strength + q.Command + q.Intelligence - 210) / 15))
-                                    {
-                                        stuntToTeach.Add(candidates[GameObject.Random(candidates.Count)]);
-                                    }
-
-                                    if (stuntToTeach.Count > 0)
-                                    {
-                                        var t = stuntToTeach[GameObject.Random(stuntToTeach.Count)];
-                                        int extraChance = 0;
-                                        if (p.Father.Stunts.ContainsKey(t.ID) || p.Mother.Stunts.ContainsKey(t.ID))
-                                        {
-                                            extraChance += 10;
-                                        }
-                                        if (GameObject.GetChance((10 + q.childrenStuntChanceIncrease + extraChance) / 3))
-                                        {
-                                            p.AddStunt(t);
-                                            p.AdjustRelation(q, 5, 10);
-                                            q.AdjustRelation(p, 2, 10);
-                                            if (GameObject.GetChance(30))
-                                            {
-                                                Dictionary<Person, int> rels = q.GetAllRelations();
-                                                foreach (KeyValuePair<Person, int> rel in rels)
-                                                {
-                                                    if (GameObject.GetChance(100 / rels.Count))
-                                                    {
-                                                        p.AdjustRelation(rel.Key, 2, Math.Min(10, rel.Value / 10));
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
-                        case 8:
-                            {
-                                foreach (Person q in teachers)
-                                {
-                                    if (p.Hates(q)) continue;
-                                    if (q.Hates(p)) continue;
-                                    //if (q.Hates(p.Father) || q.Hates(p.Mother) || p.Father.Hates(q) || p.Mother.Hates(q)) continue;
-                                    List<Title> toTeach = q.Titles;
-                                    int maxLevel = 1;
-                                    foreach (Title t in toTeach)
-                                    {
-                                        if (t.Level > maxLevel && t.Kind.RandomTeachable)
-                                        {
-                                            maxLevel = t.Level;
-                                        }
-                                    }
-
-                                    foreach (var t in GameCommonData.AllTitles.Values)
-                                    {
-                                        if (t.Kind.RandomTeachable && t.Level <= maxLevel + q.childrenTitleChanceIncrease + 1 && GameObject.GetChance(t.InheritChance) && t.CanBeBorn(p))
-                                        {
-                                            toTeach.Add(t);
-                                        }
-                                    }
-
-                                    foreach (Title t in toTeach)
-                                    {
-                                        int extraChance = 0;
-                                        if (p.Father.RealTitles.Contains(t) || p.Mother.RealTitles.Contains(t))
-                                        {
-                                            extraChance += 5;
-                                        }
-                                        if (GameObject.GetChance(t.InheritChance * 3 + q.childrenTitleChanceIncrease * 3 + extraChance) && t.CanBeBorn(p))
-                                        {
-                                            Title existing = null;
-                                            foreach (var u in p.Titles)
-                                            {
-                                                if (u.KindId == t.KindId)
-                                                {
-                                                    existing = u;
-                                                    break;
-                                                }
-                                            }
-
-                                            // TODO let player choose
-                                            if (existing == null || existing.Level < t.Level || (existing.Level == t.Level && existing.Merit < t.Merit))
-                                            {
-                                                if (existing != null)
-                                                {
-                                                    p.RealTitles.Remove(existing);
-                                                }
-                                                p.RealTitles.Add(t);
-
-                                                p.AdjustRelation(q, 5, 5 * t.Level);
-                                                q.AdjustRelation(p, 2, 5 * t.Level);
-                                                if (GameObject.GetChance(30))
-                                                {
-                                                    Dictionary<Person, int> rels = q.GetAllRelations();
-                                                    foreach (KeyValuePair<Person, int> rel in rels)
-                                                    {
-                                                        if (GameObject.GetChance(100 / rels.Count))
-                                                        {
-                                                            p.AdjustRelation(rel.Key, 2, Math.Min(5 * t.Level, rel.Value / 10));
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                        }
-                                    }
-                                }
-
-                                break;
-                            }
+                        skillChance += 5;
                     }
 
+                    if (GameObject.GetChance(skillChance))
+                    {
+                        person.AddSkill(skill);
+                        AdjustTeacherRelations(person, teacher);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 特技培育
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="teachers"></param>
+        private void TrainStunt(Person person, IEnumerable<Person> teachers)
+        {
+            var father = person.Father;
+            var mother = person.Mother;
+
+            foreach (var teacher in teachers)
+            {
+                var stunts = new List<Stunt>();
+
+                foreach (var stunt in teacher.Stunts.Values)
+                {
+                    if (stunt.CanBeBorn(person))
+                    {
+                        stunts.Add(stunt);
+                    }
+                }
+
+                var candidates = new List<Stunt>();
+                foreach (var stunt in GameCommonData.AllStunts.Values)
+                {
+                    if (stunt.CanBeBorn(person))
+                    {
+                        candidates.Add(stunt);
+                    }
+                }
+
+                int teacherChance = (teacher.Strength + teacher.Command + teacher.Intelligence - 210) / 15;
+                if (candidates.Count > 0 && GameObject.GetChance(teacherChance))
+                {
+                    stunts.Add(StaticMethods.GetRandomItem(candidates));
+                }
+
+                if (stunts.Count == 0) continue;
+
+                var stuntToTeach = StaticMethods.GetRandomItem(stunts);
+
+                int extraChance = 0;
+                if ((father != null && father.Stunts.ContainsKey(stuntToTeach.ID)) || (mother != null && mother.Stunts.ContainsKey(stuntToTeach.ID)))
+                {
+                    extraChance += 10;
+                }
+
+                int stuntChance = (10 + teacher.childrenStuntChanceIncrease + extraChance) / 3;
+                if (GameObject.GetChance(stuntChance))
+                {
+                    person.AddStunt(stuntToTeach);
+                    AdjustTeacherRelations(person, teacher, 10);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 称号培育
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="teachers"></param>
+        private void TrainTitle(Person person, IEnumerable<Person> teachers)
+        {
+            var father = person.Father;
+            var mother = person.Mother;
+
+            foreach (var teacher in teachers)
+            {
+                var titles = teacher.Titles;
+
+                int maxLevel = 1;
+                foreach (var title in titles)
+                {
+                    if (title.Level > maxLevel && title.Kind.RandomTeachable)
+                    {
+                        maxLevel = title.Level;
+                    }
+                }
+
+                maxLevel += teacher.childrenTitleChanceIncrease + 1;
+
+                foreach (var title in GameCommonData.AllTitles.Values)
+                {
+                    if (title.Kind.RandomTeachable
+                        && title.Level <= maxLevel
+                        && GameObject.GetChance(title.InheritChance)
+                        && title.CanBeBorn(person))
+                    {
+                        titles.Add(title);
+                    }
+                }
+
+                foreach (var title in titles)
+                {
+                    var titleChance = (title.InheritChance + teacher.childrenTitleChanceIncrease) * 3;
+
+                    if ((father != null && father.RealTitles.Contains(title)) || (mother != null && mother.RealTitles.Contains(title)))
+                    {
+                        titleChance += 5;
+                    }
+
+                    if (!GameObject.GetChance(titleChance) || !title.CanBeBorn(person)) continue;
+
+                    var existedTitle = person.GetTitleByKind(title.KindId);
+
+                    // TODO let player choose
+                    bool shouldReplace = existedTitle == null
+                        || existedTitle.Level < title.Level
+                        || (existedTitle.Level == title.Level && existedTitle.Merit < title.Merit);
+
+                    if (shouldReplace)
+                    {
+                        person.RealTitles.Remove(existedTitle);
+                        person.RealTitles.Add(title);
+                        AdjustTeacherRelations(person, teacher, 5 * title.Level);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 调整和老师及其相关人物的关系
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="teacher"></param>
+        private void AdjustTeacherRelations(Person person, Person teacher, int adjust = 5)
+        {
+            person.AdjustRelation(teacher, 5, adjust);
+            teacher.AdjustRelation(person, 2, adjust);
+
+            if (GameObject.GetChance(30))
+            {
+                var relations = teacher.GetAllRelations();
+                var relationsCount = relations.Count;
+
+                foreach (var item in relations)
+                {
+                    if (GameObject.GetChance(100 / relationsCount))
+                    {
+                        var minAdjust = Math.Min(adjust, item.Value / 10);
+                        person.AdjustRelation(item.Key, 2, minAdjust);
+                    }
                 }
             }
         }

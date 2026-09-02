@@ -1,4 +1,5 @@
-﻿using GameEnums;
+﻿using Extensions;
+using GameEnums;
 using GameFreeText;
 using GameGlobal;
 using GameManager;
@@ -11,6 +12,7 @@ using Microsoft.Xna.Framework.Graphics;
 using PluginInterface;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Tools;
 
 namespace MarshalSectionDialogPlugin
@@ -120,21 +122,21 @@ namespace MarshalSectionDialogPlugin
 
         private void OK()
         {
-            if (this.IsNew)
+            if (IsNew)
             {
-                foreach (Section section in this.EditingFaction.Sections)
+                foreach (Section section in EditingFaction.Sections)
                 {
-                    foreach (Architecture architecture in this.EditingSection.Architectures)
+                    foreach (var architecture in EditingSection.Architectures)
                     {
                         section.RemoveArchitecture(architecture);
                     }
                 }
-                foreach (Architecture architecture in this.EditingSection.Architectures)
+                foreach (var architecture in EditingSection.Architectures)
                 {
-                    architecture.BelongedSection = this.EditingSection;
+                    architecture.BelongedSection = EditingSection;
                 }
-                this.EditingFaction.AddSection(this.EditingSection);
-                Session.Current.Scenario.Sections.AddSectionWithEvent(this.EditingSection);
+                EditingFaction.AddSection(EditingSection);
+                Session.Current.Scenario.Sections.Add(EditingSection.ID, EditingSection);
             }
             else
             {
@@ -156,35 +158,40 @@ namespace MarshalSectionDialogPlugin
                 this.OriginalSection.OrientationSection = this.EditingSection.OrientationSection;
                 this.OriginalSection.OrientationState = this.EditingSection.OrientationState;
                 this.OriginalSection.OrientationArchitecture = this.EditingSection.OrientationArchitecture;
-                GameObjectList list = this.OriginalSection.Architectures.GetList();
-                foreach (Architecture architecture in list)
+
+                var architectures = OriginalSection.Architectures;
+                foreach (var architecture in architectures)
                 {
-                    this.OriginalSection.RemoveArchitecture(architecture);
+                    OriginalSection.RemoveArchitecture(architecture);
                 }
-                foreach (Section section in this.EditingFaction.Sections)
+                foreach (Section section in EditingFaction.Sections)
                 {
-                    foreach (Architecture architecture in this.EditingSection.Architectures)
+                    foreach (var architecture in EditingSection.Architectures)
                     {
                         section.RemoveArchitecture(architecture);
                     }
                 }
-                foreach (Architecture architecture in this.EditingSection.Architectures)
+                foreach (var architecture in EditingSection.Architectures)
                 {
-                    this.OriginalSection.AddArchitecture(architecture);
+                    OriginalSection.AddArchitecture(architecture);
                 }
-                Section anotherSection = this.EditingFaction.GetAnotherSection(this.OriginalSection);
+                Section anotherSection = EditingFaction.GetAnotherSection(OriginalSection);
                 if (anotherSection != null)
                 {
-                    foreach (Architecture architecture in list)
+                    foreach (var architecture in architectures)
                     {
-                        if (!this.OriginalSection.HasArchitecture(architecture))
+                        if (!OriginalSection.HasArchitecture(architecture))
                         {
                             anotherSection.AddArchitecture(architecture);
                         }
                     }
                 }
             }
-            foreach (Section section in this.EditingFaction.Sections.GetList())
+
+            var sections = EditingFaction.Sections;
+            var allSectionAIDetails = Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values;
+
+            foreach (var section in sections)
             {
                 if (section.ArchitectureCount > 0)
                 {
@@ -192,11 +199,11 @@ namespace MarshalSectionDialogPlugin
                 }
                 else
                 {
-                    foreach (Section section3 in this.EditingFaction.Sections.GetList())
+                    foreach (var section3 in sections)
                     {
-                        if ((section3 != section) && (section3.OrientationSection == section))
+                        if (section3 != section && section3.OrientationSection == section)
                         {
-                            foreach (var detail in Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values)
+                            foreach (var detail in allSectionAIDetails)
                             {
                                 if (detail.OrientationKind == SectionOrientationKind.None)
                                 {
@@ -207,8 +214,7 @@ namespace MarshalSectionDialogPlugin
                             section3.OrientationSection = null;
                         }
                     }
-                    this.EditingFaction.RemoveSection(section);
-                    Session.Current.Scenario.Sections.Remove(section);
+                    EditingFaction.RemoveSection(section);
                 }
             }
             this.IsShowing = false;
@@ -402,16 +408,19 @@ namespace MarshalSectionDialogPlugin
 
         internal void SetSection(Section section)
         {
-            this.OriginalSection = section;
-            this.EditingSection = new Section();
-            this.EditingSection.ID = Session.Current.Scenario.Sections.GetFreeGameObjectID();
-            this.EditingSection.BelongedFaction = this.EditingFaction;
+            OriginalSection = section;
+            EditingSection = new Section
+            {
+                ID = Session.Current.Scenario.Sections.GetNewId(),
+                BelongedFaction = EditingFaction,
+            };
+            
             if (section != null)
             {
                 this.IsNew = false;
                 foreach (Architecture architecture in section.Architectures)
                 {
-                    this.EditingSection.Architectures.Add(architecture);
+                    EditingSection.Architectures.Add(architecture);
                 }
                 this.EditingSection.Name = section.Name;
                 this.EditingSection.AIDetail = section.AIDetail;
@@ -446,10 +455,10 @@ namespace MarshalSectionDialogPlugin
                 {
                     case SectionOrientationKind.Section:
                     {
-                        SectionList otherSections = this.EditingFaction.GetOtherSections(this.OriginalSection);
+                        var otherSections = EditingFaction.GetOtherSections(OriginalSection);
                         if (otherSections.Count == 1)
                         {
-                            this.EditingSection.OrientationSection = otherSections[0] as Section;
+                            EditingSection.OrientationSection = otherSections[0];
                         }
                         break;
                     }
@@ -464,27 +473,27 @@ namespace MarshalSectionDialogPlugin
                     }
                     case SectionOrientationKind.State:
                     {
-                        StateList states = Session.Current.Scenario.States;
+                        var states = Session.Current.Scenario.States.Values;
                         if (states.Count == 1)
                         {
-                            this.EditingSection.OrientationState = states[0] as State;
+                            EditingSection.OrientationState = states.FirstOrDefault();
                         }
                         break;
                     }
                     case SectionOrientationKind.Architecture:
                     {
-                        ArchitectureList allArch = Session.Current.Scenario.Architectures;
-                        ArchitectureList targetArch = new ArchitectureList();
-                        foreach (Architecture a in allArch)
+                        var targetArch = new List<Architecture>();
+                        foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                         {
-                            if (a.BelongedFaction != this.EditingFaction)
+                            if (architecture.BelongedFaction != EditingFaction)
                             {
-                                targetArch.Add(a);
+                                targetArch.Add(architecture);
                             }
                         }
+
                         if (targetArch.Count == 1)
                         {
-                            this.EditingSection.OrientationArchitecture = targetArch[0] as Architecture;
+                            EditingSection.OrientationArchitecture = targetArch[0];
                         }
                         break;
                     }
@@ -536,7 +545,7 @@ namespace MarshalSectionDialogPlugin
                 switch (this.EditingSection.AIDetail.OrientationKind)
                 {
                     case SectionOrientationKind.Section:
-                        this.TabListPlugin.InitialValues(this.EditingFaction.GetOtherSections(this.OriginalSection), null, InputManager.NowMouse.ScrollWheelValue, "");
+                        this.TabListPlugin.InitialValues(EditingFaction.GetOtherSections(OriginalSection), null, InputManager.NowMouse.ScrollWheelValue, "");
                         this.TabListPlugin.SetListKindByName("Section", true, false);
                         this.TabListPlugin.SetSelectedTab("");
                         this.GameFramePlugin.Kind = FrameKind.TerrainDetail;
@@ -602,7 +611,7 @@ namespace MarshalSectionDialogPlugin
                         break;
 
                     case SectionOrientationKind.State:
-                        this.TabListPlugin.InitialValues(Session.Current.Scenario.States.GetList(), null, InputManager.NowMouse.ScrollWheelValue, "");
+                        this.TabListPlugin.InitialValues(Session.Current.Scenario.States.Values, null, InputManager.NowMouse.ScrollWheelValue, "");
                         this.TabListPlugin.SetListKindByName("State", true, false);
                         this.TabListPlugin.SetSelectedTab("");
                         this.GameFramePlugin.Kind = FrameKind.SectionAIDetail;
@@ -626,13 +635,12 @@ namespace MarshalSectionDialogPlugin
                         break;
 
                     case SectionOrientationKind.Architecture:
-                        ArchitectureList allArch = Session.Current.Scenario.Architectures;
-                        ArchitectureList targetArch = new ArchitectureList();
-                        foreach (Architecture a in allArch)
+                        var targetArch = new List<Architecture>();
+                        foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                         {
-                            if (a.BelongedFaction != this.EditingFaction)
+                            if (architecture.BelongedFaction != EditingFaction)
                             {
-                                targetArch.Add(a);
+                                targetArch.Add(architecture);
                             }
                         }
                         this.TabListPlugin.InitialValues(targetArch, null, InputManager.NowMouse.ScrollWheelValue, "");

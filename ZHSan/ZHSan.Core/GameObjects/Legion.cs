@@ -1,5 +1,4 @@
 ﻿using GameGlobal;
-using GameObjects.FactionDetail;
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
@@ -12,16 +11,15 @@ namespace GameObjects
     [DataContract]
     public class Legion : GameObject
     {
-
         public Faction BelongedFaction;
 
         [DataMember]
         public int CoreTroopString { get; set; }
 
         public Troop CoreTroop;
+
         [DataMember]
-        public Point? InformationDestination = null;
-        private LegionKind kind;
+        public Point? InformationDestination { get; set; } = null;
 
         [DataMember]
         public int PreferredRoutewayString { get; set; }
@@ -34,10 +32,10 @@ namespace GameObjects
         public Architecture StartArchitecture;
 
         [DataMember]
-        public List<SupplyingRoutewayPack> SupplyingRouteways = new List<SupplyingRoutewayPack>();
+        public List<SupplyingRoutewayPack> SupplyingRouteways { get; set; } = new();
 
         [DataMember]
-        public List<Point> TakenPositions = new List<Point>();
+        public List<Point> TakenPositions { get; set; } = new();
 
         [DataMember]
         public string TroopsString { get; set; }
@@ -100,7 +98,7 @@ namespace GameObjects
         {
             if (!this.InformationDestination.HasValue)
             {
-                PersonList list = new PersonList();
+                var list = new List<Person>();
                 foreach (LinkNode node in this.WillArchitecture.AIAllLinkNodes.Values)
                 {
                     if ((((node.A.BelongedFaction == this.BelongedFaction) && node.A.BelongedSection != null && 
@@ -120,9 +118,10 @@ namespace GameObjects
                         }
                     }
                 }
+
                 if (list.Count > 0)
                 {
-                    Person person = list[GameObject.Random(list.Count)] as Person;
+                    var person = StaticMethods.GetRandomItem(list);
 
                     var availKinds = person.LocationArchitecture.GetAvailInformationKindList();
                     var count = availKinds.Count;
@@ -143,7 +142,7 @@ namespace GameObjects
                     SetInformationPosition();
                     if (InformationDestination.HasValue)
                     {
-                        person.CurrentInformationKind = availKinds[index];
+                        person.SetInformationKind(availKinds[index]);
                         person.GoForInformation(InformationDestination.Value);
                     }
                 }
@@ -469,7 +468,7 @@ namespace GameObjects
         {
             get
             {
-                foreach (Troop troop in this.Troops)
+                foreach (Troop troop in Troops)
                 {
                     if (troop.WillArchitecture == this.WillArchitecture)
                     {
@@ -493,17 +492,6 @@ namespace GameObjects
             }
         }
         [DataMember]
-        public LegionKind Kind
-        {
-            get
-            {
-                return this.kind;
-            }
-            set
-            {
-                this.kind = value;
-            }
-        }
+        public LegionKind Kind { get; set; }
     }
 }
-

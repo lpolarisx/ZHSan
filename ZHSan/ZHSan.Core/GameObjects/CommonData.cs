@@ -13,13 +13,12 @@ using Microsoft.Xna.Framework;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace GameObjects
 {
-    [DataContract]
     public class CommonData
     {
         private static ILogger logger;
@@ -81,7 +80,6 @@ namespace GameObjects
         /// <summary>
         /// 设施种类
         /// </summary>
-        [DataMember]
         public Dictionary<int, FacilityKind> AllFacilityKinds { get; set; } = new();
 
         /// <summary>
@@ -238,169 +236,91 @@ namespace GameObjects
 
             try
             {
-                var dirPath = @"Content\Data\Common";
+                Current = new CommonData();
 
-                Current = Tools.SimpleSerializer.DeserializeJsonFile<CommonData>(Path.Combine(dirPath, "CommonData.json"), false, false);
+                using var archive = GameDataArchive.Open(@"Content\Data\Common\CommonData.dat");
 
-                var terrainDetailStore = new JsonStore<TerrainDetailConfig>(Path.Combine(dirPath, "TerrainDetails.json"));
-                var terrainDetails = terrainDetailStore.Load();
+                var terrainDetails = archive.Load<List<TerrainDetailConfig>>("TerrainDetails.json");
+                var combatMethods = archive.Load<List<CombatMethodConfig>>("CombatMethods.json");
+                var stunts = archive.Load<List<StuntConfig>>("Stunts.json");
+                var techniques = archive.Load<List<TechniqueConfig>>("Techniques.json");
+                var skills = archive.Load<List<SkillConfig>>("Skills.json");
+                var stratagems = archive.Load<List<StratagemConfig>>("Stratagems.json");
+                var titleKinds = archive.Load<List<TitleKindConfig>>("TitleKinds.json");
+                var titles = archive.Load<List<TitleConfig>>("Titles.json");
+                var influenceKinds = archive.Load<List<InfluenceKindConfig>>("InfluenceKinds.json");
+                var influences = archive.Load<List<InfluenceConfig>>("Influences.json");
+                var conditionKinds = archive.Load<List<ConditionKindConfig>>("ConditionKinds.json");
+                var conditions = archive.Load<List<ConditionConfig>>("Conditions.json");
+                var architectureEventEffectKinds = archive.Load<List<ArchitectureEventEffectKindConfig>>("ArchitectureEventEffectKinds.json");
+                var architectureEventEffects = archive.Load<List<ArchitectureEventEffectConfig>>("ArchitectureEventEffects.json");
+                var troopEventEffectKinds = archive.Load<List<TroopEventEffectKindConfig>>("TroopEventEffectKinds.json");
+                var troopEventEffects = archive.Load<List<TroopEventEffectConfig>>("TroopEventEffects.json");
+                var informationKinds = archive.Load<List<InformationKindConfig>>("InformationKinds.json");
+                var characterKinds = archive.Load<List<CharacterKindConfig>>("CharacterKinds.json");
+                var colors = archive.Load<List<Color>>("Colors.json");
+                var facilityKinds = archive.Load<List<FacilityKindConfig>>("FacilityKinds.json");
+                var facilityKindLevels = archive.Load<List<FacilityKindLevelConfig>>("FacilityKindLevels.json");
+                var disasterKinds = archive.Load<List<DisasterKindConfig>>("DisasterKinds.json");
+                var officialTitleKinds = archive.Load<List<OfficialTitleKindConfig>>("OfficialTitleKinds.json");
+                var sectionAIDetails = archive.Load<List<SectionAIDetailConfig>>("SectionAIDetails.json");
+                var idealTendencyKinds = archive.Load<List<IdealTendencyKindConfig>>("IdealTendencyKinds.json");
+                var militaryKinds = archive.Load<List<MilitaryKindConfig>>("MilitaryKinds.json");
+                var architectureKinds = archive.Load<List<ArchitectureKindConfig>>("ArchitectureKinds.json");
+                var personMessages = archive.Load<List<PersonMessageConfig>>("PersonMessages.json");
+                var tileAnimations = archive.Load<List<AnimationConfig>>("TileAnimations.json");
+                var troopAnimations = archive.Load<List<AnimationConfig>>("TroopAnimations.json");
+                var biographyAdjectives = archive.Load<List<BiographyAdjectiveConfig>>("BiographyAdjectives.json");
+                var personGeneratorTypes = archive.Load<List<PersonGeneratorTypeConfig>>("PersonGeneratorTypes.json");
+                var trainPolicies = archive.Load<List<TrainPolicyConfig>>("TrainPolicies.json");
+                var personGeneratorSettings = archive.Load<List<PersonGeneratorSettingConfig>>("PersonGeneratorSettings.json");
+                var treasureCreationSettings = archive.Load<List<TreasureCreationSettingConfig>>("TreasureCreationSettings.json");
+                var attackDefaultKinds = archive.Load<List<AttackDefaultKindConfig>>("AttackDefaultKinds.json");
+                var attackTargetKinds = archive.Load<List<AttackTargetKindConfig>>("AttackTargetKinds.json");
+                var castDefaultKinds = archive.Load<List<CastDefaultKindConfig>>("CastDefaultKinds.json");
+                var castTargetKinds = archive.Load<List<CastTargetKindConfig>>("CastTargetKinds.json");
+                var statusEffects = archive.Load<List<StatusEffectConfig>>("StatusEffects.json");
+
                 Current.AllTerrainDetails = terrainDetails.Select(x => new TerrainDetail(x)).ToDictionary(x => x.ID);
-
-                var combatMethodStore = new JsonStore<CombatMethodConfig>(Path.Combine(dirPath, "CombatMethods.json"));
-                var combatMethods = combatMethodStore.Load();
                 Current.AllCombatMethods = combatMethods.Select(x => new CombatMethod(x)).ToDictionary(x => x.ID);
-
-                var stuntStore = new JsonStore<StuntConfig>(Path.Combine(dirPath, "Stunts.json"));
-                var stunts = stuntStore.Load();
                 Current.AllStunts = stunts.Select(x => new Stunt(x)).ToDictionary(x => x.ID);
-
-                var techniqueStore = new JsonStore<TechniqueConfig>(Path.Combine(dirPath, "Techniques.json"));
-                var techniques = techniqueStore.Load();
                 Current.AllTechniques = techniques.Select(x => new Technique(x)).ToDictionary(x => x.ID);
-
-                var skillStore = new JsonStore<SkillConfig>(Path.Combine(dirPath, "Skills.json"));
-                var skills = skillStore.Load();
                 Current.AllSkills = skills.Select(x => new Skill(x)).ToDictionary(x => x.ID);
-
-                var stratagemStore = new JsonStore<StratagemConfig>(Path.Combine(dirPath, "Stratagems.json"));
-                var stratagems = stratagemStore.Load();
                 Current.AllStratagems = stratagems.Select(x => new Stratagem(x)).ToDictionary(x => x.ID);
-
-                var titleKindStore = new JsonStore<TitleKindConfig>(Path.Combine(dirPath, "TitleKinds.json"));
-                var titleKinds = titleKindStore.Load();
                 Current.AllTitleKinds = titleKinds.Select(x => new TitleKind(x)).ToDictionary(x => x.ID);
-
-                var titleStore = new JsonStore<TitleConfig>(Path.Combine(dirPath, "Titles.json"));
-                var titles = titleStore.Load();
                 Current.AllTitles = titles.Select(x => new Title(x)).ToDictionary(x => x.ID);
-
-                var influenceKindStore = new JsonStore<InfluenceKindConfig>(Path.Combine(dirPath, "InfluenceKinds.json"));
-                var influenceKinds = influenceKindStore.Load();
                 Current.AllInfluenceKinds = influenceKinds.Select(x => CreateInfluenceKind(x)).Where(x => x != null).ToDictionary(x => x.ID);
-
-                var influenceStore = new JsonStore<InfluenceConfig>(Path.Combine(dirPath, "Influences.json"));
-                var influences = influenceStore.Load();
                 Current.AllInfluences = influences.Select(x => new Influence(x)).ToDictionary(x => x.ID);
-
-                var conditionKindStore = new JsonStore<ConditionKindConfig>(Path.Combine(dirPath, "ConditionKinds.json"));
-                var conditionKinds = conditionKindStore.Load();
                 Current.AllConditionKinds = conditionKinds.Select(x => CreateConditionKind(x)).Where(x => x != null).ToDictionary(x => x.ID);
-
-                var conditionStore = new JsonStore<ConditionConfig>(Path.Combine(dirPath, "Conditions.json"));
-                var conditions = conditionStore.Load();
                 Current.AllConditions = conditions.Select(x => new Condition(x)).ToDictionary(x => x.ID);
-
-                var architectureEventEffectKindStore = new JsonStore<ArchitectureEventEffectKindConfig>(Path.Combine(dirPath, "ArchitectureEventEffectKinds.json"));
-                var architectureEventEffectKinds = architectureEventEffectKindStore.Load();
                 Current.AllEventEffectKinds = architectureEventEffectKinds.Select(x => CreateArchitectureEventEffectKind(x)).Where(x => x != null).ToDictionary(x => x.ID);
-
-                var architectureEventEffectStore = new JsonStore<ArchitectureEventEffectConfig>(Path.Combine(dirPath, "ArchitectureEventEffects.json"));
-                var architectureEventEffects = architectureEventEffectStore.Load();
                 Current.AllEventEffects = architectureEventEffects.Select(x => new ArchitectureDetail.EventEffect.EventEffect(x)).ToDictionary(x => x.ID);
-
-                var troopEventEffectKindStore = new JsonStore<TroopEventEffectKindConfig>(Path.Combine(dirPath, "TroopEventEffectKinds.json"));
-                var troopEventEffectKinds = troopEventEffectKindStore.Load();
                 Current.AllTroopEventEffectKinds = troopEventEffectKinds.Select(x => CreateTroopEventEffectKind(x)).Where(x => x != null).ToDictionary(x => x.ID);
-
-                var troopEventEffectStore = new JsonStore<TroopEventEffectConfig>(Path.Combine(dirPath, "TroopEventEffects.json"));
-                var troopEventEffects = troopEventEffectStore.Load();
                 Current.AllTroopEventEffects = troopEventEffects.Select(x => new TroopDetail.EventEffect.EventEffect(x)).ToDictionary(x => x.ID);
-
-                var informationKindStore = new JsonStore<InformationKindConfig>(Path.Combine(dirPath, "InformationKinds.json"));
-                var informationKinds = informationKindStore.Load();
                 Current.AllInformationKinds = informationKinds.Select(x => new InformationKind(x)).ToDictionary(x => x.ID);
-
-                var characterKindStore = new JsonStore<CharacterKindConfig>(Path.Combine(dirPath, "CharacterKinds.json"));
-                var characterKinds = characterKindStore.Load();
                 Current.AllCharacterKinds = characterKinds.Select(x => new CharacterKind(x)).ToDictionary(x => x.ID);
-
-                var colorStore = new JsonStore<Color>(Path.Combine(dirPath, "Colors.json"));
-                Current.AllColors = colorStore.Load();
-
-                var facilityKindStore = new JsonStore<FacilityKindConfig>(Path.Combine(dirPath, "FacilityKinds.json"));
-                var facilityKinds = facilityKindStore.Load();
+                Current.AllColors = colors;
                 Current.AllFacilityKinds = facilityKinds.Select(x => new FacilityKind(x)).ToDictionary(x => x.ID);
-
-                var facilityKindLevelStore = new JsonStore<FacilityKindLevelConfig>(Path.Combine(dirPath, "FacilityKindLevels.json"));
-                var facilityKindLevels = facilityKindLevelStore.Load();;
                 Current.AllFacilityKindLevels = facilityKindLevels.Select(x => new FacilityKindLevel(x)).ToDictionary(x => x.Id);
-
-                var disasterKindStore = new JsonStore<DisasterKindConfig>(Path.Combine(dirPath, "DisasterKinds.json"));
-                var disasterKinds = disasterKindStore.Load();
                 Current.AllDisasterKinds = disasterKinds.Select(x => new DisasterKind(x)).ToDictionary(x => x.ID);
-
-                var officialTitleKindStore = new JsonStore<OfficialTitleKindConfig>(Path.Combine(dirPath, "OfficialTitleKinds.json"));
-                var officialTitleKinds = officialTitleKindStore.Load();
                 Current.AllOfficialTitleKinds = officialTitleKinds.Select(x => new OfficialTitleKind(x)).ToDictionary(x => x.ID);
-                
-                var sectionAIDetailStore = new JsonStore<SectionAIDetailConfig>(Path.Combine(dirPath, "SectionAIDetails.json"));
-                var sectionAIDetails = sectionAIDetailStore.Load();
                 Current.AllSectionAIDetails = sectionAIDetails.Select(x => new SectionAIDetail(x)).ToDictionary(x => x.ID);
-
-                var idealTendencyKindStore = new JsonStore<IdealTendencyKindConfig>(Path.Combine(dirPath, "IdealTendencyKinds.json"));
-                var idealTendencyKinds = idealTendencyKindStore.Load();
                 Current.AllIdealTendencyKinds = idealTendencyKinds.Select(x => new IdealTendencyKind(x)).ToDictionary(x => x.ID);
-                
-                var militaryKindStore = new JsonStore<MilitaryKindConfig>(Path.Combine(dirPath, "MilitaryKinds.json"));
-                var militaryKinds = militaryKindStore.Load();
                 Current.AllMilitaryKinds = militaryKinds.Select(x => new MilitaryKind(x)).ToDictionary(x => x.ID);
-
-                var architectureKindStore = new JsonStore<ArchitectureKindConfig>(Path.Combine(dirPath, "ArchitectureKinds.json"));
-                var architectureKinds = architectureKindStore.Load();
                 Current.AllArchitectureKinds = architectureKinds.Select(x => new ArchitectureKind(x)).ToDictionary(x => x.ID);
-
-                var personMessageStore = new JsonStore<PersonMessageConfig>(Path.Combine(dirPath, "PersonMessages.json"));
-                var personMessages = personMessageStore.Load();
                 Current.AllTextMessages = personMessages.ToDictionary(x => (x.PersonId, x.Kind), x => x.Messages);
-
-                var tileAnimationStore = new JsonStore<AnimationConfig>(Path.Combine(dirPath, "TileAnimations.json"));
-                var tileAnimations = tileAnimationStore.Load();
                 Current.AllTileAnimations = tileAnimations.Select(x => new Animation(x)).ToDictionary(x => x.ID);
-
-                var troopAnimationStore = new JsonStore<AnimationConfig>(Path.Combine(dirPath, "TroopAnimations.json"));
-                var troopAnimations = troopAnimationStore.Load();
                 Current.AllTroopAnimations = troopAnimations.Select(x => new Animation(x)).ToDictionary(x => x.ID);
-
-                var biographyAdjectiveStore = new JsonStore<BiographyAdjectiveConfig>(Path.Combine(dirPath, "BiographyAdjectives.json"));
-                var biographyAdjectives = biographyAdjectiveStore.Load();
                 Current.AllBiographyAdjectives = biographyAdjectives.Select(x => new BiographyAdjectives(x)).ToList();
-
-                var personGeneratorTypeStore = new JsonStore<PersonGeneratorTypeConfig>(Path.Combine(dirPath, "PersonGeneratorTypes.json"));
-                var personGeneratorTypes = personGeneratorTypeStore.Load();
                 Current.AllPersonGeneratorTypes = personGeneratorTypes.Select(x => new PersonGeneratorType(x)).ToDictionary(x => x.ID);
-
-                var trainPolicyStore = new JsonStore<TrainPolicyConfig>(Path.Combine(dirPath, "TrainPolicies.json"));
-                var trainPolicies = trainPolicyStore.Load();
                 Current.AllTrainPolicies = trainPolicies.Select(x => new TrainPolicy(x)).ToDictionary(x => x.ID);
-
-                var personGeneratorSettingStore = new JsonStore<PersonGeneratorSettingConfig>(Path.Combine(dirPath, "PersonGeneratorSettings.json"));
-                var personGeneratorSettings = personGeneratorSettingStore.Load();
                 Current.PersonGeneratorSetting = new PersonGeneratorSetting(personGeneratorSettings.FirstOrDefault());
-
-                var treasureCreationSettingStore = new JsonStore<TreasureCreationSettingConfig>(Path.Combine(dirPath, "TreasureCreationSettings.json"));
-                var treasureCreationSettings = treasureCreationSettingStore.Load();
                 Current.AllTreasureCreationSettings = treasureCreationSettings.Select(x => new TreasureCreationSetting(x)).ToDictionary(x => x.ID);
-
-                var attackDefaultKindStore = new JsonStore<AttackDefaultKindConfig>(Path.Combine(dirPath, "AttackDefaultKinds.json"));
-                var attackDefaultKinds = attackDefaultKindStore.Load();
                 Current.AllAttackDefaultKinds = attackDefaultKinds.Select(x => new AttackDefaultKind(x)).ToList();
-
-                var attackTargetKindStore = new JsonStore<AttackTargetKindConfig>(Path.Combine(dirPath, "AttackTargetKinds.json"));
-                var attackTargetKinds = attackDefaultKindStore.Load();
                 Current.AllAttackTargetKinds = attackDefaultKinds.Select(x => new AttackTargetKind(x)).ToList();
-
-                var castDefaultKindStore = new JsonStore<CastDefaultKindConfig>(Path.Combine(dirPath, "CastDefaultKinds.json"));
-                var castDefaultKinds = castDefaultKindStore.Load();
                 Current.AllCastDefaultKinds = castDefaultKinds.Select(x => new CastDefaultKind(x)).ToList();
-
-                var castTargetKindStore = new JsonStore<CastTargetKindConfig>(Path.Combine(dirPath, "CastTargetKinds.json"));
-                var castTargetKinds = castTargetKindStore.Load();
                 Current.AllCastTargetKinds = castTargetKinds.Select(x => new CastTargetKind(x)).ToList();
-
-                var statusEffectStore = new JsonStore<StatusEffectConfig>(Path.Combine(dirPath, "StatusEffects.json"));
-                var statusEffects = statusEffectStore.Load();
                 Current.AllStatusEffects = statusEffects.Select(x => new StatusEffect(x)).ToDictionary(x => x.ID);
-
 
                 GameScenario.ProcessCommonData(Current);
 

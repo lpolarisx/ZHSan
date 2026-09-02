@@ -37,10 +37,6 @@ namespace GameObjects
 
             AttackedTroopList = new GameObjectList();
 
-            controllable = true;
-
-            currentCombatMethodID = -1;
-
             EnterList = new ArchitectureList();
 
             EventInfluences = new();
@@ -54,8 +50,6 @@ namespace GameObjects
             simplepathFinder = new TierPathFinder();
 
             TroopDamageList = new List<TroopDamage>();
-
-            will = TroopWill.行军;
 
             friendlyTroopsInView = new TroopList();
             hostileTroopsInView = new TroopList();
@@ -111,17 +105,19 @@ namespace GameObjects
             attackInjuryRate = 1;
 
             targetTroop = (Troop) Session.Current.Scenario.Troops.GetGameObject(targetTroopID);
-            targetArchitecture = (Architecture)Session.Current.Scenario.Architectures.GetGameObject(targetArchitectureID);
+            targetArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(targetArchitectureID);
         }
 
         private int[] weizhixulie = { 0, 1, -1, 2, -2, 3, -3, 4 };
         private int weizhijishu = 0;
         private int yuanmubiaofangxiang = 0;
         private int chongshemubiaofangxiang = 0;
+
         [DataMember]
-        public bool chongshemubiaoweizhibiaoji = false;
+        public bool chongshemubiaoweizhibiaoji { get; set; }
+
         [DataMember]
-        public Point minglingweizhi;
+        public Point minglingweizhi { get; set; }
 
         private TroopAction action;
         private int antiCriticalStrikeChance;
@@ -139,7 +135,6 @@ namespace GameObjects
         public int AroundAttackRadius;
         public bool AttackAllOffenceArea;
         public int AttackDecrementOfCombativity;
-        private TroopAttackDefaultKind attackDefaultKind;
 
         public GameObjectList AttackedTroopList = new GameObjectList();
 
@@ -165,8 +160,6 @@ namespace GameObjects
         public Faction BelongedFaction = null;
         public Legion BelongedLegion;
         public bool CanAttackAfterRout;
-        private TroopCastDefaultKind castDefaultKind;
-        private TroopCastTargetKind castTargetKind;
         public int ChanceDecrementOfCriticalStrike;
         public int ChanceDecrementOfCriticalStrikeByViewArea;
         public int ChanceDecrementOfCriticalStrikeInViewArea;
@@ -193,7 +186,6 @@ namespace GameObjects
         private int chaosAfterCriticalStrikeChance;
         private int chaosAfterStratagemSuccessChance;
         private int chaosAfterSurroundAttackChance;
-        private int chaosDayLeft;
         public bool ChaosLastOneDay;
         public int CombativityDecrementOnPower;
         public int CombativityDecrementPerDayByViewArea;
@@ -213,8 +205,6 @@ namespace GameObjects
         public int ContactHostileTroopCount;
         public bool ContactingWillArchitecture;
 
-        private bool controllable = true;
-
         public int CounterAttackDecrementOfCombativity;
         public int CriticalChanceIncrementOfCliff;
         public int CriticalChanceIncrementOfDesert;
@@ -229,8 +219,6 @@ namespace GameObjects
         public int CriticalChanceIncrementOfWater;
         private int criticalStrikeChance;
         private CombatMethod currentCombatMethod;
-        private int currentCombatMethodID = -1;
-        private int autoCombatMethodID = -1;
         //private Person CurrentDestinationChallengePerson;
         private Person CurrentDestinationControversyPerson;
         public OutburstKind CurrentOutburstKind;
@@ -245,12 +233,10 @@ namespace GameObjects
         public Stunt CurrentStunt;
         private int currentTileAnimationIndex;
         [DataMember]
-        public TileAnimationKind CurrentTileAnimationKind = TileAnimationKind.无;
+        public TileAnimationKind CurrentTileAnimationKind { get; set; } = TileAnimationKind.无;
         private int currentTileStayIndex;
         private int currentTroopAnimationIndex;
         private int currentTroopStayIndex;
-        private int cutRoutewayDays;
-
         public bool LoyaltyNoChange;
         public CombatNumberItemList DecrementNumberList = new CombatNumberItemList(CombatNumberDirection.下);
         public int DecrementOfCliffAdaptability;
@@ -279,14 +265,15 @@ namespace GameObjects
         public float DefenceRateOnSubdueQixie = 1f;
         public float DefenceRateOnSubdueShuijun = 1f;
         private Point destination;
+
         [DataMember]
-        public bool Destroyed;
+        public bool Destroyed { get; set; }
         private double DistanceToWillArchitecture;
 
         public int DominationDecrementOfCriticalStrike;
-        private bool drawAnimation = true;
+
         [DataMember]
-        public TroopEffect Effect;
+        public TroopEffect Effect { get; set; }
         private int effectTileAnimationIndex;
         private int effectTileStayIndex;
         public bool EnableOneAdaptablility;
@@ -298,14 +285,10 @@ namespace GameObjects
         public List<Influence> EventInfluences = new();
 
         [DataMember]
-        public List<Point> FirstTierPath;
+        public List<Point> FirstTierPath { get; set; }
 
-        private int firstTierPathIndex = 0;
-        private int food;
-        private int zijinzhi;
         [DataMember]
         public FriendlyActionKind FriendlyAction = FriendlyActionKind.NotCare;
-        private int fund;
         [DataMember]
         public bool HasPath = false;
         private bool HasSupply;
@@ -353,8 +336,6 @@ namespace GameObjects
 
         public bool LowerLevelInformationWhileInvestigated;
 
-        private int militaryID = -1;
-
         public float MoraleChangeRateOnOutOfFood = 1f;
         public int MoraleDecrementOfCriticalStrike;
         public int MoraleDecrementOnPrestige;
@@ -363,7 +344,6 @@ namespace GameObjects
         public int MovabilityLeft;
         [DataMember]
         public List<Point> MoveAnimationFrames = new List<Point>();
-        private bool moved;
         private int moveFrameIndex = 0;
         private int moveStayCount = 0;
         public float MultipleOfArmyExperience = 1;
@@ -391,8 +371,6 @@ namespace GameObjects
         public float OffenceRateOnSubdueShuijun = 1f;
         public bool OffencingWillArchitecture;
         public bool OnlyBeDetectedByHighLevelInformation;
-        private bool operated;
-        private bool operationDone;
 
         public Architecture OrientationArchitecture;
         [DataMember]
@@ -450,8 +428,6 @@ namespace GameObjects
         public bool ScatteredShootingOblique;
         [DataMember]
         public List<Point> SecondTierPath;
-        private int secondTierPathDestinationIndex = 0;
-        private Point selfCastPosition;
         private bool showNumber;
         [DataMember]
         public bool ShowPath = false;
@@ -494,7 +470,6 @@ namespace GameObjects
         public bool StuntCanAttackAfterRout;
         public int StuntDayDecrementOfAttack;
         [DataMember]
-        private int stuntDayLeft;
         public bool StuntMustSurround;
         public bool StuntRecoverFromChaos;
 
@@ -512,14 +487,12 @@ namespace GameObjects
         private Troop targetTroop;
         [DataMember]
         private int targetTroopID = -1;
-        private int technologyIncrement;
         private Point? TempDestination;
         public float TempRateOfDefence = 1f;
         public float TempRateOfOffence = 1f;
         private float terrainRate = 1f;
         [DataMember]
         public List<Point> ThirdTierPath;
-        private int thirdTierPathDestinationIndex = 0;
         private int troopCommand;
         private List<TroopDamage> TroopDamageList = new List<TroopDamage>();
         private int troopIntelligence;
@@ -553,7 +526,6 @@ namespace GameObjects
         public bool WaitForDeepChaos;
         private int waitForDeepChaosFrameCount;
         public bool WaitOnce = false;
-        private TroopWill will = TroopWill.行军;
         private Architecture willArchitecture;
         [DataMember]
         private int willArchitectureID = -1;
@@ -685,7 +657,7 @@ namespace GameObjects
 
         public List<Influence> InfluencesApplying = new List<Influence>();
 
-        public GameObjectList Candidates;
+        public List<Person> Candidates;
 
 #pragma warning disable CS0067 // The event 'Troop.OnAmbush' is never used
         public event Ambush OnAmbush;
@@ -820,16 +792,18 @@ namespace GameObjects
         [DataMember]
         public string CaptivesString { get; set; }
 
-        public CaptiveList Captives
+        public List<Captive> Captives
         {
             get
             {
-                CaptiveList result = new CaptiveList();
-                foreach (Captive i in Session.Current.Scenario.Captives)
+                var result = new List<Captive>();
+                var captives = Session.Current.Scenario.GetCaptives();
+
+                foreach (var captive in captives)
                 {
-                    if (i.LocationTroop == this)
+                    if (captive.LocationTroop == this)
                     {
-                        result.Add(i);
+                        result.Add(captive);
                     }
                 }
                 return result;
@@ -953,13 +927,17 @@ namespace GameObjects
 
         public void AddCaptive(Captive captive)
         {
-            captive.CaptivePerson.LocationTroop = this;
-            if (this.BelongedFaction != null)
+            var captivePerson = captive.CaptivePerson;
+
+            if (captivePerson == null) return;
+
+            captivePerson.LocationTroop = this;
+            if (BelongedFaction != null)
             {
-                foreach (Treasure treasure in captive.CaptivePerson.Treasures.GetList())
+                foreach (Treasure treasure in captivePerson.Treasures.GetList())
                 {
-                    captive.CaptivePerson.LoseTreasure(treasure);
-                    this.BelongedFaction.Leader.ReceiveTreasure(treasure);
+                    captivePerson.LoseTreasure(treasure);
+                    BelongedFaction.Leader.ReceiveTreasure(treasure);
                 }
             }
         }
@@ -2395,8 +2373,8 @@ namespace GameObjects
 
             this.SecondTierPath = null;
             this.ThirdTierPath = null;
-            this.secondTierPathDestinationIndex = 0;
-            this.thirdTierPathDestinationIndex = 0;
+            this.SecondIndex = 0;
+            this.ThirdIndex = 0;
 
             return true;
 
@@ -2967,13 +2945,13 @@ namespace GameObjects
                 this.BelongedFaction = null;
                 faction.AddTroop(this);
                 faction.AddTroopKnownAreaData(this);
-                foreach (Captive captive in this.Captives.GetList())
+                foreach (var captive in Captives)
                 {
                     if (captive.CaptiveFaction == faction)
                     {
                         captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital, Position, true, false, oldFaction);
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
-                        Session.Current.Scenario.Captives.Remove(captive);
+                        // Session.Current.Scenario.Captives.Remove(captive);
                     }
                 }
                 faction.AddMilitary(this.Army);
@@ -3139,7 +3117,7 @@ namespace GameObjects
         private bool CheckReLaunchPathFinder(MilitaryKind kind)
         {
             bool secondTierPath = false;
-            if (((((this.SecondTierPath != null) && (this.ThirdTierPath != null)) && (this.SecondTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.SecondTierPath[this.SecondTierPath.Count - 1] != GetSecondTierCoordinate(this.Destination)))) && ReLaunchSecondPathFinder(this.Position, this.GetCentrePointInThirdTierPosition(this.ThirdTierPath[this.thirdTierPathDestinationIndex])))
+            if (((((this.SecondTierPath != null) && (this.ThirdTierPath != null)) && (this.SecondTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.SecondTierPath[this.SecondTierPath.Count - 1] != GetSecondTierCoordinate(this.Destination)))) && ReLaunchSecondPathFinder(this.Position, this.GetCentrePointInThirdTierPosition(this.ThirdTierPath[this.ThirdIndex])))
             {
                 if (!secondTierPath)
                 {
@@ -3150,7 +3128,7 @@ namespace GameObjects
                     this.pathFinder.GetSecondTierPath(this.Position, this.GetSecondTierDestinationFromThirdTier(kind), kind);
                 }
             }
-            if (((((this.FirstTierPath != null) && (this.SecondTierPath != null)) && (this.FirstTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.FirstTierPath[this.FirstTierPath.Count - 1] != this.Destination))) && ReLaunchFirstPathFinder(this.Position, this.GetCentrePointInSecondTierPosition(this.SecondTierPath[this.secondTierPathDestinationIndex])))
+            if (((((this.FirstTierPath != null) && (this.SecondTierPath != null)) && (this.FirstTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.FirstTierPath[this.FirstTierPath.Count - 1] != this.Destination))) && ReLaunchFirstPathFinder(this.Position, this.GetCentrePointInSecondTierPosition(this.SecondTierPath[this.SecondIndex])))
             {
                 if (!secondTierPath)
                 {
@@ -3513,13 +3491,13 @@ namespace GameObjects
         public void ClearSecondTierPath()
         {
             this.SecondTierPath = null;
-            this.secondTierPathDestinationIndex = 0;
+            this.SecondIndex = 0;
         }
 
         public void ClearThirdTierPath()
         {
             this.ThirdTierPath = null;
-            this.thirdTierPathDestinationIndex = 0;
+            this.ThirdIndex = 0;
         }
 
         public string CombativityInInformationLevel(InformationLevel level)
@@ -3587,14 +3565,14 @@ namespace GameObjects
             return ((((!troop.Destroyed && troop.CounterOffence) && (this.BeCountered && (troop.Offence > 0))) && (!this.BaseNoCounterAttack && !this.NoCounterAttack)) && troop.OffenceArea.HasPoint(position));
         }
 
-        public static Troop Create(Architecture from, GameObjectList persons, Person leader, Military military, int food, Point position)
+        public static Troop Create(Architecture from, List<Person> persons, Person leader, Military military, int food, Point position)
         {
             Troop troop = new Troop();
             troop.destination = position;
             troop.realDestination = position;
             troop.StartingArchitecture = from;
             troop.ID = Session.Current.Scenario.Troops.GetFreeGameObjectID();
-            foreach (Person p in persons.GetList())
+            foreach (var p in persons)
             {
                 troop.persons.Add(p);
                 p.LocationTroop = troop;
@@ -3617,7 +3595,7 @@ namespace GameObjects
                 else
                 {
                     from.RemoveMilitary(military.ShelledMilitary);
-                    Session.Current.Scenario.Militaries.AddMilitary(military);
+                    Session.Current.Scenario.Militaries.Add(military.ID, military);
                 }
             }
             troop.Army = military;
@@ -3669,35 +3647,32 @@ namespace GameObjects
             ExtensionInterface.call("CreateTroop", new Object[] { Session.Current.Scenario, troop });
             foreach (Person p in troop.persons)
             {
-                if (p != troop.Leader)
-                {
-                    p.belongedperson = troop.Leader;
-                }
-                else p.belongedperson = null;
+                p.BelongedPerson = p == troop.Leader ? null : troop.Leader;
             }
             return troop;
         }
 
-        public static Troop CreateSimulateTroop(GameObjectList persons, Military military, Point startPosition)
+        public static Troop CreateSimulateTroop(List<Person> persons, Military military, Point startPosition)
         {
-            Troop troop = new Troop();
-            troop.Simulating = true;
+            var troop = new Troop { Simulating = true };
+            
             if (persons != null)
             {
-                foreach (Person person in persons)
+                foreach (var person in persons)
                 {
                     person.LocationTroop = troop;
                 }
-                troop.SetLeader(persons[0] as Person);
-                troop.BackupArmyLeaderID = (military.Leader != null) ? military.Leader.ID : -1;
+                troop.SetLeader(persons[0]);
+                troop.BackupArmyLeaderID = military.Leader?.ID ?? -1;
                 troop.BackupArmyLeaderExperience = military.LeaderExperience;
                 troop.BackupArmyLeader = military.Leader;
                 troop.Army = military;
                 troop.SimulateInitializePosition(startPosition);
             }
             troop.Simulating = false;
-            troop.Candidates = persons as PersonList;
-            foreach (Person person in persons)
+            troop.Candidates = persons;
+
+            foreach (var person in persons)
             {
                 person.LocationTroop = null;
             }
@@ -3709,6 +3684,12 @@ namespace GameObjects
 
         public static Troop CreateSimulateTroop(Architecture architecture, GameObjectList persons, Person Leader, Military military, int rationdays, Point startPosition)
         {
+            var candidates = new List<Person>();
+            foreach (Person person in persons)
+            {
+                candidates.Add(person);
+            }
+
             Troop troop = new Troop();
             Session.Current.Scenario = Session.Current.Scenario;
             troop.BelongedFaction = architecture.BelongedFaction;
@@ -3737,14 +3718,12 @@ namespace GameObjects
                 troop.SimulateInitializePosition(startPosition);
             }
             troop.Simulating = false;
-            troop.Candidates = persons as GameObjectList;
-            if (persons != null)
+            troop.Candidates = candidates;
+            foreach (var person in candidates)
             {
-                foreach (Person person in persons)
-                {
-                    person.LocationTroop = null;
-                }
+                person.LocationTroop = null;
             }
+            
             if (military != null)
             {
                 military.Leader = troop.BackupArmyLeader;
@@ -4298,16 +4277,16 @@ namespace GameObjects
                         {
                             this.BelongedFaction.RemoveMilitary(this.Army);
                         }
-                        Session.Current.Scenario.Militaries.Remove(this.Army);
+                        Session.Current.Scenario.Militaries.Remove(Army.ID);
                     }
                     else
                     {
-                        if (this.BelongedFaction != null)
+                        if (BelongedFaction != null)
                         {
-                            this.BelongedFaction.RemoveMilitary(this.Army.ShelledMilitary);
+                            BelongedFaction.RemoveMilitary(Army.ShelledMilitary);
                         }
-                        Session.Current.Scenario.Militaries.Remove(this.Army.ShelledMilitary);
-                        Session.Current.Scenario.Militaries.Remove(this.Army);
+                        Session.Current.Scenario.Militaries.Remove(Army.ShelledMilitary.ID);
+                        Session.Current.Scenario.Militaries.Remove(Army.ID);
                     }
                 }
                 if (this.BelongedFaction != null)
@@ -4468,7 +4447,7 @@ namespace GameObjects
                         this.Army.Quantity = this.Army.ShelledMilitary.Kind.MaxScale;
                     }
                     a.AddMilitary(this.Army.ShelledMilitary);
-                    Session.Current.Scenario.Militaries.Remove(this.Army);
+                    Session.Current.Scenario.Militaries.Remove(Army.ID);
                 }
                 a.callReturnedOfficerToWork();
                 if (this.Food > 0)
@@ -4512,13 +4491,16 @@ namespace GameObjects
             {
                 this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
             }
+
+            var architectures = Session.Current.Scenario.Architectures.Values.ToList();
+
             foreach (Person person in this.Persons)
             {
                 person.OutsideTask = OutsideTaskKind.无;
                 person.TaskDays = 0;
                 person.Status = PersonStatus.NoFaction;
 
-                person.LocationArchitecture = (Architecture)(this.StartingArchitecture == null ? Session.Current.Scenario.Architectures.GetRandomObject() : this.StartingArchitecture);
+                person.LocationArchitecture = StartingArchitecture == null ? StaticMethods.GetRandomItem(architectures) : this.StartingArchitecture;
                 person.TargetArchitecture = null;
             }
             this.Destroy(true, true);
@@ -6391,13 +6373,13 @@ namespace GameObjects
 
         protected Point GetSecondTierDestination()
         {
-            if ((this.secondTierPathDestinationIndex + GameObjectConsts.LaunchTierFinderDistance) < this.SecondTierPath.Count)
+            if ((this.SecondIndex + GameObjectConsts.LaunchTierFinderDistance) < this.SecondTierPath.Count)
             {
-                this.secondTierPathDestinationIndex += GameObjectConsts.LaunchTierFinderDistance;
-                return this.SecondTierPath[this.secondTierPathDestinationIndex];
+                this.SecondIndex += GameObjectConsts.LaunchTierFinderDistance;
+                return this.SecondTierPath[this.SecondIndex];
             }
-            this.secondTierPathDestinationIndex = this.SecondTierPath.Count - 1;
-            return this.SecondTierPath[this.secondTierPathDestinationIndex];
+            this.SecondIndex = this.SecondTierPath.Count - 1;
+            return this.SecondTierPath[this.SecondIndex];
         }
 
         public Point GetSecondTierDestinationFromThirdTier(MilitaryKind kind)
@@ -6639,11 +6621,11 @@ namespace GameObjects
             }
             if (architectureTarget)
             {
-                foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+                foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                 {
-                    if (this.IsFriendly(architecture.BelongedFaction) == friendly)
+                    if (IsFriendly(architecture.BelongedFaction) == friendly)
                     {
-                        foreach (Point point in architecture.ArchitectureArea.Area)
+                        foreach (var point in architecture.ArchitectureArea.Area)
                         {
                             area.AddPoint(point);
                         }
@@ -6657,12 +6639,11 @@ namespace GameObjects
         {
             GameArea area = new GameArea();
 
-
-            foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+            foreach (var architecture in Session.Current.Scenario.Architectures.Values)
             {
-                if (this.IsFriendly(architecture.BelongedFaction) == friendly)
+                if (IsFriendly(architecture.BelongedFaction) == friendly)
                 {
-                    foreach (Point point in architecture.ArchitectureArea.Area)
+                    foreach (var point in architecture.ArchitectureArea.Area)
                     {
                         area.AddPoint(point);
                     }
@@ -6780,13 +6761,13 @@ namespace GameObjects
 
         protected Point GetThirdTierDestination()
         {
-            if ((this.thirdTierPathDestinationIndex + GameObjectConsts.LaunchTierFinderDistance) < this.ThirdTierPath.Count)
+            if ((this.ThirdIndex + GameObjectConsts.LaunchTierFinderDistance) < this.ThirdTierPath.Count)
             {
-                this.thirdTierPathDestinationIndex += GameObjectConsts.LaunchTierFinderDistance;
-                return this.ThirdTierPath[this.thirdTierPathDestinationIndex];
+                this.ThirdIndex += GameObjectConsts.LaunchTierFinderDistance;
+                return this.ThirdTierPath[this.ThirdIndex];
             }
-            this.thirdTierPathDestinationIndex = this.ThirdTierPath.Count - 1;
-            return this.ThirdTierPath[this.thirdTierPathDestinationIndex];
+            this.ThirdIndex = this.ThirdTierPath.Count - 1;
+            return this.ThirdTierPath[this.ThirdIndex];
         }
 
         public TreasureList GetTreasureList()
@@ -8183,34 +8164,6 @@ namespace GameObjects
 
         }
 
-        public List<string> LoadCaptivesFromString(CaptiveList captives, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.Captives.Clear();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    Captive gameObject = captives.GetGameObject(int.Parse(str)) as Captive;
-                    if (gameObject != null)
-                    {
-                        this.AddCaptive(gameObject);
-                    }
-                    else
-                    {
-                        errorMsg.Add("俘虜ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("俘虜列表應為半型空格分隔的俘虜ID");
-            }
-            return errorMsg;
-        }
-
         public void LoadPathInformation(int positionX, int positionY, int destinationX, int destinationY, int realDestinationX, int realDestinationY, string firstTierPathData, string secondTierPathData, string thirdTierPathData, int firstIndex, int secondIndex, int thirdIndex)
         {
             this.PreviousPosition = this.position = new Point(positionX, positionY);
@@ -8376,7 +8329,7 @@ namespace GameObjects
 
         private void MoveCaptiveIntoArchitecture(Architecture des)
         {
-            foreach (Captive captive in this.Captives.GetList())
+            foreach (var captive in Captives)
             {
                 captive.CaptivePerson.LocationArchitecture = des;
                 captive.CaptivePerson.LocationTroop = null;
@@ -8645,7 +8598,7 @@ namespace GameObjects
                     {
                         Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedFaction.ID, currentArchitecture.BelongedFaction.ID, (-20 * currentArchitecture.AreaCount) * (currentArchitecture.IsImportant ? 2 : 1));
                         Session.Current.Scenario.ReflectDiplomaticRelations(this.BelongedFaction.ID, currentArchitecture.BelongedFaction.ID, -20);
-                        foreach (Architecture architecture2 in currentArchitecture.GetAILinks())
+                        foreach (var architecture2 in currentArchitecture.AIWaterLinks.ToList())
                         {
                             if (!(((architecture2.BelongedFaction == null) || (architecture2.BelongedFaction == currentArchitecture.BelongedFaction)) || this.IsFriendly(architecture2.BelongedFaction)))
                             {
@@ -8657,7 +8610,7 @@ namespace GameObjects
                     else
                     {
                         flag = true;
-                        foreach (Architecture architecture2 in currentArchitecture.GetAILinks())
+                        foreach (var architecture2 in currentArchitecture.AIWaterLinks.ToList())
                         {
                             if (!((architecture2.BelongedFaction == null) || this.IsFriendly(architecture2.BelongedFaction)))
                             {
@@ -9753,7 +9706,7 @@ namespace GameObjects
             if (this.HasCaptive())
             {
                 PersonList personlist = new PersonList();
-                foreach (Captive captive in this.Captives.GetList())
+                foreach (var captive in Captives)
                 {
                     if (captive.CaptivePerson != null && captive.CaptiveFaction != null && captive.CaptiveFaction.Capital != null)
                     {
@@ -10428,15 +10381,11 @@ namespace GameObjects
         public void SetCurrentCombatMethod(CombatMethod combatMethod)
         {
             currentCombatMethod = combatMethod;
+            CurrentCombatMethodID = combatMethod?.ID ?? -1;
             if (combatMethod != null)
             {
-                currentCombatMethodID = combatMethod.ID;
                 AttackDefaultKind = (TroopAttackDefaultKind)combatMethod.AttackDefaultString;
                 attackTargetKind = (TroopAttackTargetKind)combatMethod.AttackTargetString;
-            }
-            else
-            {
-                currentCombatMethodID = -1;
             }
         }
 
@@ -10721,7 +10670,7 @@ namespace GameObjects
         {
             if (!this.Destroyed)
             {
-                this.chaosDayLeft = 0;
+                ChaosDayLeft = 0;
                 this.Status = TroopStatus.一般;
                 this.PreAction = TroopPreAction.恢复;
                 this.RefreshOffence();
@@ -10791,7 +10740,7 @@ namespace GameObjects
 
         public void SimpleRecoverFromChaos()
         {
-            this.chaosDayLeft = 0;
+            ChaosDayLeft = 0;
             this.Status = TroopStatus.一般;
             this.RefreshOffence();
             this.RefreshDefence();
@@ -10825,7 +10774,7 @@ namespace GameObjects
             }
 
             this.AttackStarted = false;
-            this.operationDone = true;
+            OperationDone = true;
             if (architecture == this.TargetArchitecture)
             {
                 this.MovabilityLeft = -1;
@@ -10915,7 +10864,7 @@ namespace GameObjects
                 troop.Action = TroopAction.BeAttacked;
             }
 
-            this.operationDone = true;
+            OperationDone = true;
             if (troop == this.TargetTroop)
             {
                 this.MovabilityLeft = -1;
@@ -10930,7 +10879,7 @@ namespace GameObjects
 
         private void StartCastSelf()
         {
-            this.operationDone = true;
+            OperationDone = true;
             this.StratagemApplyed = true;
 
             if (Session.Current.Scenario.IsKnownToAnyPlayer(this))
@@ -10961,7 +10910,7 @@ namespace GameObjects
         {
             if (troop != null)
             {
-                this.operationDone = true;
+                OperationDone = true;
                 this.StratagemApplyed = true;
 
                 if (Session.Current.Scenario.IsKnownToAnyPlayer(this) || Session.Current.Scenario.IsKnownToAnyPlayer(troop))
@@ -11012,10 +10961,7 @@ namespace GameObjects
             this.Operated = false;
         }
 
-        public bool SurroundAvail()
-        {
-            return ((this.Status == TroopStatus.一般) && this.Controllable);
-        }
+        public bool SurroundAvail() => Status == TroopStatus.一般 && Controllable;
 
         public bool TargetAvail()
         {
@@ -11055,10 +11001,7 @@ namespace GameObjects
             return flag;
         }
 
-        public override string ToString()
-        {
-            return (this.DisplayName + "  " + this.FactionString);
-        }
+        public override string ToString() => $"{DisplayName} {FactionString}";
 
         public void TryToPlaySound(Point position, string soundFileLocation, bool looping)
         {
@@ -11101,12 +11044,12 @@ namespace GameObjects
                                 this.MovabilityLeft = -1;
                                 return path;
                             }
-                            int firstTierPathIndex = this.firstTierPathIndex;
+                            int FirstIndex = this.FirstIndex;
                             int movabilityLeft = this.MovabilityLeft;
-                            while ((firstTierPathIndex + 1) < this.FirstTierPath.Count)
+                            while ((FirstIndex + 1) < this.FirstTierPath.Count)
                             {
-                                Point currentPosition = this.FirstTierPath[firstTierPathIndex];
-                                Point nextPosition = this.FirstTierPath[firstTierPathIndex + 1];
+                                Point currentPosition = this.FirstTierPath[FirstIndex];
+                                Point nextPosition = this.FirstTierPath[FirstIndex + 1];
                                 int num3 = this.NextPositionCost(currentPosition, nextPosition);
                                 if (num3 <= movabilityLeft)
                                 {
@@ -11122,7 +11065,7 @@ namespace GameObjects
                                         return path;
                                     }
                                     movabilityLeft -= num3;
-                                    firstTierPathIndex++;
+                                    FirstIndex++;
                                 }
                                 else
                                 {
@@ -11130,7 +11073,7 @@ namespace GameObjects
                                     return path;
                                 }
                             }
-                            if (firstTierPathIndex == (this.FirstTierPath.Count - 1))
+                            if (FirstIndex == (this.FirstTierPath.Count - 1))
                             {
                                 this.MovabilityLeft = -1;
                                 return path;
@@ -11143,12 +11086,12 @@ namespace GameObjects
                         if (this.MovabilityLeft >= num4)
                         {
                             this.MovabilityLeft -= num4;
-                            this.firstTierPathIndex++;
-                            this.Position = this.FirstTierPath[this.firstTierPathIndex];
+                            this.FirstIndex++;
+                            this.Position = this.FirstTierPath[this.FirstIndex];
                             this.Moved = true;
                             if (this.FirstTierPath != null)
                             {
-                                if (this.firstTierPathIndex == (this.FirstTierPath.Count - 1))
+                                if (this.FirstIndex == (this.FirstTierPath.Count - 1))
                                 {
                                     this.HasPath = false;
                                     this.MovabilityLeft = -1;
@@ -11204,7 +11147,7 @@ namespace GameObjects
                         this.chongshemubiaoweizhi();
                         return path;
                     }
-                    int firstTierPathIndex = this.FirstIndex;
+                    int FirstIndex = this.FirstIndex;
                     int movabilityLeft = this.MovabilityLeft;
 
 
@@ -11220,10 +11163,10 @@ namespace GameObjects
                         }
                     }
 
-                    while ((firstTierPathIndex + 1) < this.FirstTierPath.Count)
+                    while ((FirstIndex + 1) < this.FirstTierPath.Count)
                     {
-                        Point currentPosition = this.FirstTierPath[firstTierPathIndex];
-                        Point nextPosition = this.FirstTierPath[firstTierPathIndex + 1];
+                        Point currentPosition = this.FirstTierPath[FirstIndex];
+                        Point nextPosition = this.FirstTierPath[FirstIndex + 1];
                         int num3 = this.NextPositionCost(currentPosition, nextPosition, kind);
                         if (num3 <= movabilityLeft)
                         {
@@ -11258,7 +11201,7 @@ namespace GameObjects
                             }
 
                             movabilityLeft -= num3;
-                            firstTierPathIndex++;
+                            FirstIndex++;
                         }
                         else    //前面友军队伍很长，没有移动力穿越
                         {
@@ -11267,7 +11210,7 @@ namespace GameObjects
                             return path;
                         }
                     }
-                    if (firstTierPathIndex == (this.FirstTierPath.Count - 1))   //被友军或障碍挡住
+                    if (FirstIndex == (this.FirstTierPath.Count - 1))   //被友军或障碍挡住
                     {
                         //this.MovabilityLeft = -1;
 
@@ -11617,13 +11560,7 @@ namespace GameObjects
         {
         }
 
-        public string AccidentalInjuryString
-        {
-            get
-            {
-                return (this.TroopNoAccidentalInjury ? "×" : "○");
-            }
-        }
+        public string AccidentalInjuryString => StaticMethods.ToMark(TroopNoAccidentalInjury);
 
         public TroopAction Action
         {
@@ -11664,37 +11601,13 @@ namespace GameObjects
             }
         }
 
-        public bool AirOffence
-        {
-            get
-            {
-                return this.Army.Kind.AirOffence;
-            }
-        }
+        public bool AirOffence => Army.Kind.AirOffence;
 
-        public int AntiCriticalStrikeChance
-        {
-            get
-            {
-                return (int)(this.antiCriticalStrikeChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int AntiCriticalStrikeChance => (int)(antiCriticalStrikeChance - (1 - TirednessFactor) * 100);
 
-        public int AntiStratagemChanceIncrement
-        {
-            get
-            {
-                return (int)(this.antiStratagemChanceIncrement - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int AntiStratagemChanceIncrement => (int)(antiStratagemChanceIncrement - (1 - TirednessFactor) * 100);
 
-        public float ArchitectureCounterDamageRate
-        {
-            get
-            {
-                return this.Army.Kind.ArchitectureCounterDamageRate;
-            }
-        }
+        public float ArchitectureCounterDamageRate => Army.Kind.ArchitectureCounterDamageRate;
 
         public float ArchitectureDamageRate
         {
@@ -11709,12 +11622,12 @@ namespace GameObjects
         {
             get
             {
-                if (this.army == null && Session.Current.Scenario != null && Session.Current.Scenario.Militaries != null)
+                if (army == null && Session.Current.Scenario != null && Session.Current.Scenario.Militaries != null)
                 {
-                    this.army = Session.Current.Scenario.Militaries.GetGameObject(this.militaryID) as Military;
-                    if (this.army != null)
+                    army = Session.Current.Scenario.Militaries.GetValueOrDefault(MilitaryID);
+                    if (army != null)
                     {
-                        this.militaryID = this.army.ID;
+                        MilitaryID = this.army.ID;
                         this.army.BelongedTroop = this;
                         if (this.Simulating)
                         {
@@ -11733,7 +11646,7 @@ namespace GameObjects
                 this.army = value;
                 if (this.army != null)
                 {
-                    this.militaryID = this.army.ID;
+                    MilitaryID = this.army.ID;
                     this.army.BelongedTroop = this;
                     if (this.Simulating)
                     {
@@ -11751,34 +11664,12 @@ namespace GameObjects
             }
         }
 
-        public bool ArrowOffence
-        {
-            get
-            {
-                return this.Army.Kind.ArrowOffence;
-            }
-        }
+        public bool ArrowOffence => Army.Kind.ArrowOffence;
 
-        public string ArrowOffenceString
-        {
-            get
-            {
-                return (this.ArrowOffence ? "○" : "×");
-            }
-        }
+        public string ArrowOffenceString => StaticMethods.ToMark(ArrowOffence);
 
         [DataMember]
-        public TroopAttackDefaultKind AttackDefaultKind
-        {
-            get
-            {
-                return this.attackDefaultKind;
-            }
-            set
-            {
-                this.attackDefaultKind = value;
-            }
-        }
+        public TroopAttackDefaultKind AttackDefaultKind { get; set; }
 
         [DataMember]
         public TroopAttackTargetKind AttackTargetKind
@@ -11830,29 +11721,11 @@ namespace GameObjects
             }
         }
 
-        public bool BeCountered
-        {
-            get
-            {
-                return this.Army.Kind.BeCountered;
-            }
-        }
+        public bool BeCountered => Army.Kind.BeCountered;
 
-        public string BeCounteredString
-        {
-            get
-            {
-                return this.Army.Kind.BeCounteredString;
-            }
-        }
+        public string BeCounteredString => Army.Kind.BeCounteredString;
 
-        public bool CanMove
-        {
-            get
-            {
-                return (this.position != this.destination);
-            }
-        }
+        public bool CanMove => position != destination;
 
         public int CaptiveAblility
         {
@@ -11866,90 +11739,26 @@ namespace GameObjects
             }
         }
 
-        public int CaptiveCount
-        {
-            get
-            {
-                return this.Captives.Count;
-            }
-        }
-        [DataMember]
-        public TroopCastDefaultKind CastDefaultKind
-        {
-            get
-            {
-                return this.castDefaultKind;
-            }
-            set
-            {
-                this.castDefaultKind = value;
-            }
-        }
-        [DataMember]
-        public TroopCastTargetKind CastTargetKind
-        {
-            get
-            {
-                return this.castTargetKind;
-            }
-            set
-            {
-                this.castTargetKind = value;
-            }
-        }
-
-        public int ChaosAfterCriticalStrikeChance
-        {
-            get
-            {
-                return (int)(this.chaosAfterCriticalStrikeChance - (100 - this.TirednessFactor * 100));
-            }
-        }
-
-        public int ChaosAfterStratagemSuccessChance
-        {
-            get
-            {
-                return (int)(this.chaosAfterStratagemSuccessChance - (100 - this.TirednessFactor * 100));
-            }
-        }
-
-        public int ChaosAfterSurroundAttackChance
-        {
-            get
-            {
-                return (int)(this.chaosAfterSurroundAttackChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int CaptiveCount => Captives.Count;
 
         [DataMember]
-        public int ChaosDayLeft
-        {
-            get
-            {
-                return this.chaosDayLeft;
-            }
-            set
-            {
-                this.chaosDayLeft = value;
-            }
-        }
+        public TroopCastDefaultKind CastDefaultKind { get; set; }
 
-        public int CliffAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.CliffAdaptability - this.DecrementOfCliffAdaptability);
-            }
-        }
+        [DataMember]
+        public TroopCastTargetKind CastTargetKind { get; set; }
 
-        public float CliffRate
-        {
-            get
-            {
-                return this.Army.Kind.CliffRate;
-            }
-        }
+        public int ChaosAfterCriticalStrikeChance => (int)(chaosAfterCriticalStrikeChance - (1 - TirednessFactor) * 100);
+
+        public int ChaosAfterStratagemSuccessChance => (int)(chaosAfterStratagemSuccessChance - (1 - TirednessFactor) * 100);
+
+        public int ChaosAfterSurroundAttackChance => (int)(chaosAfterSurroundAttackChance - (1 - TirednessFactor) * 100);
+
+        [DataMember]
+        public int ChaosDayLeft { get; set; }
+
+        public int CliffAdaptability => Army.RealMilitaryKind.CliffAdaptability - DecrementOfCliffAdaptability;
+
+        public float CliffRate => Army.Kind.CliffRate;
 
         public int Combativity
         {
@@ -11980,34 +11789,12 @@ namespace GameObjects
             }
         }
 
-        public bool ContactOffence
-        {
-            get
-            {
-                return this.Army.Kind.ContactOffence;
-            }
-        }
+        public bool ContactOffence => Army.Kind.ContactOffence;
 
-        public string ContactOffenceString
-        {
-            get
-            {
-                return this.Army.Kind.ContactOffenceString;
-            }
-        }
+        public string ContactOffenceString => Army.Kind.ContactOffenceString;
 
         [DataMember]
-        public bool Controllable
-        {
-            get
-            {
-                return this.controllable;
-            }
-            set
-            {
-                this.controllable = value;
-            }
-        }
+        public bool Controllable { get; set; } = true;
 
         public TroopControlState ControlState
         {
@@ -12037,50 +11824,15 @@ namespace GameObjects
             }
         }
 
-        public bool CounterOffence
-        {
-            get
-            {
-                return this.Army.Kind.CounterOffence;
-            }
-        }
+        public bool CounterOffence => Army.Kind.CounterOffence;
 
-        public string CounterOffenceString
-        {
-            get
-            {
-                return this.Army.Kind.CounterOffenceString;
-            }
-        }
+        public string CounterOffenceString => Army.Kind.CounterOffenceString;
 
-        public int CriticalStrikeChance
-        {
-            get
-            {
-                return (int)(this.criticalStrikeChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int CriticalStrikeChance => (int)(criticalStrikeChance - (1 - TirednessFactor) * 100);
 
-        public Animation CurrentAnimation
-        {
-            get
-            {
-                if (Session.Current.Scenario.GameCommonData.AllTroopAnimations.TryGetValue((int)Action, out var animation))
-                {
-                    return animation;
-                }
+        public Animation CurrentAnimation => Session.Current.Scenario.GameCommonData.AllTroopAnimations.GetValueOrDefault((int)Action);
 
-                return null;
-            }
-        }
-
-        public Architecture CurrentArchitecture
-        {
-            get
-            {
-                return Session.Current.Scenario.GetArchitectureByPositionNoCheck(this.Position);
-            }
-        }
+        public Architecture CurrentArchitecture => Session.Current.Scenario.GetArchitectureByPositionNoCheck(Position);
 
         public string CurrentCombatAction
         {
@@ -12102,7 +11854,7 @@ namespace GameObjects
         {
             get
             {
-                if (currentCombatMethod == null && CombatMethods.TryGetValue(currentCombatMethodID, out var combatMethod))
+                if (currentCombatMethod == null && CombatMethods.TryGetValue(CurrentCombatMethodID, out var combatMethod))
                 {
                     currentCombatMethod = combatMethod;
                 }
@@ -12111,64 +11863,28 @@ namespace GameObjects
             }
             set
             {
-                this.currentCombatMethod = value;
+                currentCombatMethod = value;
+                CurrentCombatMethodID = value?.ID ?? -1;
                 if (this.currentCombatMethod != null)
                 {
-                    this.currentCombatMethodID = value.ID;
                     if (this.OnSetCombatMethod != null)
                     {
                         this.OnSetCombatMethod(this, this.currentCombatMethod);
                     }
                 }
-                else
-                {
-                    this.currentCombatMethodID = -1;
-                }
             }
         }
 
         [DataMember]
-        public int CurrentCombatMethodID
-        {
-            get
-            {
-                return this.currentCombatMethodID;
-            }
-            set
-            {
-                this.currentCombatMethodID = value;
-            }
-        }
+        public int CurrentCombatMethodID { get; set; } = -1;
         [DataMember]
-        public int AutoCombatMethodID
-        {
-            get
-            {
-                return this.autoCombatMethodID;
-            }
-            set
-            {
-                this.autoCombatMethodID = value;
-            }
-        }
+        public int AutoCombatMethodID { get; set; } = -1;
         public string CurrentDestinationChallengePersonName;
 
 
-        public string CurrentDestinationControversyPersonName
-        {
-            get
-            {
-                return this.CurrentDestinationControversyPerson.Name;
-            }
-        }
+        public string CurrentDestinationControversyPersonName => CurrentDestinationControversyPerson.Name;
 
-        public float CurrentRate
-        {
-            get
-            {
-                return this.terrainRate;
-            }
-        }
+        public float CurrentRate => terrainRate;
 
         public string CurrentRateString
         {
@@ -12181,13 +11897,7 @@ namespace GameObjects
         public string CurrentSourceChallengePersonName;
 
 
-        public string CurrentSourceControversyPersonName
-        {
-            get
-            {
-                return this.CurrentSourceControversyPerson.Name;
-            }
-        }
+        public string CurrentSourceControversyPersonName => CurrentSourceControversyPerson.Name;
 
         public Stratagem CurrentStratagem
         {
@@ -12221,26 +11931,10 @@ namespace GameObjects
         [DataMember]
         public int CurrentStratagemID { get; set; } = -1;
 
-        public string CurrentStuntString
-        {
-            get
-            {
-                return ((this.CurrentStunt != null) ? this.CurrentStunt.Name : "----");
-            }
-        }
+        public string CurrentStuntString => CurrentStunt?.Name ?? "----";
 
         [DataMember]
-        public int CutRoutewayDays
-        {
-            get
-            {
-                return this.cutRoutewayDays;
-            }
-            set
-            {
-                this.cutRoutewayDays = value;
-            }
-        }
+        public int CutRoutewayDays { get; set; }
 
         public int CutRoutewayDaysNeeded
         {
@@ -12284,21 +11978,9 @@ namespace GameObjects
             }
         }
 
-        public int DesertAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.DesertAdaptability - this.DecrementOfDesertAdaptability);
-            }
-        }
+        public int DesertAdaptability => Army.RealMilitaryKind.DesertAdaptability - DecrementOfDesertAdaptability;
 
-        public float DesertRate
-        {
-            get
-            {
-                return this.Army.Kind.DesertRate;
-            }
-        }
+        public float DesertRate => Army.Kind.DesertRate;
 
         [DataMember]
         public Point Destination
@@ -12322,13 +12004,7 @@ namespace GameObjects
             }
         }
 
-        public string DestinationString
-        {
-            get
-            {
-                return Session.Current.Scenario.PositionString(this.destination);
-            }
-        }
+        public string DestinationString => Session.Current.Scenario.PositionString(destination);
 
         [DataMember]
         public TroopDirection Direction { get; set; } = TroopDirection.正东;
@@ -12383,17 +12059,7 @@ namespace GameObjects
             }
         }
 
-        public string FactionString
-        {
-            get
-            {
-                if (this.BelongedFaction != null)
-                {
-                    return this.BelongedFaction.Name;
-                }
-                return "----";
-            }
-        }
+        public string FactionString => BelongedFaction?.Name ?? "----";
 
         public int FightingForce
         {
@@ -12434,17 +12100,7 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int FirstIndex
-        {
-            get
-            {
-                return this.firstTierPathIndex;
-            }
-            set
-            {
-                this.firstTierPathIndex = value;
-            }
-        }
+        public int FirstIndex { get; set; }
 
         public Point FirstTierDestination
         {
@@ -12459,104 +12115,42 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int Food
-        {
-            get
-            {
-                return this.food;
-            }
-            set
-            {
-                this.food = value;
-            }
-        }
+        public int Food { get; set; }
 
         [DataMember]
-        public int zijin
-        {
-            get
-            {
-                return this.zijinzhi;
-            }
-            set
-            {
-                this.zijinzhi = value;
-            }
-        }
+        public int zijin { get; set; }
 
-        public int FoodCostPerDay
-        {
-            get
-            {
-                return this.Army == null ? 0 : this.Army.FoodCostPerDay;
-            }
-        }
+        public int FoodCostPerDay => Army?.FoodCostPerDay ?? 0;
 
-        public int FoodMax
-        {
-            get
-            {
-                return (this.FoodCostPerDay * this.RationDays);
-            }
-        }
+        public int FoodMax => FoodCostPerDay * RationDays;
 
-        public int ForrestAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.ForrestAdaptability - this.DecrementOfForrestAdaptability);
-            }
-        }
+        public int ForrestAdaptability => Army.RealMilitaryKind.ForrestAdaptability - DecrementOfForrestAdaptability;
 
-        public float ForrestRate
-        {
-            get
-            {
-                return this.Army.Kind.ForrestRate;
-            }
-        }
+        public float ForrestRate => Army.Kind.ForrestRate;
 
-        public int Fund
-        {
-            get
-            {
-                return this.fund;
-            }
-            set
-            {
-                this.fund = value;
-            }
-        }
+        public int Fund { get; set; }
 
-        public int GrasslandAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.GrasslandAdaptability - this.DecrementOfGrasslandAdaptability);
-            }
-        }
+        public int GrasslandAdaptability => Army.RealMilitaryKind.GrasslandAdaptability - DecrementOfGrasslandAdaptability;
 
-        public float GrasslandRate
-        {
-            get
-            {
-                return this.Army.Kind.GrasslandRate;
-            }
-        }
+        public float GrasslandRate => Army.Kind.GrasslandRate;
 
-        public String CombatTitleString
+        public string CombatTitleString
         {
             get
             {
-                if (this.Leader == null) return "----";
-                foreach (Title t in this.Leader.Titles)
+                string defaultStr = "----";
+
+                if (Leader == null) return defaultStr;
+
+                foreach (var title in Leader.Titles)
                 {
-                    if (t.Kind.Combat)
+                    if (title.Kind.Combat)
                     {
-                        return t.Name;
+                        return title.Name;
                     }
                 }
-                return "----";
+
+                return defaultStr;
             }
         }
 
@@ -12593,13 +12187,7 @@ namespace GameObjects
             }
         }
 
-        public int InjuryChance
-        {
-            get
-            {
-                return (this.Army.InjuryChance + this.IncrementOfInjuryRate);
-            }
-        }
+        public int InjuryChance => Army.InjuryChance + IncrementOfInjuryRate;
 
         public int InjuryQuantity
         {
@@ -12626,13 +12214,7 @@ namespace GameObjects
             }
         }
 
-        public int InvestigateRadius
-        {
-            get
-            {
-                return (2 + this.IncrementOfInvestigateRadius);
-            }
-        }
+        public int InvestigateRadius => 2 + IncrementOfInvestigateRadius;
 
         private bool IsAntiArrowAttack
         {
@@ -12703,13 +12285,7 @@ namespace GameObjects
             }
         }
 
-        public bool IsRobber
-        {
-            get
-            {
-                return (this.BelongedFaction == null);
-            }
-        }
+        public bool IsRobber => BelongedFaction == null;
 
         public bool IsSurrounded
         {
@@ -12740,13 +12316,8 @@ namespace GameObjects
             }
         }
 
-        public string KindString
-        {
-            get
-            {
-                return this.Army.Kind.Name;
-            }
-        }
+        public string KindString => Army.Kind.Name;
+
         //以下添加
         public int TheMilitaryType
         {
@@ -12762,48 +12333,19 @@ namespace GameObjects
         }
 
         //
-        public int MarshAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.MarshAdaptability - this.DecrementOfMarshAdaptability);
-            }
-        }
+        public int MarshAdaptability => Army.RealMilitaryKind.MarshAdaptability - DecrementOfMarshAdaptability;
 
-        public float MarshRate
-        {
-            get
-            {
-                return this.Army.Kind.MarshRate;
-            }
-        }
+        public float MarshRate => Army.Kind.MarshRate;
 
         [DataMember]
-        public int MilitaryID
-        {
-            get
-            {
-                return this.militaryID;
-            }
-            set
-            {
-                this.militaryID = value;
-            }
-        }
+        public int MilitaryID { get; set; }
 
         [DataMember]
         public int Morale
         {
             get
             {
-                if (this.Army != null)
-                {
-                    return this.Army.Morale;
-                }
-                else
-                {
-                    return 0;
-                }
+                return Army?.Morale ?? 0;
             }
             set
             {
@@ -12814,42 +12356,14 @@ namespace GameObjects
             }
         }
 
-        public int MountainAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.MountainAdaptability - this.DecrementOfMountainAdaptability);
-            }
-        }
+        public int MountainAdaptability => Army.RealMilitaryKind.MountainAdaptability - DecrementOfMountainAdaptability;
 
-        public float MountainRate
-        {
-            get
-            {
-                return this.Army.Kind.MountainRate;
-            }
-        }
+        public float MountainRate => Army.Kind.MountainRate;
 
-        public int Movability
-        {
-            get
-            {
-                return (this.RealMovability * 5);
-            }
-        }
+        public int Movability => RealMovability * 5;
 
         [DataMember]
-        public bool Moved
-        {
-            get
-            {
-                return this.moved;
-            }
-            set
-            {
-                this.moved = value;
-            }
-        }
+        public bool Moved { get; set; }
 
         public Point NextPosition
         {
@@ -12864,65 +12378,20 @@ namespace GameObjects
             }
         }
 
-        public bool NextPositionHasTroop
-        {
-            get
-            {
-                if (Session.Current.Scenario.GetTroopByPositionNoCheck(this.NextPosition) == null)
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
+        public bool NextPositionHasTroop => Session.Current.Scenario.GetTroopByPositionNoCheck(NextPosition) != null;
+        
 
-        public bool ObliqueOffence
-        {
-            get
-            {
-                return (this.Army.Kind.ObliqueOffence || this.YesOrNoOfObliqueOffence);
-            }
-        }
+        public bool ObliqueOffence => Army.Kind.ObliqueOffence || YesOrNoOfObliqueOffence;
 
-        public string ObliqueOffenceString
-        {
-            get
-            {
-                return (this.ObliqueOffence ? "○" : "×");
-            }
-        }
+        public string ObliqueOffenceString => StaticMethods.ToMark(ObliqueOffence);
 
-        public bool ObliqueStratagem
-        {
-            get
-            {
-                return (this.Army.Kind.ObliqueStratagem || this.YesOrNoOfObliqueStratagem);
-            }
-        }
+        public bool ObliqueStratagem => Army.Kind.ObliqueStratagem || YesOrNoOfObliqueStratagem;
 
-        public string ObliqueStratagemString
-        {
-            get
-            {
-                return (this.ObliqueStratagem ? "○" : "×");
-            }
-        }
+        public string ObliqueStratagemString => StaticMethods.ToMark(ObliqueStratagem);
 
-        public bool ObliqueView
-        {
-            get
-            {
-                return (this.Army.Kind.ObliqueView || this.YesOrNoOfObliqueView);
-            }
-        }
+        public bool ObliqueView => Army.Kind.ObliqueView || YesOrNoOfObliqueView;
 
-        public string ObliqueViewString
-        {
-            get
-            {
-                return (this.ObliqueView ? "○" : "×");
-            }
-        }
+        public string ObliqueViewString => StaticMethods.ToMark(ObliqueView);
 
         public int Tiredness
         {
@@ -13049,13 +12518,7 @@ namespace GameObjects
             }
         }
 
-        public string OffenceOnlyBeforeMoveString
-        {
-            get
-            {
-                return (this.OffenceOnlyBeforeMove ? "○" : "×");
-            }
-        }
+        public string OffenceOnlyBeforeMoveString => StaticMethods.ToMark(OffenceOnlyBeforeMove);
 
         public int OffenceRadius
         {
@@ -13085,54 +12548,16 @@ namespace GameObjects
             }
         }
 
-        public bool Operated
-        {
-            get
-            {
-                return this.operated;
-            }
-            set
-            {
-                this.operated = value;
-            }
-        }
+        public bool Operated { get; set; }
 
         [DataMember]
-        public bool OperationDone
-        {
-            get
-            {
-                return this.operationDone;
-            }
-            set
-            {
-                this.operationDone = value;
-            }
-        }
+        public bool OperationDone { get; set; }
 
-        public int PersonCount
-        {
-            get
-            {
-                return this.Persons.Count;
-            }
-        }
+        public int PersonCount => Persons.Count;
 
-        public int PlainAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.PlainAdaptability - this.DecrementOfPlainAdaptability);
-            }
-        }
+        public int PlainAdaptability => Army.RealMilitaryKind.PlainAdaptability - DecrementOfPlainAdaptability;
 
-        public float PlainRate
-        {
-            get
-            {
-                return this.Army.Kind.PlainRate;
-            }
-        }
+        public float PlainRate => Army.Kind.PlainRate;
 
         [DataMember]
         public Point Position
@@ -13318,13 +12743,8 @@ namespace GameObjects
             }
         }
 
-        public string RationDaysString
-        {
-            get
-            {
-                return (this.RationDaysLeft + "/" + this.RationDays);
-            }
-        }
+        public string RationDaysString => $"{RationDaysLeft}/{RationDays}";
+        
         [DataMember]
         public Point RealDestination
         {
@@ -13339,14 +12759,7 @@ namespace GameObjects
             }
         }
 
-        public string RealDestinationString
-        {
-            get
-            {
-
-                return Session.Current.Scenario.PositionString(this.realDestination);
-            }
-        }
+        public string RealDestinationString => Session.Current.Scenario.PositionString(realDestination);
 
         public int RealMovability
         {
@@ -13357,21 +12770,9 @@ namespace GameObjects
             }
         }
 
-        public int RidgeAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.RidgeAdaptability - this.DecrementOfRidgeAdaptability);
-            }
-        }
+        public int RidgeAdaptability => Army.RealMilitaryKind.RidgeAdaptability - DecrementOfRidgeAdaptability;
 
-        public float RidgeRate
-        {
-            get
-            {
-                return this.Army.Kind.RidgeRate;
-            }
-        }
+        public float RidgeRate => Army.Kind.RidgeRate;
 
         public InformationLevel ScoutLevel
         {
@@ -13393,25 +12794,9 @@ namespace GameObjects
             }
         }
         [DataMember]
-        public int SecondIndex
-        {
-            get
-            {
-                return this.secondTierPathDestinationIndex;
-            }
-            set
-            {
-                this.secondTierPathDestinationIndex = value;
-            }
-        }
+        public int SecondIndex { get; set; }
 
-        private int[,] SecondTierMapCost
-        {
-            get
-            {
-                return this.BelongedFaction.SecondTierMapCost;
-            }
-        }
+        private int[,] SecondTierMapCost => BelongedFaction.SecondTierMapCost;
 
         public string SectionString
         {
@@ -13425,17 +12810,7 @@ namespace GameObjects
             }
         }
         [DataMember]
-        public Point SelfCastPosition
-        {
-            get
-            {
-                return this.selfCastPosition;
-            }
-            set
-            {
-                this.selfCastPosition = value;
-            }
-        }
+        public Point SelfCastPosition { get; set; }
 
         public bool ShowNumber
         {
@@ -13578,34 +12953,12 @@ namespace GameObjects
             }
         }
 
-        public int StratagemChanceIncrement
-        {
-            get
-            {
-                return (int)(this.stratagemChanceIncrement - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int StratagemChanceIncrement => (int)(stratagemChanceIncrement - (1 - TirednessFactor) * 100);
 
-        public int StratagemRadius
-        {
-            get
-            {
-                return (this.Army.Kind.StratagemRadius + this.IncrementOfStratagemRadius);
-            }
-        }
+        public int StratagemRadius => Army.Kind.StratagemRadius + IncrementOfStratagemRadius;
 
         [DataMember]
-        public int StuntDayLeft
-        {
-            get
-            {
-                return this.stuntDayLeft;
-            }
-            set
-            {
-                this.stuntDayLeft = value;
-            }
-        }
+        public int StuntDayLeft { get; set; }
 
         public Animation StuntTileAnimation
         {
@@ -13630,7 +12983,7 @@ namespace GameObjects
                 }
                 if (this.targetArchitecture == null)
                 {
-                    this.targetArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.targetArchitectureID) as Architecture;
+                    this.targetArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(targetArchitectureID);
                 }
                 return this.targetArchitecture;
             }
@@ -13758,45 +13111,15 @@ namespace GameObjects
             }
         }
 
-        public string TargetTroopString
-        {
-            get
-            {
-                return ((this.TargetTroop != null) ? this.TargetTroop.DisplayName : "----");
-            }
-        }
-        [DataMember]
-        public int TechnologyIncrement
-        {
-            get
-            {
-                return this.technologyIncrement;
-            }
-            set
-            {
-                this.technologyIncrement = value;
-            }
-        }
-        [DataMember]
-        public int ThirdIndex
-        {
-            get
-            {
-                return this.thirdTierPathDestinationIndex;
-            }
-            set
-            {
-                this.thirdTierPathDestinationIndex = value;
-            }
-        }
+        public string TargetTroopString => TargetTroop?.DisplayName ?? "----";
 
-        private int[,] ThirdTierMapCost
-        {
-            get
-            {
-                return this.BelongedFaction.ThirdTierMapCost;
-            }
-        }
+        [DataMember]
+        public int TechnologyIncrement { get; set; }
+
+        [DataMember]
+        public int ThirdIndex { get; set; }
+
+        private int[,] ThirdTierMapCost => BelongedFaction.ThirdTierMapCost;
 
         public Animation TileAnimation
         {
@@ -13811,45 +13134,15 @@ namespace GameObjects
             }
         }
 
-        public int TotalQuantity
-        {
-            get
-            {
-                return this.Army.TotalQuantity;
-            }
-        }
+        public int TotalQuantity => Army.TotalQuantity;
 
-        public int TroopCommand
-        {
-            get
-            {
-                return this.troopCommand;
-            }
-        }
+        public int TroopCommand => troopCommand;
 
-        public int TroopIntelligence
-        {
-            get
-            {
-                return this.troopIntelligence;
-            }
-        }
+        public int TroopIntelligence => troopIntelligence;
 
-        public bool TroopNoAccidentalInjury
-        {
-            get
-            {
-                return (this.BaseNoAccidentalInjury || this.NoAccidentalInjury);
-            }
-        }
+        public bool TroopNoAccidentalInjury => BaseNoAccidentalInjury || NoAccidentalInjury;
 
-        public int TroopStrength
-        {
-            get
-            {
-                return this.troopStrength;
-            }
-        }
+        public int TroopStrength => troopStrength;
 
         public PlatformTexture TroopTexture
         {
@@ -13871,7 +13164,7 @@ namespace GameObjects
         {
             get
             {
-                return this.SecondTierPath.GetRange(this.secondTierPathDestinationIndex, this.SecondTierPath.Count - this.secondTierPathDestinationIndex);
+                return this.SecondTierPath.GetRange(this.SecondIndex, this.SecondTierPath.Count - this.SecondIndex);
             }
         }
 
@@ -13879,17 +13172,11 @@ namespace GameObjects
         {
             get
             {
-                return this.ThirdTierPath.GetRange(this.thirdTierPathDestinationIndex, this.ThirdTierPath.Count - this.thirdTierPathDestinationIndex);
+                return this.ThirdTierPath.GetRange(this.ThirdIndex, this.ThirdTierPath.Count - this.ThirdIndex);
             }
         }
 
-        public int RecruitLimit
-        {
-            get
-            {
-                return this.Army.Kind.RecruitLimit;
-            }
-        }
+        public int RecruitLimit => Army.Kind.RecruitLimit;
 
         public GameArea ViewArea
         {
@@ -13950,29 +13237,11 @@ namespace GameObjects
             }
         }
 
-        public float WastelandRate
-        {
-            get
-            {
-                return this.Army.Kind.WastelandRate;
-            }
-        }
+        public float WastelandRate => Army.Kind.WastelandRate;
 
-        public int WaterAdaptability
-        {
-            get
-            {
-                return (this.Army.Kind.WaterAdaptability - this.DecrementOfWaterAdaptability);
-            }
-        }
+        public int WaterAdaptability => Army.Kind.WaterAdaptability - DecrementOfWaterAdaptability;
 
-        public float WaterRate
-        {
-            get
-            {
-                return this.Army.Kind.WaterRate;
-            }
-        }
+        public float WaterRate => Army.Kind.WaterRate;
 
         public int Weighing
         {
@@ -14009,17 +13278,7 @@ namespace GameObjects
             }
         }
 
-        public TroopWill Will
-        {
-            get
-            {
-                return this.will;
-            }
-            set
-            {
-                this.will = value;
-            }
-        }
+        public TroopWill Will { get; set; } = TroopWill.行军;
 
         public Architecture RealWillArchitecture
         {
@@ -14027,7 +13286,7 @@ namespace GameObjects
             {
                 if (this.willArchitecture == null)
                 {
-                    this.willArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.willArchitectureID) as Architecture;
+                    this.willArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(willArchitectureID);
                     if (this.willArchitecture == null)
                     {
                         this.WillArchitecture = this.StartingArchitecture;
@@ -14047,7 +13306,7 @@ namespace GameObjects
                 }
                 if (this.willArchitecture == null)
                 {
-                    this.willArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.willArchitectureID) as Architecture;
+                    this.willArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(willArchitectureID);
                     if (this.willArchitecture == null)
                     {
                         this.WillArchitecture = this.StartingArchitecture;
@@ -14058,16 +13317,10 @@ namespace GameObjects
             set
             {
                 this.willArchitecture = value;
-                if (value != null)
-                {
-                    this.willArchitectureID = value.ID;
-                }
-                else
-                {
-                    this.willArchitectureID = -1;
-                }
+                willArchitectureID = value?.ID ?? -1;
             }
         }
+
         [DataMember]
         public int WillArchitectureID
         {
@@ -14093,17 +13346,7 @@ namespace GameObjects
             }
         }
 
-        public string StartArchitectureString
-        {
-            get
-            {
-                if (this.StartingArchitecture == null)
-                {
-                    return "----";
-                }
-                return this.StartingArchitecture.Name;
-            }
-        }
+        public string StartArchitectureString => StartingArchitecture?.Name ?? "----";
 
         public string WillString
         {
@@ -14183,20 +13426,11 @@ namespace GameObjects
             }
         }
 
-        public string WillTroopString
-        {
-            get
-            {
-                return ((this.WillTroop != null) ? this.WillTroop.DisplayName : "----");
-            }
-        }
+        public string WillTroopString => WillTroop?.DisplayName ?? "----";
+        
 
         [DataMember]
-        public String mingling
-        {
-            get;
-            set;
-        }
+        public string mingling { get; set; }
 
         public delegate void Ambush(Troop troop);
 
@@ -14350,4 +13584,3 @@ namespace GameObjects
         }
     }
 }
-

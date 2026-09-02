@@ -30,7 +30,7 @@ public class InfluenceKind3050 : InfluenceKind
             arch.LongViewArea = null;
             if (!Session.Current.Scenario.Preparing)
             {
-                foreach (Architecture architecture2 in Session.Current.Scenario.Architectures)
+                foreach (var architecture2 in Session.Current.Scenario.Architectures.Values)
                 {
                     architecture2.RefreshViewArea();
                 }
@@ -76,7 +76,7 @@ public class InfluenceKind3050 : InfluenceKind
             arch.LongViewArea = null;
             if (!Session.Current.Scenario.Preparing)
             {
-                foreach (Architecture architecture2 in Session.Current.Scenario.Architectures)
+                foreach (var architecture2 in Session.Current.Scenario.Architectures.Values)
                 {
                     architecture2.RefreshViewArea();
                 }

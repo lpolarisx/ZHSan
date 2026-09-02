@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using GameEnums;
 
 namespace GameObjects.Conditions.ConditionKindPack;
 [DataContract]

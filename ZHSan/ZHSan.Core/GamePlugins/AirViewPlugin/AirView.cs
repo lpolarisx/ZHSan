@@ -93,7 +93,7 @@ namespace AirViewPlugin
                         this.drawTroop( gameTime);
                     }
                 }
-                foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+                foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                 {
                     Color white = Color.White;
                     if (architecture.BelongedFaction != null)

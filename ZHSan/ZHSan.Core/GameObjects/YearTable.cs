@@ -475,8 +475,7 @@ namespace GameObjects
 
         public void addObtainedTitleEntry(GameDate date, Person p, PersonDetail.Title title)
         {
-            this.addPersonInGameBiography(p, date,
-                String.Format(yearTableStrings["obtainTitle_p"], title.Name));
+            addPersonInGameBiography(p, date, string.Format(yearTableStrings["obtainTitle_p"], title.Name));
         }
 
         public void addAwardTitleEntry(GameDate date, Person p, PersonDetail.Title title)
