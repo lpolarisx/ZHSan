@@ -7,6 +7,6 @@ public class ConditionKind2410 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        return arch.NoFactionPersons.Count >= condition.GetIntParam();
+        return arch.GetNoFactionPersons().Count >= condition.GetIntParam();
     }
 }

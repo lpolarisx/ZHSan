@@ -14,6 +14,7 @@ using GameObjects.ArchitectureDetail;
 using Platforms;
 using GameManager;
 using Tools;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.Resources
 {
@@ -349,7 +350,9 @@ namespace WorldOfTheThreeKingdoms.Resources
             string[] filePaths = Platform.Current.GetMODFiles("Content/Textures/Resources/Architecture/", false).NullToEmptyList().Where(fi => fi.EndsWith(".png")).NullToEmptyArray();
             foreach (String s in filePaths)
             {
+                // string fileName = s.Substring(s.LastIndexOf('/') + 1, s.LastIndexOf('.') - s.LastIndexOf('/') - 1);
                 string fileName = s.Substring(s.LastIndexOf('/') + 1, s.LastIndexOf('.') - s.LastIndexOf('/') - 1);
+
                 if (fileName.IndexOf('-') < 0)
                 {
                     continue;

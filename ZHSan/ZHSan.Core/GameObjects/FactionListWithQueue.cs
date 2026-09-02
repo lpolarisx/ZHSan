@@ -1,14 +1,16 @@
 ﻿using GameManager;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace GameObjects
 {
     [DataContract]
-    public class FactionListWithQueue : FactionList
+    public class FactionListWithQueue
     {
         private Queue<Faction> factionQueue = new Queue<Faction>();
+
         public Faction RunningFaction;
 
         [DataMember]
@@ -18,22 +20,20 @@ namespace GameObjects
         {
             factionQueue = new Queue<Faction>();
 
-            GameObjectList list = base.GetList();
-            list.PropertyName = "Power";
-            list.IsNumber = true;
-            list.SmallToBig = true;
-            list.ReSort();
-            foreach (Faction faction in list)
+            var factions = Session.Current.Scenario.Factions.Values.ToList();
+            factions.Sort((a, b) => a.Power.CompareTo(b.Power));
+
+            foreach (var faction in factions)
             {
-                this.SetFactionInQueue(faction, preUserControlFinished);
+                SetFactionInQueue(faction, preUserControlFinished);
             }
         }
 
-        public bool HasFactionInQueue(FactionList list)
+        public bool HasFactionInQueue(IEnumerable<Faction> factions)
         {
-            foreach (Faction faction in list)
+            foreach (var faction in factions)
             {
-                if (this.IsFactionInQueue(faction))
+                if (IsFactionInQueue(faction))
                 {
                     return true;
                 }
@@ -43,7 +43,7 @@ namespace GameObjects
 
         public bool IsFactionInQueue(Faction faction)
         {
-            foreach (Faction faction2 in this.factionQueue)
+            foreach (Faction faction2 in factionQueue)
             {
                 if (faction2 == faction)
                 {
@@ -53,33 +53,18 @@ namespace GameObjects
             return false;
         }
 
-        public void LoadQueueFromString(string dataString)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.factionQueue.Clear();
-            foreach (string str in strArray)
-            {
-                Faction gameObject = base.GetGameObject(int.Parse(str)) as Faction;
-                if (gameObject != null)
-                {
-                    this.factionQueue.Enqueue(gameObject);
-                }
-            }
-        }
-
         public void RunQueue()
         {
-            if (this.RunningFaction != null)
+            if (RunningFaction != null)
             {
-                if (this.RunningFaction.Run())
+                if (RunningFaction.Run())
                 {
-                    this.RunningFaction = null;
+                    RunningFaction = null;
                 }
             }
-            else if (!this.QueueEmpty)
+            else if (!QueueEmpty)
             {
-                this.RunningFaction = this.factionQueue.Dequeue();
+                RunningFaction = factionQueue.Dequeue();
                 if (this.RunningFaction != null)
                 {
                     if (this.RunningFaction.Leader.BelongedFaction == null)
@@ -113,7 +98,9 @@ namespace GameObjects
 
         public void SetControlling(bool controlling)
         {
-            foreach (Faction faction in base.GameObjects)
+            var factions = Session.Current.Scenario.Factions.Values;
+
+            foreach (var faction in factions)
             {
                 faction.Controlling = controlling;
             }
@@ -121,19 +108,12 @@ namespace GameObjects
 
         private void SetFactionInQueue(Faction faction, bool preUserControlFinished)
         {
-            this.factionQueue.Enqueue(faction);
+            factionQueue.Enqueue(faction);
             faction.Passed = false;
             faction.PreUserControlFinished = preUserControlFinished;
             faction.AIFinished = false;
         }
 
-        public bool QueueEmpty
-        {
-            get
-            {
-                return (this.factionQueue.Count == 0);
-            }
-        }
+        public bool QueueEmpty => factionQueue.Count == 0;
     }
 }
-

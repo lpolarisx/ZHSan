@@ -1,4 +1,6 @@
-﻿using GameManager;
+﻿using GameGlobal;
+using GameManager;
+using System.Linq;
 using System.Runtime.Serialization;
 
 namespace GameObjects.Conditions.ConditionKindPack;
@@ -10,7 +12,7 @@ public class ConditionKind690 : ConditionKind
     {
         if (person.ID == -1)
         {
-            person = Session.Current.Scenario.Persons[GameObject.Random(Session.Current.Scenario.Persons.Count)] as Person;
+            person = StaticMethods.GetRandomItem(Session.Current.Scenario.AllPersons.Values.ToList());
         }
 
         var result = person.LocationArchitecture != null && person.LocationArchitecture.BelongedFaction == person.BelongedFaction;

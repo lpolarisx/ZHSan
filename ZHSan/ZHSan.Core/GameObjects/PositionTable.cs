@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-
 namespace GameObjects
 {
     [DataContract]
@@ -64,13 +63,6 @@ namespace GameObjects
             return builder.ToString();
         }
 
-        public int Count
-        {
-            get
-            {
-                return this.Positions.Count;
-            }
-        }
+        public int Count => Positions.Count;
     }
 }
-

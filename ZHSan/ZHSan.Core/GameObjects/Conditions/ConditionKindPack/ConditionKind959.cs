@@ -7,7 +7,7 @@ public class ConditionKind959 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        var result = person.BelongedFactionWithPrincess != null && !person.Brothers.GameObjects.Contains(person.BelongedFactionWithPrincess.Leader);
+        var result = person.BelongedFactionWithPrincess != null && !person.Brothers.Contains(person.BelongedFactionWithPrincess.Leader);
 
         return result;
     }

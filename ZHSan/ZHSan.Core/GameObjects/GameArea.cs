@@ -14,55 +14,56 @@ namespace GameObjects
     {
         [DataMember]
         public List<Point> Area = new List<Point>();
+
         [DataMember]
         public Point Centre;
+
         private Point? topleft = null;
 
         public GameArea() { }
 
         public GameArea(GameArea old)
         {
-            this.Area = new List<Point>(old.Area);
-            this.Centre = new Point(old.Centre.X, old.Centre.Y);
-            if (!old.topleft.HasValue)
-            {
-                this.topleft = null;
-            } else {
-                this.topleft = new Point(old.topleft.Value.X, old.topleft.Value.Y);
-            }
+            Area = new List<Point>(old.Area);
+
+            Centre = new Point(old.Centre.X, old.Centre.Y);
+
+            var oldTopLeft = old.topleft;
+
+            topleft = oldTopLeft.HasValue ? new Point(oldTopLeft.Value.X, oldTopLeft.Value.Y) : null;
         }
 
         public void AddPoint(Point point)
         {
-            this.Area.Add(point);
-            this.topleft = null;
+            Area.Add(point);
+            topleft = null;
         }
 
         private static void CheckPoint(GameArea Area, List<Point> BlackAngles, Point point, Faction faction)
         {
-            TerrainDetail terrainDetailByPosition = Session.Current.Scenario.GetTerrainDetailByPosition(point);
-            if (terrainDetailByPosition != null)
+            var terrain = Session.Current.Scenario.GetTerrainDetailByPosition(point);
+
+            if (terrain == null) return;
+
+            if (terrain.ViewThrough)
             {
-                if (terrainDetailByPosition.ViewThrough)
+                if (faction != null)
                 {
-                    if (faction != null)
+                    var architecture = Session.Current.Scenario.GetArchitectureByPosition(point);
+                    if (architecture != null && architecture.Endurance > 0 && !faction.IsFriendlyWithoutTruce(architecture.BelongedFaction))
                     {
-                        Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(point);
-                        if (!(architectureByPosition == null || architectureByPosition.Endurance <= 0 || faction.IsFriendlyWithoutTruce(architectureByPosition.BelongedFaction)))
-                        {
-                            BlackAngles.Add(point);
-                            return;
-                        }
-                    }
-                    if (!IsInBlackAngle(Area.Centre, BlackAngles, point))
-                    {
-                        Area.AddPoint(point);
+                        BlackAngles.Add(point);
+                        return;
                     }
                 }
-                else
+                if (!IsInBlackAngle(Area.Centre, BlackAngles, point))
                 {
-                    BlackAngles.Add(point);
+                    Area.AddPoint(point);
                 }
+            }
+            else
+            {
+                BlackAngles.Add(point);
             }
         }
 
@@ -113,7 +114,7 @@ namespace GameObjects
         {
             int num = point.X - centre.X;
             int num2 = point.Y - centre.Y;
-            return Math.Asin(((double) num2) / Math.Sqrt((double) ((num * num) + (num2 * num2))));
+            return Math.Asin(num2 / Math.Sqrt((num * num) + (num2 * num2)));
         }
 
         public static GameArea GetArea(Point Centre, int Radius, bool Oblique)
@@ -405,7 +406,7 @@ namespace GameObjects
         {
             foreach (Point point in area.Area)
             {
-                this.Area.Remove(point);
+                Area.Remove(point);
             }
         }
 
@@ -413,7 +414,7 @@ namespace GameObjects
         {
             foreach (Point point in points)
             {
-                this.Area.Remove(point);
+                Area.Remove(point);
             }
         }
 
@@ -446,16 +447,17 @@ namespace GameObjects
         }
 
         public int Count => Area.Count;
+        
 
         public Point this[int index]
         {
             get
             {
-                return this.Area[index];
+                return Area[index];
             }
             set
             {
-                this.Area[index] = value;
+                Area[index] = value;
             }
         }
 
@@ -463,13 +465,13 @@ namespace GameObjects
         {
             get
             {
-                if (!this.topleft.HasValue)
+                if (!topleft.HasValue)
                 {
-                    this.ResetTopLeft();
+                    ResetTopLeft();
                 }
-                return this.topleft.Value;
+
+                return topleft.Value;
             }
         }
     }
 }
-

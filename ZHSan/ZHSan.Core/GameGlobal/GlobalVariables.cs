@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Xml;
-using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using Platforms;
 using GameManager;
 using GameEnums;
+using GameDatas;
 
 namespace GameGlobal
 {
@@ -287,9 +287,244 @@ namespace GameGlobal
         [DataMember]
         public int MaxTupianwenzi = 50;
 
-        public const string cryptKey = "A3g0c3%2";
         [DataMember]
         public int ShowNumberAddTime = 0;
+
+        public const string cryptKey = "A3g0c3%2";
+
+        public GlobalVariables() {}
+
+        public GlobalVariables(GlobalVariablesConfig config)
+        {
+            WujiangYoukenengDuli = config.WujiangYoukenengDuli;
+            LiangdaoXitong = config.LiangdaoXitong;
+            ShowGrid = config.ShowGrid;
+            AdditionalPersonAvailable = config.AdditionalPersonAvailable;
+            ArchitectureLayerDepth = config.ArchitectureLayerDepth;
+            CalculateAverageCostOfTiers = config.CalculateAverageCostOfTiers;
+            CommonPersonAvailable = config.CommonPersonAvailable;
+            CurrentMapLayer = config.CurrentMapLayer;
+            DrawMapVeil = config.DrawMapVeil;
+            DrawTroopAnimation = config.DrawTroopAnimation;
+            FactionRunningTicksLimitInOneFrame = config.FactionRunningTicksLimitInOneFrame;
+            FastBattleSpeed = config.FastBattleSpeed;
+            GameDifficulty = config.GameDifficulty;
+            HintPopulation = config.HintPopulation;
+            HintPopulationUnder1000 = config.HintPopulationUnder1000;
+            IdealTendencyValid = config.IdealTendencyValid;
+            LoadBackGroundMapTexture = config.LoadBackGroundMapTexture;
+            MapScrollSpeed = config.MapScrollSpeed;
+            MaxCountOfKnownPaths = config.MaxCountOfKnownPaths;
+            MaxTimeOfAnimationFrame = config.MaxTimeOfAnimationFrame;
+            MilitaryKindSpeedValid = config.MilitaryKindSpeedValid;
+            MultipleResource = config.MultipleResource;
+            NoHintOnSmallFacility = config.NoHintOnSmallFacility;
+            PersonNaturalDeath = config.PersonNaturalDeath;
+            PlayBattleSound = config.PlayBattleSound;
+            PlayerPersonAvailable = config.PlayerPersonAvailable;
+            PlayMusic = config.PlayMusic;
+            PlayNormalSound = config.PlayNormalSound;
+            PopulationRecruitmentLimit = config.PopulationRecruitmentLimit;
+            RoutewayInformationLevel = config.RoutewayInformationLevel;
+            RunWhileNotFocused = config.RunWhileNotFocused;
+            ScoutRoutewayInformationLevel = config.ScoutRoutewayInformationLevel;
+            SingleSelectionOneClick = config.SingleSelectionOneClick;
+            SkyEye = config.SkyEye;
+            TroopMoveFrameCount = config.TroopMoveFrameCount;
+            TroopMoveLimitOnce = config.TroopMoveLimitOnce;
+            TroopMoveSpeed = config.TroopMoveSpeed;
+            PinPointAtPlayer = config.PinPointAtPlayer;
+            IgnoreStrategyTendency = config.IgnoreStrategyTendency;
+            createChildren = config.createChildren;
+            zainanfashengjilv = config.zainanfashengjilv;
+            doAutoSave = config.doAutoSave;
+            createChildrenIgnoreLimit = config.createChildrenIgnoreLimit;
+            internalSurplusRateForPlayer = config.internalSurplusRateForPlayer;
+            internalSurplusRateForAI = config.internalSurplusRateForAI;
+            getChildrenRate = config.getChildrenRate;
+            hougongGetChildrenRate = config.hougongGetChildrenRate;
+            hougongAlienOnly = config.hougongAlienOnly;
+            getRaisedSoliderRate = config.getRaisedSoliderRate;
+            AIExecutionRate = config.AIExecutionRate;
+            AIExecuteBetterOfficer = config.AIExecuteBetterOfficer;
+            maxExperience = config.maxExperience;
+            lockChildrenLoyalty = config.lockChildrenLoyalty;
+            AIAutoTakeNoFactionCaptives = config.AIAutoTakeNoFactionCaptives;
+            AIAutoTakeNoFactionPerson = config.AIAutoTakeNoFactionPerson;
+            AIAutoTakePlayerCaptives = config.AIAutoTakePlayerCaptives;
+            AIAutoTakePlayerCaptiveOnlyUnfull = config.AIAutoTakePlayerCaptiveOnlyUnfull;
+            TechniquePointMultiple = config.TechniquePointMultiple;
+            PermitFactionMerge = config.PermitFactionMerge;
+            LeadershipOffenceRate = config.LeadershipOffenceRate;
+            DialogShowTime = config.DialogShowTime;
+            LandArmyCanGoDownWater = config.LandArmyCanGoDownWater;
+            EnableResposiveThreading = config.EnableResposiveThreading;
+            EnableCheat = config.EnableCheat;
+            HardcoreMode = config.HardcoreMode;
+            MaxAbility = config.MaxAbility;
+            TirednessIncrease = config.TirednessIncrease;
+            TirednessDecrease = config.TirednessDecrease;
+            EnableAgeAbilityFactor = config.EnableAgeAbilityFactor;
+            TabListDetailLevel = config.TabListDetailLevel;
+            EnableExtensions = config.EnableExtensions;
+            EncryptSave = config.EncryptSave;
+            AutoSaveFrequency = config.AutoSaveFrequency;
+            ShowChallengeAnimation = config.ShowChallengeAnimation;
+            PersonDieInChallenge = config.PersonDieInChallenge;
+            OfficerDieInBattleRate = config.OfficerDieInBattleRate;
+            OfficerChildrenLimit = config.OfficerChildrenLimit;
+            StopToControlOnAttack = config.StopToControlOnAttack;
+            MaxMilitaryExperience = config.MaxMilitaryExperience;
+            FactionMilitaryLimt = config.FactionMilitaryLimt;
+            ZhaoXianSuccessRate = config.ZhaoXianSuccessRate;
+            TroopTirednessDecrease = config.TroopTirednessDecrease;
+            CreateRandomOfficerChance = config.CreateRandomOfficerChance;
+            ChildrenAvailableAge = config.ChildrenAvailableAge;
+            CreatedOfficerAbilityFactor = config.CreatedOfficerAbilityFactor;
+            ChildrenAbilityFactor = config.ChildrenAbilityFactor;
+            EnablePersonRelations = config.EnablePersonRelations;
+            FriendlyDiplomacyThreshold = config.FriendlyDiplomacyThreshold;
+            SurroundFactor = config.SurroundFactor;
+            FullScreen = config.FullScreen;
+            PermitQuanXiang = config.PermitQuanXiang;
+            PermitManualAwardTitleAutoLearn = config.PermitManualAwardTitleAutoLearn;
+            zhaoxianOfficerMax = config.zhaoxianOfficerMax;
+            AIZhaoxianFixIdeal = config.AIZhaoxianFixIdeal;
+            PlayerZhaoxianFixIdeal = config.PlayerZhaoxianFixIdeal;
+            FixedUnnaturalDeathAge = config.FixedUnnaturalDeathAge;
+            AIQuickBattle = config.AIQuickBattle;
+            PlayerAutoSectionHasAIResourceBonus = config.PlayerAutoSectionHasAIResourceBonus;
+            ProhibitFactionAgainstDestroyer = config.ProhibitFactionAgainstDestroyer;
+            AIMergeAgainstPlayer = config.AIMergeAgainstPlayer;
+            RemoveSpouseIfNotAvailable = config.RemoveSpouseIfNotAvailable;
+            SkyEyeSimpleNotification = config.SkyEyeSimpleNotification;
+            AutoMultipleMarriage = config.AutoMultipleMarriage;
+            BornHistoricalChildren = config.BornHistoricalChildren;
+            StartCircleTime = config.StartCircleTime;
+            ScenarioMapPerTime = config.ScenarioMapPerTime;
+            KeepSpousePersonalLoyalty = config.KeepSpousePersonalLoyalty;
+            TroopVoice = config.TroopVoice;
+            MaxTupianwenzi = config.MaxTupianwenzi;
+            ShowNumberAddTime = config.ShowNumberAddTime;
+        }
+
+        public GlobalVariablesConfig ToConfig()
+        {
+            return new GlobalVariablesConfig
+            {
+                WujiangYoukenengDuli = WujiangYoukenengDuli,
+                LiangdaoXitong = LiangdaoXitong,
+                ShowGrid = ShowGrid,
+                AdditionalPersonAvailable = AdditionalPersonAvailable,
+                ArchitectureLayerDepth = ArchitectureLayerDepth,
+                CalculateAverageCostOfTiers = CalculateAverageCostOfTiers,
+                CommonPersonAvailable = CommonPersonAvailable,
+                CurrentMapLayer = CurrentMapLayer,
+                DrawMapVeil = DrawMapVeil,
+                DrawTroopAnimation = DrawTroopAnimation,
+                FactionRunningTicksLimitInOneFrame = FactionRunningTicksLimitInOneFrame,
+                FastBattleSpeed = FastBattleSpeed,
+                GameDifficulty = GameDifficulty,
+                HintPopulation = HintPopulation,
+                HintPopulationUnder1000 = HintPopulationUnder1000,
+                IdealTendencyValid = IdealTendencyValid,
+                LoadBackGroundMapTexture = LoadBackGroundMapTexture,
+                MapScrollSpeed = MapScrollSpeed,
+                MaxCountOfKnownPaths = MaxCountOfKnownPaths,
+                MaxTimeOfAnimationFrame = MaxTimeOfAnimationFrame,
+                MilitaryKindSpeedValid = MilitaryKindSpeedValid,
+                MultipleResource = MultipleResource,
+                NoHintOnSmallFacility = NoHintOnSmallFacility,
+                PersonNaturalDeath = PersonNaturalDeath,
+                PlayBattleSound = PlayBattleSound,
+                PlayerPersonAvailable = PlayerPersonAvailable,
+                PlayMusic = PlayMusic,
+                PlayNormalSound = PlayNormalSound,
+                PopulationRecruitmentLimit = PopulationRecruitmentLimit,
+                RoutewayInformationLevel = RoutewayInformationLevel,
+                RunWhileNotFocused = RunWhileNotFocused,
+                ScoutRoutewayInformationLevel = ScoutRoutewayInformationLevel,
+                SingleSelectionOneClick = SingleSelectionOneClick,
+                SkyEye = SkyEye,
+                TroopMoveFrameCount = TroopMoveFrameCount,
+                TroopMoveLimitOnce = TroopMoveLimitOnce,
+                TroopMoveSpeed = TroopMoveSpeed,
+                PinPointAtPlayer = PinPointAtPlayer,
+                IgnoreStrategyTendency = IgnoreStrategyTendency,
+                createChildren = createChildren,
+                zainanfashengjilv = zainanfashengjilv,
+                doAutoSave = doAutoSave,
+                createChildrenIgnoreLimit = createChildrenIgnoreLimit,
+                internalSurplusRateForPlayer = internalSurplusRateForPlayer,
+                internalSurplusRateForAI = internalSurplusRateForAI,
+                getChildrenRate = getChildrenRate,
+                hougongGetChildrenRate = hougongGetChildrenRate,
+                hougongAlienOnly = hougongAlienOnly,
+                getRaisedSoliderRate = getRaisedSoliderRate,
+                AIExecutionRate = AIExecutionRate,
+                AIExecuteBetterOfficer = AIExecuteBetterOfficer,
+                maxExperience = maxExperience,
+                lockChildrenLoyalty = lockChildrenLoyalty,
+                AIAutoTakeNoFactionCaptives = AIAutoTakeNoFactionCaptives,
+                AIAutoTakeNoFactionPerson = AIAutoTakeNoFactionPerson,
+                AIAutoTakePlayerCaptives = AIAutoTakePlayerCaptives,
+                AIAutoTakePlayerCaptiveOnlyUnfull = AIAutoTakePlayerCaptiveOnlyUnfull,
+                TechniquePointMultiple = TechniquePointMultiple,
+                PermitFactionMerge = PermitFactionMerge,
+                LeadershipOffenceRate = LeadershipOffenceRate,
+                DialogShowTime = DialogShowTime,
+                LandArmyCanGoDownWater = LandArmyCanGoDownWater,
+                EnableResposiveThreading = EnableResposiveThreading,
+                EnableCheat = EnableCheat,
+                HardcoreMode = HardcoreMode,
+                MaxAbility = MaxAbility,
+                TirednessIncrease = TirednessIncrease,
+                TirednessDecrease = TirednessDecrease,
+                EnableAgeAbilityFactor = EnableAgeAbilityFactor,
+                TabListDetailLevel = TabListDetailLevel,
+                EnableExtensions = EnableExtensions,
+                EncryptSave = EncryptSave,
+                AutoSaveFrequency = AutoSaveFrequency,
+                ShowChallengeAnimation = ShowChallengeAnimation,
+                PersonDieInChallenge = PersonDieInChallenge,
+                OfficerDieInBattleRate = OfficerDieInBattleRate,
+                OfficerChildrenLimit = OfficerChildrenLimit,
+                StopToControlOnAttack = StopToControlOnAttack,
+                MaxMilitaryExperience = MaxMilitaryExperience,
+                FactionMilitaryLimt = FactionMilitaryLimt,
+                ZhaoXianSuccessRate = ZhaoXianSuccessRate,
+                TroopTirednessDecrease = TroopTirednessDecrease,
+                CreateRandomOfficerChance = CreateRandomOfficerChance,
+                ChildrenAvailableAge = ChildrenAvailableAge,
+                CreatedOfficerAbilityFactor = CreatedOfficerAbilityFactor,
+                ChildrenAbilityFactor = ChildrenAbilityFactor,
+                EnablePersonRelations = EnablePersonRelations,
+                FriendlyDiplomacyThreshold = FriendlyDiplomacyThreshold,
+                SurroundFactor = SurroundFactor,
+                FullScreen = FullScreen,
+                PermitQuanXiang = PermitQuanXiang,
+                PermitManualAwardTitleAutoLearn = PermitManualAwardTitleAutoLearn,
+                zhaoxianOfficerMax = zhaoxianOfficerMax,
+                AIZhaoxianFixIdeal = AIZhaoxianFixIdeal,
+                PlayerZhaoxianFixIdeal = PlayerZhaoxianFixIdeal,
+                FixedUnnaturalDeathAge = FixedUnnaturalDeathAge,
+                AIQuickBattle = AIQuickBattle,
+                PlayerAutoSectionHasAIResourceBonus = PlayerAutoSectionHasAIResourceBonus,
+                ProhibitFactionAgainstDestroyer = ProhibitFactionAgainstDestroyer,
+                AIMergeAgainstPlayer = AIMergeAgainstPlayer,
+                RemoveSpouseIfNotAvailable = RemoveSpouseIfNotAvailable,
+                SkyEyeSimpleNotification = SkyEyeSimpleNotification,
+                AutoMultipleMarriage = AutoMultipleMarriage,
+                BornHistoricalChildren = BornHistoricalChildren,
+                StartCircleTime = StartCircleTime,
+                ScenarioMapPerTime = ScenarioMapPerTime,
+                KeepSpousePersonalLoyalty = KeepSpousePersonalLoyalty,
+                TroopVoice = TroopVoice,
+                MaxTupianwenzi = MaxTupianwenzi,
+                ShowNumberAddTime = ShowNumberAddTime,
+            };
+        }
+
 
         public GlobalVariables Clone()
         {
@@ -1328,7 +1563,7 @@ namespace GameGlobal
             element.SetAttribute("MaxTupianwenzi", MaxTupianwenzi.ToString());
 
             document.AppendChild(element);
-        
+
             Platform.Current.SaveUserFile("Content/Data/GlobalVariables.xml", document.OuterXml, true);
         }
     }

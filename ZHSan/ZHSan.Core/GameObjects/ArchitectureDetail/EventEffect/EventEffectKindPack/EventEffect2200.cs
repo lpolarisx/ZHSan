@@ -1,6 +1,5 @@
 ﻿using GameManager;
 using System.Runtime.Serialization;
-using GameObjects.FactionDetail;
 
 namespace GameObjects.ArchitectureDetail.EventEffect;
 
@@ -9,16 +8,15 @@ public class EventEffect2200 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
+        if (faction == null) return;
+
         var increment = eventEffect.GetIntParam();
 
-        if (faction != null && Session.Current.Scenario.DiplomaticRelations != null)
-        {
-            GameObjectList relations = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(faction.ID);
+        var diplomaticRelations = Session.Current.Scenario.GetDiplomaticRelationListByFactionID(faction.ID);
 
-            foreach (DiplomaticRelation i in relations)
-            {
-                i.Relation += increment;
-            }
+        foreach (var relation in diplomaticRelations)
+        {
+            relation.Relation += increment;
         }
     }
 }

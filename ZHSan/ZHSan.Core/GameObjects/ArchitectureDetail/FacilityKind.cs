@@ -115,7 +115,7 @@ public class FacilityKind : GameObject
         FactionLimit = config.FactionLimit;
         PopulationRelated = config.PopulationRelated;
         IsDemolishable = config.IsDemolishable;
-        AIBuildConditionWeightString = config.AIBuildConditionWeightString;
+        AIBuildConditionWeightString = config.AIBuildConditionWeightString ?? "";
         Type = config.Type;
     }
 

@@ -29,18 +29,18 @@ using GameGlobal;
 
 namespace Platforms
 {
-	/// <summary>
+    /// <summary>
     /// 各平台不同的實現
     /// </summary>
-	public class Platform : PlatformBase
+    public class Platform : PlatformBase
     {
-		public static new PlatFormType PlatFormType = PlatFormType.Desktop;
+        public static new PlatFormType PlatFormType = PlatFormType.Desktop;
 
         public static new bool IsMobilePlatForm = false;
 
-		public static string PreferResolution = "1280*720";
+        public static string PreferResolution = "1280*720";
 
-		public new string PreferFullMode = "Window";
+        public new string PreferFullMode = "Window";
 
         public new string Location
         {
@@ -51,65 +51,65 @@ namespace Platforms
         }
 
         public static bool IsActive
-		{
-			get
-			{
-				return MainGame != null ? MainGame.IsActive : false;
-			}
-		}
+        {
+            get
+            {
+                return MainGame != null ? MainGame.IsActive : false;
+            }
+        }
 
-		public new bool IsGuideVisible
-		{
-			get
+        public new bool IsGuideVisible
+        {
+            get
             {
                 return false;
             }
-		}
+        }
 
-		public new bool KeyBoardAvailable = true;
+        public new bool KeyBoardAvailable = true;
 
-		static GraphicsDeviceManager GraphicsDeviceManager = null;
+        static GraphicsDeviceManager GraphicsDeviceManager = null;
 
-		public static GraphicsDevice GraphicsDevice
-		{
-			get
-			{
-				return GraphicsDeviceManager != null ? GraphicsDeviceManager.GraphicsDevice : null;
-			}
-		}
+        public static GraphicsDevice GraphicsDevice
+        {
+            get
+            {
+                return GraphicsDeviceManager != null ? GraphicsDeviceManager.GraphicsDevice : null;
+            }
+        }
 
-		public static void InitGraphicsDeviceManager()
-		{
-			GraphicsDeviceManager = new GraphicsDeviceManager(MainGame);
+        public static void InitGraphicsDeviceManager()
+        {
+            GraphicsDeviceManager = new GraphicsDeviceManager(MainGame);
 
-			GraphicsDeviceManager.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
-		}
+            GraphicsDeviceManager.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+        }
 
-		public static void SetGraphicsWidthHeight(int width, int height)
-		{
-			GraphicsDeviceManager.PreferredBackBufferWidth = width;  //1024;
-			GraphicsDeviceManager.PreferredBackBufferHeight = height; //680;
-		}
+        public static void SetGraphicsWidthHeight(int width, int height)
+        {
+            GraphicsDeviceManager.PreferredBackBufferWidth = width;  //1024;
+            GraphicsDeviceManager.PreferredBackBufferHeight = height; //680;
+        }
 
-		public static void GraphicsApplyChanges()
-		{
-			GraphicsDeviceManager.ApplyChanges();
-		}
+        public static void GraphicsApplyChanges()
+        {
+            GraphicsDeviceManager.ApplyChanges();
+        }
 
-		public override void SetMouseVisible(bool visible)
-		{
+        public override void SetMouseVisible(bool visible)
+        {
             MainGame.IsMouseVisible = visible;
-		}
+        }
 
-		public override void SetWindowAllowUserResizing(bool allow)
-		{
+        public override void SetWindowAllowUserResizing(bool allow)
+        {
             MainGame.Window.AllowUserResizing = true;
-		}
+        }
 
-		public override void SetFullScreen(bool full)
-		{
-			GraphicsDeviceManager.IsFullScreen = full;
-		}
+        public override void SetFullScreen(bool full)
+        {
+            GraphicsDeviceManager.IsFullScreen = full;
+        }
 
         public override string GetDeviceInfo()
         {
@@ -119,6 +119,39 @@ namespace Platforms
         public override string GetSystemInfo()
         {
             return System.Environment.OSVersion.Platform + " " + System.Environment.OSVersion.VersionString;
+        }
+
+        public override string[] GetDirectories(
+    string dir,
+    bool all,
+    bool full)
+        {
+            if (!Directory.Exists(dir))
+                return Array.Empty<string>();
+
+            return Directory.GetDirectories(
+                dir,
+                "*",
+                all
+                    ? SearchOption.AllDirectories
+                    : SearchOption.TopDirectoryOnly);
+        }
+
+        public override string[] GetDirectoriesBasic(
+            string dir,
+            bool all,
+            bool full)
+        {
+            return GetDirectories(dir, all, full);
+        }
+
+        public override string[] GetDirectoriesExpan(
+            string dir,
+            bool all,
+            bool full)
+        {
+            // Desktop 没有 OBB 扩展包目录。
+            return Array.Empty<string>();
         }
 
         #region 加載資源文件
@@ -132,25 +165,25 @@ namespace Platforms
             res = res.Replace("\\", "/");
             //lock (Platform.IoLock)
             //{
-                return File.ReadAllText(res);
+            return File.ReadAllText(res);
             //}
-			//MacOS
-			//string dir = AppDomain.CurrentDomain.BaseDirectory;
-			//return File.ReadAllText(dir + "Content/Resources/" + res);
+            //MacOS
+            //string dir = AppDomain.CurrentDomain.BaseDirectory;
+            //return File.ReadAllText(dir + "Content/Resources/" + res);
         }
-		/// <summary>
-		/// 加載資源文本
-		/// </summary>
-		/// <param name="res"></param>
-		/// <returns></returns>
-		public string[] LoadTexts(string res)
-		{
+        /// <summary>
+        /// 加載資源文本
+        /// </summary>
+        /// <param name="res"></param>
+        /// <returns></returns>
+        public string[] LoadTexts(string res)
+        {
             res = res.Replace("\\", "/");
             //lock (Platform.IoLock)
             //{
-                return File.ReadAllLines(res);
+            return File.ReadAllLines(res);
             //}
-		}
+        }
         /// <summary>
         /// 加載資源文件
         /// </summary>
@@ -197,27 +230,30 @@ namespace Platforms
                 }
                 else
                 {
-
+                    // All packaged textures use Content/... as their logical path.
+                    // Resolve that path at load time so a selected MOD can override
+                    // maps, architecture images, and any other texture resource.
+                    res = GetMODFile(res);
                 }
 
                 //lock (Platform.IoLock)
                 //{
-                    using (var stream = isUser ? LoadUserFileStream(res) : TitleContainer.OpenStream(res))
-                    {
-                        Texture2D tex = Texture2D.FromStream(Platform.GraphicsDevice, stream);
-                        //if (tex != null && Path.GetExtension(res).ToLower() == ".png")
-                        //{
-                        //    try
-                        //    {
-                        //        Season.Current.PreMultiplyAlphas(tex);
-                        //    }
-                        //    catch (Exception ex)
-                        //    {
-                        //        WebTools.TakeWarnMsg("处理透明层级失败:" + res, "PreMultiplyAlphas:" + UserApplicationDataPath + res, ex);
-                        //    }
-                        //}
-                        return tex;
-                    }
+                using (var stream = isUser ? LoadUserFileStream(res) : TitleContainer.OpenStream(res))
+                {
+                    Texture2D tex = Texture2D.FromStream(Platform.GraphicsDevice, stream);
+                    //if (tex != null && Path.GetExtension(res).ToLower() == ".png")
+                    //{
+                    //    try
+                    //    {
+                    //        Season.Current.PreMultiplyAlphas(tex);
+                    //    }
+                    //    catch (Exception ex)
+                    //    {
+                    //        WebTools.TakeWarnMsg("处理透明层级失败:" + res, "PreMultiplyAlphas:" + UserApplicationDataPath + res, ex);
+                    //    }
+                    //}
+                    return tex;
+                }
                 //}
             }
             catch (Exception ex)
@@ -237,7 +273,25 @@ namespace Platforms
 
         public override string[] GetFiles(string dir, bool all)
         {
-            return Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
+            if (!Directory.Exists(dir))
+            {
+                return Array.Empty<string>();
+            }
+
+            return Directory.GetFiles(dir, "*.*", all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+        }
+
+        public override string[] GetFilesBasic(string dir, bool all = false)
+        {
+            if (!Directory.Exists(dir))
+            {
+                return Array.Empty<string>();
+            }
+
+            return Directory.GetFiles(
+                dir,
+                "*.*",
+                all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
         }
 
         public string[] GetDirectoryNames(string dir)
@@ -593,7 +647,7 @@ namespace Platforms
 
             return exis;
         }
-        
+
         /// <summary>
         /// 判斷用戶文件是否存在
         /// </summary>
@@ -757,7 +811,7 @@ namespace Platforms
         /// <returns></returns>
         protected IsolatedStorageFile GetIsolatedStorageFile()
         {
-			return null;
+            return null;
         }
 
         #endregion
@@ -767,17 +821,17 @@ namespace Platforms
             Thread.Sleep(time);
         }
 
-		public override void OpenMarket(string key)
+        public override void OpenMarket(string key)
         {
-			 OpenLink(WebTools.WebSite);
+            OpenLink(WebTools.WebSite);
         }
 
-		public override void OpenReview(string key)
+        public override void OpenReview(string key)
         {
-			OpenLink(WebTools.WebSite);
+            OpenLink(WebTools.WebSite);
         }
 
-		public override byte[] ScreenShot(GraphicsDevice graphicsDevice, RenderTarget2D screenshot)
+        public override byte[] ScreenShot(GraphicsDevice graphicsDevice, RenderTarget2D screenshot)
         {
             graphicsDevice.SetRenderTarget(null);
             byte[] shot = null;
@@ -790,17 +844,17 @@ namespace Platforms
             //screenshot = new RenderTarget2D(graphicsDevice, 800, 480, false, SurfaceFormat.Color, DepthFormat.None);
             //screenshot = new RenderTarget2D(Season.GraphicsDevice, Season.GraphicsDevice.Viewport.Width, Season.GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None);
             return shot;
-//            return null;
-//            graphics.GraphicsDevice.SetRenderTarget(null);
-//            byte[] shot = null;
-//            using (MemoryStream ms = new MemoryStream())
-//            {
-//                screenshot.SaveAsJpeg(ms, screenshot.Width, screenshot.Height);
-//                screenshot.Dispose();
-//                shot = ms.ToArray(); //.GetBuffer();
-//                screenshot = new RenderTarget2D(graphics.GraphicsDevice, 800, 480, false, SurfaceFormat.Color, DepthFormat.None);
-//            }
-//            return shot;
+            //            return null;
+            //            graphics.GraphicsDevice.SetRenderTarget(null);
+            //            byte[] shot = null;
+            //            using (MemoryStream ms = new MemoryStream())
+            //            {
+            //                screenshot.SaveAsJpeg(ms, screenshot.Width, screenshot.Height);
+            //                screenshot.Dispose();
+            //                shot = ms.ToArray(); //.GetBuffer();
+            //                screenshot = new RenderTarget2D(graphics.GraphicsDevice, 800, 480, false, SurfaceFormat.Color, DepthFormat.None);
+            //            }
+            //            return shot;
         }
 
         /// <summary>
@@ -902,36 +956,36 @@ namespace Platforms
         }
 
         public void OpenLink(string link)
-		{
-			try
-			{
+        {
+            try
+            {
                 //"IExplore.exe " + 
                 ProcessStartInfo startInfo = new ProcessStartInfo(link);
                 //startInfo.WindowStyle = ProcessWindowStyle.Minimized;
                 startInfo.UseShellExecute = true;
                 Process.Start(startInfo);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 WebTools.TakeWarnMsg("ProcessStartInfo打開IE出錯：", "", ex);
-			}
-		}
+            }
+        }
 
-		public override void Exit()
-		{
-			MainGame.Exit ();
-		}
+        public override void Exit()
+        {
+            MainGame.Exit();
+        }
 
-		public override void ShowKeyBoard(PlayerIndex index, string name, string title, string desc, AsyncCallback CallbackFunction)
-		{			
-			//Guide.BeginShowKeyboardInput(index, name, title, desc, CallbackFunction, null);
-		}
+        public override void ShowKeyBoard(PlayerIndex index, string name, string title, string desc, AsyncCallback CallbackFunction)
+        {
+            //Guide.BeginShowKeyboardInput(index, name, title, desc, CallbackFunction, null);
+        }
 
-		public override string EndShowKeyBoard(IAsyncResult ar)
-		{
-			//return Guide.EndShowKeyboardInput(ar);
-			return "";
-		}
+        public override string EndShowKeyBoard(IAsyncResult ar)
+        {
+            //return Guide.EndShowKeyboardInput(ar);
+            return "";
+        }
 
         public static string picStatus = "";
 
@@ -1030,23 +1084,23 @@ namespace Platforms
             }
             return newSize;
         }
-/*
-        static byte[] SavePngFromBitmap(Bitmap bitmap)
-        {
-            var imageStream = new MemoryStream();
-            using (imageStream)
-            {
-                // Save bitmap in some format.
-                bitmap.Save(imageStream, ImageFormat.Png);
-                imageStream.Position = 0;
+        /*
+                static byte[] SavePngFromBitmap(Bitmap bitmap)
+                {
+                    var imageStream = new MemoryStream();
+                    using (imageStream)
+                    {
+                        // Save bitmap in some format.
+                        bitmap.Save(imageStream, ImageFormat.Png);
+                        imageStream.Position = 0;
 
-                // Do something with the memory stream. For example:
-                byte[] imageBytes = imageStream.ToArray();
-                // Save bytes to the database.
-                return imageBytes;
-            }
-        }
-*/
+                        // Do something with the memory stream. For example:
+                        byte[] imageBytes = imageStream.ToArray();
+                        // Save bytes to the database.
+                        return imageBytes;
+                    }
+                }
+        */
         public override void MirrorPicture(byte[] image, PlatformTask action)
         {
             /*
@@ -1315,27 +1369,27 @@ namespace Platforms
 
     public class PlatformTask2
     {
-		//Action act;
-		//public SeasonTask(Action action)
-		//{
-		//    act = action;
-		//}
-		//public void Start()
-		//{
-		//	act.Invoke();
-		//	//act.BeginInvoke(null, null);
-		//}
+        //Action act;
+        //public SeasonTask(Action action)
+        //{
+        //    act = action;
+        //}
+        //public void Start()
+        //{
+        //	act.Invoke();
+        //	//act.BeginInvoke(null, null);
+        //}
 
-		Thread thread;
-		public PlatformTask2(Action action)
-		{
-			thread = new Thread(() => { action.Invoke(); });
-		}
-		public void Start()
-		{
-			thread.Start();
-		}
-	}
+        Thread thread;
+        public PlatformTask2(Action action)
+        {
+            thread = new Thread(() => { action.Invoke(); });
+        }
+        public void Start()
+        {
+            thread.Start();
+        }
+    }
 
 
 }

@@ -107,7 +107,7 @@ namespace GameObjects
         }
 
 
-        public virtual void ArchitectureHirePerson(PersonList personList)
+        public virtual void ArchitectureHirePerson(List<Person> persons)
         {
         }
 
@@ -124,11 +124,11 @@ namespace GameObjects
         {
         }
 
-        public virtual void ArchitectureReleaseCaptiveAfterOccupied(Architecture architecture, PersonList persons)
+        public virtual void ArchitectureReleaseCaptiveAfterOccupied(Architecture architecture, List<Person> persons)
         {
         }
 
-        public virtual void ArchitectureRewardPersons(Architecture architecture, GameObjectList personlist)
+        public virtual void ArchitectureRewardPersons(Architecture architecture, List<Person> persons)
         {
         }
 
@@ -709,7 +709,7 @@ namespace GameObjects
         {
         }
 
-        public virtual void TroopGetNewCaptive(Troop troop, PersonList personlist)
+        public virtual void TroopGetNewCaptive(Troop troop, List<Person> persons)
         {
         }
 
@@ -779,7 +779,7 @@ namespace GameObjects
         {
         }
 
-        public virtual void TroopReleaseCaptive(Troop troop, PersonList personlist)
+        public virtual void TroopReleaseCaptive(Troop troop, List<Person> persons)
         {
         }
 

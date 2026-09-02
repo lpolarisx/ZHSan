@@ -2135,6 +2135,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                         // 重载CommonData，不同mod的CommonData不一致，例如建筑类型表
                         CommonData.Init();
+                        InitScenarioList();
                     }
                 };
                 btSettingList.Add(btOne);
@@ -2519,9 +2520,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         void InitScenarioList()
         {
-            string path = @"Content\Data\Scenario\";
-
-            string file = path + "Scenarios.json";
+            string file = Platform.Current.GetMODFile(@"Content\Data\Scenario\Scenarios.json");
 
             pageIndex = pageIndex1 = 1;
 
@@ -2529,8 +2528,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             btScenarioPlayersList = new List<CheckBox>();
             CurrentScenario = null;
+
             ScenarioList = SimpleSerializer.DeserializeJsonFile<List<Scenario>>(file, false, false, false);
             //var str = SimpleSerializer.SerializeJson(ScenarioList, false, true, true);
+            
             #region 预处理剧本列表信息
 
             frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);
@@ -2588,7 +2589,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                     var btP = (CheckBox)sender0;
                                     var id1 = btP.ID;
 
-                                    faction = scenario.Factions.GameObjects.FirstOrDefault(fi => fi.Name == id1) as Faction;
+                                    faction = scenario.Factions.Values.FirstOrDefault(fi => fi.Name == id1);
 
                                     if (Platform.IsMobilePlatForm)
                                     {
@@ -2609,7 +2610,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                         {
                                             var btG = (ButtonTexture)sender1;
 
-                                            var person = faction.Persons.GameObjects.FirstOrDefault(pe => ((Person)pe).Name == btG.ID) as Person;
+                                            var person = faction.Persons.FirstOrDefault(x => x.Name == btG.ID);
 
                                             ScreenLayers.DantiaoLayer.Persons.Add(person);
 
@@ -2640,6 +2641,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         var iDs = CurrentScenario.IDs.Split(',').NullToEmptyList();
                         var names = CurrentScenario.Names.Split(',').NullToEmptyList();
+
+                        // 切换或重新选择剧本时，不能保留上一份势力控件。
+                        // 否则隐藏列表中已经勾选的势力仍会写入 Players。
+                        btScenarioPlayersList = new List<CheckBox>();
+
                         frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);
                         frame_PlayersList.FixedBackground = false;
                         frame_PlayersList.CanvasRightPadding = 1030;

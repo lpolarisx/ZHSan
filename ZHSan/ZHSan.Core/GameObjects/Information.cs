@@ -95,11 +95,8 @@ public class Information : GameObject
     {
         var troop = Session.Current.Scenario.GetTroopByPosition(point);
 
-        // 不是友军
-        var notAnAlly = !BelongedArchitecture.IsFriendly(troop.BelongedFaction);
-
-        if (troop != null && troop.Status == TroopStatus.埋伏
-            && ((BelongedArchitecture != null && notAnAlly) || (BelongedFaction != null && notAnAlly)))
+        if (troop != null && troop.Status == TroopStatus.Ambushing
+            && (BelongedArchitecture != null && !BelongedArchitecture.IsFriendly(troop.BelongedFaction) || (BelongedFaction != null && !BelongedArchitecture.IsFriendly(troop.BelongedFaction))))
         {
             DetectAmbush(troop);
         }

@@ -282,4 +282,3 @@ namespace GameObjects.TroopDetail
         public delegate int GetPenalizedCost(Point position, MilitaryKind kind);
     }
 }
-

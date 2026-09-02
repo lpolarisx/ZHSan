@@ -17,7 +17,7 @@ public class InfluenceKind390 : InfluenceKind
             troop.ApplyGongxin(enemy, baseDecrement);
         }
 
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, inevitableSuccess, troop2.InvincibleGongxin, troop2.InvincibleStratagemFromLowerIntelligence))
             {
@@ -32,7 +32,7 @@ public class InfluenceKind390 : InfluenceKind
         int pureFightingForce = source.PureFightingForce;
         var inevitableSuccess = source.InevitableGongxinOnLowerIntelligence || source.InevitableStratagemOnLowerIntelligence;
 
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, false))
+        foreach (var troop in source.GetAreaStratagemTroops(destination))
         {
             int credit = source.GetStratagemSuccessChanceCredit(troop, inevitableSuccess, troop.InvincibleGongxin, troop.InvincibleStratagemFromLowerIntelligence);
             credit -= (destination.MoraleIncreaseByViewArea + destination.MoraleIncreaseInViewArea + destination.IncrementPerDayOfMorale - destination.MoraleDecreaseByViewArea - destination.MoraleDecreaseInViewArea) * 50;

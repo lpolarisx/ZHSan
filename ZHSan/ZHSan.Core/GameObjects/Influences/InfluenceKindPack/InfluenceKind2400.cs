@@ -25,7 +25,7 @@ public class InfluenceKind2400 : InfluenceKind
         if (Session.Current.Scenario.NewInfluence)
         {
             faction.ClosedRouteways.Clear();
-            foreach (Routeway routeway in faction.Routeways)
+            foreach (var routeway in faction.Routeways)
             {
                 routeway.RemoveAfterClose = true;
             }

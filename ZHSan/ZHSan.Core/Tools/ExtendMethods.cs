@@ -94,18 +94,14 @@ namespace Tools
 
         public static string ToSeasonDate(this string dateTime)
         {
-            if (String.IsNullOrEmpty(dateTime))
+            if (!string.IsNullOrEmpty(dateTime))
             {
-
-            }
-            else
-            {
-                DateTime dt;
-                if (DateTime.TryParse(dateTime, out dt))
+                if (DateTime.TryParse(dateTime, out var dt))
                 {
                     return dt.ToSeasonDate();
                 }
             }
+
             return "";
         }
 

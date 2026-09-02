@@ -18,6 +18,6 @@ public class InfluenceKind6300 : InfluenceKind
 
     public override double AIFacilityValue(Influence influence, Architecture arch)
     {
-        return Math.Max(arch.Meinvkongjian, arch.Feiziliebiao.Count) * (influence.GetIntParam() / 100.0) * 10;
+        return Math.Max(arch.Meinvkongjian, arch.GetConcubines().Count) * (influence.GetIntParam() / 100.0) * 10;
     }
 }

@@ -1,4 +1,5 @@
-﻿using GameGlobal;
+﻿using GameEnums;
+using GameGlobal;
 using GameManager;
 using GameObjects;
 using Microsoft.Xna.Framework;

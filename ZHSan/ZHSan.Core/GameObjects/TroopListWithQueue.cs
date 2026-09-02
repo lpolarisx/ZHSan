@@ -1,58 +1,64 @@
-﻿using GameGlobal;
+﻿using GameEnums;
+using GameGlobal;
 using GameManager;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
-using System.Threading;
-
 
 namespace GameObjects
 {
     [DataContract]
-    public class TroopListWithQueue : TroopList
+    public class TroopListWithQueue
     {
-        public TroopList AmbushList = new TroopList();
-        public Queue<Troop> CurrentQueue = new Queue<Troop>();
+        public List<Troop> AmbushList { get; set; } = new();
+
+        public Queue<Troop> CurrentQueue = new();
         public Troop CurrentTroop;
         private bool queueEnded = true;
-        private Queue<Troop> troopQueue = new Queue<Troop>();
+        private Queue<Troop> troopQueue = new();
 
         public void Init()
         {
             queueEnded = true;
-            AmbushList = new TroopList();
-            CurrentQueue = new Queue<Troop>();
-            troopQueue = new Queue<Troop>();
+            AmbushList = new();
+            CurrentQueue = new();
+            troopQueue = new();
         }
 
         public void BuildQueue()
         {
-            this.queueEnded = false;
-            if (this.troopQueue.Count != 0)
+            queueEnded = false;
+            if (troopQueue.Count != 0)
             {
                 throw new Exception("troopQueue is not empty before building");
             }
-            this.AmbushList.Clear();
-            GameObjectList randomList = base.GetRandomList();
-            if (Session.GlobalVariables.MilitaryKindSpeedValid && (randomList.Count > 1))
+
+            var troops = Session.Current.Scenario.Troops.Values.ToList();
+
+            AmbushList.Clear();
+
+            if (Session.GlobalVariables.MilitaryKindSpeedValid)
             {
-                randomList.PropertyName = "Speed";
-                randomList.IsNumber = true;
-                randomList.SmallToBig = false;
-                randomList.ReSort();
+                troops.Sort((a, b) => b.Speed.CompareTo(a.Speed));
             }
-            foreach (Troop troop in randomList)
+            else
+            {
+                troops = StaticMethods.GetRandomList(troops);
+            }
+
+            foreach (var troop in troops)
             {
                 if (troop.CanMoveAnyway())
                 {
                     troop.InitializeInQueue();
-                    if (troop.Status == TroopStatus.埋伏)
+                    if (troop.Status == TroopStatus.Ambushing)
                     {
-                        this.AmbushList.Add(troop);
+                        AmbushList.Add(troop);
                     }
                     else
                     {
-                        this.troopQueue.Enqueue(troop);
+                        troopQueue.Enqueue(troop);
                     }
                 }
                 troop.Operated = false;
@@ -64,70 +70,71 @@ namespace GameObjects
 
         private bool CheckAmbushList()
         {
-            Troop gameObject = null;
-            int count = this.AmbushList.Count;
-            foreach (Troop troop2 in this.AmbushList)
+            Troop targetTroop = null;
+
+            foreach (var troop in AmbushList)
             {
-                if (troop2.ToDoCombatAction())
+                if (troop.ToDoCombatAction())
                 {
-                    troop2.DoCombatAction();
-                    if (troop2.OperationDone)
+                    troop.DoCombatAction();
+                    if (troop.OperationDone)
                     {
-                        gameObject = troop2;
+                        targetTroop = troop;
                         break;
                     }
                 }
             }
-            this.AmbushList.Remove(gameObject);
-            return (gameObject != null);
+
+            AmbushList.Remove(targetTroop);
+
+            return targetTroop != null;
         }
 
-#pragma warning disable CS0108 // 'TroopListWithQueue.Clear()' hides inherited member 'GameObjectList.Clear()'. Use the new keyword if hiding was intended.
         public void Clear()
-#pragma warning restore CS0108 // 'TroopListWithQueue.Clear()' hides inherited member 'GameObjectList.Clear()'. Use the new keyword if hiding was intended.
         {
-            base.GameObjects.Clear();
-            this.troopQueue.Clear();
-            this.CurrentQueue.Clear();
-            this.AmbushList.Clear();
+            troopQueue.Clear();
+            CurrentQueue.Clear();
+            AmbushList.Clear();
         }
 
         public void CurrentQueueTroopMove()
         {
             
-            if (this.CurrentTroop != null)
+            if (CurrentTroop != null)
             {
 
-                this.TroopMoveThread(this.CurrentTroop);
+                TroopMoveThread(CurrentTroop);
                 /*Thread thread;
                 
                 thread = new Thread(new ThreadStart(this.CurrentTroop.Move));
                 thread.Start();
                 thread.Join();*/
                 
-                if (this.CurrentTroop.StepNotFinished || (this.CurrentTroop.MovabilityLeft <= 0))
+                if (CurrentTroop.StepNotFinished || CurrentTroop.MovabilityLeft <= 0)
                 {
-                    if (!this.CurrentTroop.OperationDone)
+                    if (!CurrentTroop.OperationDone)
                     {
-                        this.troopQueue.Enqueue(this.CurrentTroop);
+                        troopQueue.Enqueue(CurrentTroop);
                     }
-                    this.CurrentTroop = null;
+                    CurrentTroop = null;
                 }
             }
-            else if (!this.CheckAmbushList())
+            else if (!CheckAmbushList())
             {
-                Queue<Troop> queue = new Queue<Troop>();
-                if ((this.CurrentQueue.Count == 0) && (this.troopQueue.Count > 0))
+                var queue = new Queue<Troop>();
+
+                if (CurrentQueue.Count == 0 && troopQueue.Count > 0)
                 {
-                    this.CurrentQueue.Enqueue(this.troopQueue.Dequeue());
+                    CurrentQueue.Enqueue(troopQueue.Dequeue());
                 }
-                while (this.CurrentQueue.Count > 0)
+
+                while (CurrentQueue.Count > 0)
                 {
-                    Troop item = this.CurrentQueue.Dequeue();
+                    Troop item = CurrentQueue.Dequeue();
                     if (!item.Destroyed)
                     {
                         if (item.Destroyed || 
-                            (item.Status != TroopStatus.一般 && item.Status != TroopStatus.伪报 && item.Status != TroopStatus.挑衅))
+                            (item.Status != TroopStatus.Normal && item.Status != TroopStatus.Rumour && item.Status != TroopStatus.Attract))
                         {
                             item.MovabilityLeft = -1;
                             item.OperationDone = true;
@@ -137,8 +144,8 @@ namespace GameObjects
                         {
                             if (item.MovabilityLeft > 0)
                             {
-                                this.TroopChangeRealDestination(item);
-                                this.TroopMoveThread(item);
+                                TroopChangeRealDestination(item);
+                                TroopMoveThread(item);
                             }
 
                             if (item.MovabilityLeft <= 0)
@@ -146,36 +153,37 @@ namespace GameObjects
                                 if (!item.HasToDoCombatAction && item.ToDoCombatAction())
                                 {
                                     item.HasToDoCombatAction = true;
-                                    this.CurrentQueue.Enqueue(item);
+                                    CurrentQueue.Enqueue(item);
                                     break;
                                 }
                                 if (item.HasToDoCombatAction)
                                 {
                                     item.HasToDoCombatAction = false;
                                     item.DoCombatAction();
-                                    this.CurrentQueue.Enqueue(item);
+                                    CurrentQueue.Enqueue(item);
                                     break;
                                 }
                             }
                         }
 
                         if (item.Destroyed ||
-                            (item.Status != TroopStatus.一般 && item.Status != TroopStatus.伪报 && item.Status != TroopStatus.挑衅))
+                            (item.Status != TroopStatus.Normal && item.Status != TroopStatus.Rumour && item.Status != TroopStatus.Attract))
                         {
                             item.MovabilityLeft = -1;
                             item.OperationDone = true;
                         }
                        
-                        if ((!item.OperationDone && item.OffenceOnlyBeforeMove) && (item.Position != item.PreviousPosition))
+                        if (!item.OperationDone && item.OffenceOnlyBeforeMove && item.Position != item.PreviousPosition)
                         {
                             item.OperationDone = true;
                         }
                         if ((!item.StepNotFinished || item.chongshemubiaoweizhibiaoji) && item.MovabilityLeft >= 0)
                         {
-                            this.CurrentTroop = item;
+                            CurrentTroop = item;
                             break;
                         }
-                        if (!this.queueEnded)
+
+                        if (!queueEnded)
                         {
                             if (item.MovabilityLeft > 0)
                             {
@@ -189,28 +197,32 @@ namespace GameObjects
                         }
                     }
                 }
+
                 while (queue.Count > 0)
                 {
-                    this.troopQueue.Enqueue(queue.Dequeue());
+                    troopQueue.Enqueue(queue.Dequeue());
                 }
-                if (!this.queueEnded && this.TotallyEmpty)
+                if (!queueEnded && TotallyEmpty)
                 {
-                    this.queueEnded = true;
-                    TroopList list = new TroopList();
-                    foreach (Troop troop2 in base.GameObjects)
+                    queueEnded = true;
+
+                    var list = new List<Troop>();
+                    foreach (var troop in Session.Current.Scenario.Troops.Values)
                     {
-                        if (troop2.QueueEnded)
+                        if (troop.QueueEnded)
                         {
-                            list.Add(troop2);
+                            list.Add(troop);
                         }
                     }
-                    foreach (Troop troop2 in list.GetRandomList())
+
+                    foreach (var troop in StaticMethods.GetRandomList(list))
                     {
-                        this.troopQueue.Enqueue(troop2);
+                        troopQueue.Enqueue(troop);
                     }
                 }
             }
         }
+
         private void TroopChangeRealDestination(Troop troop)
         {
             if (troop.mingling == "Attack" || troop.mingling == "Stratagem")
@@ -260,7 +272,6 @@ namespace GameObjects
             }
         }
 
-
         private void TroopMoveThread(Troop troop)
         {
             troop.Move();
@@ -274,11 +285,9 @@ namespace GameObjects
             thread = null;*/
         }
 
-
-
         public void FinalizeQueue()
         {
-            foreach (Troop troop in base.GameObjects)
+            foreach (var troop in Session.Current.Scenario.Troops.Values)
             {
                 troop.FinalizeInQueue();
             }
@@ -286,23 +295,22 @@ namespace GameObjects
 
         public void MoveTroopsFromQueueToCurrentQueue(int n)
         {
-            if (this.troopQueue.Count < n)
-            {
-                n = this.troopQueue.Count;
-            }
+            n = Math.Min(n, troopQueue.Count);
+
             for (int i = 0; i < n; i++)
             {
-                this.CurrentQueue.Enqueue(this.troopQueue.Dequeue());
+                CurrentQueue.Enqueue(troopQueue.Dequeue());
             }
         }
 
         public void StepAnimationIndex(int steps)
         {
-            if (this.CurrentTroop != null)
+            if (CurrentTroop != null)
             {
-                this.CurrentTroop.AddMoveAnimationIndex(steps);
+                CurrentTroop.AddMoveAnimationIndex(steps);
             }
-            foreach (Troop troop in this.CurrentQueue)
+
+            foreach (var troop in CurrentQueue)
             {
                 if (troop.Action != TroopAction.Stop)
                 {
@@ -311,29 +319,10 @@ namespace GameObjects
             }
         }
 
-        public bool CurrentQueueEmpty
-        {
-            get
-            {
-                return ((this.CurrentQueue.Count == 0) && (this.CurrentTroop == null));
-            }
-        }
+        public bool CurrentQueueEmpty => CurrentQueue.Count == 0 && CurrentTroop == null;
 
-        public bool QueueEmpty
-        {
-            get
-            {
-                return (this.troopQueue.Count == 0);
-            }
-        }
+        public bool QueueEmpty => troopQueue.Count == 0;
 
-        public bool TotallyEmpty
-        {
-            get
-            {
-                return (this.QueueEmpty && this.CurrentQueueEmpty);
-            }
-        }
+        public bool TotallyEmpty => QueueEmpty && CurrentQueueEmpty;
     }
 }
-

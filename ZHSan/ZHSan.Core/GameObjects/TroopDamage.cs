@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.Collections.Generic;
 
 namespace GameObjects
 {
@@ -31,7 +31,7 @@ namespace GameObjects
         public int SourceMoraleChange;
         public int SourceOffence;
         public Troop SourceTroop;
-        public TroopList SurroudingList = new TroopList();
+        public List<Troop> SurroudingList { get; set; } = new();
         public bool Surround;
         public bool Waylay;
         public float OfficerInjury;

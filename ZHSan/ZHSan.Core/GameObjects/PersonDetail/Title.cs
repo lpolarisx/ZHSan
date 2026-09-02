@@ -153,12 +153,7 @@ public class Title : GameObject
 
     public List<Condition> LoseConditions { get; set; } = new();
 
-    public PersonList Persons = new PersonList();
-
-    public void Init()
-    {
-        Persons = new PersonList();
-    }
+    public List<Person> Persons { get; set; } = new();
 
     private bool? containsLeaderOnlyCache = null;
     public bool ContainsLeaderOnly
@@ -235,10 +230,10 @@ public class Title : GameObject
             }
             if (cnt >= this.FactionLimit) return false;
         }
-        if (Session.Current.Scenario.Persons.Count > this.MapLimit)
+        if (Session.Current.Scenario.AllPersons.Count > this.MapLimit)
         {
             int cnt = 0;
-            foreach (Person p in Session.Current.Scenario.Persons)
+            foreach (var p in Session.Current.Scenario.AllPersons.Values)
             {
                 if ((p.Alive || p.Available) && p.Titles.Contains(this))
                 {
@@ -314,13 +309,7 @@ public class Title : GameObject
         }
     }
 
-    public string DetailedName
-    {
-        get
-        {
-            return this.Level + "级" + this.KindName + "「" + this.Name + "」";
-        }
-    }
+    public string DetailedName => $"{Level}级{KindName}「{Name}」";
 
     private double? aiPersonValue = null;
     public double AIPersonValue
@@ -456,21 +445,8 @@ public class Title : GameObject
 
     public static Dictionary<int, List<Title>> GetKindTitleDictionary()
     {
-        var dict = new Dictionary<int, List<Title>>();
-        foreach (var title in Session.Current.Scenario.GameCommonData.AllTitles.Values)
-        {
-            var kindId = title.KindId;
-
-            if (dict.ContainsKey(kindId))
-            {
-                dict[kindId].Add(title);
-            }
-            else
-            {
-                dict[kindId] = new List<Title>();
-            }
-        }
-
-        return dict;
+        return Session.Current.Scenario.GameCommonData.AllTitles.Values
+               .GroupBy(t => t.KindId)
+               .ToDictionary(g => g.Key, g => g.ToList());
     }
 }

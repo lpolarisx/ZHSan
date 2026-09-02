@@ -1,4 +1,5 @@
 ﻿using GameManager;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GameObjects.Conditions.ConditionKindPack;
@@ -8,9 +9,10 @@ public class ConditionKind530 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        Person p1 = Session.Current.Scenario.Persons.GetGameObject(condition.GetIntParam()) as Person;
+        var personId = condition.GetIntParam();
+        var otherPerson = Session.Current.Scenario.AllPersons.GetValueOrDefault(personId);
 
-        var result = person.BelongedFactionWithPrincess != null && p1.BelongedFactionWithPrincess != null && person.BelongedFactionWithPrincess == p1.BelongedFactionWithPrincess;
+        var result = person.BelongedFactionWithPrincess != null && otherPerson.BelongedFactionWithPrincess != null && person.BelongedFactionWithPrincess == otherPerson.BelongedFactionWithPrincess;
         
         return result;
     }

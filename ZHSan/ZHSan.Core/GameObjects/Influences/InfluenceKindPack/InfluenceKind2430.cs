@@ -29,7 +29,7 @@ public class InfluenceKind2430 : InfluenceKind
         if (Session.Current.Scenario.NewInfluence)
         {
             faction.ClosedRouteways.Clear();
-            foreach (Routeway routeway in faction.Routeways)
+            foreach (var routeway in faction.Routeways)
             {
                 routeway.ResetRoutePointConsumptionRate(rate);
             }

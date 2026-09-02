@@ -558,7 +558,7 @@ namespace ArchitectureSurveyPlugin
         private int meigongzuoderenshu(Architecture jianzhu)
         {
             int renshu = 0;
-            foreach (Person person in jianzhu.Persons.GetList())
+            foreach (Person person in jianzhu.Persons.ToList())
             {
                 if (person.WorkKind == ArchitectureWorkKind.无)
                 {

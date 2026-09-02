@@ -1,7 +1,6 @@
-﻿using GameGlobal;
+﻿using GameDatas;
+using GameEnums;
 using GameManager;
-using System;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 
 namespace GameObjects
@@ -10,36 +9,55 @@ namespace GameObjects
     public class GameDate
     {
         [DataMember]
-        public int Day = 1;
+        public int Day { get; set; } = 1;
 
         [DataMember]
-        public int DaysLeft;
+        public int DaysLeft { get; set; }
 
         [DataMember]
-        public bool IsRunning = false;
+        public bool IsRunning { get; set; }
 
         [DataMember]
-        public int Month = 1;
+        public int Month { get; set; } = 1;
 
         [DataMember]
-        public GameSeason Season;
+        public GameSeason Season { get; set; }
 
         [DataMember]
-        public int Year = 0xb8;
+        public int Year { get; set; } = 184;
+
+        public GameDate(GameDateConfig config)
+        {
+            Year = config.Year;
+            Month = config.Month;
+            Day = config.Day;
+            Season = config.Season;
+            DaysLeft = config.DaysLeft;
+            IsRunning = config.IsRunning;
+        }
+
+        public GameDateConfig ToConfig()
+        {
+            return new GameDateConfig
+            {
+                Year = Year,
+                Month = Month,
+                Day = Day,
+                Season = Season,
+                DaysLeft = DaysLeft,
+                IsRunning = IsRunning,
+            };
+        }
 
         public event DayPassedEvent OnDayPassed;
 
-#pragma warning disable CS0067 // The event 'GameDate.OnDayRunning' is never used
         public event DayRunningEvent OnDayRunning;
-#pragma warning restore CS0067 // The event 'GameDate.OnDayRunning' is never used
 
         public event DayStartingEvent OnDayStarting;
 
         public event MonthPassedEvent OnMonthPassed;
 
-#pragma warning disable CS0067 // The event 'GameDate.OnMonthRunning' is never used
         public event MonthRunningEvent OnMonthRunning;
-#pragma warning restore CS0067 // The event 'GameDate.OnMonthRunning' is never used
 
         public event MonthStartingEvent OnMonthStarting;
 
@@ -47,9 +65,7 @@ namespace GameObjects
 
         public event YearPassedEvent OnYearPassed;
 
-#pragma warning disable CS0067 // The event 'GameDate.OnYearRunning' is never used
         public event YearRunningEvent OnYearRunning;
-#pragma warning restore CS0067 // The event 'GameDate.OnYearRunning' is never used
 
         public event YearStartingEvent OnYearStarting;
 
@@ -74,7 +90,8 @@ namespace GameObjects
                     return false;
                 }
             }
-            this.IsRunning = false;
+
+            IsRunning = false;
             return true;
         }
 
@@ -82,16 +99,16 @@ namespace GameObjects
         {
             switch (season)
             {
-                case GameSeason.春:
+                case GameSeason.Spring:
                     return 0.6f;
 
-                case GameSeason.夏:
+                case GameSeason.Summer:
                     return 1f;
 
-                case GameSeason.秋:
+                case GameSeason.Autumn:
                     return 1f;
 
-                case GameSeason.冬:
+                case GameSeason.Winter:
                     return 0.3f;
             }
             return 0f;
@@ -99,78 +116,86 @@ namespace GameObjects
 
         public GameSeason GetSeason(int dayslater)
         {
-            if (((this.Day + dayslater) > 30) && ((this.Month % 3) == 0))
+            if (Day + dayslater > 30 && Month % 3 == 0)
             {
-                return (GameSeason.春 + ((int)this.Season % (int)GameSeason.冬));
+                return GameSeason.Spring + (int)Season % (int)GameSeason.Winter;
             }
-            return this.Season;
+
+            return Season;
         }
 
         public void Go()
         {
             //this.Day++;
-            this.Day += Session.Parameters.DayInTurn;
-            if (this.Day > 30)
+            Day += Session.Parameters.DayInTurn;
+
+            if (Day > 30)
             {
                 //this.Day = 1;
-                this.Day -= 30;
-                this.Month++;
-                if (this.Month > 12)
+                Day -= 30;
+                Month++;
+
+                if (Month > 12)
                 {
-                    this.Month = 1;
-                    this.Year++;
+                    Month = 1;
+                    Year++;
                 }
-                this.SetSeason();
-            }
-            if (this.DaysLeft > 0)
-            {
-                this.DaysLeft--;
+
+                SetSeason();
             }
 
+            if (DaysLeft > 0)
+            {
+                DaysLeft--;
+            }
         }
 
         public void Go(int i)
         {
-            this.Day += i;
-            while (this.Day > 30)
+            Day += i;
+
+            while (Day > 30)
             {
-                this.Day -= 30;
-                this.Month++;
-                if (this.Month > 12)
+                Day -= 30;
+                Month++;
+
+                if (Month > 12)
                 {
-                    this.Month = 1;
-                    this.Year++;
+                    Month = 1;
+                    Year++;
                 }
-                this.SetSeason();
+
+                SetSeason();
             }
         }
 
         public void LoadDateData(int year, int month, int day)
         {
-            this.Year = year;
-            this.Month = month;
-            this.Day = day;
-            this.SetSeason();
+            Year = year;
+            Month = month;
+            Day = day;
+            SetSeason();
         }
 
         public void SetSeason()
         {
-            GameSeason season = this.Season;
-            if (this.Month >= 3 && this.Month<=5)
+            GameSeason season = Season;
+
+            if (Month >= 3 && Month <= 5)
             {
-                this.Season = GameSeason.春;
+                Season = GameSeason.Spring;
             }
-            else if (this.Month >= 6 && this.Month <= 8)
+            else if (Month >= 6 && Month <= 8)
             {
-                this.Season = GameSeason.夏;
+                Season = GameSeason.Summer;
             }
-            else if (this.Month >= 9 && this.Month <= 11)
+            else if (Month >= 9 && Month <= 11)
             {
-                this.Season = GameSeason.秋;
+                Season = GameSeason.Autumn;
             }
             else
             {
-                this.Season = GameSeason.冬;
+                this.Season = GameSeason.Winter;
             }
             if ((season != this.Season) && (this.OnSeasonChange != null))
             {
@@ -184,62 +209,39 @@ namespace GameObjects
 
         public bool StartRunning()
         {
-            if (this.IsRunning)
+            if (IsRunning) return false;
+
+            if (OnDayStarting != null && !OnDayStarting()) return false;
+
+            if (Day <= Session.Current.Scenario.Parameters.DayInTurn)
             {
-                return false;
+                if (OnMonthStarting != null && !OnMonthStarting()) return false;
+
+                if (Month == 1 && OnYearStarting != null && !OnYearStarting()) return false;
             }
-            if ((this.OnDayStarting != null) && !this.OnDayStarting())
-            {
-                return false;
-            }
-            if (this.Day <= Session.Current.Scenario.Parameters.DayInTurn)
-            {
-                if ((this.OnMonthStarting != null) && !this.OnMonthStarting())
-                {
-                    return false;
-                }
-                if ((this.Month == 1) && ((this.OnYearStarting != null) && !this.OnYearStarting()))
-                {
-                    return false;
-                }
-            }
-            this.IsRunning = true;
+
+            IsRunning = true;
             return true;
         }
 
         public string ToDateString()
         {
-            return this.ToString();
+            return ToString();
         }
 
-        public override string ToString()
-        {
-            return string.Concat(new object[] { this.Year, "年", this.Month, "月", this.Day, "日" });
-        }
+        public override string ToString() => $"{Year}年{Month}月{Day}日";
 
-        public int LeftDays
-        {
-            get
-            {
-                return (360 - this.PassedDays);
-            }
-        }
+        public int LeftDays => 360 - PassedDays;
 
-        public int PassedDays
-        {
-            get
-            {
-                return ((this.Month * 30) + this.Day);
-            }
-        }
+        public int PassedDays => Month * 30 + Day;
 
         public GameDate() { }
 
-        public GameDate(int y, int m, int d)
+        public GameDate(int year, int month, int day)
         {
-            Year = y;
-            Month = m;
-            Day = d;
+            Year = year;
+            Month = month;
+            Day = day;
         }
 
         public GameDate(GameDate d)
@@ -249,7 +251,6 @@ namespace GameObjects
             Day = d.Day;
         }
         
-
         public delegate bool DayPassedEvent();
 
         public delegate bool DayRunningEvent();
@@ -271,4 +272,3 @@ namespace GameObjects
         public delegate bool YearStartingEvent();
     }
 }
-

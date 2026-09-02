@@ -16,7 +16,7 @@ public class PersonRelationValue : GameObject
 
     public bool IsSpouse => Source.Spouse == Person;
 
-    public bool IsBrother => Source.Brothers.GameObjects.Contains(Person);
+    public bool IsBrother => Source.Brothers.Contains(Person);
 
     public bool IsClose => Source.Closes(Person);
 

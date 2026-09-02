@@ -1,49 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using GameDatas;
+using GameGlobal;
 
 namespace GameObjects.ArchitectureDetail;
 
-[DataContract]
+/// <summary>
+/// 地区
+/// </summary>
 public class Region : GameObject
 {
-    public ArchitectureList Architectures = new ArchitectureList();
+    public List<Architecture> Architectures { get; set; } = new();
     public Architecture RegionCore;
 
-    [DataMember]
-    public int RegionCoreID;
+    public int RegionCoreID { get; set; }
 
-    [DataMember]
-    public string StatesListString;
+    public string StatesListString { get; set; }
 
-    public StateList States = new StateList();
+    public List<State> States { get; set; } = new();
 
-    public void Init()
+    public Region(RegionConfig config)
     {
-        Architectures = new ArchitectureList();
-        States = new StateList();
+        ID = config.Id;
+        Name = config.Name;
+        RegionCoreID = config.RegionCoreID;
+        StatesListString = config.StatesListString;
+    }
+
+    public RegionConfig ToConfig()
+    {
+        return new RegionConfig
+        {
+            Id = ID,
+            Name = Name,
+            RegionCoreID = RegionCoreID,
+            StatesListString = StatesListString,
+        };
     }
 
     public int GetFactionScale(Faction faction)
     {
-        if (Architectures.Count <= 0) return 0;
+        var architectureCount = Architectures.Count;
 
-        var num = 0;
-        foreach (Architecture architecture in Architectures)
+        if (architectureCount <= 0) return 0;
+
+        int num = 0;
+        foreach (var architecture in Architectures)
         {
             if (architecture.BelongedFaction == null || faction == architecture.BelongedFaction)
             {
                 num++;
             }
         }
-        return num * 100 / Architectures.Count;
+        return num * 100 / architectureCount;
     }
 
     public int GetSectionScale(Section section)
     {
-        if (Architectures.Count <= 0 || section.ArchitectureCount <= 0) return 0;
+        var sectionCount = section.ArchitectureCount;
 
-        var num = 0;
+        if (Architectures.Count <= 0 || sectionCount <= 0) return 0;
+
+        int num = 0;
         foreach (Architecture architecture in Architectures)
         {
             if (architecture.BelongedSection == section)
@@ -51,57 +68,16 @@ public class Region : GameObject
                 num++;
             }
 
-            if (num >= section.ArchitectureCount)
+            if (num >= sectionCount)
             {
                 return 100;
             }
         }
 
-        return num * 100 / section.ArchitectureCount;
-    }
-
-    public List<string> LoadStatesFromString(StateList states, string dataString)
-    {
-        List<string> errorMsg = new List<string>();
-        char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-        string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-        this.States.Clear();
-        try
-        {
-            foreach (string str in strArray)
-            {
-                State gameObject = states.GetGameObject(int.Parse(str)) as State;
-                if (gameObject != null)
-                {
-                    this.States.Add(gameObject);
-                    gameObject.LinkedRegion = this;
-                }
-                else
-                {
-                    errorMsg.Add("州域ID" + str + "不存在");
-                }
-            }
-        }
-        catch
-        {
-            errorMsg.Add("州域一栏应为半型空格分隔的州域ID");
-        }
-        return errorMsg;
-
+        return num * 100 / sectionCount;
     }
 
     public string RegionCoreString => RegionCore?.Name ?? "----";
 
-    public string StatesString
-    {
-        get
-        {
-            string str = "";
-            foreach (State state in this.States)
-            {
-                str = str + state.Name + " ";
-            }
-            return str;
-        }
-    }
+    public string StatesString => StaticMethods.SaveNameToString(States);
 }

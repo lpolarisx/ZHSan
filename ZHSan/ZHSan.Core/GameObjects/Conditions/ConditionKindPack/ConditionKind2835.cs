@@ -9,7 +9,7 @@ public class ConditionKind2835 : ConditionKind
     {
         var personId = condition.GetIntParam();
 
-        foreach (Person person in arch.Feiziliebiao)
+        foreach (var person in arch.GetConcubines())
         {
             if (person.ID == personId)
             {

@@ -1,5 +1,4 @@
 ﻿using GameGlobal;
-using GameObjects.ArchitectureDetail;
 using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
 using System;
@@ -17,13 +16,9 @@ namespace GameObjects
     [KnownType(typeof(Event))]
     [KnownType(typeof(Person))]
     [KnownType(typeof(Architecture))]
-    [KnownType(typeof(Information))]
     [KnownType(typeof(Legion))]
     [KnownType(typeof(Military))]
-    [KnownType(typeof(Region))]
     [KnownType(typeof(Routeway))]
-    [KnownType(typeof(Section))]
-    [KnownType(typeof(State))]
     [KnownType(typeof(Treasure))]
     [KnownType(typeof(TroopEvent))]
     [KnownType(typeof(Troop))]
@@ -32,14 +27,7 @@ namespace GameObjects
     
     public class GameObject
     {
-        private int id;
-        private string name;
-
         public float Scale;
-
-        private bool selected;
-        private string textDestinationString;
-        private string textResultString;
 
         public static bool GetChance(int chance)
         {
@@ -102,66 +90,18 @@ namespace GameObjects
         {
             return this.Name;
         }
+
         [DataMember]
-        public int ID
-        {
-            get
-            {
-                return this.id;
-            }
-            set
-            {
-                this.id = value;
-            }
-        }
+        public int ID { get; set; }
+
         [DataMember]
-        public string Name
-        {
-            get
-            {
-                return this.name;
-            }
-            set
-            {
-                this.name = value;
-            }
-        }
+        public string Name { get; set; }
 
-        public bool Selected
-        {
-            get
-            {
-                return this.selected;
-            }
-            set
-            {
-                this.selected = value;
-            }
-        }
+        public bool Selected { get; set; }
 
-        public string TextDestinationString
-        {
-            get
-            {
-                return this.textDestinationString;
-            }
-            set
-            {
-                this.textDestinationString = value;
-            }
-        }
+        public string TextDestinationString { get; set; }
 
-        public string TextResultString
-        {
-            get
-            {
-                return this.textResultString;
-            }
-            set
-            {
-                this.textResultString = value;
-            }
-        }
+        public string TextResultString { get; set; }
 
         public static T WeightedRandom<T>(Dictionary<T, float> weights)
         {
@@ -203,13 +143,12 @@ namespace GameObjects
         public override bool Equals(object obj)
         {
             if (!(obj is GameObject)) return false;
-            return this.id == ((GameObject)obj).id;
+            return ID == ((GameObject)obj).ID;
         }
 
         public override int GetHashCode()
         {
-            return id;
+            return ID;
         }
     }
 }
-

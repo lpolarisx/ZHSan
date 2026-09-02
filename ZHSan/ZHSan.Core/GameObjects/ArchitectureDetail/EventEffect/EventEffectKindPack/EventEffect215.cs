@@ -19,12 +19,12 @@ public class EventEffect215 : EventEffectKind
             person.suoshurenwu = princess.LeaderID;
             leader.suoshurenwu = person.ID;
 
-            if (!person.suoshurenwuList.GameObjects.Contains(leader))
+            if (!person.suoshurenwuList.Contains(leader))
             {
                 person.suoshurenwuList.Add(leader);
             }
 
-            if (!leader.suoshurenwuList.GameObjects.Contains(person))
+            if (!leader.suoshurenwuList.Contains(person))
             {
                 leader.suoshurenwuList.Add(person);
             }

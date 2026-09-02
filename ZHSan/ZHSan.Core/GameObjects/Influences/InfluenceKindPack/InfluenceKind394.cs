@@ -19,7 +19,7 @@ public class InfluenceKind394 : InfluenceKind
             troop.OrientationTroop.SetOnFire(troop.GenerateFireDamageScale(scale, terrain));
         }
 
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, inevitableSuccess, troop2.InvincibleHuogong, troop2.InvincibleStratagemFromLowerIntelligence))
             {
@@ -38,7 +38,7 @@ public class InfluenceKind394 : InfluenceKind
 
         var inevitableSuccess = source.InevitableHuogongOnLowerIntelligence || source.InevitableStratagemOnLowerIntelligence;
 
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, false))
+        foreach (var troop in source.GetAreaStratagemTroops(destination))
         {
             int num3 = source.GetStratagemSuccessChanceCredit(troop, inevitableSuccess, troop.InvincibleHuogong, troop.InvincibleStratagemFromLowerIntelligence);
             if (num3 > 0)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.Serialization;
+using GameEnums;
 
 namespace GameObjects.Influences.InfluenceKindPack;
 
@@ -14,7 +15,7 @@ public class InfluenceKind399 : InfluenceKind
 
         if (troop.GetCurrentStratagemSuccess(friendly, false, false, false))
         {
-            friendly.PreAction = TroopPreAction.恢复;
+            friendly.PreAction = TroopPreAction.Recover;
             var recoverQuantity = (int)(rate * friendly.Army.Kind.MinScale);
 
             recoverQuantity = Math.Min(recoverQuantity, friendly.InjuryQuantity);
@@ -23,11 +24,11 @@ public class InfluenceKind399 : InfluenceKind
             friendly.InjuryQuantity -= recoverQuantity;
         }
 
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
             {
-                troop2.PreAction = TroopPreAction.恢复;
+                troop2.PreAction = TroopPreAction.Recover;
                 var recoverQuantity = (int)(rate * troop2.Army.Kind.MinScale);
                 
                 recoverQuantity = Math.Min(recoverQuantity, troop2.InjuryQuantity);
@@ -49,7 +50,7 @@ public class InfluenceKind399 : InfluenceKind
 
         var sum = 0;
         int fightingForce = source.FightingForce;
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, true))
+        foreach (var troop in source.GetAreaStratagemTroops(destination, true))
         {
             var rate = (float)troop.InjuryQuantity / troop.Army.Kind.MinScale;
             int num4 = source.GetStratagemSuccessChanceCredit(troop, false, false, false);

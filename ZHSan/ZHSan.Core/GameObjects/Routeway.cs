@@ -1,5 +1,4 @@
-﻿using GameGlobal;
-using GameObjects.MapDetail;
+﻿using GameObjects.MapDetail;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -7,20 +6,15 @@ using System.Runtime.Serialization;
 using System.Text;
 using GameManager;
 using GameEnums;
-
+using GameDatas;
+using System.Linq;
 
 namespace GameObjects
 {
     [DataContract]
     public class Routeway : GameObject
     {
-        [DataMember]
-        private bool avoidWater;
-        
         public Faction BelongedFaction;
-
-        [DataMember]
-        private bool building;
         
         public Architecture DestinationArchitecture;
         
@@ -28,12 +22,6 @@ namespace GameObjects
 
         [DataMember]
         private bool HasSupportedLegion = false;
-        [DataMember]
-        private int inefficiencyDays;
-        [DataMember]
-        private int lastActivePointIndex = -1;
-        [DataMember]
-        private bool removeAfterClose;
         
         public void Init()
         {
@@ -45,8 +33,6 @@ namespace GameObjects
         [DataMember]
         public LinkedList<RoutePoint> RoutePoints = new LinkedList<RoutePoint>();
 
-        private bool showArea;
-        
         [DataMember]
         public int StartArchitectureString { get; set; }
 
@@ -60,7 +46,46 @@ namespace GameObjects
         public int BelongedFactionString { get; set; }
 
         [DataMember]
-        public Boolean Developing { get; private set; }
+        public bool Developing { get; private set; }
+
+        public Routeway () {}
+
+        public Routeway(RoutewayConfig config)
+        {
+            HasSupportedLegion = config.HasSupportedLegion;
+            RoutePoints = new LinkedList<RoutePoint>(config.RoutePoints.Select(x => new RoutePoint(x)));
+            StartArchitectureString = config.StartArchitectureString;
+            EndArchitectureString = config.EndArchitectureString;
+            DestinationArchitectureString = config.DestinationArchitectureString;
+            BelongedFactionString = config.BelongedFactionString;
+            Developing = config.Developing;
+            AvoidWater = config.AvoidWater;
+            Building = config.Building;
+            InefficiencyDays = config.InefficiencyDays;
+            LastActivePointIndex = config.LastActivePointIndex;
+            RemoveAfterClose = config.RemoveAfterClose;
+            ShowArea = config.ShowArea;
+        }
+
+        public RoutewayConfig ToConfig()
+        {
+            return new RoutewayConfig
+            {
+                HasSupportedLegion = HasSupportedLegion,
+                RoutePoints = new LinkedList<RoutePointConfig>(RoutePoints.Select(x => x.ToConfig())),
+                StartArchitectureString = StartArchitectureString,
+                EndArchitectureString = EndArchitectureString,
+                DestinationArchitectureString = DestinationArchitectureString,
+                BelongedFactionString = BelongedFactionString,
+                Developing = Developing,
+                AvoidWater = AvoidWater,
+                Building = Building,
+                InefficiencyDays = InefficiencyDays,
+                LastActivePointIndex = LastActivePointIndex,
+                RemoveAfterClose = RemoveAfterClose,
+                ShowArea = ShowArea,
+            };
+        }
 
         public Architecture StartArchitecture;
 
@@ -126,10 +151,7 @@ namespace GameObjects
             this.ShrinkAt(p);
         }
 
-        public bool CloseAvail()
-        {
-            return (this.Building || (this.LastActivePointIndex >= 0));
-        }
+        public bool CloseAvail() => Building || LastActivePointIndex >= 0;
 
         public bool ContainsPoint(Point p)
         {
@@ -705,30 +727,10 @@ namespace GameObjects
         }
 
         [DataMember]
-        public bool AvoidWater
-        {
-            get
-            {
-                return this.avoidWater;
-            }
-            set
-            {
-                this.avoidWater = value;
-            }
-        }
+        public bool AvoidWater { get; set; }
 
         [DataMember]
-        public bool Building
-        {
-            get
-            {
-                return this.building;
-            }
-            set
-            {
-                this.building = value;
-            }
-        }
+        public bool Building { get; set; }
 
         public Architecture ByPassHostileArchitecture
         {
@@ -736,9 +738,9 @@ namespace GameObjects
             {
                 if ((this.StartArchitecture != null) && (this.DestinationArchitecture != null))
                 {
-                    foreach (RoutePoint point in this.RoutePoints)
+                    foreach (RoutePoint point in RoutePoints)
                     {
-                        foreach (Architecture architecture in Session.Current.Scenario.GetHighViewingArchitecturesByPosition(point.Position))
+                        foreach (var architecture in Session.Current.Scenario.GetHighViewingArchitecturesByPosition(point.Position))
                         {
                             if (((architecture != this.DestinationArchitecture) && (architecture.BelongedFaction != null)) && !(this.BelongedFaction.IsFriendlyWithoutTruce(architecture.BelongedFaction) || (Session.Current.Scenario.GetDistance(this.StartArchitecture.ArchitectureArea, architecture.ArchitectureArea) >= Session.Current.Scenario.GetDistance(this.StartArchitecture.ArchitectureArea, this.DestinationArchitecture.ArchitectureArea))))
                             {
@@ -789,17 +791,7 @@ namespace GameObjects
             }
         }
 
-        public RoutePoint FirstPoint
-        {
-            get
-            {
-                if (this.RoutePoints.First != null)
-                {
-                    return this.RoutePoints.First.Value;
-                }
-                return null;
-            }
-        }
+        public RoutePoint FirstPoint => RoutePoints.First?.Value;
 
         public bool HasSupportingTroop
         {
@@ -818,17 +810,7 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int InefficiencyDays
-        {
-            get
-            {
-                return this.inefficiencyDays;
-            }
-            set
-            {
-                this.inefficiencyDays = value;
-            }
-        }
+        public int InefficiencyDays { get; set; }
 
         public bool IsActive
         {
@@ -858,12 +840,12 @@ namespace GameObjects
                 }
                 if (this.BelongedFaction != null)
                 {
-                    foreach (Legion legion in this.BelongedFaction.Legions)
+                    foreach (var legion in BelongedFaction.Legions)
                     {
                         if ((legion.Troops.Count > 0) && (legion.WillArchitecture != null))
                         {
                             int minTroopFoodCost = legion.GetMinTroopFoodCost();
-                            if ((minTroopFoodCost <= this.StartArchitecture.Food) || ((Session.Current.Scenario.Date.Day >= 0x1c) && (minTroopFoodCost <= (this.StartArchitecture.Food + this.StartArchitecture.ExpectedFood))))
+                            if (minTroopFoodCost <= StartArchitecture.Food || ((Session.Current.Scenario.Date.Day >= 0x1c) && (minTroopFoodCost <= (this.StartArchitecture.Food + this.StartArchitecture.ExpectedFood))))
                             {
                                 if ((legion.PreferredRouteway == this) && ((legion.WillArchitecture.BelongedFaction != this.BelongedFaction) || (legion.WillArchitecture.RecentlyAttacked > 0)))
                                 {
@@ -901,25 +883,17 @@ namespace GameObjects
             }
         }
 
-        public bool IsShowingArea
-        {
-            get
-            {
-                return this.ShowArea;
-            }
-        }
+        public bool IsShowingArea => ShowArea;
 
         public LinkedListNode<RoutePoint> LastActiveNode
         {
             get
             {
-                if ((this.LastActivePointIndex < 0) || (this.RoutePoints.Count == 0))
-                {
-                    return null;
-                }
+                if (LastActivePointIndex < 0 || RoutePoints.Count == 0) return null;
+
                 int index = 0;
-                LinkedListNode<RoutePoint> first = this.RoutePoints.First;
-                while (index < this.LastActivePointIndex)
+                var first = RoutePoints.First;
+                while (index < LastActivePointIndex)
                 {
                     first = first.Next;
                     index = first.Value.Index;
@@ -932,13 +906,11 @@ namespace GameObjects
         {
             get
             {
-                if ((this.LastActivePointIndex < 0) || (this.RoutePoints.Count == 0))
-                {
-                    return null;
-                }
+                if (LastActivePointIndex < 0 || RoutePoints.Count == 0) return null;
+
                 int index = 0;
-                LinkedListNode<RoutePoint> first = this.RoutePoints.First;
-                while (index < this.LastActivePointIndex)
+                var first = RoutePoints.First;
+                while (index < LastActivePointIndex)
                 {
                     first = first.Next;
                     index = first.Value.Index;
@@ -948,71 +920,18 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int LastActivePointIndex
-        {
-            get
-            {
-                return this.lastActivePointIndex;
-            }
-            set
-            {
-                this.lastActivePointIndex = value;
-            }
-        }
+        public int LastActivePointIndex { get; set; } = -1;
 
-        public RoutePoint LastPoint
-        {
-            get
-            {
-                if (this.RoutePoints.Last != null)
-                {
-                    return this.RoutePoints.Last.Value;
-                }
-                return null;
-            }
-        }
+        public RoutePoint LastPoint => RoutePoints.Last?.Value;
 
-        public int Length
-        {
-            get
-            {
-                return this.RoutePoints.Count;
-            }
-        }
+        public int Length => RoutePoints.Count;
 
-        public int Radius
-        {
-            get
-            {
-                return (1 + this.BelongedFaction.IncrementOfRoutewayRadius);
-            }
-        }
+        public int Radius => 1 + BelongedFaction.IncrementOfRoutewayRadius;
 
         [DataMember]
-        public bool RemoveAfterClose
-        {
-            get
-            {
-                return this.removeAfterClose;
-            }
-            set
-            {
-                this.removeAfterClose = value;
-            }
-        }
+        public bool RemoveAfterClose { get; set; }
 
         [DataMember]
-        public bool ShowArea
-        {
-            get
-            {
-                return this.showArea;
-            }
-            set
-            {
-                this.showArea = value;
-            }
-        }
+        public bool ShowArea { get; set; }
     }
 }
-
