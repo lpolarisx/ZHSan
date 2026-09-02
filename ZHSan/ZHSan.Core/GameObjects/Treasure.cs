@@ -1,4 +1,5 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameManager;
 using GameObjects.Influences;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,19 +13,17 @@ namespace GameObjects;
 [DataContract]
 public class Treasure : GameObject
 {
-    #region DataMember
+    /// <summary>
+    /// 图像
+    /// </summary>
+    [DataMember]
+    public int Pic { get; set; }
 
     /// <summary>
     /// 价值
     /// </summary>
     [DataMember]
     public int Worth { get; set; }
-
-    /// <summary>
-    /// 图像
-    /// </summary>
-    [DataMember]
-    public int Pic { get; set; }
 
     /// <summary>
     /// 已出现
@@ -74,7 +73,42 @@ public class Treasure : GameObject
     [DataMember]
     public int Durability { get; set; }
 
-    #endregion
+    public Treasure() {}
+
+    public Treasure(TreasureConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        Pic = config.Pic;
+        Worth = config.Worth;
+        Available = config.Available;
+        HidePlaceIDString = config.HidePlaceIDString;
+        TreasureGroup = config.TreasureGroup;
+        AppearYear = config.AppearYear;
+        BelongedPersonIDString = config.BelongedPersonIDString;
+        InfluencesString = config.InfluencesString;
+        Description = config.Description;
+        Durability = config.Durability;
+    }
+
+    public TreasureConfig ToConfig()
+    {
+        return new TreasureConfig
+        {
+            Id = ID,
+            Name = Name,
+            Pic = Pic,
+            Worth = Worth,
+            Available = Available,
+            HidePlaceIDString = HidePlaceIDString,
+            TreasureGroup = TreasureGroup,
+            AppearYear = AppearYear,
+            BelongedPersonIDString = BelongedPersonIDString,
+            InfluencesString = InfluencesString,
+            Description = Description,
+            Durability = Durability,
+        };
+    }
 
     public Person BelongedPerson;
 

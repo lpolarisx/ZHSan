@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using GameEnums;
 
 namespace GameObjects.Influences.InfluenceKindPack;
 
@@ -12,7 +13,7 @@ public class InfluenceKind395 : InfluenceKind
             troop.OrientationTroop.SetRecoverFromChaos();
         }
         
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
             {
@@ -27,7 +28,7 @@ public class InfluenceKind395 : InfluenceKind
 
         var sum = 0;
         int pureFightingForce = source.PureFightingForce;
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, true))
+        foreach (var troop in source.GetAreaStratagemTroops(destination, true))
         {
             int num3 = source.GetStratagemSuccessChanceCredit(troop, false, false, false);
             if (num3 > 0)
@@ -41,6 +42,6 @@ public class InfluenceKind395 : InfluenceKind
 
     public override bool IsVaild(Influence influence, Troop troop)
     {
-        return troop.Status == TroopStatus.混乱 || troop.Status == TroopStatus.挑衅 || troop.Status == TroopStatus.伪报;
+        return troop.Status == TroopStatus.Chaos || troop.Status == TroopStatus.Attract || troop.Status == TroopStatus.Rumour;
     }
 }

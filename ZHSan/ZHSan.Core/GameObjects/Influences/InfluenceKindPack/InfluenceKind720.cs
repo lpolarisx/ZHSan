@@ -17,7 +17,7 @@ public class InfluenceKind720 : InfluenceKind
             enemy.SetRumour(troop.GenerateCastRumourDay(maxDays));
         }
 
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, inevitableSuccess, troop2.NeverBeIntoChaos || troop2.OutburstNeverBeIntoChaos || troop2.InvincibleRumour, troop2.InvincibleStratagemFromLowerIntelligence))
             {
@@ -32,7 +32,7 @@ public class InfluenceKind720 : InfluenceKind
 
         var sum = 0;
         int pureFightingForce = source.PureFightingForce;
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, false))
+        foreach (var troop in source.GetAreaStratagemTroops(destination))
         {
             int num3 = source.GetStratagemSuccessChanceCredit(troop, inevitableSuccess, troop.InvincibleAttract, troop.InvincibleStratagemFromLowerIntelligence);
             if (num3 > 0)

@@ -1,26 +1,28 @@
-﻿using GameObjects;
-using System;
-using System.IO;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
 using Platforms;
 using Tools;
 using GameManager;
+using GameObjects.PersonDetail;
+using System.Linq;
 
 namespace GameObjects
 {
     [DataContract]
-    public class YearTable : GameObjectList
+    public class YearTable
     {
         [DataMember]
-        private Dictionary<String, String> yearTableStrings;
+        private Dictionary<string, string> yearTableStrings;
 
-        public void Init()
+        private List<YearTableEntry> yearTableEntries = new();
+
+        public void Init(List<YearTableEntry> yearTableEntryList)
         {
             //TextReader tr = new StreamReader("Content/Data/yearTableStrings.txt");
 
-            yearTableStrings = new Dictionary<String, String>();
+            yearTableStrings = new Dictionary<string, string>();
+            yearTableEntries = yearTableEntryList;
 
             var fileName = "Content/Data/yearTableStrings.txt";
 
@@ -37,50 +39,92 @@ namespace GameObjects
             //    yearTableStrings[line.Substring(0, line.IndexOf(' '))] = line.Substring(line.IndexOf(' ') + 1);
             //}
         }
-        
-        public void addTableEntry(GameDate date, FactionList faction, string content, bool global)
+
+        private int GetNewId()
         {
-            this.Add(new YearTableEntry(this.GetFreeGameObjectID(), date, faction, content, global) as GameObject);
+            var lastEntry = yearTableEntries.LastOrDefault();
+
+            return lastEntry?.ID ?? 0;
+        }
+        
+        public void addTableEntry(GameDate date, List<Faction> factions, string content, bool global)
+        {
+            yearTableEntries.Add(new YearTableEntry(GetNewId(), date, factions, content, global));
         }
 
-        public void addTableEntry(int id, GameDate date, FactionList faction, string content, bool global)
+        public void addTableEntry(int id, GameDate date, List<Faction> factions, string content, bool global)
         {
-            this.Add(new YearTableEntry(id, date, faction, content, global) as GameObject);
+            yearTableEntries.Add(new YearTableEntry(id, date, factions, content, global));
         }
 
         public void AddTableEntry(YearTableEntry entry)
         {
-            this.Add(entry as GameObject);
+            yearTableEntries.Add(entry);
+        }
+
+        public List<YearTableEntry> GetYearTableEntries()
+        {
+            return yearTableEntries;
+        }
+
+        public List<YearTableEntry> GetFactionYearTable(Faction faction)
+        {
+            var result = new List<YearTableEntry>();
+
+            foreach (var yearTableEntry in yearTableEntries.ToArray())
+            {
+                if (yearTableEntry.Factions.Contains(faction))
+                {
+                    result.Add(yearTableEntry);
+                }
+            }
+            return result;
+        }
+
+        public List<YearTableEntry> GetFactionYearTableRecentYears(Faction faction, int year)
+        {
+            var result = new List<YearTableEntry>();
+
+            foreach (var yearTableEntry in yearTableEntries.ToArray())
+            {
+                if ((yearTableEntry.IsGloballyKnown || yearTableEntry.Factions.Contains(faction) || Session.GlobalVariables.SkyEye) 
+                    && yearTableEntry.Date.Year > year)
+                {
+                    result.Add(yearTableEntry);
+                }
+            }
+            return result;
         }
 
         public void addPersonInGameBiography(Person p, GameDate date, string content)
         {
             if (p.PersonBiography == null)
             {
-                p.PersonBiography = new PersonDetail.Biography();
-                p.PersonBiography.FactionColor = 52;
-                p.PersonBiography.AddBasicMilitaryKinds();
-                p.PersonBiography.Brief = "";
-                p.PersonBiography.History = "";
-                p.PersonBiography.Romance = "";
-                p.PersonBiography.InGame = "";
-                p.PersonBiography.ID = p.ID;
-                Session.Current.Scenario.AllBiographies.AddBiography(p.PersonBiography);
+                var biography = new Biography
+                {
+                    ID = p.ID,
+                    FactionColor = 52,
+                };
+                biography.AddBasicMilitaryKinds();
+
+                p.PersonBiography = biography;
+                Session.Current.Scenario.AllBiographies.Add(biography.ID, biography);
             }
             p.PersonBiography.InGame = date.Year + "年" + date.Month + "月：" + content + '\n' + p.PersonBiography.InGame;
         }
 
-        public static FactionList composeFactionList(params Faction[] f)
+        public static List<Faction> composeFactionList(params Faction[] factions)
         {
-            FactionList r = new FactionList();
-            foreach (Faction i in f)
+            var result = new List<Faction>();
+
+            foreach (var faction in factions)
             {
-                if (i != null)
+                if (faction != null)
                 {
-                    r.Add(i);
+                    result.Add(faction);
                 }
             }
-            return r;
+            return result;
         }
 
         public void addOccupyEntry(GameDate date, Troop occupier, Architecture occupied)
@@ -475,8 +519,7 @@ namespace GameObjects
 
         public void addObtainedTitleEntry(GameDate date, Person p, PersonDetail.Title title)
         {
-            this.addPersonInGameBiography(p, date,
-                String.Format(yearTableStrings["obtainTitle_p"], title.Name));
+            addPersonInGameBiography(p, date, string.Format(yearTableStrings["obtainTitle_p"], title.Name));
         }
 
         public void addAwardTitleEntry(GameDate date, Person p, PersonDetail.Title title)

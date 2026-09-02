@@ -30,7 +30,6 @@ namespace GameObjects
         {
             ID = config.Id;
             LevelId = config.LevelId;
-            facilityLevel = Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.GetValueOrDefault(config.LevelId);
             Endurance = config.Endurance;
         }
 
@@ -48,10 +47,10 @@ namespace GameObjects
         {
             ID = id;
             Endurance = level.Endurance;
-            facilityLevel = level;
+            LevelId = level.Id;
         }
 
-        private FacilityKindLevel facilityLevel;
+        private FacilityKindLevel facilityLevel => Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.GetValueOrDefault(LevelId);
 
         /// <summary>
         /// 耐久下降

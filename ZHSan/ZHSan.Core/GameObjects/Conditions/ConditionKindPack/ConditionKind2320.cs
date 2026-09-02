@@ -7,7 +7,7 @@ public class ConditionKind2320 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        return arch.Meinvkongjian - arch.Feiziliebiao.Count >= condition.GetIntParam();
+        return arch.Meinvkongjian - arch.GetConcubines().Count >= condition.GetIntParam();
     }
 
     public override bool CheckConditionKind(Condition condition, Faction faction)

@@ -98,7 +98,7 @@ public class Information : GameObject
         // 不是友军
         var notAnAlly = !BelongedArchitecture.IsFriendly(troop.BelongedFaction);
 
-        if (troop != null && troop.Status == TroopStatus.埋伏
+        if (troop != null && troop.Status == TroopStatus.Ambushing
             && ((BelongedArchitecture != null && notAnAlly) || (BelongedFaction != null && notAnAlly)))
         {
             DetectAmbush(troop);

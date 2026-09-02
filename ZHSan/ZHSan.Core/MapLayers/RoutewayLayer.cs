@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using WorldOfTheThreeKingdoms;
 using Microsoft.Xna.Framework.Graphics;
 using GameManager;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
@@ -26,7 +27,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 float num = 0f;
                 Color white = new Color((byte)200, (byte)200, (byte)200, (byte)200);
             //Label_064C:
-                foreach (Routeway routeway in Session.Current.Scenario.Routeways.GetList())
+                foreach (var routeway in Session.Current.Scenario.Routeways.Values)
                 {
                     if ((routeway == null) || (routeway.BelongedFaction == null))
                     {
@@ -127,12 +128,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                     //Label_064B: ;
                     }
                 }//结束Foreach (Routeway routeway in Session.Current.Scenario.Routeways.GetList())
-                foreach (Point point2 in Session.Current.Scenario.NoFoodDictionary.Positions.Keys)
+
+                foreach (var point in Session.Current.Scenario.NoFoodPositions.Keys.ToList())
                 {
-                    if (Session.Current.Scenario.IsPositionDisplayable(point2))
+                    if (Session.Current.Scenario.IsPositionDisplayable(point))
                     {
                         nullable = null;
-                        CacheManager.Draw(Session.MainGame.mainGameScreen.Textures.RoutewayTextures[4], Session.MainGame.mainGameScreen.mainMapLayer.GetThreeFourthsDestination(point2), nullable, white, 0f, Vector2.Zero, SpriteEffects.None, 0.849999f);
+                        CacheManager.Draw(Session.MainGame.mainGameScreen.Textures.RoutewayTextures[4], Session.MainGame.mainGameScreen.mainMapLayer.GetThreeFourthsDestination(point), nullable, white, 0f, Vector2.Zero, SpriteEffects.None, 0.849999f);
                     }
                 }
             }//结束IF

@@ -124,7 +124,7 @@ namespace GameObjects
         {
         }
 
-        public virtual void ArchitectureReleaseCaptiveAfterOccupied(Architecture architecture, PersonList persons)
+        public virtual void ArchitectureReleaseCaptiveAfterOccupied(Architecture architecture, List<Person> persons)
         {
         }
 

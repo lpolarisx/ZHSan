@@ -146,9 +146,6 @@ namespace WorldOfTheThreeKingdoms
             //Plugin.Plugins.FindPlugins(AppDomain.CurrentDomain.BaseDirectory + "GamePlugins");
             //this.mainGameScreen = new MainGameScreen(this);
             //base.Components.Add(this.mainGameScreen);
-
-            // 注册订阅者
-            var personSubscriber = new PersonSubscriber();
         }
 
         //private static bool AltComboPressed(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)

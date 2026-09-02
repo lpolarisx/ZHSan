@@ -1,6 +1,7 @@
 ﻿using GameManager;
 using System.Runtime.Serialization;
 using GameObjects.FactionDetail;
+using System.Collections.Generic;
 
 namespace GameObjects.ArchitectureDetail.EventEffect;
 
@@ -14,11 +15,13 @@ public class EventEffect2300 : EventEffectKind
         var factionId = faction.ID;
         var scenario = Session.Current.Scenario;
 
-        Faction otherFaction = scenario.Factions.GetGameObject(eventEffect.GetIntParam2()) as Faction;
-        var otherFactionId = otherFaction.ID;
+        var otherFactionId = eventEffect.GetIntParam2();
+        var otherFaction = scenario.Factions.GetValueOrDefault(otherFactionId);
 
-        GameObjectList relations = scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(factionId);
-        foreach (DiplomaticRelation relation in relations)
+        if (otherFaction == null) return;
+
+        var diplomaticRelations = scenario.GetDiplomaticRelationListByFactionID(factionId);
+        foreach (var relation in diplomaticRelations)
         {
             if ((relation.RelationFaction1ID == factionId && relation.RelationFaction2ID == otherFactionId) || (relation.RelationFaction1ID == otherFactionId && relation.RelationFaction2ID == factionId))
             {

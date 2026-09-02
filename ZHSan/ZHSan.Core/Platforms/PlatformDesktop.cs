@@ -237,7 +237,25 @@ namespace Platforms
 
         public override string[] GetFiles(string dir, bool all)
         {
-            return Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
+            if (!Directory.Exists(dir))
+            {
+                return Array.Empty<string>();
+            }
+
+            return Directory.GetFiles(dir, "*.*", all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+        }
+
+        public override string[] GetFilesBasic(string dir, bool all = false)
+        {
+            if (!Directory.Exists(dir))
+            {
+                return Array.Empty<string>();
+            }
+
+            return Directory.GetFiles(
+                dir,
+                "*.*",
+                all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
         }
 
         public string[] GetDirectoryNames(string dir)

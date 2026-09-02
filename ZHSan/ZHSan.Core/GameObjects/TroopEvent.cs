@@ -1,83 +1,181 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameEnums;
+using GameEvents;
+using GameManager;
 using GameObjects.Conditions;
 using GameObjects.TroopDetail.EventEffect;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Text;
 
 namespace GameObjects
 {
     [DataContract]
     public class TroopEvent : GameObject
     {
+        private EventManager eventManager = EventManager.Instance;
+
+        /// <summary>
+        /// 已发生过
+        /// </summary>
         [DataMember]
-        public int AfterEventHappened = -1;
+        public bool Happened { get; set; }
 
-        public TroopEvent AfterHappenedEvent;
-
+        /// <summary>
+        /// 可以重复
+        /// </summary>
         [DataMember]
-        public EventCheckAreaKind CheckArea;
+        public bool Repeatable { get; set; }
 
+        /// <summary>
+        /// 某事件发生之后：需要在某事件发生过之后才能触发
+        /// </summary>
         [DataMember]
-        public string ConditionsString { get; set; }
+        public int AfterEventHappened { get; set; } = -1;
 
-        public List<Condition> Conditions { get; set; } = new();
+        /// <summary>
+        /// 发动人物：发动事件的人物，所有效果将以本人物所在部队为中心。如果为-1，则每个部队都可以触发此事件。
+        /// </summary>
+        [DataMember]
+        public int LaunchPersonString { get; set; }
 
-        //[DataMember]
-        public List<PersonDialog> Dialogs = new List<PersonDialog>();
-
+        /// <summary>
+        /// 人物对话：每个人物ID后跟随其要说的话。以空格分隔。留空则无对话。
+        /// </summary>
         [DataMember]
         public string dialogString { get; set; }
 
+        /// <summary>
+        /// 发动条件：发动事件的部队所需要满足的条件，留空则为满足。
+        /// </summary>
         [DataMember]
-        public string EffectAreasString { get; set; }
+        public string ConditionsString { get; set; }
 
-        public List<TroopEffectArea> EffectAreas = new List<TroopEffectArea>();
-
+        /// <summary>
+        /// 发动几率：0--100
+        /// </summary>
         [DataMember]
-        public string EffectPersonsString { get; set; }
+        public int HappenChance { get; set; }
 
-        public List<TroopEffectPerson> EffectPersons = new List<TroopEffectPerson>();
-
-        private int happenChance;
-        private bool happened;
-
-        [DataMember]
-        public int LaunchPersonString { get; set; }
-        public Person LaunchPerson;
-        private bool repeatable;
-
-        [DataMember]
-        public string SelfEffectsString { get; set; }
-
-        public List<TroopDetail.EventEffect.EventEffect> SelfEffects { get; set; } = new();
-
+        /// <summary>
+        /// 目标人物列表：每个关系之后跟随一个人物ID。0：非友好；1：友好。留空则不在搜索范围检查此条件。
+        /// </summary>
         [DataMember]
         public string TargetPersonsString { get; set; }
 
-        public List<PersonRelation> TargetPersons = new List<PersonRelation>();
-
+        /// <summary>
+        /// 自身效果：发动部队的效果列表
+        /// </summary>
         [DataMember]
-        public String Image = "";
+        public string SelfEffectsString { get; set; }
 
+        /// <summary>
+        /// 特定人物效果：每个人物ID后跟随一个效果种类。以空格分隔。
+        /// </summary>
         [DataMember]
-        public String Sound = "";
+        public string EffectPersonsString { get; set; }
+
+        /// <summary>
+        /// 特定范围效果：范围类别：
+        /// 0：视野内所有敌军；
+        /// 1：视野内所有友军；
+        /// 2：攻击范围内所有敌军；
+        /// 3：攻击范围内所有友军；
+        /// 4：周围八格内所有敌军；
+        /// 5：周围八格内所有友军；
+        /// 每个范围类别后跟随一个效果种类。以空格分隔。
+        /// </summary>
+        [DataMember]
+        public string EffectAreasString { get; set; }
+
+        /// <summary>
+        /// 图片。图片档案放在Content目录Textures目录GameComponents目录tupianwenzi目录Data目录tupian里
+        /// </summary>
+        [DataMember]
+        public string Image { get; set; }
+
+        /// <summary>
+        /// 音效。音效档案放在Content目录Textures目录GameComponents目录tupianwenzi目录Data目录yinxiao里
+        /// </summary>
+        [DataMember]
+        public string Sound { get; set; }
+
+        /// <summary>
+        /// 0--视野内 1--周边八格 2--攻击范围 用来搜索目标人物列表
+        /// </summary>
+        [DataMember]
+        public EventCheckAreaKind CheckArea { get; set; }
 
         [DataMember]
         public string TryToShowString { get; set; }
 
-        public event ApplyTroopEvent OnApplyTroopEvent;
+        public TroopEvent AfterHappenedEvent;
+
+        public List<Condition> Conditions { get; set; } = new();
+
+        //[DataMember]
+        public List<PersonDialog> Dialogs = new();
+        
+        public Person LaunchPerson;
+
+        private List<TroopEffectArea> effectAreas = new();
+
+        private List<TroopEffectPerson> effectPersons = new();
+
+        private List<PersonRelation> TargetPersons = new();
+
+        public List<EventEffect> SelfEffects { get; set; } = new();
+
+        public TroopEvent(TroopEventConfig config)
+        {
+            ID = config.Id;
+            Name = config.Name;
+            Happened = config.Happened;
+            Repeatable = config.Repeatable;
+            AfterEventHappened = config.AfterEventHappened;
+            LaunchPersonString = config.LaunchPersonString;
+            dialogString = config.DialogString;
+            ConditionsString = config.ConditionsString;
+            HappenChance = config.HappenChance;
+            TargetPersonsString = config.TargetPersonsString;
+            SelfEffectsString = config.SelfEffectsString;
+            EffectPersonsString = config.EffectPersonsString;
+            EffectAreasString = config.EffectAreasString;
+            Image = config.Image;
+            Sound = config.Sound;
+            CheckArea = config.CheckArea;
+            TryToShowString = config.TryToShowString;
+        }
+
+        public TroopEventConfig ToConfig()
+        {
+            return new TroopEventConfig
+            {
+                Id = ID,
+                Name = Name,
+                Happened = Happened,
+                Repeatable = Repeatable,
+                AfterEventHappened = AfterEventHappened,
+                LaunchPersonString = LaunchPersonString,
+                DialogString = dialogString,
+                ConditionsString = ConditionsString,
+                HappenChance = HappenChance,
+                TargetPersonsString = TargetPersonsString,
+                SelfEffectsString = SelfEffectsString,
+                EffectPersonsString = EffectPersonsString,
+                EffectAreasString = EffectAreasString,
+                Image = Image,
+                Sound = Sound,
+                CheckArea = CheckArea,
+                TryToShowString = TryToShowString,
+            };
+        }
 
         public void Init()
         {
-            EffectAreas = new List<TroopEffectArea>();
-
-            EffectPersons = new List<TroopEffectPerson>();
-
-            SelfEffects = new List<GameObjects.TroopDetail.EventEffect.EventEffect>();
-
-            TargetPersons = new List<PersonRelation>();
+            eventManager = EventManager.Instance;
 
             if (Dialogs == null)
             {
@@ -87,39 +185,43 @@ namespace GameObjects
 
         public void ApplyEventDialogs(Troop troop)
         {
-            if (this.OnApplyTroopEvent != null)
-            {
-                this.OnApplyTroopEvent(this, troop);
-            }
+            eventManager.Publish(new ApplyTroopEvent(this, troop));
         }
 
         public void ApplyEventEffects(Troop self)
         {
-            if (((self != null) && !self.Destroyed) && (!this.Happened || this.Repeatable))
+            if (self != null && !self.Destroyed && (!Happened || Repeatable))
             {
                 Troop troopByPositionNoCheck;
-                this.Happened = true;
-                TroopList list = new TroopList();
-                if (this.SelfEffects.Count > 0)
+                Happened = true;
+
+                var list = new List<Troop>();
+                if (SelfEffects.Count > 0)
                 {
                     list.Add(self);
-                    foreach (GameObjects.TroopDetail.EventEffect.EventEffect effect in this.SelfEffects)
+                    foreach (var effect in SelfEffects)
                     {
                         effect.ApplyEffect(self.Leader);
                     }
                 }
-                foreach (TroopEffectPerson person in this.EffectPersons)
+
+                foreach (var person in effectPersons)
                 {
-                    person.Effect.ApplyEffect(person.EffectPerson);
-                    if ((person.EffectPerson.LocationTroop != null) && (list.GetGameObject(person.EffectPerson.LocationTroop.ID) == null))
+                    var effectPerson = person.EffectPerson;
+                    var locationTroop = effectPerson.LocationTroop;
+
+                    person.Effect.ApplyEffect(effectPerson);
+                    if (locationTroop != null && !list.Contains(locationTroop))
                     {
-                        list.Add(person.EffectPerson.LocationTroop);
+                        list.Add(locationTroop);
                     }
                 }
-                List<TroopEffectArea> list2 = new List<TroopEffectArea>();
-                List<TroopEffectArea> list3 = new List<TroopEffectArea>();
-                List<TroopEffectArea> list4 = new List<TroopEffectArea>();
-                foreach (TroopEffectArea area in this.EffectAreas)
+
+                var list2 = new List<TroopEffectArea>();
+                var list3 = new List<TroopEffectArea>();
+                var list4 = new List<TroopEffectArea>();
+
+                foreach (var area in effectAreas)
                 {
                     switch (area.Kind)
                     {
@@ -237,7 +339,8 @@ namespace GameObjects
                         }
                     }
                 }
-                foreach (Troop troop in list)
+                
+                foreach (var troop in list)
                 {
                     Troop.CheckTroopRout(troop);
                 }
@@ -263,56 +366,49 @@ namespace GameObjects
                 }
                 if ((this.LaunchPerson == null) || troop.Persons.HasGameObject(this.LaunchPerson))
                 {
-                    if (!this.CheckCondition(troop))
-                    {
-                        return false;
-                    }
-                    if (this.TargetPersons.Count <= 0)
-                    {
-                        return true;
-                    }
+                    if (!CheckCondition(troop)) return false;
+
+                    if (TargetPersons.Count <= 0) return true;
+
                     GameArea baseViewArea = null;
                     switch (this.CheckArea)
                     {
-                        case EventCheckAreaKind.视野:
+                        case EventCheckAreaKind.Vision:
                             baseViewArea = troop.BaseViewArea;
                             break;
 
-                        case EventCheckAreaKind.八格:
+                        case EventCheckAreaKind.EightAdjacentTiles:
                             baseViewArea = GameArea.GetArea(troop.Position, 1, true);
                             break;
 
-                        case EventCheckAreaKind.攻击范围:
+                        case EventCheckAreaKind.AttackRange:
                             baseViewArea = troop.OffenceArea;
                             break;
                     }
-                    if (baseViewArea != null)
+                    if (baseViewArea == null || troop.BelongedFaction == null) return false;
+                    
+                    int num = 0;
+                    foreach (var point in baseViewArea.Area)
                     {
-                        int num = 0;
-                        foreach (Point point in baseViewArea.Area)
+                        if (!troop.BelongedFaction.IsPositionKnown(point)) continue;
+                        
+                        var troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
+                        if (troopByPositionNoCheck == null) continue;
+                        
+                        foreach (var relation in TargetPersons)
                         {
-                            if (troop.BelongedFaction != null)
+                            if (relation.Relation == PersonRelationKind.友好 
+                                && troop.IsFriendly(troopByPositionNoCheck.BelongedFaction) 
+                                && troopByPositionNoCheck.Persons.HasGameObject(relation.SpeakingPerson))
                             {
-                                if (troop.BelongedFaction.IsPositionKnown(point))
-                                {
-                                    Troop troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
-                                    if (troopByPositionNoCheck != null)
-                                    {
-                                        foreach (PersonRelation relation in this.TargetPersons)
-                                        {
-                                            if (((relation.Relation == PersonRelationKind.友好) == troop.IsFriendly(troopByPositionNoCheck.BelongedFaction)) && troopByPositionNoCheck.Persons.HasGameObject(relation.SpeakingPerson))
-                                            {
-                                                num++;
-                                            }
-                                        }
-                                    }
-                                }
+                                num++;
                             }
                         }
-                        return (num == this.TargetPersons.Count);
                     }
+                    return num == TargetPersons.Count;
                 }
             }
+
             return false;
         }
 
@@ -323,9 +419,9 @@ namespace GameObjects
 
         public void LoadDialogFromString(Dictionary<int, Person> persons, string data)
         {
-            if (data == null) return;
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            if (string.IsNullOrEmpty(data)) return;
+
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             this.Dialogs.Clear();
             for (int i = 0; i < strArray.Length; i += 2)
             {
@@ -342,34 +438,35 @@ namespace GameObjects
                     item.SpeakingPersonID = -1;
                 }
                 item.Text = strArray[i + 1];
-                this.Dialogs.Add(item);
+                Dialogs.Add(item);
             }
         }
 
-        public void LoadEffectAreaFromString(Dictionary<int, TroopDetail.EventEffect.EventEffect> eventEffects, string data)
+        public void LoadEffectAreaFromString(Dictionary<int, EventEffect> eventEffects, string data)
         {
-            EffectAreas.Clear();
+            var troopEffectAreas = new List<TroopEffectArea>();
 
             var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                var effectArea = int.Parse(strArray[i]);
                 var eventEffectId = int.Parse(strArray[i + 1]);
 
                 if (eventEffects.TryGetValue(eventEffectId, out var eventEffect))
                 {
-                    EffectAreas.Add(new TroopEffectArea
+                    troopEffectAreas.Add(new TroopEffectArea
                     {
-                        Kind = (EffectAreaKind)effectArea,
+                        Kind = (EffectAreaKind)int.Parse(strArray[i]),
                         Effect = eventEffect,
                     });
                 }
             }
+
+            effectAreas = troopEffectAreas;
         }
 
-        public void LoadEffectPersonFromString(Dictionary<int, Person> persons, Dictionary<int, TroopDetail.EventEffect.EventEffect> eventEffects, string data)
+        public void LoadEffectPersonFromString(Dictionary<int, Person> persons, Dictionary<int, EventEffect> eventEffects, string data)
         {
-            EffectPersons.Clear();
+            var troopEffectPersons = new List<TroopEffectPerson>();
 
             var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < strArray.Length; i += 2)
@@ -379,131 +476,78 @@ namespace GameObjects
 
                 if (persons.TryGetValue(personId, out var person) && eventEffects.TryGetValue(eventEffectId, out var eventEffect))
                 {
-                    EffectPersons.Add(new TroopEffectPerson
+                    troopEffectPersons.Add(new TroopEffectPerson
                     {
                         EffectPerson = person,
                         Effect = eventEffect,
                     });
                 }
             }
+
+            effectPersons = troopEffectPersons;
         }
 
         public void LoadTargetPersonFromString(Dictionary<int, Person> persons, string data)
         {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.TargetPersons.Clear();
+            var personRelations = new List<PersonRelation>();
+
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                if (!persons.ContainsKey(int.Parse(strArray[i + 1]))) continue;
-                PersonRelation item = new PersonRelation();
-                item.Relation = (PersonRelationKind) int.Parse(strArray[i]);
-                item.SpeakingPerson = persons[int.Parse(strArray[i + 1])];
-                this.TargetPersons.Add(item);
+                int personId = int.Parse(strArray[i + 1]);
+
+                if (persons.TryGetValue(personId, out var person))
+                {
+                    personRelations.Add(new PersonRelation
+                    {
+                        SpeakingPerson = person,
+                        Relation = (PersonRelationKind)int.Parse(strArray[i])
+                    });
+                }
             }
+
+            TargetPersons = personRelations;
         }
 
         public string SaveDialogToString()//剧本的部队事件的对话武将默认全部变成了0，而且目前源码转换中，并没有这一块的安排
         {
-            string str = "";
-            foreach (PersonDialog dialog in this.Dialogs)
+            var sb = new StringBuilder();
+            foreach (var dialog in Dialogs)
             {
-                object obj2;
-                if (dialog.SpeakingPerson != null)
-                {
-                    obj2 = str;
-                    str = string.Concat(new object[] { obj2, dialog.SpeakingPerson.ID, " ", dialog.Text, " " });
-                }
-                else
-                {
-                    obj2 = str;
-                    str = string.Concat(new object[] { obj2, -1, " ", dialog.Text, " " });
-                }
+                int personId = dialog.SpeakingPerson?.ID ?? -1;
+                sb.Append(personId).Append(' ').Append(dialog.Text).Append(' ');
             }
-            return str;
+            return sb.ToString();
         }
 
         public string SaveEffectAreaToString()
         {
-            string str = "";
-            foreach (TroopEffectArea area in this.EffectAreas)
+            var sb = new StringBuilder();
+            foreach (var area in effectAreas)
             {
-                object obj2 = str;
-                str = string.Concat(new object[] { obj2, (int) area.Kind, " ", area.Effect.ID, " " });
+                sb.Append((int)area.Kind).Append(' ').Append(area.Effect.ID).Append(' ');
             }
-            return str;
+            return sb.ToString();
         }
 
         public string SaveEffectPersonToString()
         {
-            string str = "";
-            foreach (TroopEffectPerson person in this.EffectPersons)
+            var sb = new StringBuilder();
+            foreach (var person in effectPersons)
             {
-                object obj2 = str;
-                str = string.Concat(new object[] { obj2, person.EffectPerson.ID, " ", person.Effect.ID, " " });
+                sb.Append(person.EffectPerson.ID).Append(' ').Append(person.Effect.ID).Append(' ');
             }
-            return str;
-        }
-
-        public string SaveSelfEffectToString()
-        {
-            string str = "";
-            foreach (GameObjects.TroopDetail.EventEffect.EventEffect effect in this.SelfEffects)
-            {
-                str = str + effect.ID + " ";
-            }
-            return str;
+            return sb.ToString();
         }
 
         public string SaveTargetPersonToString()
         {
-            string str = "";
-            foreach (PersonRelation relation in this.TargetPersons)
+            var sb = new StringBuilder();
+            foreach (var relation in TargetPersons)
             {
-                object obj2 = str;
-                str = string.Concat(new object[] { obj2, (int) relation.Relation, " ", relation.SpeakingPerson.ID, " " });
+                sb.Append(relation.Relation).Append(' ').Append(relation.SpeakingPerson.ID).Append(' ');
             }
-            return str;
+            return sb.ToString();
         }
-
-        [DataMember]
-        public int HappenChance
-        {
-            get
-            {
-                return this.happenChance;
-            }
-            set
-            {
-                this.happenChance = value;
-            }
-        }
-        [DataMember]
-        public bool Happened
-        {
-            get
-            {
-                return this.happened;
-            }
-            set
-            {
-                this.happened = value;
-            }
-        }
-        [DataMember]
-        public bool Repeatable
-        {
-            get
-            {
-                return this.repeatable;
-            }
-            set
-            {
-                this.repeatable = value;
-            }
-        }
-
-        public delegate void ApplyTroopEvent(TroopEvent te, Troop troop);
     }
 }
-

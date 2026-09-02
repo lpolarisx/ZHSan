@@ -28,6 +28,6 @@ public class ConditionKind5075 : ConditionKind
 
     private bool Check(Condition condition)
     {
-        return Session.Current.Scenario.Persons.Count < condition.GetIntParam();
+        return Session.Current.Scenario.AllPersons.Count < condition.GetIntParam();
     }
 }

@@ -14,6 +14,7 @@ using GameObjects.ArchitectureDetail;
 using Platforms;
 using GameManager;
 using Tools;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.Resources
 {

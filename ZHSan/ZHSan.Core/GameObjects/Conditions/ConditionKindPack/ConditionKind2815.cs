@@ -10,7 +10,7 @@ public class ConditionKind2815 : ConditionKind
     {
         var personId = condition.GetIntParam();
 
-        foreach (Person person in arch.NoFactionPersons)
+        foreach (var person in arch.GetNoFactionPersons())
         {
             if (person.ID == personId && person.Status == PersonStatus.NoFaction)
             {

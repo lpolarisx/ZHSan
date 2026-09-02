@@ -1,4 +1,5 @@
 ﻿using GameManager;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GameObjects.Conditions.ConditionKindPack;
@@ -8,8 +9,12 @@ public class ConditionKind500 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        Treasure t = Session.Current.Scenario.Treasures.GetGameObject(condition.GetIntParam()) as Treasure;
-        return person.Treasures.GameObjects.Contains(t);
+        int treasureId = condition.GetIntParam();
+        var treasure = Session.Current.Scenario.Treasures.GetValueOrDefault(treasureId);
+
+        if (treasure == null) return false;
+
+        return person.Treasures.Contains(treasure);
     }
 
     public override bool CheckConditionKind(Condition condition, Architecture architecture)

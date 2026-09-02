@@ -15,13 +15,19 @@ public class EventManager
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <param name="handler"></param>
-    public void Subscribe<T>(Action<T> handler)
+    public IDisposable Subscribe<T>(Action<T> handler)
     {
         var type = typeof(T);
-        if (!_handlers.ContainsKey(type))
-            _handlers[type] = new List<Delegate>();
 
-        _handlers[type].Add(handler);
+        if (!_handlers.TryGetValue(type, out var handlers))
+        {
+            handlers = new List<Delegate>();
+            _handlers[type] = handlers;
+        }
+
+        handlers.Add(handler);
+
+        return new Subscription<T>(this, handler);
     }
 
     /// <summary>
@@ -70,5 +76,33 @@ public class EventManager
             tasks.Add(Task.Run(() => handler.DynamicInvoke(message)));
 
         await Task.WhenAll(tasks);
+    }
+
+    private sealed class Subscription<T> : IDisposable
+    {
+        private EventManager eventManager;
+        private Action<T> handler;
+        private bool disposed;
+
+        public Subscription(EventManager eventManager, Action<T> handler)
+        {
+            this.eventManager = eventManager;
+            this.handler = handler;
+        }
+
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            disposed = true;
+
+            eventManager.Unsubscribe(handler);
+
+            eventManager = null;
+            handler = null;
+        }
     }
 }

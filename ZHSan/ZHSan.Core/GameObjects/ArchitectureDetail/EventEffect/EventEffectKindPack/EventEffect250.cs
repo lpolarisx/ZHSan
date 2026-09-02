@@ -1,4 +1,5 @@
 ﻿using GameManager;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GameObjects.ArchitectureDetail.EventEffect;
@@ -8,9 +9,8 @@ public class EventEffect250 : EventEffectKind
 {
     public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        FactionList factionlist = Session.Current.Scenario.Factions;
-
-        Faction targetFaction = factionlist.GetGameObject(eventEffect.GetIntParam()) as Faction;
+        int factionId = eventEffect.GetIntParam();
+        var targetFaction = Session.Current.Scenario.Factions.GetValueOrDefault(factionId);
         /*
         if (targetFaction != null)
         {

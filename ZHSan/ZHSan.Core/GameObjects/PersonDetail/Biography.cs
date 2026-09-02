@@ -1,4 +1,5 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameManager;
 using GameObjects.TroopDetail;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -8,8 +9,6 @@ namespace GameObjects.PersonDetail;
 [DataContract]
 public class Biography : GameObject
 {
-    public List<MilitaryKind> MilitaryKinds { get; set; } = new();
-
     /// <summary>
     /// 简要
     /// </summary>
@@ -45,6 +44,35 @@ public class Biography : GameObject
     /// </summary>
     [DataMember]
     public string MilitaryKindsString { get; set; }
+
+    public List<MilitaryKind> MilitaryKinds { get; set; } = new();
+
+    public Biography() {}
+
+    public Biography(BiographyConfig config)
+    {
+        ID = config.Id;
+        Brief = config.Brief;
+        FactionColor = config.FactionColor;
+        History = config.History;
+        Romance = config.Romance;
+        InGame = config.InGame;
+        MilitaryKindsString = config.MilitaryKindsString;
+    }
+
+    public BiographyConfig ToConfig()
+    {
+        return new BiographyConfig
+        {
+            Id = ID,
+            Brief = Brief,
+            FactionColor = FactionColor,
+            History = History,
+            Romance = Romance,
+            InGame = InGame,
+            MilitaryKindsString = MilitaryKindsString,
+        };
+    }
 
     public void AddBasicMilitaryKinds()
     {

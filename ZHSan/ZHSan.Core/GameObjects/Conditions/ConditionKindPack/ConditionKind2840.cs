@@ -11,7 +11,7 @@ public class ConditionKind2840 : ConditionKind
 
         var leader = arch.BelongedFaction.Leader;
 
-        foreach (Person person in arch.Feiziliebiao)
+        foreach (var person in arch.GetConcubines())
         {
             if (person == leader)
             {

@@ -8,6 +8,7 @@ using GameObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using GameManager;
+using GameEnums;
 
 namespace AirViewPlugin
 {
@@ -93,7 +94,7 @@ namespace AirViewPlugin
                         this.drawTroop( gameTime);
                     }
                 }
-                foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+                foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                 {
                     Color white = Color.White;
                     if (architecture.BelongedFaction != null)
@@ -124,7 +125,7 @@ namespace AirViewPlugin
         {
             Color color = Color.White;
             if (troop.Destroyed) return;
-            if (troop.Status == TroopStatus.埋伏) return;
+            if (troop.Status == TroopStatus.Ambushing) return;
             if (troop.BelongedFaction != null)
             {
                 color = troop.BelongedFaction.FactionColor;
@@ -137,21 +138,22 @@ namespace AirViewPlugin
 
         private void drawTroop(GameTime gameTime)
         {
+            var factions = new List<Faction>();
+
             if (Session.GlobalVariables.SkyEye)
             {
-                foreach (Faction f in Session.Current.Scenario.Factions)
-                {
-                    foreach (Troop t in f.GetVisibleTroops())
-                    {
-                        renderTroop( gameTime, t);
-                    }
-                }
+                factions = Session.Current.Scenario.Factions.Values.ToList();
             }
             else if (Session.Current.Scenario.CurrentPlayer != null)
             {
-                foreach (Troop t in Session.Current.Scenario.CurrentPlayer.GetVisibleTroops())
+                factions.Add(Session.Current.Scenario.CurrentPlayer);
+            }
+
+            foreach (var faction in factions)
+            {
+                foreach (var troop in faction.GetVisibleTroops())
                 {
-                    renderTroop( gameTime, t);
+                    renderTroop( gameTime, troop);
                 }
             }
         }

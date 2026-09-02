@@ -22,24 +22,25 @@ public class InfluenceKind398 : InfluenceKind
     public override int GetCreditWithPosition(Troop source, out Point? position)
     {
         position = new Point(0, 0);
-        TroopList hostileTroopsInView = source.GetHostileTroopsInView();
-        TroopList list2 = new TroopList();
-        foreach (Troop troop in hostileTroopsInView)
+        
+        var troops = new List<Troop>();
+        var hostileTroopsInView = source.GetHostileTroopsInView();
+
+        foreach (var troop in hostileTroopsInView)
         {
-            if (troop.IsInArchitecture || !troop.DaysToReachPosition(source.Position, 1) || (troop.Army.Kind.Type == MilitaryType.Navy))
+            if (troop.IsInArchitecture || !troop.DaysToReachPosition(source.Position, 1) || troop.Army.Kind.Type == MilitaryType.Navy)
             {
-                list2.Add(troop);
+                troops.Add(troop);
             }
         }
-        foreach (Troop troop in list2)
+        foreach (var troop in troops)
         {
             hostileTroopsInView.Remove(troop);
         }
-        if (hostileTroopsInView.Count == 0)
-        {
-            return 0;
-        }
-        List<Point> orientations = new List<Point>();
+        
+        if (hostileTroopsInView.Count == 0) return 0;
+
+        var orientations = new List<Point>();
         int num = 0;
         foreach (Troop troop in hostileTroopsInView)
         {
@@ -50,25 +51,23 @@ public class InfluenceKind398 : InfluenceKind
         num4 = Math.Min(num4, 100);
        
         int num2 = Square(num4) / 60 * num / source.FightingForce / 100;
-        if (num2 > 0)
+
+        if (num2 <= 0) return num2;
+
+        var points = new List<Point>();
+
+        foreach (var point in source.GetStratagemArea(source.Position).Area)
         {
-            GameArea area = new GameArea();
-            foreach (Point point in source.GetStratagemArea(source.Position).Area)
+            if (!Session.Current.Scenario.PositionIsOnFire(point) && Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
             {
-                if (!Session.Current.Scenario.PositionIsOnFire(point) && Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
-                {
-                    area.Area.Add(point);
-                }
-            }
-            if (area.Count > 0)
-            {
-                position = Session.Current.Scenario.GetClosestPosition(area, orientations);
-            }
-            else
-            {
-                num2 = 0;
+                points.Add(point);
             }
         }
+
+        if (points.Count == 0) return 0;
+
+        position = Session.Current.Scenario.GetClosestPosition(points, orientations);
+
         return num2;
     }
 }

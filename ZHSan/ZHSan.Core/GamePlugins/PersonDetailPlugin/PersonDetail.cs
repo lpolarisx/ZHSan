@@ -364,10 +364,12 @@
                 if (num2 > -1)
                 {
                     int num3 = num2;
-                    if (this.ShowingPerson.BelongedFaction != null && this.ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID).Count > num3)
+                    var treasures = ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID);
+
+                    if (this.ShowingPerson.BelongedFaction != null && treasures.Count > num3)
                     {
-                        Treasure treasure = this.ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID)[num3] as Treasure;
-                        foreach (Treasure t in this.ShowingPerson.TreasureListforGroup(CurrentTreasureGID))
+                        var treasure = treasures[num3];
+                        foreach (var t in ShowingPerson.TreasureListforGroup(CurrentTreasureGID))
                         {
                             this.ShowingPerson.LoseTreasure(t);
                             this.ShowingPerson.BelongedFaction.Leader.ReceiveTreasure(t);
@@ -377,7 +379,7 @@
                         this.TreasureText.Clear();
                         //this.TreasureText.AddText("可赏赐宝物列表", Color.Khaki);
                         //this.TreasureText.AddNewLine();
-                        foreach (Treasure t in this.ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID))
+                        foreach (var t in treasures)
                         {                            
                                 this.TreasureText.AddText(t.Name, Color.Khaki);
                                 this.TreasureText.AddText(t.InfluenceString, Color.SkyBlue);

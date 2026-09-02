@@ -1,78 +1,218 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameEvents;
+using GameManager;
 using GameObjects.ArchitectureDetail.EventEffect;
 using GameObjects.Conditions;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
+using System.Text;
 
 namespace GameObjects
 {
     [DataContract]
-    public class PersonIdDialog
-    {
-        [DataMember]
-        public int id;
-        [DataMember]
-        public string dialog;
-        [DataMember]
-        public string yesdialog;
-        [DataMember]
-        public string nodialog;
-    }
-
-    [DataContract]
     public class Event : GameObject
     {
+        private EventManager eventManager = EventManager.Instance;
+
+        /// <summary>
+        /// 已发生过
+        /// </summary>
         [DataMember]
-        public int AfterEventHappened = -1;
+        public bool happened { get; set; }
+
+        /// <summary>
+        /// 可以重复
+        /// </summary>
+        [DataMember]
+        public bool repeatable { get; set; }
+
+        /// <summary>
+        /// 不重要 不重要的事件不会出现对话，除非涉及君主
+        /// </summary>
+        [DataMember]
+        public bool Minor { get; set; }
+
+        /// <summary>
+        /// 某事件发生之后 需要在某事件发生过之后才能触发
+        /// </summary>
+        [DataMember]
+        public int AfterEventHappened { get; set; } = -1;
+
         public TroopEvent AfterHappenedEvent;
-        [DataMember]
-        public int happenChance;
 
+        /// <summary>
+        /// 发动几率 实际机率为1除以此数
+        /// </summary>
         [DataMember]
-        public bool happened;
-        [DataMember]
-        public bool repeatable;
+        public int happenChance { get; set; }
 
+        /// <summary>
+        /// 全势力可见
+        /// </summary>
         [DataMember]
-        public String nextScenario;
+        public bool GloballyDisplayed { get; set; }
 
+        /// <summary>
+        /// 开始年
+        /// </summary>
+        [DataMember]
+        public int StartYear { get; set; }= 0;
+
+        /// <summary>
+        /// 开始月
+        /// </summary>
+        [DataMember]
+        public int StartMonth { get; set; } = 1;
+
+        /// <summary>
+        /// 结束年
+        /// </summary>
+        [DataMember]
+        public int EndYear { get; set; } = 99999;
+
+        /// <summary>
+        /// 结束月
+        /// </summary>
+        [DataMember]
+        public int EndMonth { get; set; } = 12;
+
+        /// <summary>
+        /// 武将编号 指定可能触发的武将ID，以空格分隔，先指定第k个武将，后跟随一个武将ID，如0 100 0 234 1 346 2 -1 可在同一个k指定多个武将，则代表列表中任何一个 -1代表任何武将
+        /// </summary>
         [DataMember]
         public string personString { get; set; }
 
-        public Dictionary<int, List<Person>> person;
-
+        /// <summary>
+        /// 武将条件 触发的武将需符合的条件，以空格分隔，先指定第k个武将，后跟随一个武将ID
+        /// </summary>
         [DataMember]
         public string PersonCondString { get; set; }
 
-        public Dictionary<int, List<Condition>> personCond;
-
+        /// <summary>
+        /// 建筑编号 触发时，指定所有武将所在建筑的ID，以空格分隔 留空代表任何建筑
+        /// </summary>
         [DataMember]
         public string architectureString { get; set; }
-        public ArchitectureList architecture;
 
+        /// <summary>
+        /// 建筑条件 触发时，所有武将所在的建筑需符合的条件 如使用武将条件，将检查该建筑的县令
+        /// </summary>
         [DataMember]
         public string architectureCondString { get; set; }
 
-        public List<Condition> architectureCond;
-
+        /// <summary>
+        /// 势力编号 触发时，指定所有武将所在势力的ID，以空格分隔 留空代表任何势力
+        /// </summary>
         [DataMember]
         public string factionString { get; set; }
 
-        public FactionList faction;
-
+        /// <summary>
+        /// 势力条件 触发时，所有武将所在的势力需符合的条件 如使用武将条件，将检查该势力的君主
+        /// </summary>
         [DataMember]
         public string factionCondString { get; set; }
+
+        /// <summary>
+        /// 对话 先指定第k个武将，后跟随一段对话 以空格分隔 可使用%k表示第k个武将的姓名
+        /// </summary>
+        [DataMember]
+        public string dialogString { get; set; }
+
+        /// <summary>
+        /// 效果 先指定第k个武将 后跟随一个效果种类 以空格分隔
+        /// </summary>
+        [DataMember]
+        public string effectString { get; set; }
+
+        /// <summary>
+        /// 建筑效果 武将所在建筑效果，以空格分隔 如使用武将效果，将应用于该建筑的县令
+        /// </summary>
+        [DataMember]
+        public string architectureEffectString { get; set; }
+
+        /// <summary>
+        /// 势力效果 武将所在势力效果，以空格分隔 如使用武将效果，将应用于该势力的君主
+        /// </summary>
+        [DataMember]
+        public string factionEffectIDString { get; set; }
+
+        /// <summary>
+        /// 图片 图片档案放在Content目录Textures目录GameComponents目录tupianwenzi目录Data目录tupian里
+        /// </summary>
+        [DataMember]
+        public string Image { get; set; }
+
+        /// <summary>
+        /// 音效 音效档案放在Content目录Textures目录GameComponents目录tupianwenzi目录Data目录yinxiao里
+        /// </summary>
+        [DataMember]
+        public string Sound { get; set; }
+
+        /// <summary>
+        /// 选是的对话 先指定第k个武将，后跟随一段对话 以空格分隔 可使用%k表示第k个武将的姓名
+        /// </summary>
+        [DataMember]
+        public string yesdialogString { get; set; }
+
+        /// <summary>
+        /// 选否的对话 先指定第k个武将，后跟随一段对话 以空格分隔 可使用%k表示第k个武将的姓名
+        /// </summary>
+        [DataMember]
+        public string nodialogString { get; set; }
+
+        /// <summary>
+        /// 选是的效果 如果填上，这事件会有选项 选是后执行这些效果 先指定第k个武将，后跟随一个效果种类 以空格分隔
+        /// </summary>
+        [DataMember]
+        public string yesEffectString { get; set; }
+
+        /// <summary>
+        /// 选否的效果 如果填上，这事件会有选项 选否后执行这些效果 先指定第k个武将，后跟随一个效果种类 以空格分隔
+        /// </summary>
+        [DataMember]
+        public string noEffectString { get; set; }
+
+        /// <summary>
+        /// 选是的建筑效果 武将所在建筑效果，以空格分隔 如使用武将效果，将应用于该建筑的县令
+        /// </summary>
+        [DataMember]
+        public string yesArchitectureEffectString { get; set; }
+
+        /// <summary>
+        /// 选否的建筑效果 武将所在建筑效果，以空格分隔 如使用武将效果，将应用于该建筑的县令
+        /// </summary>
+        [DataMember]
+        public string noArchitectureEffectString { get; set; }
+
+        /// <summary>
+        /// 武将列传 先指定第k个武将，后跟随一段武将列传 以空格分隔 可使用%k表示第k个武将的姓名
+        /// </summary>
+        [DataMember]
+        public string scenBiographyString { get; set; }
+
+        /// <summary>
+        /// 下一剧本，暂时无用
+        /// </summary>
+        [DataMember]
+        public string nextScenario { get; set; }
+
+        [DataMember]
+        public string TryToShowString { get; set; }
+
+        public Dictionary<int, List<Person>> person;
+
+        public Dictionary<int, List<Condition>> personCond;
+
+        public List<Architecture> Architectures { get; set; }
+
+        public List<Condition> architectureCond;
+
+        public List<Faction> Factions { get; set; } = new();
 
         public List<Condition> factionCond;
         
         public List<PersonIdDialog> dialog;
-
-        [DataMember]
-        public string dialogString { get; set; }
-
-        [DataMember]
-        public string effectString { get; set; }
 
         public Dictionary<int, List<EventEffect>> effect;
         public List<PersonDialog> matchedDialog;
@@ -81,72 +221,25 @@ namespace GameObjects
         public List<PersonDialog> matchedyesDialog = new List<PersonDialog>();
         public List<PersonDialog> matchednoDialog = new List<PersonDialog>();
         
-        public List<PersonIdDialog> yesdialog = new List<PersonIdDialog>();
-        public List<PersonIdDialog> nodialog = new List<PersonIdDialog>();
-
-        [DataMember]
-        public string yesdialogString { get; set; }
-        [DataMember]
-        public string nodialogString { get; set; }
+        private List<PersonIdDialog> yesDialogs = new();
+        public List<PersonIdDialog> nodialog = new();
 
         public Dictionary<Person, List<EventEffect>> matchedYesEffect;
         public Dictionary<Person, List<EventEffect>> matchedNoEffect;
 
-        [DataMember]
-        public string yesEffectString { get; set; }
-
-        [DataMember]
-        public string noEffectString { get; set; }
-
         public Dictionary<int, List<EventEffect>> yesEffect = new Dictionary<int,List<EventEffect>>();
         public Dictionary<int, List<EventEffect>> noEffect = new Dictionary<int,List<EventEffect>>();
 
-        [DataMember]
-        public string architectureEffectString { get; set; }
-
         public List<EventEffect> architectureEffect = new List<EventEffect>();
 
-        [DataMember]
-        public string factionEffectIDString { get; set; }
-
         public List<EventEffect> factionEffect = new List<EventEffect>();
-
-        [DataMember]
-        public string yesArchitectureEffectString { get; set; }
-
-        [DataMember]
-        public string noArchitectureEffectString { get; set; }
 
         public List<EventEffect> yesArchitectureEffect = new List<EventEffect>();
         public List<EventEffect> noArchitectureEffect = new List<EventEffect>();
 
-        public List<PersonIdDialog> scenBiography = new List<PersonIdDialog>() ;
-
-        [DataMember]
-        public string scenBiographyString { get; set; }
+        public List<PersonIdDialog> scenBiography = new List<PersonIdDialog>();
         
-        public List<PersonDialog> matchedScenBiography = new List<PersonDialog> () ;
-
-        [DataMember]
-        public String Image = "";
-        [DataMember]
-        public String Sound = "";
-        [DataMember]
-        public bool GloballyDisplayed = false;
-        [DataMember]
-        public int StartYear = 0;
-        [DataMember]
-        public int StartMonth = 1;
-        [DataMember]
-        public int EndYear = 99999;
-        [DataMember]
-        public int EndMonth = 12;
-
-        [DataMember]
-        public bool Minor = false;
-
-        [DataMember]
-        public string TryToShowString { get; set; }
+        public List<PersonDialog> matchedScenBiography = new List<PersonDialog> ();
 
         private bool involveLeader = false;
         public bool InvolveLeader
@@ -157,7 +250,81 @@ namespace GameObjects
             }
         }
 
-        public event ApplyEvent OnApplyEvent;
+        public Event(EventConfig config)
+        {
+            ID = config.Id;
+            Name = config.Name;
+            happened = config.Happened;
+            repeatable = config.Repeatable;
+            Minor = config.Minor;
+            AfterEventHappened = config.AfterEventHappened;
+            happenChance = config.HappenChance;
+            GloballyDisplayed = config.GloballyDisplayed;
+            StartYear = config.StartYear;
+            StartMonth = config.StartMonth;
+            EndYear = config.EndYear;
+            EndMonth = config.EndMonth;
+            personString = config.PersonString;
+            PersonCondString = config.PersonCondString;
+            architectureString = config.ArchitectureString;
+            architectureCondString = config.ArchitectureCondString;
+            factionString = config.FactionString;
+            dialogString = config.DialogString;
+            effectString = config.EffectString;
+            architectureEffectString = config.ArchitectureEffectString;
+            factionEffectIDString = config.FactionEffectIDString;
+            Image = config.Image;
+            Sound = config.Sound;
+            yesdialogString = config.YesDialogString;
+            nodialogString = config.NoDialogString;
+            yesEffectString = config.YesEffectString;
+            noEffectString = config.NoEffectString;
+            yesArchitectureEffectString = config.YesArchitectureEffectString;
+            noArchitectureEffectString = config.NoArchitectureEffectString;
+            scenBiographyString = config.ScenBiographyString;
+            nextScenario = config.NextScenario;
+            TryToShowString = config.TryToShowString;
+        }
+        
+        public EventConfig ToConfig()
+        {
+            return new EventConfig
+            {
+                Id = ID,
+                Name = Name,
+                Happened = happened,
+                Repeatable = repeatable,
+                Minor = Minor,
+                AfterEventHappened = AfterEventHappened,
+                HappenChance = happenChance,
+                GloballyDisplayed = GloballyDisplayed,
+                StartYear = StartYear,
+                StartMonth = StartMonth,
+                EndYear = EndYear,
+                EndMonth = EndMonth,
+                PersonString = personString,
+                PersonCondString = PersonCondString,
+                ArchitectureString = architectureString,
+                ArchitectureCondString = architectureCondString,
+                FactionString = factionString,
+                FactionCondString = factionCondString,
+                DialogString = dialogString,
+                EffectString = effectString,
+                ArchitectureEffectString = architectureEffectString,
+                FactionEffectIDString = factionEffectIDString,
+                Image = Image,
+                Sound = Sound,
+                YesDialogString = yesdialogString,
+                NoDialogString = nodialogString,
+                YesEffectString = yesEffectString,
+                NoEffectString = noEffectString,
+                YesArchitectureEffectString = yesArchitectureEffectString,
+                NoArchitectureEffectString = noArchitectureEffectString,
+                ScenBiographyString = scenBiographyString,
+                NextScenario = nextScenario,
+                TryToShowString = TryToShowString,
+            };
+        }
 
         public void Init()
         {
@@ -177,10 +344,8 @@ namespace GameObjects
             {
                 dialog = new List<PersonIdDialog>();
             }
-            if (yesdialog == null)
-            {
-                yesdialog = new List<PersonIdDialog>();
-            }
+            yesDialogs = new();
+            
             if (nodialog == null)
             {
                 nodialog = new List<PersonIdDialog>();
@@ -194,10 +359,8 @@ namespace GameObjects
         public void ApplyEventDialogs(Architecture a, Screen screen)
         {
             Session.Current.Scenario = Session.Current.Scenario;
-            if (this.OnApplyEvent != null)
-            {
-                this.OnApplyEvent(this, a, screen);
-            }
+            eventManager.Publish(new ArchitectureEvent(this, a, screen));
+            
             foreach (PersonDialog i in matchedScenBiography) 
             {
                 if (i.SpeakingPerson != null)
@@ -231,9 +394,8 @@ namespace GameObjects
 
         public void DoYesApplyEvent(Architecture a)
         {
-            if (this.yesEffect != null)
+            if (yesEffect != null)
             {
-
                 foreach (KeyValuePair<Person, List<EventEffect>> i in matchedYesEffect)
                 {
                     foreach (EventEffect j in i.Value)
@@ -241,25 +403,21 @@ namespace GameObjects
                         j.ApplyEffect(i.Key, this);
                     }
                 }
-                foreach (PersonDialog yesdialog in this.matchedyesDialog)
+
+                foreach (PersonDialog dialog in matchedyesDialog)
                 {
-                    if (yesdialog.SpeakingPerson != null)
-                    {
-                        Session.MainGame.mainGameScreen.xianshishijiantupian(yesdialog.SpeakingPerson, null, yesdialog.Text, true);
-                    }
-                    else
-                    {
-                        Session.MainGame.mainGameScreen.xianshishijiantupian(a.BelongedFaction.Leader, null, yesdialog.Text, true);
-                    }
+                    var person = dialog.SpeakingPerson ?? a.BelongedFaction.Leader;
+
+                    Session.MainGame.mainGameScreen.xianshishijiantupian(person, null, dialog.Text, true);
                 }
             }
-            if (this.yesArchitectureEffect != null)
+
+            if (yesArchitectureEffect != null)
             {
                 foreach (EventEffect i in yesArchitectureEffect)
                 {
                     i.ApplyEffect(a, this);
                 }
-
             }
         }
 
@@ -356,7 +514,6 @@ namespace GameObjects
                 }
             }
 
-            // check person in the architecture
             foreach (KeyValuePair<int, List<Condition>> i in this.personCond)
             {
                 foreach (Person p in allPersons)
@@ -431,18 +588,22 @@ namespace GameObjects
             }
 
             matchedyesDialog = new List<PersonDialog>();
-            foreach (PersonIdDialog i in this.yesdialog)
-            {
-                if (!matchedPersons.ContainsKey(i.id)) return false;
 
-                PersonDialog pd = new PersonDialog();
-                pd.SpeakingPerson = matchedPersons[i.id];
-                pd.Text = i.yesdialog;
+            foreach (var dialog in yesDialogs)
+            {
+                if (!matchedPersons.ContainsKey(dialog.id)) return false;
+
+                string text = dialog.yesdialog;
                 for (int j = 0; j < matchedPersons.Count; ++j)
                 {
-                    pd.Text = pd.Text.Replace("%" + j, ' ' + matchedPersons[j].Name + ' ');
+                    text = text.Replace("%" + j, ' ' + matchedPersons[j].Name + ' ');
                 }
-                matchedyesDialog.Add(pd);
+                
+                matchedyesDialog.Add(new PersonDialog
+                {
+                    SpeakingPerson = matchedPersons[dialog.id],
+                    Text = text,
+                });
             }
 
             matchednoDialog = new List<PersonDialog>();
@@ -513,13 +674,8 @@ namespace GameObjects
                 return false;
             }
 
-            if (this.AfterEventHappened >= 0)
-            {
-                if (!(Session.Current.Scenario.AllEvents.GetGameObject(this.AfterEventHappened) as Event).happened)
-                {
-                    return false;
-                }
-            }
+            var afterEvent = Session.Current.Scenario.AllEvents.GetValueOrDefault(AfterEventHappened);
+            if (afterEvent == null || !afterEvent.happened) return false;
 
             if (Session.Current.Scenario.Date.Year < this.StartYear || Session.Current.Scenario.Date.Year > this.EndYear) return false;
 
@@ -536,45 +692,32 @@ namespace GameObjects
             if (!Condition.CheckConditionList(this.architectureCond, a)) return false;
             if (!Condition.CheckConditionList(this.factionCond, a.BelongedFaction)) return false;
 
-            if (architecture.Count > 0 || faction.Count > 0)
+            if (Factions.Count > 0)
             {
                 bool contains = false;
-                if (architecture != null)
+                foreach (var architecture in Architectures)
                 {
-                    foreach (Architecture archi in this.architecture)
+                    if (architecture.ID == a.ID)
                     {
-                        if (archi.ID == a.ID)
+                        contains = true;
+                    }
+                }
+
+                if (Factions != null)
+                {
+                    foreach (var faction in Factions)
+                    {
+                        if (a.BelongedFaction != null && faction != null && faction.ID == a.BelongedFaction.ID)
                         {
                             contains = true;
                         }
                     }
-                }
-
-                if (faction != null)
-                {
-                    foreach (Faction f in faction)
-                    {
-                        if (a.BelongedFaction != null && f != null)
-                        {
-                            if (f.ID == a.BelongedFaction.ID)
-                            {
-                                contains = true;
-                            }
-                        }
-                    }
 
                 }
-                if (contains)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+
+                return contains;
             }
             
-           
             return this.matchEventPersons(a);
         }
 
@@ -598,153 +741,109 @@ namespace GameObjects
             return false;
         }
 
-        public void LoadPersonIdFromString(PersonList persons, string data)
+        public Dictionary<int, List<Person>> LoadPersonIdFromString(Dictionary<int, Person> persons, string data)
         {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var result = new Dictionary<int, List<Person>>();
+            string[] strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
-            this.person = new Dictionary<int, List<Person>>();
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                int n = int.Parse(strArray[i]);
-                int pid = int.Parse(strArray[i + 1]);
-                if (!this.person.ContainsKey(n))
+                int key = int.Parse(strArray[i]);
+                int personId = int.Parse(strArray[i + 1]);
+
+                if (!result.ContainsKey(key))
                 {
-                    this.person[n] = new List<Person>();
+                    result.Add(key, new List<Person>());
                 }
-                if (pid != -1)
+
+                if (persons.ContainsKey(personId))
                 {
-                    this.person[n].Add(persons.GetGameObject(pid) as Person);
-                }
-                else
-                {
-                    this.person[n].Add(null);
+                    result[key].Add(persons[personId]);
                 }
             }
-        }
 
-        public void LoadArchitectureFromString(ArchitectureList archs, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.architecture = new ArchitectureList();
-            foreach (string i in strArray)
-            {
-                this.architecture.Add(archs.GetGameObject(int.Parse(i)) as Architecture);
-            }
-        }
-
-        public void LoadFactionFromString(FactionList factions, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.faction = new FactionList();
-            foreach (string i in strArray)
-            {
-                this.faction.Add(factions.GetGameObject(int.Parse(i)) as Faction);
-            }
-        }
-
-        public void LoadDialogFromString(string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.dialog = new List<PersonIdDialog>();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                PersonIdDialog d = new PersonIdDialog();
-                d.id = int.Parse(strArray[i]);
-                d.dialog = strArray[i + 1];
-                this.dialog.Add(d);
-            }
+            return result;
         }
 
         public void LoadyesDialogFromString(string data)
         {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var result = new List<PersonIdDialog>();
 
-            this.yesdialog = new List<PersonIdDialog>();
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                PersonIdDialog d = new PersonIdDialog();
-                d.id = int.Parse(strArray[i]);
-                d.yesdialog = strArray[i + 1];
-                this.yesdialog.Add(d);
+                result.Add(new PersonIdDialog
+                {
+                    id = int.Parse(strArray[i]),
+                    yesdialog = strArray[i + 1],
+                });
             }
+
+            yesDialogs = result;
         }
 
-        public void LoadnoDialogFromString(string data)
+        public List<PersonIdDialog> LoadDialogsFromString(string data)
         {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var result = new List<PersonIdDialog>();
 
-            this.nodialog = new List<PersonIdDialog>();
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                PersonIdDialog d = new PersonIdDialog();
-                d.id = int.Parse(strArray[i]);
-                d.nodialog = strArray[i + 1];
-                this.nodialog.Add(d);
+                result.Add(new PersonIdDialog
+                {
+                    id = int.Parse(strArray[i]),
+                    dialog = strArray[i + 1],
+                });
             }
-        }
-        
-        public void LoadScenBiographyFromString(string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
 
-            this.scenBiography = new List<PersonIdDialog>();
-            for (int i = 0; i < strArray.Length; i += 2)
-            {
-                PersonIdDialog d = new PersonIdDialog();
-                d.id = int.Parse(strArray[i]);
-                d.dialog = strArray[i + 1];
-                this.scenBiography.Add(d);
-            }
+            return result;
         }
 
         public string SaveDialogToString()
         {
-            string result = "";
-            foreach (PersonIdDialog i in this.dialog)
-            {
-                result += i.id + " " + i.dialog + " ";
-            }
+            var result = SaveDialogToString(dialog);
+
             return result;
         }
 
         public string SaveyesDialogToString()
         {
-            string result = "";
-            foreach (PersonIdDialog i in this.yesdialog)
+            var sb = new StringBuilder();
+
+            foreach (var personIdDialog in yesDialogs)
             {
-                result += i.id + " " + i.yesdialog + " ";
+                sb.Append(personIdDialog.id).Append(' ').Append(personIdDialog.yesdialog).Append(' ');
             }
-            return result;
+
+            return sb.ToString();
         }
 
         public string SavenoDialogToString()
         {
-            string result = "";
-            foreach (PersonIdDialog i in this.nodialog)
-            {
-                result += i.id + " " + i.nodialog + " ";
-            }
+            var result = SaveDialogToString(nodialog);
+
             return result;
         }
         
         public string SaveScenBiographyToString()
         {
-            string result = "";
-            foreach (PersonIdDialog i in this.scenBiography)
-            {
-                result += i.id + " " + i.dialog + " ";
-            }
+            var result = SaveDialogToString(scenBiography);
+
             return result;
+        }
+
+        private string SaveDialogToString(List<PersonIdDialog> dialogs)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var personIdDialog in dialogs)
+            {
+                sb.Append(personIdDialog.id).Append(' ').Append(personIdDialog.dialog).Append(' ');
+            }
+
+            return sb.ToString();
         }
         
        /*
@@ -757,6 +856,5 @@ namespace GameObjects
             return false ;
         }
         */
-        public delegate void ApplyEvent(Event te, Architecture a, Screen screen);
     }
 }

@@ -2,6 +2,7 @@
 using GameObjects.TroopDetail;
 using GameManager;
 using GameDatas;
+using GameEnums;
 
 namespace GameObjects.MapDetail;
 
@@ -100,16 +101,16 @@ public class TerrainDetail : GameObject
     {
         switch (season)
         {
-            case GameSeason.春:
+            case GameSeason.Spring:
                 return (int)(FoodDeposit * FoodSpringRate);
 
-            case GameSeason.夏:
+            case GameSeason.Summer:
                 return (int)(FoodDeposit * FoodSummerRate);
 
-            case GameSeason.秋:
+            case GameSeason.Autumn:
                 return (int)(FoodDeposit * FoodAutumnRate);
 
-            case GameSeason.冬:
+            case GameSeason.Winter:
                 return (int)(FoodDeposit * FoodWinterRate);
         }
         return FoodDeposit;
@@ -122,16 +123,16 @@ public class TerrainDetail : GameObject
 
         switch (season)
         {
-            case GameSeason.春:
+            case GameSeason.Spring:
                 return (int)(num * FoodSpringRate);
 
-            case GameSeason.夏:
+            case GameSeason.Summer:
                 return (int)(num * FoodSummerRate);
 
-            case GameSeason.秋:
+            case GameSeason.Autumn:
                 return (int)(num * FoodAutumnRate);
 
-            case GameSeason.冬:
+            case GameSeason.Winter:
                 return (int)(num * FoodWinterRate);
         }
         return num;

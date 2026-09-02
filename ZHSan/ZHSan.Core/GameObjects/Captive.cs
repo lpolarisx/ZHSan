@@ -1,108 +1,87 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
-using GameGlobal;
 using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
 using GameManager;
 using GameEnums;
+using System.Linq;
+using GameObjects.PersonDetail;
+using System.Collections.Generic;
+using GameEvents;
+using GameGlobal;
+using GameDatas;
 
 namespace GameObjects
 {
     [DataContract]
     public class Captive : GameObject
     {
-        private Faction captiveFaction;
-        public Faction CaptiveFaction
-        {
-            get
-            {
-                if (this.CaptiveFactionID == -1) return null;
+        private EventManager eventManager = EventManager.Instance;
 
-                if (captiveFaction == null)
-                {
-                    captiveFaction = (Faction) Session.Current.Scenario.Factions.GetGameObject(CaptiveFactionID);
-                }
-                return captiveFaction;
-            }
-            set
-            {
-                if (value != null)
-                {
-                    this.CaptiveFactionID = value.ID;
-                }
-                else
-                {
-                    this.CaptiveFactionID = -1;
-                }
-                captiveFaction = value;
-            }
-        }
-        // the captive's original faction
+        public Faction CaptiveFaction => Session.Current.Scenario.Factions.GetValueOrDefault(CaptiveFactionID);
 
         [DataMember]
-        public int CaptiveFactionID;
+        public int CaptiveFactionID { get; set; }
 
-        private Person captivePerson;
-        public Person CaptivePerson
-        {
-            get
-            {
-                if (captivePerson == null)
-                {
-                    captivePerson = (Person)Session.Current.Scenario.Persons.GetGameObject(CaptivePersonID);
-                }
-                return captivePerson;
-            }
-            set
-            {
-                CaptivePersonID = value.ID;
-                captivePerson = value;
-            }
-        }
+        public Person CaptivePerson => Session.Current.Scenario.AllPersons.GetValueOrDefault(CaptivePersonID);
 
         [DataMember]
-        public int CaptivePersonID;
+        public int CaptivePersonID { get; set; }
 
         public Architecture RansomArchitecture;
 
         [DataMember]
-        public int RansomArchitectureID;
+        public int RansomArchitectureID { get; set; }
 
         [DataMember]
-        public int RansomArriveDays;
+        public int RansomArriveDays { get; set; }
 
-        private int ransomFund;
+        public Captive() {}
 
-        public event PlayerRelease OnPlayerRelease;
+        public Captive(CaptiveConfig config)
+        {
+            ID = config.Id;
+            CaptiveFactionID = config.CaptiveFactionId;
+            CaptivePersonID = config.CaptivePersonId;
+            RansomArchitectureID = config.RansomArchitectureId;
+            RansomArriveDays = config.RansomArriveDays;
+            RansomFund = config.RansomFund;
+        }
 
-        public event Release OnRelease;
-
-        public event SelfRelease OnSelfRelease;
-
-        public event Escape OnEscape;
+        public CaptiveConfig ToConfig()
+        {
+            return new CaptiveConfig
+            {
+                Id = ID,
+                CaptiveFactionId = CaptiveFactionID,
+                CaptivePersonId = CaptivePersonID,
+                RansomArchitectureId = RansomArchitectureID,
+                RansomArriveDays = RansomArriveDays,
+                RansomFund = RansomFund,
+            };
+        }
 
         public void ClearEvents()
         {
-            OnPlayerRelease = null;
-            OnRelease = null;
-            OnSelfRelease = null;
-            OnEscape = null;
         }
 
         public static Captive Create(Person person, Faction capturingFaction)
         {
-            if (person.BelongedFaction == capturingFaction)
+            if (person.BelongedFaction == capturingFaction) return null;
+
+            var captives = Session.Current.Scenario.GetCaptives();
+
+            var captive = new Captive
             {
-                return null;
-            }
-            Captive captive = new Captive();
-            captive.ID = Session.Current.Scenario.Captives.GetFreeGameObjectID();
-            captive.CaptivePerson = person;
+                ID = captives.Count > 0 ? captives.Max(x => x.ID) + 1 : 0,
+                CaptivePersonID = person.ID,
+                CaptiveFactionID = person.BelongedFaction?.ID ?? -1
+            };
+
             person.DecreaseReputation(50);
-            captive.CaptiveFaction = person.BelongedFaction;
-            person.SetBelongedCaptive(captive, GameObjects.PersonDetail.PersonStatus.Captive);
+            person.SetBelongedCaptive(captive, PersonStatus.Captive);
             person.HeldCaptiveCount++;
-            Session.Current.Scenario.Captives.AddCaptiveWithEvent(captive);
+            // Session.Current.Scenario.Captives.AddCaptiveWithEvent(captive);
+
             return captive;
         }
 
@@ -126,26 +105,12 @@ namespace GameObjects
             }
         }
 
-        public Architecture LocationArchitecture
-        {
-            get
-            {
-                return this.CaptivePerson.LocationArchitecture;
-            }
-        }
+        public Architecture LocationArchitecture => CaptivePerson.LocationArchitecture;
 
-        public Troop LocationTroop
-        {
-            get
-            {
-                return this.CaptivePerson.LocationTroop;
-            }
-        }
+        public Troop LocationTroop => CaptivePerson.LocationTroop;
 
         public void DayEvent()
         {
-
-
             if (((this.BelongedFaction != null) && (this.CaptiveFaction != null)) && (this.RansomArriveDays > 0))
             {
                 //this.RansomArriveDays--;
@@ -158,18 +123,14 @@ namespace GameObjects
                         {
                             if (Session.Current.Scenario.IsPlayer(this.BelongedFaction))
                             {
-                                if (!(!this.BelongedFaction.AutoRefuse))
+                                if (BelongedFaction.AutoRefuse)
                                 {
-                                    this.ReturnRansom();
+                                    ReturnRansom();
                                 }
-                                else if (this.OnPlayerRelease != null)
-                                {
-                                    this.OnPlayerRelease(this.BelongedFaction, this.CaptiveFaction, this);
-                                }
-                                else
-                                {
-                                    Session.MainGame.mainGameScreen.CaptivePlayerRelease(this.BelongedFaction, this.CaptiveFaction, this);
-                                }
+
+                                eventManager.Publish(new PlayerReleaseEvent(BelongedFaction, CaptiveFaction, this));
+
+                                // Session.MainGame.mainGameScreen.CaptivePlayerRelease(BelongedFaction, CaptiveFaction, this);
                             }
                             else
                             {
@@ -208,7 +169,7 @@ namespace GameObjects
 
         private void DoRelease()
         {
-            Point position = this.CaptivePerson.Position;
+            Point position = CaptivePerson.Position;
             if (this.CaptivePerson.BelongedFaction != null && this.CaptivePerson.BelongedFaction.Capital != null)
             {
                 Faction f = this.CaptivePerson.BelongedFaction;
@@ -250,54 +211,45 @@ namespace GameObjects
 
         public void ReleaseCaptive()
         {
-            if (this.OnRelease != null)
-            {
-                this.OnRelease(true, this.BelongedFaction, this.CaptiveFaction, this.CaptivePerson);
-            }
-            this.RansomArchitecture.IncreaseFund(this.RansomFund);
-            this.DoRelease();
+            eventManager.Publish(new ReleaseEvent(true, BelongedFaction, CaptiveFaction, CaptivePerson));
+            RansomArchitecture.IncreaseFund(RansomFund);
+            DoRelease();
         }
 
         public void ReturnRansom()
         {
-            if (this.OnRelease != null)
-            {
-                this.OnRelease(false, this.BelongedFaction, this.CaptiveFaction, this.CaptivePerson);
-            }
-            this.DoReturn();
+            eventManager.Publish(new ReleaseEvent(false, BelongedFaction, CaptiveFaction, CaptivePerson));
+            DoReturn();
         }
 
         public void SelfReleaseCaptive()
         {
-            if (this.OnSelfRelease != null)
+            eventManager.Publish(new SelfReleaseEvent(this));
+
+            if (BelongedFaction != null && CaptiveFaction != null)
             {
-                this.OnSelfRelease(this);
+                Session.Current.Scenario.ChangeDiplomaticRelation(BelongedFaction.ID, CaptiveFaction.ID, ReleaseRelation / 400);
             }
-            if (this.BelongedFaction !=null && this.CaptiveFaction != null)
+            if (GameObject.GetChance(CaptivePerson.Karma + CaptivePerson.PersonalLoyalty * 10))
             {
-                Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedFaction.ID, this.CaptiveFaction.ID, this.ReleaseRelation / 400);
+                BelongedFaction.Leader.IncreaseKarma(1);
             }
-            if (GameObject.GetChance(this.CaptivePerson.Karma + this.CaptivePerson.PersonalLoyalty * 10))
-            {
-                this.BelongedFaction.Leader.IncreaseKarma(1);
-            }
-            this.DoReturn();
-            this.DoRelease();
+            DoReturn();
+            DoRelease();
         }
 
         public void CaptiveEscape()
         {
-            if (this.OnEscape != null)
+            eventManager.Publish(new EscapeEvent(this));
+            CaptivePerson.FleeCount++;
+
+            if (BelongedFaction != null)
             {
-                this.OnEscape(this);
+                Session.MainGame.mainGameScreen.xianshishijiantupian(CaptivePerson, BelongedFaction.Name, TextMessageKind.CaptiveEscape, "CaptiveEscape", "", "", false);
             }
-            this.CaptivePerson.FleeCount++;
-            if (this.BelongedFaction != null)
-            {
-                Session.MainGame.mainGameScreen.xianshishijiantupian(this.CaptivePerson, this.BelongedFaction.Name, TextMessageKind.CaptiveEscape, "CaptiveEscape", "", "", false);
-            }
-            this.DoReturn();
-            this.DoRelease();
+
+            DoReturn();
+            DoRelease();
         }
 
         public void CaptiveEscapeNoHint()
@@ -328,85 +280,57 @@ namespace GameObjects
 
         public void TransformToNoFactionCaptive()
         {
-            if ((this.CaptivePerson != null) && (this.CaptivePerson.BelongedFaction != null))
+            if (CaptivePerson != null && CaptivePerson.BelongedFaction != null)
             {
-                this.CaptiveFaction = null;
-
+                CaptiveFactionID = -1;
             }
-
         }
 
-        public void TransformToNoFaction()  //变成在野人物
+        // 变成在野人物
+        public void TransformToNoFaction()  
         {
-            if (this.CaptivePerson != null)
+            if (CaptivePerson == null) return;
+
+            CaptivePerson.Status = PersonStatus.NoFaction;
+
+            if (LocationTroop != null)
             {
-                this.CaptivePerson.Status = GameObjects.PersonDetail.PersonStatus.NoFaction;
-                if (this.LocationTroop == null)
-                {
-                    
-                }
-                else
-                {
-                    this.CaptivePerson.LocationArchitecture = Session.Current.Scenario.Architectures[GameObject.Random(Session.Current.Scenario.Architectures.Count)] as Architecture;
-                    if ((this.CaptivePerson.BelongedFaction != null) && this.BelongedFaction.Capital != null)
-                    {
-                        this.CaptivePerson.MoveToArchitecture(this.BelongedFaction.Capital, this.CaptivePerson.LocationTroop.Position, false, true, null);
-                    }
-                    else if (Session.Current.Scenario.Architectures.Count > 0)
-                    {
-                        this.CaptivePerson.MoveToArchitecture(Session.Current.Scenario.Architectures[GameObject.Random(Session.Current.Scenario.Architectures.Count)] as Architecture, this.CaptivePerson.LocationTroop.Position, false, true, null);
-                    }
-                }
-                this.CaptivePerson.SetBelongedCaptive(null, GameObjects.PersonDetail.PersonStatus.NoFaction);
+                CaptivePerson.LocationArchitecture = StaticMethods.GetRandomItem(Session.Current.Scenario.Architectures.Values.ToList());
+
+                var architecture = CaptivePerson.BelongedFaction != null && BelongedFaction.Capital != null
+                                   ? BelongedFaction.Capital
+                                   : StaticMethods.GetRandomItem(Session.Current.Scenario.Architectures.Values.ToList());
+
+                CaptivePerson.MoveToArchitecture(architecture, CaptivePerson.LocationTroop.Position, false, true, null);
             }
+            
+            CaptivePerson.SetBelongedCaptive(null, PersonStatus.NoFaction);
         }
 
-        public string BelongedFactionString
-        {
-            get
-            {
-                return ((this.BelongedFaction != null) ? this.BelongedFaction.Name : "----");
-            }
-        }
+        public string BelongedFactionString => BelongedFaction?.Name ?? "----";
 
-        public string CaptiveFactionString
-        {
-            get
-            {
-                return ((this.CaptiveFaction != null) ? this.CaptiveFaction.Name : "----");
-            }
-        }
+        public string CaptiveFactionString => CaptiveFaction?.Name ?? "----";
 
         public string LocationString
         {
             get
             {
-                if (!Session.Current.Scenario.IsCurrentPlayer(this.CaptiveFaction) || Session.GlobalVariables.SkyEye)
+                if (!Session.Current.Scenario.IsCurrentPlayer(CaptiveFaction) || Session.GlobalVariables.SkyEye)
                 {
-                    if (this.LocationArchitecture != null)
+                    if (LocationArchitecture != null)
                     {
-                        return this.LocationArchitecture.Name;
+                        return LocationArchitecture.Name;
                     }
-                    if (this.LocationTroop != null)
+                    if (LocationTroop != null)
                     {
-                        return this.LocationTroop.DisplayName;
+                        return LocationTroop.DisplayName;
                     }
                 }
                 return "----";
             }
         }
 
-        public int Loyalty
-        {
-            get
-            {
-                if (this.CaptivePerson != null)
-                {
-                    return this.CaptivePerson.Loyalty;
-                }
-                return 100;
-            }
-        }
+        public int Loyalty => CaptivePerson?.Loyalty ?? 100;
 
         public string LoyaltyString
         {
@@ -428,43 +352,21 @@ namespace GameObjects
         {
             get
             {
-                if (this.CaptivePerson != null && this.CaptivePerson.LocationTroop == null)
+                if (CaptivePerson != null && CaptivePerson.LocationTroop == null)
                 {
-                    if (this.CaptivePerson.ArrivingDays > 0)
+                    if (CaptivePerson.ArrivingDays > 0)
                     {
-                        return (this.CaptivePerson.ArrivingDays * Session.Current.Scenario.Parameters.DayInTurn + "天");
+                        return $"{CaptivePerson.ArrivingDays * Session.Current.Scenario.Parameters.DayInTurn}天";
                     }
-                    
                 }
                 
                 return "----";
             }
         }
 
-        public string RansomArriveDaysString
-        {
-            get
-            {
-                if (this.CaptivePerson != null)
-                {
-                    if (this.RansomArriveDays > 0)
-                    {
-                        return (this.RansomArriveDays + "天");
-                    }
-                }
-                return "----";
-            }
-        }
-
-#pragma warning disable CS0108 // 'Captive.Name' hides inherited member 'GameObject.Name'. Use the new keyword if hiding was intended.
-        public string Name
-#pragma warning restore CS0108 // 'Captive.Name' hides inherited member 'GameObject.Name'. Use the new keyword if hiding was intended.
-        {
-            get
-            {
-                return ((this.CaptivePerson != null) ? this.CaptivePerson.Name : "----");
-            }
-        }
+        public string RansomArriveDaysString => CaptivePerson != null && RansomArriveDays > 0 ? $"{RansomArriveDays}天" : "----";
+       
+        public new string Name => CaptivePerson?.Name ?? "----";
 
         public int Ransom
         {
@@ -480,17 +382,7 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int RansomFund
-        {
-            get
-            {
-                return this.ransomFund;
-            }
-            set
-            {
-                this.ransomFund = value;
-            }
-        }
+        public int RansomFund { get; set; }
 
         public int ReleaseRelation
         {
@@ -508,19 +400,16 @@ namespace GameObjects
         {
             get
             {
-                if (!this.CaptivePerson.WillLoseLoyaltyWhenHeldCaptive) return this.CaptivePerson.Merit / 2;
-                return this.CaptivePerson.Merit + (110 - this.Loyalty) * 500 + 
-                    (this.LocationArchitecture.noEscapeChance - this.CaptivePerson.captiveEscapeChance) * 300;
+                if (!CaptivePerson.WillLoseLoyaltyWhenHeldCaptive)
+                {
+                    return CaptivePerson.Merit / 2;
+                }
+
+                return CaptivePerson.Merit + (110 - Loyalty) * 500 + (LocationArchitecture.noEscapeChance - CaptivePerson.captiveEscapeChance) * 300;
             }
         }
 
-        public int Merit
-        {
-            get
-            {
-                return this.CaptivePerson.Merit;
-            }
-        }
+        public int Merit => CaptivePerson.Merit;
 
         public delegate void PlayerRelease(Faction from, Faction to, Captive captive);
 
@@ -529,8 +418,5 @@ namespace GameObjects
         public delegate void SelfRelease(Captive captive);
 
         public delegate void Escape(Captive captive);
-
-
     }
 }
-
