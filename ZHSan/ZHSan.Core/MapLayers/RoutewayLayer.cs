@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using WorldOfTheThreeKingdoms;
 using Microsoft.Xna.Framework.Graphics;
 using GameManager;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
@@ -26,7 +27,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 float num = 0f;
                 Color white = new Color((byte)200, (byte)200, (byte)200, (byte)200);
             //Label_064C:
-                foreach (Routeway routeway in Session.Current.Scenario.Routeways.GetList())
+                foreach (var routeway in Session.Current.Scenario.Routeways.Values)
                 {
                     if ((routeway == null) || (routeway.BelongedFaction == null))
                     {

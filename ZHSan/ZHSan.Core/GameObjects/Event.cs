@@ -1,6 +1,7 @@
 ﻿using GameManager;
 using GameObjects.ArchitectureDetail.EventEffect;
 using GameObjects.Conditions;
+using GameObjects.TroopDetail;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
@@ -49,7 +50,8 @@ namespace GameObjects
 
         [DataMember]
         public string architectureString { get; set; }
-        public ArchitectureList architecture;
+
+        public List<Architecture> Architectures { get; set; }
 
         [DataMember]
         public string architectureCondString { get; set; }
@@ -59,7 +61,7 @@ namespace GameObjects
         [DataMember]
         public string factionString { get; set; }
 
-        public FactionList faction;
+        public List<Faction> Factions { get; set; } = new();
 
         [DataMember]
         public string factionCondString { get; set; }
@@ -356,7 +358,6 @@ namespace GameObjects
                 }
             }
 
-            // check person in the architecture
             foreach (KeyValuePair<int, List<Condition>> i in this.personCond)
             {
                 foreach (Person p in allPersons)
@@ -536,45 +537,32 @@ namespace GameObjects
             if (!Condition.CheckConditionList(this.architectureCond, a)) return false;
             if (!Condition.CheckConditionList(this.factionCond, a.BelongedFaction)) return false;
 
-            if (architecture.Count > 0 || faction.Count > 0)
+            if (Factions.Count > 0)
             {
                 bool contains = false;
-                if (architecture != null)
+                foreach (var architecture in Architectures)
                 {
-                    foreach (Architecture archi in this.architecture)
+                    if (architecture.ID == a.ID)
                     {
-                        if (archi.ID == a.ID)
+                        contains = true;
+                    }
+                }
+
+                if (Factions != null)
+                {
+                    foreach (var faction in Factions)
+                    {
+                        if (a.BelongedFaction != null && faction != null && faction.ID == a.BelongedFaction.ID)
                         {
                             contains = true;
                         }
                     }
-                }
-
-                if (faction != null)
-                {
-                    foreach (Faction f in faction)
-                    {
-                        if (a.BelongedFaction != null && f != null)
-                        {
-                            if (f.ID == a.BelongedFaction.ID)
-                            {
-                                contains = true;
-                            }
-                        }
-                    }
 
                 }
-                if (contains)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+
+                return contains;
             }
             
-           
             return this.matchEventPersons(a);
         }
 
@@ -598,53 +586,28 @@ namespace GameObjects
             return false;
         }
 
-        public void LoadPersonIdFromString(PersonList persons, string data)
+        public Dictionary<int, List<Person>> LoadPersonIdFromString(Dictionary<int, Person> persons, string data)
         {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+            var result = new Dictionary<int, List<Person>>();
+            string[] strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
-            this.person = new Dictionary<int, List<Person>>();
             for (int i = 0; i < strArray.Length; i += 2)
             {
-                int n = int.Parse(strArray[i]);
-                int pid = int.Parse(strArray[i + 1]);
-                if (!this.person.ContainsKey(n))
+                int key = int.Parse(strArray[i]);
+                int personId = int.Parse(strArray[i + 1]);
+
+                if (!result.ContainsKey(key))
                 {
-                    this.person[n] = new List<Person>();
+                    result.Add(key, new List<Person>());
                 }
-                if (pid != -1)
+
+                if (persons.ContainsKey(personId))
                 {
-                    this.person[n].Add(persons.GetGameObject(pid) as Person);
-                }
-                else
-                {
-                    this.person[n].Add(null);
+                    result[key].Add(persons[personId]);
                 }
             }
-        }
 
-        public void LoadArchitectureFromString(ArchitectureList archs, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.architecture = new ArchitectureList();
-            foreach (string i in strArray)
-            {
-                this.architecture.Add(archs.GetGameObject(int.Parse(i)) as Architecture);
-            }
-        }
-
-        public void LoadFactionFromString(FactionList factions, string data)
-        {
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = data.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-
-            this.faction = new FactionList();
-            foreach (string i in strArray)
-            {
-                this.faction.Add(factions.GetGameObject(int.Parse(i)) as Faction);
-            }
+            return result;
         }
 
         public void LoadDialogFromString(string data)

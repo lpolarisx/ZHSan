@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using GameEnums;
 
 namespace GameObjects.Influences.InfluenceKindPack;
 
@@ -13,14 +14,14 @@ public class InfluenceKind397 : InfluenceKind
 
         if (troop.GetCurrentStratagemSuccess(friendly, false, false, false))
         {
-            friendly.PreAction = TroopPreAction.鼓舞;
+            friendly.PreAction = TroopPreAction.Inspire;
             friendly.IncreaseMorale(troop.GenerateBoostIncrement(baseIncrement));
         }
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
             {
-                troop2.PreAction = TroopPreAction.鼓舞;
+                troop2.PreAction = TroopPreAction.Inspire;
                 troop2.IncreaseMorale(troop.GenerateBoostIncrement(baseIncrement));
             }
         }
@@ -34,7 +35,7 @@ public class InfluenceKind397 : InfluenceKind
 
         var sum = 0;
         int fightingForce = source.FightingForce;
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, true))
+        foreach (var troop in source.GetAreaStratagemTroops(destination, true))
         {
             int num3 = troop.Army.MoraleCeiling - troop.Army.Morale;
             if (num3 >= 5 || !GetChance(0x5f))

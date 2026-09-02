@@ -8,8 +8,9 @@ public class ConditionKind1241 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        GameObjectList viewingArchitecturesByPosition = Session.Current.Scenario.GetViewingArchitecturesByPosition(troop.Position);
-        foreach (Architecture architecture in viewingArchitecturesByPosition)
+        var architectures = Session.Current.Scenario.GetViewingArchitecturesByPosition(troop.Position);
+        
+        foreach (var architecture in architectures)
         {
             if (troop.IsFriendly(architecture.BelongedFaction))
             {

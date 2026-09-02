@@ -442,7 +442,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (shijian == "CaptiveEscape")
             {
-                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.HasGameObject(p.BelongedCaptive))
+                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.Contains(p.BelongedCaptive))
                 {
                     zongshixianshi = true;
                     p.TextResultString = TextResultString;
@@ -490,7 +490,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (shijian == "CaptiveEscape")
             {
-                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.HasGameObject(p.BelongedCaptive))
+                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.Contains(p.BelongedCaptive))
                 {
                     zongshixianshi = true;
                     p.TextResultString = TextResultString;

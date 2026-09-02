@@ -17,7 +17,7 @@ public class InfluenceKind721 : InfluenceKind
             enemy.SetAttract(troop, troop.GenerateCastAttractDay(maxDays));
         }
 
-        foreach (Troop troop2 in troop.AreaStratagemTroops)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
             if (troop.GetCurrentStratagemSuccess(troop2, inevitableSuccess, troop2.InvincibleAttract, troop2.InvincibleStratagemFromLowerIntelligence))
             {
@@ -32,7 +32,7 @@ public class InfluenceKind721 : InfluenceKind
 
         var sum = 0;
         int pureFightingForce = source.PureFightingForce;
-        foreach (Troop troop in source.GetAreaStratagemTroops(destination, false))
+        foreach (var troop in source.GetAreaStratagemTroops(destination))
         {
             if (troop.FightingForce > source.FightingForce) return -100;
 

@@ -95,25 +95,30 @@ namespace GameObjects
 
         public void ApplyEventEffects(Troop self)
         {
-            if (((self != null) && !self.Destroyed) && (!this.Happened || this.Repeatable))
+            if (self != null && !self.Destroyed && (!Happened || Repeatable))
             {
                 Troop troopByPositionNoCheck;
-                this.Happened = true;
-                TroopList list = new TroopList();
-                if (this.SelfEffects.Count > 0)
+                Happened = true;
+
+                var list = new List<Troop>();
+                if (SelfEffects.Count > 0)
                 {
                     list.Add(self);
-                    foreach (GameObjects.TroopDetail.EventEffect.EventEffect effect in this.SelfEffects)
+                    foreach (EventEffect effect in SelfEffects)
                     {
                         effect.ApplyEffect(self.Leader);
                     }
                 }
-                foreach (TroopEffectPerson person in this.EffectPersons)
+
+                foreach (TroopEffectPerson person in EffectPersons)
                 {
-                    person.Effect.ApplyEffect(person.EffectPerson);
-                    if ((person.EffectPerson.LocationTroop != null) && (list.GetGameObject(person.EffectPerson.LocationTroop.ID) == null))
+                    var effectPerson = person.EffectPerson;
+                    var locationTroop = effectPerson.LocationTroop;
+
+                    person.Effect.ApplyEffect(effectPerson);
+                    if (locationTroop != null && !list.Contains(locationTroop))
                     {
-                        list.Add(person.EffectPerson.LocationTroop);
+                        list.Add(locationTroop);
                     }
                 }
                 List<TroopEffectArea> list2 = new List<TroopEffectArea>();
@@ -237,7 +242,8 @@ namespace GameObjects
                         }
                     }
                 }
-                foreach (Troop troop in list)
+                
+                foreach (var troop in list)
                 {
                     Troop.CheckTroopRout(troop);
                 }

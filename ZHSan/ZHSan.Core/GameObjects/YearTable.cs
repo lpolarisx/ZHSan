@@ -38,14 +38,14 @@ namespace GameObjects
             //}
         }
         
-        public void addTableEntry(GameDate date, FactionList faction, string content, bool global)
+        public void addTableEntry(GameDate date, List<Faction> factions, string content, bool global)
         {
-            this.Add(new YearTableEntry(this.GetFreeGameObjectID(), date, faction, content, global) as GameObject);
+            Add(new YearTableEntry(GetFreeGameObjectID(), date, factions, content, global));
         }
 
-        public void addTableEntry(int id, GameDate date, FactionList faction, string content, bool global)
+        public void addTableEntry(int id, GameDate date, List<Faction> factions, string content, bool global)
         {
-            this.Add(new YearTableEntry(id, date, faction, content, global) as GameObject);
+            this.Add(new YearTableEntry(id, date, factions, content, global));
         }
 
         public void AddTableEntry(YearTableEntry entry)
@@ -70,17 +70,18 @@ namespace GameObjects
             p.PersonBiography.InGame = date.Year + "年" + date.Month + "月：" + content + '\n' + p.PersonBiography.InGame;
         }
 
-        public static FactionList composeFactionList(params Faction[] f)
+        public static List<Faction> composeFactionList(params Faction[] factions)
         {
-            FactionList r = new FactionList();
-            foreach (Faction i in f)
+            var result = new List<Faction>();
+
+            foreach (var faction in factions)
             {
-                if (i != null)
+                if (faction != null)
                 {
-                    r.Add(i);
+                    result.Add(faction);
                 }
             }
-            return r;
+            return result;
         }
 
         public void addOccupyEntry(GameDate date, Troop occupier, Architecture occupied)
@@ -475,8 +476,7 @@ namespace GameObjects
 
         public void addObtainedTitleEntry(GameDate date, Person p, PersonDetail.Title title)
         {
-            this.addPersonInGameBiography(p, date,
-                String.Format(yearTableStrings["obtainTitle_p"], title.Name));
+            addPersonInGameBiography(p, date, string.Format(yearTableStrings["obtainTitle_p"], title.Name));
         }
 
         public void addAwardTitleEntry(GameDate date, Person p, PersonDetail.Title title)

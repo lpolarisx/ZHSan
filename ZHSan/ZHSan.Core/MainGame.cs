@@ -149,6 +149,7 @@ namespace WorldOfTheThreeKingdoms
 
             // 注册订阅者
             var personSubscriber = new PersonSubscriber();
+            var mainGameScreenSubscriber = new MainGameScreenSubscriber();
         }
 
         //private static bool AltComboPressed(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using GameEnums;
 
 namespace GameObjects.Conditions.ConditionKindPack;
 
@@ -7,6 +8,6 @@ public class ConditionKind4300 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Person person)
     {
-        return person.OutsideTask == OutsideTaskKind.无 && person.WorkKind == GameGlobal.ArchitectureWorkKind.无;
+        return person.OutsideTask == OutsideTaskKind.无 && person.WorkKind == ArchitectureWorkKind.无;
     }
 }

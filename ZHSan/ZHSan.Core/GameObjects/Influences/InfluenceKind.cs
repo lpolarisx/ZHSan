@@ -1,4 +1,5 @@
-﻿using GameEnums;
+﻿using System.Collections.Generic;
+using GameEnums;
 using Microsoft.Xna.Framework;
 
 namespace GameObjects.Influences;
@@ -142,19 +143,19 @@ public class InfluenceKind : GameObject
         }
     }
 
-    private void ApplyToTroops(Influence influence, TroopList troops, Applier applier, int id)
+    private void ApplyToTroops(Influence influence, List<Troop> troops, Applier applier, int id)
     {
-        foreach (Troop troop in troops)
+        foreach (var troop in troops)
         {
             ApplyToTroop(influence, troop, applier, id);
         }
     }
 
-    private void ApplyToArchitectures(Influence influence, ArchitectureList archs, Applier applier, int id)
+    private void ApplyToArchitectures(Influence influence, List<Architecture> architectures, Applier applier, int id)
     {
-        foreach (Architecture arch in archs)
+        foreach (var architecture in architectures)
         {
-            ApplyFromEntry(arch, influence, applier, id);
+            ApplyFromEntry(architecture, influence, applier, id);
         }
     }
 
@@ -288,11 +289,11 @@ public class InfluenceKind : GameObject
         }
     }
 
-    private void PurifyFromArchitectures(Influence influence, ArchitectureList archs, Applier applier, int id)
+    private void PurifyFromArchitectures(Influence influence, List<Architecture> architectures, Applier applier, int id)
     {
-        foreach (Architecture arch in archs)
+        foreach (var architecture in architectures)
         {
-            PurifyFromArchitecture(influence, arch, applier, id);
+            PurifyFromArchitecture(influence, architecture, applier, id);
         }
     }
 
@@ -304,9 +305,9 @@ public class InfluenceKind : GameObject
         }
     }
 
-    private void PurifyFromTroops(Influence influence, TroopList troops, Applier applier, int id)
+    private void PurifyFromTroops(Influence influence, List<Troop> troops, Applier applier, int id)
     {
-        foreach (Troop troop in troops)
+        foreach (var troop in troops)
         {
             PurifyFromTroop(influence, troop, applier, id);
         }

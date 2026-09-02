@@ -2588,7 +2588,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                     var btP = (CheckBox)sender0;
                                     var id1 = btP.ID;
 
-                                    faction = scenario.Factions.GameObjects.FirstOrDefault(fi => fi.Name == id1) as Faction;
+                                    faction = scenario.Factions.Values.FirstOrDefault(fi => fi.Name == id1);
 
                                     if (Platform.IsMobilePlatForm)
                                     {

@@ -63,7 +63,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private float scrollSpeedScaleSpeedy;
         private SelectingLayer selectingLayer;
         public Point SelectorStartPosition;
-        public TroopList SelectorTroops;
+        public List<Troop> SelectorTroops;
         public GameTextures Textures;
         
         private TileAnimationLayer tileAnimationLayer;
@@ -96,7 +96,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.tileAnimationLayer = new TileAnimationLayer();
             this.routewayLayer = new RoutewayLayer();
             this.Plugins = new GamePlugin();
-            this.SelectorTroops = new TroopList();
+            SelectorTroops = new();
             this.scrollSpeedScale = 1f;
             this.scrollSpeedScaleDefault = 1f;
             this.scrollSpeedScaleSpeedy = 1.7f;
@@ -593,18 +593,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         public void changeFaction()
         {
             GameDelegates.VoidFunction function = null;
-            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, true, true, true, true, Session.Current.Scenario.Factions, Session.Current.Scenario.PlayerFactions, "变更控制", "");
+            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, true, true, true, true, [.. Session.Current.Scenario.Factions.Values], [.. Session.Current.Scenario.PlayerFactions], "变更控制", "");
             if (function == null)
             {
                 function = delegate
                 {
-                    FactionList list = new FactionList();
-                    foreach (Faction faction in Session.Current.Scenario.PlayerFactions)
-                    {
-                        list.Add(faction);
-                    }
-                    Session.Current.Scenario.SetPlayerFactionList(this.Plugins.TabListPlugin.SelectedItemList as GameObjectList);
-                    foreach (Faction faction in list)
+                    var list = new List<Faction>(Session.Current.Scenario.PlayerFactions);
+
+                    Session.Current.Scenario.SetPlayerFactionList(Plugins.TabListPlugin.SelectedItemList as GameObjectList);
+                    foreach (var faction in list)
                     {
                         if (!Session.Current.Scenario.IsPlayer(faction))
                         {
@@ -613,9 +610,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     }
                     foreach (Faction faction in Session.Current.Scenario.PlayerFactions)
                     {
-                        if (!list.HasGameObject(faction))
+                        if (!list.Contains(faction))
                         {
-                            foreach (Routeway routeway in faction.Routeways.GetList())
+                            foreach (var routeway in faction.Routeways)
                             {
                                 if (!routeway.IsInUsing)
                                 {
@@ -631,7 +628,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             Session.Current.Scenario.CurrentPlayer.Passed = true;
                             Session.Current.Scenario.CurrentPlayer.Controlling = false;
                         }
-                        if (!Session.Current.Scenario.Factions.HasFactionInQueue(Session.Current.Scenario.PlayerFactions))
+                        if (!Session.Current.Scenario.FactionsQueue.HasFactionInQueue(Session.Current.Scenario.PlayerFactions))
                         {
                             this.Plugins.DateRunnerPlugin.Reset();
                             this.Plugins.DateRunnerPlugin.RunDays(1);
@@ -678,7 +675,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (this.CurrentArchitecture != null)
                     {
                         this.selectingLayer.AreaFrameKind = SelectingUndoneWorkKind.AssassinatePosition;
-                        this.selectingLayer.Area = this.CurrentArchitecture.GetAssassinateArchitectureArea((this.CurrentPersons[0] as Person).BelongedFaction);
+                        this.selectingLayer.Area = this.CurrentArchitecture.GetAssassinateArchitectureArea(CurrentPersons[0].BelongedFaction);
                         this.selectingLayer.ShowComment = true;
                         this.selectingLayer.SingleWay = true;
                         this.selectingLayer.FromArea = this.CurrentArchitecture.ArchitectureArea;
@@ -808,10 +805,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case SelectingUndoneWorkKind.SelectorTroopsDestination:
-                    if (this.SelectorTroops.Count > 0)
+                    if (SelectorTroops.Count > 0)
                     {
-                        this.selectingLayer.AreaFrameKind = SelectingUndoneWorkKind.SelectorTroopsDestination;
-                        this.selectingLayer.Area = new GameArea();
+                        selectingLayer.AreaFrameKind = SelectingUndoneWorkKind.SelectorTroopsDestination;
+                        selectingLayer.Area = new GameArea();
                     }
                     break;
 
@@ -915,39 +912,39 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     return;
 
                 case SelectingUndoneWorkKind.ConvincePersonPosition:
-                    if (!this.selectingLayer.Canceled && (this.CurrentPersons.Count > 0))
+                    if (!this.selectingLayer.Canceled && (CurrentPersons.Count > 0))
                     {
                         Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
                         if (architectureByPosition != null)
                         {
                             this.CurrentArchitecture = architectureByPosition;
-                            foreach (Person person in this.CurrentPersons)
+                            foreach (var person in CurrentPersons)
                             {
                                 person.OutsideDestination = new Point?(this.selectingLayer.SelectedPoint);
                             }
-                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetConvinceDestinationPerson, false, true, true, false, architectureByPosition.GetConvinceDestinationPersonList((this.CurrentPersons[0] as Person).BelongedFaction), null, "说服", "Personal");
+                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetConvinceDestinationPerson, false, true, true, false, architectureByPosition.GetConvinceDestinationPersonList(CurrentPersons[0].BelongedFaction), null, "说服", "Personal");
                         }
                     }
                     return;
 
                 case SelectingUndoneWorkKind.AssassinatePosition:
-                    if (!this.selectingLayer.Canceled && (this.CurrentPersons.Count > 0))
+                    if (!this.selectingLayer.Canceled && (CurrentPersons.Count > 0))
                     {
                         Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
                         if (architectureByPosition != null)
                         {
                             this.CurrentArchitecture = architectureByPosition;
-                            foreach (Person person in this.CurrentPersons)
+                            foreach (var person in CurrentPersons)
                             {
                                 person.OutsideDestination = new Point?(this.selectingLayer.SelectedPoint);
                             }
-                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAssassinatePersonTarget, false, true, true, false, architectureByPosition.GetAssassinatePersonTarget((this.CurrentPersons[0] as Person).BelongedFaction), null, "暗杀", "Personal");
+                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAssassinatePersonTarget, false, true, true, false, [.. architectureByPosition.GetAssassinatePersonTarget(CurrentPersons[0].BelongedFaction)], null, "暗杀", "Personal");
                         }
                     }
                     return;
 
                 case SelectingUndoneWorkKind.WujiangDiaodong:
-                    if (!this.selectingLayer.Canceled && (this.CurrentPersons.Count > 0))
+                    if (!this.selectingLayer.Canceled && (CurrentPersons.Count > 0))
                     {
                            Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
                            if (architectureByPosition != null)
@@ -959,7 +956,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     return;
 
                 case SelectingUndoneWorkKind.MoveFeizi:
-                    if (!this.selectingLayer.Canceled && (this.CurrentPersons != null))
+                    if (!this.selectingLayer.Canceled && (CurrentPersons != null))
                     {
                         Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
                         if (architectureByPosition != null)
@@ -971,7 +968,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     return;
 
                 case SelectingUndoneWorkKind.MoveCaptive: //移动俘虏
-                    if (!this.selectingLayer.Canceled && (this.CurrentPersons != null))
+                    if (!this.selectingLayer.Canceled && (CurrentPersons != null))
                     {
                         Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
                         if (architectureByPosition != null)
@@ -1024,7 +1021,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case SelectingUndoneWorkKind.DestroyPosition:
                     if (!this.selectingLayer.Canceled)
                     {
-                        foreach (Person person in this.CurrentPersons)
+                        foreach (var person in CurrentPersons)
                         {
                             person.GoForDestroy(this.selectingLayer.SelectedPoint);
                         }
@@ -1035,7 +1032,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case SelectingUndoneWorkKind.InstigatePosition:
                     if (!this.selectingLayer.Canceled)
                     {
-                        foreach (Person person in this.CurrentPersons)
+                        foreach (var person in CurrentPersons)
                         {
                             person.GoForInstigate(this.selectingLayer.SelectedPoint);
                         }
@@ -1046,7 +1043,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case SelectingUndoneWorkKind.GossipPosition:
                     if (!this.selectingLayer.Canceled)
                     {
-                        foreach (Person person in this.CurrentPersons)
+                        foreach (var person in CurrentPersons)
                         {
                             person.GoForGossip(this.selectingLayer.SelectedPoint);
                         }
@@ -1057,7 +1054,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case SelectingUndoneWorkKind.JailBreakPosition:
                     if (!this.selectingLayer.Canceled)
                     {
-                        foreach (Person person in this.CurrentPersons)
+                        foreach (var person in CurrentPersons)
                         {
                             person.GoForJailBreak(this.selectingLayer.SelectedPoint);
                         }
@@ -1104,10 +1101,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                     targetArchitecture = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
 
-                    if (this.CurrentTroop.CanEnter() && this.CurrentTroop.EnterList.GameObjects.Contains(targetArchitecture))
+                    if (CurrentTroop.CanEnter() && CurrentTroop.EnterList.Contains(targetArchitecture))
                     {
-                        this.CurrentTroop.Enter(targetArchitecture);
-                        this.CurrentTroop = null;
+                        CurrentTroop.Enter(targetArchitecture);
+                        CurrentTroop = null;
                         //this.Plugins.AirViewPlugin.ReloadTroopView();
                         Session.Current.Scenario.ClearPersonStatusCache();
                         return;
@@ -1134,8 +1131,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (!this.selectingLayer.Canceled)
                     {
                         targetArchitecture = Session.Current.Scenario.GetArchitectureByPosition(this.selectingLayer.SelectedPoint);
-                        Troop targetTroop = Session.Current.Scenario.GetTroopByPosition(this.selectingLayer.SelectedPoint);
-                        foreach (Troop troop in this.SelectorTroops)
+                        var targetTroop = Session.Current.Scenario.GetTroopByPosition(this.selectingLayer.SelectedPoint);
+
+                        foreach (var troop in SelectorTroops)
                         {
                             if (!troop.SelectedMove && !troop.SelectedAttack)
                             {
@@ -1194,7 +1192,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             }
                         }
                     }
-                    this.SelectorTroops.Clear();
+                    SelectorTroops.Clear();
                     return;
 
                 case SelectingUndoneWorkKind.TroopTarget:  //选目标
@@ -1207,7 +1205,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 this.CurrentTroop.CastTargetKind = TroopCastTargetKind.Possible;
                             }
                             
-                            if (this.CurrentTroop.Status == TroopStatus.埋伏)
+                            if (this.CurrentTroop.Status == TroopStatus.Ambushing)
                             {
                                 this.CurrentTroop.EndAmbush();
                             }
@@ -1444,8 +1442,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 if (!Session.Current.Scenario.Animating || Setting.Current.GlobalVariables.FastBattleSpeed < 2)
                 //if (!Session.Current.Scenario.Animating)
                 {
-                    Session.Current.Scenario.Troops.CurrentQueueTroopMove();
-                    if (Session.Current.Scenario.Troops.TotallyEmpty)
+                    Session.Current.Scenario.TroopsQueue.CurrentQueueTroopMove();
+                    if (Session.Current.Scenario.TroopsQueue.TotallyEmpty)
                     {
                         return false;
                     }
@@ -1453,7 +1451,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 else if (gameTime.ElapsedGameTime.TotalMilliseconds > Session.GlobalVariables.MaxTimeOfAnimationFrame-(10- Setting.Current.GlobalVariables.FastBattleSpeed)*2.5f)
                 //else if (gameTime.ElapsedGameTime.TotalMilliseconds > Session.GlobalVariables.MaxTimeOfAnimationFrame)
                 {
-                    Session.Current.Scenario.Troops.StepAnimationIndex(1);
+                    Session.Current.Scenario.TroopsQueue.StepAnimationIndex(1);
                 }
             }
             return true;
@@ -1552,14 +1550,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         public override void PushUndoneWork(UndoneWorkItem undoneWork)
         {
             base.PushUndoneWork(undoneWork);
-            if (this.PeekUndoneWork().Kind != UndoneWorkKind.None)
+            if (PeekUndoneWork().Kind != UndoneWorkKind.None)
             {
-                this.Plugins.ToolBarPlugin.Enabled = false;
+                Plugins.ToolBarPlugin.Enabled = false;
             }
             switch (undoneWork.Kind)
             {
                 case UndoneWorkKind.Selecting:
-                    this.HandlePushSelectingUndoneWork(undoneWork.SubKind);
+                    HandlePushSelectingUndoneWork(undoneWork.SubKind);
                     break;
             }
         }
@@ -1646,8 +1644,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             try
             {
-                Session.Current.Scenario.Factions.RunQueue();
-                if (Session.Current.Scenario.Factions.QueueEmpty)
+                Session.Current.Scenario.FactionsQueue.RunQueue();
+                if (Session.Current.Scenario.FactionsQueue.QueueEmpty)
                 {
                     return false;
                 }
@@ -2059,7 +2057,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             if ((Session.Current.Scenario.CurrentPlayer != null) && (Session.Current.Scenario.CurrentPlayer.FirstSection != null))
             {
-                this.Showyoucelan(UndoneWorkKind.None,FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures, null, "", "");
+                this.Showyoucelan(UndoneWorkKind.None,FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, [.. Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures], null, "", "");
             }
         }
 
@@ -2180,7 +2178,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom, this);
                 foreach (PersonDialog dialog in te.Dialogs)
                 {
-                    dialog.SpeakingPerson = Session.Current.Scenario.Persons.GetGameObject(dialog.SpeakingPersonID) as Person;//修复部队事件未识别说话武将
+                    dialog.SpeakingPerson = Session.Current.Scenario.AllPersons.GetValueOrDefault(dialog.SpeakingPersonID);//修复部队事件未识别说话武将
                     if (dialog.SpeakingPerson !=null)
                     {
                         if (te.Sound == null && Setting.Current.GlobalVariables.TroopVoice)
@@ -2531,7 +2529,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         public override void TroopReceiveCriticalStrike(Troop sending, Troop receiving)
         {
-            if (!receiving.Destroyed && ((((Session.Current.Scenario.CurrentPlayer == null) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(receiving.Position)) || Session.GlobalVariables.SkyEye) && ((receiving.Status != TroopStatus.混乱) && (GameObject.GetChance(receiving.Leader.Braveness * 10)))))
+            if (!receiving.Destroyed && ((((Session.Current.Scenario.CurrentPlayer == null) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(receiving.Position)) || Session.GlobalVariables.SkyEye) && ((receiving.Status != TroopStatus.Chaos) && (GameObject.GetChance(receiving.Leader.Braveness * 10)))))
             {
                 this.Plugins.PersonBubblePlugin.AddPerson(receiving.Leader, receiving.Position, TextMessageKind.BeCritical, "ReceiveCriticalStrike");
             }
@@ -2965,7 +2963,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     this.Plugins.ConmentTextPlugin.BuildSecondText("", false);
                 }
-                if ((troopByPosition != null && troopByPosition.Status != TroopStatus.埋伏) && (Session.GlobalVariables.SkyEye || ((Session.Current.Scenario.CurrentPlayer != null) && Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.position))))
+                if ((troopByPosition != null && troopByPosition.Status != TroopStatus.Ambushing) && (Session.GlobalVariables.SkyEye || ((Session.Current.Scenario.CurrentPlayer != null) && Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.position))))
                 {
                     this.Plugins.ConmentTextPlugin.BuildFirstText(troopByPosition.DisplayName + " " + this.mainMapLayer.GetTerrainNameByPosition(this.position), true);
                 }
@@ -3129,7 +3127,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         troopByPosition = null;
                     }
-                    if (troopByPosition != null && troopByPosition.Status != TroopStatus.埋伏)
+                    if (troopByPosition != null && troopByPosition.Status != TroopStatus.Ambushing)
                     {
                         this.Plugins.TroopSurveyPlugin.SetTroop(troopByPosition);
                         this.Plugins.TroopSurveyPlugin.SetFaction(Session.Current.Scenario.CurrentPlayer);
@@ -3404,13 +3402,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public GameObjectList CurrentPersons
-        {
-            get
-            {
-                return this.screenManager.CurrentPersons;
-            }
-        }
+        public List<Person> CurrentPersons => screenManager.CurrentPersons;
 
         public Routeway CurrentRouteway
         {
@@ -3424,13 +3416,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public string CurrentRoutewayDisplayName
-        {
-            get
-            {
-                return this.CurrentRouteway.DisplayName;
-            }
-        }
+        public string CurrentRoutewayDisplayName => CurrentRouteway.DisplayName;
 
         public Troop CurrentTroop
         {
@@ -3444,13 +3430,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public string CurrentTroopDisplayName
-        {
-            get
-            {
-                return this.CurrentTroop.DisplayName;
-            }
-        }
+        public string CurrentTroopDisplayName => CurrentTroop.DisplayName;
 
         public override bool DrawingSelector
         {
@@ -3463,7 +3443,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 if (this.drawingSelector != value)
                 {
                     this.drawingSelector = value;
-                    this.SelectorTroops.Clear();
+                    SelectorTroops.Clear();
                     if (!value)
                     {
                         this.PopUndoneWork();
@@ -3474,13 +3454,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             Rectangle r = new Rectangle(
                                 Math.Min(point2.X, positionByPoint.X), Math.Min(point2.Y, positionByPoint.Y),
                                 Math.Abs(point2.X - positionByPoint.X), Math.Abs(point2.Y - positionByPoint.Y));
-                            foreach (Troop troop in Session.Current.Scenario.CurrentPlayer.Troops.GetList())
+
+                            foreach (var troop in Session.Current.Scenario.CurrentPlayer.Troops)
                             {
-                                if (!troop.Destroyed && troop.Status == TroopStatus.一般 && 
-                                    r.Contains(troop.Position) &&
-                                    !troop.Operated)
+                                if (!troop.Destroyed 
+                                    && troop.Status == TroopStatus.Normal 
+                                    && r.Contains(troop.Position) 
+                                    && !troop.Operated)
                                 {
-                                    this.SelectorTroops.Add(troop);
+                                    SelectorTroops.Add(troop);
                                 }
                             }
                             this.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.SelectorTroopsDestination));
@@ -3516,93 +3498,27 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public bool IsMultipleResource
-        {
-            get
-            {
-                return Session.GlobalVariables.MultipleResource;
-            }
-        }
+        public bool IsMultipleResource => Session.GlobalVariables.MultipleResource;
 
-        public bool IsPlayingBattleSound
-        {
-            get
-            {
-                return Setting.Current.GlobalVariables.PlayBattleSound;
-            }
-        }
+        public bool IsPlayingBattleSound => Setting.Current.GlobalVariables.PlayBattleSound;
 
-        public bool IsPlayingTroopVoice
-        {
-            get
-            {
-                return Setting.Current.GlobalVariables.TroopVoice;
-            }
-        }
+        public bool IsPlayingTroopVoice => Setting.Current.GlobalVariables.TroopVoice;
 
-        public bool IsPlayingMusic
-        {
-            get
-            {
-                return Session.GlobalVariables.PlayMusic;
-            }
-        }
+        public bool IsPlayingMusic => Session.GlobalVariables.PlayMusic;
 
-        public bool IsPlayingNormalSound
-        {
-            get
-            {
-                return Setting.Current.GlobalVariables.PlayNormalSound;
-            }
-        }
+        public bool IsPlayingNormalSound => Setting.Current.GlobalVariables.PlayNormalSound;
 
-        public bool IsPlayingTroopAnimation
-        {
-            get
-            {
-                return Setting.Current.GlobalVariables.DrawTroopAnimation;
-            }
-        }
+        public bool IsPlayingTroopAnimation => Setting.Current.GlobalVariables.DrawTroopAnimation;
 
-        public bool IsShowingSmog
-        {
-            get
-            {
-                return Setting.Current.GlobalVariables.DrawMapVeil;
-            }
-        }
+        public bool IsShowingSmog => Setting.Current.GlobalVariables.DrawMapVeil;
 
-        public bool IsStopOnAttack
-        {
-            get
-            {
-                return Setting.Current.GlobalVariables.StopToControlOnAttack;
-            }
-        }
+        public bool IsStopOnAttack => Setting.Current.GlobalVariables.StopToControlOnAttack;
 
-        public bool IsShowingTroopTitle
-        {
-            get
-            {
-                return this.Plugins.TroopTitlePlugin.IsShowing;
-            }
-        }
+        public bool IsShowingTroopTitle => Plugins.TroopTitlePlugin.IsShowing;
 
-        public bool IsSkyEye
-        {
-            get
-            {
-                return Session.GlobalVariables.SkyEye;
-            }
-        }
+        public bool IsSkyEye => Session.GlobalVariables.SkyEye;
 
-        public bool IsSkyEyeSimpleNotification
-        {
-            get
-            {
-                return Session.GlobalVariables.SkyEyeSimpleNotification;
-            }
-        }
+        public bool IsSkyEyeSimpleNotification => Session.GlobalVariables.SkyEyeSimpleNotification;
 
         public ViewMove ViewMoveDirection
         {
@@ -3718,8 +3634,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 this.Plugins.ContextMenuPlugin.Prepare(this.SelectorStartPosition.X, this.SelectorStartPosition.Y, base.viewportSize);
 
                 this.bianduiLiebiaoBiaoji = "ArchitectureLeftClick";
-                this.ShowBianduiLiebiao(UndoneWorkKind.None, FrameKind.Military, FrameFunction.Browse, false, true, false, true,
-                    this.CurrentArchitecture.Militaries, this.CurrentArchitecture.ZhengzaiBuchongDeBiandui(), "", "", this.CurrentArchitecture.MilitaryPopulation);
+                this.ShowBianduiLiebiao(UndoneWorkKind.None, FrameKind.Military, FrameFunction.Browse, false, true, false, true, 
+                [.. CurrentArchitecture.Militaries], [.. CurrentArchitecture.ZhengzaiBuchongDeBiandui()], "", "", this.CurrentArchitecture.MilitaryPopulation);
                 this.ShowArchitectureSurveyPlugin(this.CurrentArchitecture);
             }
         }

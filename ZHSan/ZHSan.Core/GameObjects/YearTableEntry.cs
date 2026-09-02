@@ -1,142 +1,103 @@
-﻿using GameManager;
-using GameObjects;
-using System;
+﻿using GameGlobal;
+using GameManager;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 
-namespace GameObjects
+namespace GameObjects;
+
+[DataContract]
+public class YearTableEntry : GameObject
 {
-    [DataContract]
-    public class YearTableEntry : GameObject
-	{
-        private GameDate date;
-        private string content;
-        private FactionList factions;
-        private bool isGloballyKnown;
-        
-        [DataMember]
-        public GameDate Date
-        {
-            get
-            {
-                return date;
-            }
-            set
-            {
-                date = value;
-            }
-        }
+    [DataMember]
+    public GameDate Date { get; set; }
 
-        [DataMember]
-        public string Content
-        {
-            get
-            {
-                return content;
-            }
-            set
-            {
-                content = value;
-            }
-        }
+    [DataMember]
+    public string Content { get; set; }
 
-        [DataMember]
-        public string FactionsString { get; set; }
+    [DataMember]
+    public string FactionsString { get; set; }
 
-        public FactionList Factions
-        {
-            get
-            {
-                if (factions == null)
-                {
-                    factions = new FactionList();
-                    string[] ids = FactionsString.Split(' ');
-                    foreach (string id in ids)
-                    {
-                        int iid;
-                        if (int.TryParse(id, out iid))
-                        {
-                            factions.Add(Session.Current.Scenario.Factions.GetGameObject(iid));
-                        }
-                    }
-                }
-                return factions;
-            }
-            set
-            {
-                factions = value;
-            }
-        }
+    [DataMember]
+    public bool IsGloballyKnown { get; set; }
 
-        public String FactionName1
-        {
-            get
-            {
-                if (factions.Count < 1 || factions[0] == null) return "";
-                return factions[0].Name;
-            }
-        }
+    private List<Faction> factions;
 
-        public String FactionName2
+    public List<Faction> Factions
+    {
+        get
         {
-            get
+            if (factions == null)
             {
-                if (factions.Count < 2 || factions[1] == null) return "";
-                return factions[1].Name;
+                factions = StaticMethods.LoadFromString(Session.Current.Scenario.Factions, FactionsString).Values.ToList();
             }
-        }
 
-        public String FactionName3
-        {
-            get
-            {
-                if (factions.Count < 3) return "";
-                return factions[2].Name;
-            }
+            return factions;
         }
+        set
+        {
+            factions = value;
+        }
+    }
 
-        public String FactionName4
-        {
-            get
-            {
-                if (factions.Count < 4) return "";
-                return factions[3].Name;
-            }
-        }
+    public override string ToString() => Content;
 
-        public String FactionName5
+    public string FactionName1
+    {
+        get
         {
-            get
-            {
-                if (factions.Count < 5) return "";
-                return factions[4].Name;
-            }
-        }
+            if (factions.Count >= 1) return factions[0].Name;
 
-        [DataMember]
-        public bool IsGloballyKnown
-        {
-            get
-            {
-                return isGloballyKnown;
-            }
-            set
-            {
-                isGloballyKnown = value;
-            }
+            return "";
         }
+    }
 
-        public YearTableEntry(int id, GameDate date, FactionList faction, string content, bool isGloballyKnown)
+    public string FactionName2
+    {
+        get
         {
-            this.ID = id;
-            this.date = new GameDate(date);
-            this.content = content;
-            this.factions = faction;
-            this.isGloballyKnown = isGloballyKnown;
-        }
+            if (factions.Count >= 2) return factions[1].Name;
 
-        public override string ToString()
-        {
-            return this.content;
+            return "";
         }
-	}
+    }
+
+    public string FactionName3
+    {
+        get
+        {
+            if (factions.Count >= 3) return factions[2].Name;
+
+            return "";
+        }
+    }
+
+    public string FactionName4
+    {
+        get
+        {
+            if (factions.Count >= 4) return factions[3].Name;
+
+            return "";
+        }
+    }
+
+    public string FactionName5
+    {
+        get
+        {
+            if (factions.Count >= 5) return factions[4].Name;
+
+            return "";
+        }
+    }
+
+    public YearTableEntry(int id, GameDate date, List<Faction> factions, string content, bool isGloballyKnown)
+    {
+        ID = id;
+        Date = new GameDate(date);
+        Content = content;
+        this.factions = factions;
+        IsGloballyKnown = isGloballyKnown;
+    }
 }

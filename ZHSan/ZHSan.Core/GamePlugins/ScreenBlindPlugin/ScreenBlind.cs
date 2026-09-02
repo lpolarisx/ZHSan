@@ -1,4 +1,5 @@
-﻿using GameFreeText;
+﻿using GameEnums;
+using GameFreeText;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -94,15 +95,15 @@ namespace ScreenBlindPlugin
 
         internal void Update()
         {
-            if (Session.Current.Scenario.Date.Season == GameSeason.春)
+            if (Session.Current.Scenario.Date.Season == GameSeason.Spring)
             {
                 this.SeasonTexture = this.SpringTexture;
             }
-            else if (Session.Current.Scenario.Date.Season == GameSeason.夏 )
+            else if (Session.Current.Scenario.Date.Season == GameSeason.Summer)
             {
                 this.SeasonTexture = this.SummerTexture;
             }
-            else if (Session.Current.Scenario.Date.Season == GameSeason.秋 )
+            else if (Session.Current.Scenario.Date.Season == GameSeason.Winter)
             {
                 this.SeasonTexture = this.AutumnTexture;
             }

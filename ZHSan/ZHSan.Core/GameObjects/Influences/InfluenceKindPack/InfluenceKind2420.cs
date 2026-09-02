@@ -24,7 +24,7 @@ public class InfluenceKind2420 : InfluenceKind
     {
         if (Session.Current.Scenario.NewInfluence)
         {
-            foreach (Routeway routeway in faction.Routeways)
+            foreach (var routeway in faction.Routeways)
             {
                 routeway.ReGenerateRoutePointArea();
             }

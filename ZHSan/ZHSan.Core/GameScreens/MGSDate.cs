@@ -20,6 +20,7 @@ using WorldOfTheThreeKingdoms.GameScreens;
 using WorldOfTheThreeKingdoms.GameScreens.ScreenLayers;
 using WorldOfTheThreeKingdoms.Resources;
 using GameManager;
+using GameEnums;
 //using GameObjects.PersonDetail.PersonMessages;
 
 namespace WorldOfTheThreeKingdoms.GameScreens
@@ -103,9 +104,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 try
                 {
-                    if (Session.Current.Scenario.CurrentPlayer != null && Session.Current.Scenario.CurrentPlayer.BattleState != ZhandouZhuangtai.和平)
+                    if (Session.Current.Scenario.CurrentPlayer != null && Session.Current.Scenario.CurrentPlayer.BattleState != CombatStance.Peace)
                     {
-                        if (Session.Current.Scenario.CurrentPlayer.BattleState == ZhandouZhuangtai.进攻)
+                        if (Session.Current.Scenario.CurrentPlayer.BattleState == CombatStance.Offensive)
                         {
                             Session.PlayMusic("Attack");
                             //Player.currentPlaylist.clear();
@@ -125,7 +126,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             //Player.settings.setMode("loop", true);
                             //this.PlayMusic("GameMusic/Attack.mp3");
                         }
-                        else if (Session.Current.Scenario.CurrentPlayer.BattleState == ZhandouZhuangtai.防守)
+                        else if (Session.Current.Scenario.CurrentPlayer.BattleState == CombatStance.Defensive)
                         {
                             Session.PlayMusic("Defend");
                             //Player.currentPlaylist.clear();
@@ -170,7 +171,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         switch (season)
                         {
-                            case GameSeason.春:
+                            case GameSeason.Spring:
                                 Session.PlayMusic("Spring");
                                 //Player.currentPlaylist.clear();
                                 //WMPLib.IWMPMedia media;
@@ -189,7 +190,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 //Player.settings.setMode("loop", true);
                                 //this.PlayMusic("GameMusic/Spring.mp3");
                                 break;
-                            case GameSeason.夏:
+                            case GameSeason.Summer:
                                 Session.PlayMusic("Summer");
                                 //Player.currentPlaylist.clear();
                                 //WMPLib.IWMPMedia media2;
@@ -209,7 +210,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 // this.PlayMusic("GameMusic/Summer.mp3");
                                 break;
 
-                            case GameSeason.秋:
+                            case GameSeason.Autumn:
                                 Session.PlayMusic("Autumn");
                                 //Player.currentPlaylist.clear();
                                 //WMPLib.IWMPMedia media3;
@@ -229,7 +230,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 //this.PlayMusic("GameMusic/Autumn.mp3");
                                 break;
 
-                            case GameSeason.冬:
+                            case GameSeason.Winter:
                                 Session.PlayMusic("Winter");
                                 //Player.currentPlaylist.clear();
                                 //WMPLib.IWMPMedia media4;
@@ -264,7 +265,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void Date_OnSeasonChange(GameSeason season)
         {
-            if (Session.Current.Scenario.CurrentPlayer == null || Session.Current.Scenario.CurrentPlayer.BattleState==ZhandouZhuangtai.和平)
+            if (Session.Current.Scenario.CurrentPlayer == null || Session.Current.Scenario.CurrentPlayer.BattleState==CombatStance.Peace)
             {
                 this.SwichMusic(season);
             }
