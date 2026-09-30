@@ -295,16 +295,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             #region 获取头像包
 
-            try
-            {
-                var portraitPackPath = @"Portraits/";
-                var portraitDirNames = Platform.Current.GetDirectoryNames(portraitPackPath);
-                portraitPacks.AddRange(portraitDirNames);
-            }
-            catch (IOException)
-            {
-                // no-op
-            }
+            var portraitPackPath = @"Portraits/";
+            var portraitDirNames = Platform.Current.GetDirectoryNames(portraitPackPath);
+            portraitPacks.AddRange(portraitDirNames);
 
             // 防止修改头像包文件夹名称时，出现没有选中的情况
             var currentPortraitPack = portraitPacks.FirstOrDefault(x => x.Equals(Setting.Current.PortraitPack));

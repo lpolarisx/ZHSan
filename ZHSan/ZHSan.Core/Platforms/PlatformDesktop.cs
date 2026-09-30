@@ -294,9 +294,16 @@ namespace Platforms
                 all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
         }
 
+        /// <summary>
+        /// 获取路径下的文件夹名称列表
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
         public string[] GetDirectoryNames(string dir)
         {
-            return Directory.GetDirectories(dir);
+            if (!Directory.Exists(dir)) return Array.Empty<string>();
+
+            return Directory.GetDirectories(dir).Select(x => Path.GetFileName(x)).ToArray();
         }
 
         public override string ReadAllText(string file)
