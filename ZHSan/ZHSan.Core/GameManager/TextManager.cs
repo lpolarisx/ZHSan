@@ -66,6 +66,17 @@ namespace GameManager
             //Session.Current.SpriteBatch.Draw(font.Texture, pos, null, color, 0f, Vector2.Zero, scale, Microsoft.Xna.Framework.Graphics.SpriteEffects.None, depth == null ? 0 : (float)depth);
         }
 
+        private static Bounds GetTextBounds(string text, Vector2 position, float scale)
+        {
+            // TextBounds scales its position too; measure locally, then translate to the drawing position.
+            Bounds bound = font.GetFont(16).TextBounds(text, Vector2.Zero, new Vector2(scale, scale));
+            bound.X += position.X;
+            bound.Y += position.Y;
+            bound.X2 += position.X;
+            bound.Y2 += position.Y;
+            return bound;
+        }
+
         public static List<Bounds> DrawTextsReturnBounds(string text, FontPair pair, Microsoft.Xna.Framework.Vector2 pos, Microsoft.Xna.Framework.Color color, int space = 0, float scale = 1f, float? depth = null)
         {
             List<Bounds> bounds = new List<Bounds>();
@@ -85,13 +96,8 @@ namespace GameManager
 
                 Session.Current.SpriteBatch.DrawString(font.GetFont(16), te, pos + new Vector2(0, i * pair.Size * scale), color,
                     depth == null ? 0 : (float)depth, new Vector2(scale, scale));
-                bound = font.GetFont(16).TextBounds(te, pos + new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
+                bound = GetTextBounds(te, pos + new Vector2(0, i * pair.Size * scale), scale);
                 //bound = font.DrawStringReturnBounds(Session.Current.SpriteBatch, te, pos + new Vector2(0, i * pair.Size * scale), color, new Vector2(scale, scale), depth == null ? 0 : (float)depth);
-                if (scale != 1f)   //当字体的缩放倍数不为一时，相应的字体范围也要乘以缩放倍数，字体范围才准确
-                {
-                    bound.X2 = bound.X + bound.Width() * scale;
-                    bound.Y2 = bound.Y + bound.Height() * scale;
-                }
                 bounds.Add(bound);
 
             }
@@ -118,13 +124,8 @@ namespace GameManager
 
                 batch.DrawString(font.GetFont(16), te, pos + new Vector2(0, i * pair.Size * scale), color,
                     depth == null ? 0 : (float)depth, new Vector2(scale, scale));
-                bound = font.GetFont(16).TextBounds(te, pos + new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
+                bound = GetTextBounds(te, pos + new Vector2(0, i * pair.Size * scale), scale);
                 //bound = font.DrawStringReturnBounds(batch, te, pos + new Vector2(0, i * pair.Size * scale), color, new Vector2(scale, scale), depth == null ? 0 : (float)depth);
-                if (scale != 1f)   //当字体的缩放倍数不为一时，相应的字体范围也要乘以缩放倍数，字体范围才准确
-                {
-                    bound.X2 = bound.X + bound.Width() * scale;
-                    bound.Y2 = bound.Y + bound.Height() * scale;
-                }
                 bounds.Add(bound);
 
             }
@@ -152,15 +153,10 @@ namespace GameManager
 
                 // te为空字符串时, bound为[0, 0, 0, 0], 若最后一行空字符串则导致长文本高度计算错误
                 bound = !string.IsNullOrWhiteSpace(te) ? 
-                        font.GetFont(16).TextBounds(te, pos + new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale)) :
+                        GetTextBounds(te, pos + new Vector2(0, i * pair.Size * scale), scale) :
                         bounds[i-1];
 
                 //bound = font.CalcStringBounds(te, pos + new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
-                if (scale != 1f)   //当字体的缩放倍数不为一时，相应的字体范围也要乘以缩放倍数，字体范围才准确
-                {
-                    bound.X2 = bound.X + bound.Width() * scale;
-                    bound.Y2 = bound.Y + bound.Height() * scale;
-                }
                 bounds.Add(bound);
 
             }
