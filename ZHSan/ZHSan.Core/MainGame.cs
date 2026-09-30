@@ -651,7 +651,18 @@ namespace WorldOfTheThreeKingdoms
 
         protected override void Dispose(bool disposing)
         {
-            Plugin.Plugins.ClosePlugins();
+            try
+            {
+                if (disposing)
+                {
+                    mainGameScreen?.StopThreads();
+                    Plugin.Plugins.ClosePlugins();
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
+            }
         }
 
         //[DllImport("user32.dll")]

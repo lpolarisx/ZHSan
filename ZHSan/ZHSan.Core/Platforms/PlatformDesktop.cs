@@ -1329,7 +1329,7 @@ namespace Platforms
     public class PlatformTask
     {
         Thread thread;
-        public bool IsStop = false;
+        public volatile bool IsStop = false;
         public string[] ParamArray = null;
         public string[] ParamArrayResult = null;
         public byte[] ParamArrayResultBytes = null;
@@ -1346,19 +1346,25 @@ namespace Platforms
                 {
                     OnStartFinish.Invoke(null);
                 }
-            });
+            }) { IsBackground = true };
         }
         public bool IsAlive
         {
             get
             {
-                return thread != null && thread.ThreadState == System.Threading.ThreadState.Running;
+                return thread != null && thread.IsAlive;
             }
         }
 
         public void Abort()
         {
             IsStop = true;
+        }
+
+        public bool Join(int millisecondsTimeout)
+        {
+            return !thread.IsAlive ||
+                (thread != Thread.CurrentThread && thread.Join(millisecondsTimeout));
         }
 
         public void Start()

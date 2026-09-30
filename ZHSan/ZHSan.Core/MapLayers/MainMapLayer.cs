@@ -499,17 +499,17 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         public void StopThreads()
         {
+            var mapThread1 = MapThread1;
+            var mapThread2 = MapThread2;
+            mapThread1?.Abort();
+            mapThread2?.Abort();
+            MapThread1 = null;
+            MapThread2 = null;
+
+            // 纹理加载可能等待主线程，退出时不能无限等待。
+            mapThread1?.Join(1000);
+            mapThread2?.Join(1000);
             freeTilesMemory();
-            if (MapThread1 != null)
-            {
-                MapThread1.Abort();
-                MapThread1 = null;
-            }
-            if (MapThread2 != null)
-            {
-                MapThread2.Abort();
-                MapThread2 = null;
-            }            
         }
 
         PlatformTask MapThread1;
@@ -519,11 +519,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         {
             if (MapThread1 == null)
             {
-                MapThread1 = new PlatformTask(() =>
+                PlatformTask mapThread1 = null;
+                mapThread1 = new PlatformTask(() =>
                 {
                     while (true)
                     {
-                        if (MapThread1 == null || MapThread1.IsStop)
+                        if (mapThread1.IsStop)
                         {
                             break;
                         }
@@ -573,15 +574,17 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                     }
                 }
                 );
+                MapThread1 = mapThread1;
                 MapThread1.Start();
             }
             if (MapThread2 == null)
             {
-                MapThread2 = new PlatformTask(() =>
+                PlatformTask mapThread2 = null;
+                mapThread2 = new PlatformTask(() =>
                 {
                     while (true)
                     {
-                        if (MapThread2 == null || MapThread2.IsStop)
+                        if (mapThread2.IsStop)
                         {
                             break;
                         }
@@ -648,6 +651,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                         //}
                     }
                 });
+                MapThread2 = mapThread2;
                 MapThread2.Start();
             }
 

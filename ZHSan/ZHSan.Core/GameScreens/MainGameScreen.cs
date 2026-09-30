@@ -162,6 +162,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         public void Dispose()
         {
+            StopThreads();
+
             // 必须在 Plugins、MapLayer 等 UI 成员被清空前取消订阅
             mainGameScreenSubscriber?.Dispose();
             mainGameScreenSubscriber = null;
@@ -2693,7 +2695,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void saveBeforeExit()
         {
-            this.mainMapLayer.StopThreads();
+            StopThreads();
             if (Session.GlobalVariables.HardcoreMode)
             {
                 this.SaveGameAutoPosition();
@@ -2747,13 +2749,22 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void RunAI()
         {
-            do
+            while (!stoppingThreads)
             {
                 this.GameGo(new GameTime());
-            } while (true);
+            }
         }
 
         private PlatformTask aiThread;
+        private volatile bool stoppingThreads;
+
+        public void StopThreads()
+        {
+            stoppingThreads = true;
+            aiThread?.Abort();
+            aiThread?.Join(1000);
+            mainMapLayer?.StopThreads();
+        }
 
         private bool loaded = false;
 

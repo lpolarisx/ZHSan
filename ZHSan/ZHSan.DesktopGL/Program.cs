@@ -14,6 +14,7 @@ public static class Program
     {
 
         Console.OutputEncoding = Encoding.UTF8;
+        Directory.SetCurrentDirectory(AppContext.BaseDirectory);
         /*bool flag;
         Mutex mutex = new Mutex(true, "WorldOfTheThreeKingdoms", out flag);
         if (!flag)
@@ -35,37 +36,38 @@ public static class Program
                             .WriteTo.File("logs/game.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 3, outputTemplate: logTemplate)
                             .CreateLogger();
 
-        string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-        Directory.SetCurrentDirectory(exeDir);
-
-        if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
+        try
         {
-            using (MainGame game = new MainGame())
+            if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
             {
                 if (System.Diagnostics.Debugger.IsAttached)
                 {
+                    using MainGame game = new MainGame();
                     game.Run();
                 }
                 else
                 {
                     try
                     {
+                        using MainGame game = new MainGame();
                         game.Run();
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex.Message);
+                        Log.Error(ex, "游戏启动或运行失败");
 
                         MessageBox.Show("游戏错误", "中华三国志遇到严重错误，请提交游戏目录/logs/下的日志文件。", ["OK"]);
                     }
                 }
             }
+            else if (Platform.PlatFormType == PlatFormType.UWP)
+            {
+                Platform.Current.OpenFactory();
+            }
         }
-        else if (Platform.PlatFormType == PlatFormType.UWP)
+        finally
         {
-            Platform.Current.OpenFactory();
+            Log.CloseAndFlush();
         }
-
-        Log.CloseAndFlush();
     }
 }
