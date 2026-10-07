@@ -5271,11 +5271,9 @@ namespace GameObjects
 
             if (result)
             {
-                int id;
-
                 string name = LoadedFileName.Replace(".json", "");
 
-                if (int.TryParse(name.Replace("Save", ""), out id))
+                if (int.TryParse(name.Replace("Save", ""), out int id))
                 {
                     GameDate gameDate = scenarioClone.Date;
                     DateTime time = new DateTime(gameDate.Year, gameDate.Month, gameDate.Day);
@@ -5296,6 +5294,7 @@ namespace GameObjects
                         Title = scenarioClone.ScenarioTitle,
                         Mod = scenarioClone.MOD
                     };
+                    
                     if(!editing)
                     {
                         SaveScenarioSaves(saves);
@@ -5311,11 +5310,11 @@ namespace GameObjects
 
             scenarioClone = null;
 
-            JustSaved = true;
+            JustSaved = result;
 
             //ExtensionInterface.call("Save", new Object[] { this });
 
-            return true;
+            return result;
         }
 
         public static void LoadGameCommonData()

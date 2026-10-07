@@ -258,9 +258,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     var mod = new MOD();
 
-                    mod.ID = dir.Substring(dir.LastIndexOf('\\') + 1);
+                    mod.ID = Path.GetFileName(dir.Replace('\\', '/').TrimEnd('/'));
 
-                    var lines = Platform.Current.ReadAllLines($@"MODs\{mod.ID}\{mod.ID}.txt").NullToEmptyArray();
+                    var modInfoPath = Path.Combine("MODs", mod.ID, $"{mod.ID}.txt");
+                    var lines = Platform.Current.ReadAllLines(modInfoPath).NullToEmptyArray();
 
                     if (lines.Length > 0)
                     {

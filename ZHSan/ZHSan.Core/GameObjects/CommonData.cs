@@ -237,9 +237,9 @@ namespace GameObjects
             {
                 Current = new CommonData();
 
-                var path = Platform.Current.GetMODFile(@"Content\Data\Common\CommonData.dat");
+                var path = Platform.Current.GetMODFile("Content/Data/Common/CommonData.dat");
 
-                using var archive = GameDataArchive.Open(path);
+                using var archive = GameDataArchive.OpenRead(path);
 
                 var terrainDetails = archive.Load<List<TerrainDetailConfig>>("TerrainDetails.json");
                 var combatMethods = archive.Load<List<CombatMethodConfig>>("CombatMethods.json");

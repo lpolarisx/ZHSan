@@ -32,6 +32,21 @@ public sealed class GameDataArchive : IDisposable
         _archive = archive;
     }
 
+    public static GameDataArchive OpenRead(string filePath)
+    {
+        var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+
+        try
+        {
+            return new GameDataArchive(stream, new ZipArchive(stream, ZipArchiveMode.Read));
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
+    }
+
     public static GameDataArchive Open(string filePath)
     {
         var directory = Path.GetDirectoryName(filePath);

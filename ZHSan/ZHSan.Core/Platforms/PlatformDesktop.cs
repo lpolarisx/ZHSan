@@ -390,7 +390,12 @@ namespace Platforms
         {
             get
             {
-                string path = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"/WorldOfTheThreeKingdoms/";
+                // Keep macOS saves local even when the system Documents location
+                // is redirected to iCloud or changes during a running session.
+                string documents = OperatingSystem.IsMacOS()
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents")
+                    : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string path = Path.Combine(documents, "WorldOfTheThreeKingdoms") + Path.DirectorySeparatorChar;
                 lock (Platform.IoLock)
                 {
                     if (!Directory.Exists(path))
@@ -402,11 +407,18 @@ namespace Platforms
             }
         }
 
+        private string GetUserFilePath(string path, bool fullPathProvided = false)
+        {
+            // Legacy callers use Windows separators even on macOS and Linux.
+            path = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+            return fullPathProvided ? path : Path.Combine(UserApplicationDataPath, path);
+        }
+
         public bool UserDirectoryExist(string path)
         {
             try
             {
-                return DirectoryExists(UserApplicationDataPath + path);
+                return DirectoryExists(GetUserFilePath(path));
             }
             catch (Exception ex)
             {
@@ -419,7 +431,7 @@ namespace Platforms
         {
             try
             {
-                DirectoryCreateDirectory(UserApplicationDataPath + path);
+                DirectoryCreateDirectory(GetUserFilePath(path));
             }
             catch (Exception ex)
             {
@@ -466,11 +478,11 @@ namespace Platforms
                 res = res.Replace("\\", "/");
                 lock (Platform.IoLock)
                 {
-                    if (File.Exists(UserApplicationDataPath + res))
+                    if (File.Exists(GetUserFilePath(res)))
                     {
                         using (var dest = new MemoryStream())
                         {
-                            using (Stream stream = File.Open(UserApplicationDataPath + res, FileMode.Open))
+                            using (Stream stream = File.Open(GetUserFilePath(res), FileMode.Open))
                             {
                                 using (var streamReader = new StreamReader(stream))
                                 {
@@ -502,11 +514,11 @@ namespace Platforms
             {
                 lock (Platform.IoLock)
                 {
-                    if (File.Exists(UserApplicationDataPath + res))
+                    if (File.Exists(GetUserFilePath(res)))
                     {
                         using (var dest = new MemoryStream())
                         {
-                            using (Stream stream = File.Open(UserApplicationDataPath + res, FileMode.Open))
+                            using (Stream stream = File.Open(GetUserFilePath(res), FileMode.Open))
                             {
                                 using (var streamReader = new StreamReader(stream))
                                 {
@@ -546,7 +558,7 @@ namespace Platforms
                 {
                     using (var dest = new MemoryStream())
                     {
-                        using (Stream stream = File.Open(UserApplicationDataPath + res, FileMode.Open))
+                        using (Stream stream = File.Open(GetUserFilePath(res), FileMode.Open))
                         {
                             stream.CopyTo(dest);
                             return dest.ToArray();
@@ -598,9 +610,9 @@ namespace Platforms
         {
             lock (Platform.IoLock)
             {
-                if (write || File.Exists(UserApplicationDataPath + res))
+                if (write || File.Exists(GetUserFilePath(res)))
                 {
-                    return File.Open(UserApplicationDataPath + res, write ? FileMode.OpenOrCreate : FileMode.Open);
+                    return File.Open(GetUserFilePath(res), write ? FileMode.OpenOrCreate : FileMode.Open);
                 }
                 else
                 {
@@ -643,7 +655,7 @@ namespace Platforms
                 {
                     lock (Platform.IoLock)
                     {
-                        exis = File.Exists(UserApplicationDataPath + res.Trim());
+                        exis = File.Exists(GetUserFilePath(res.Trim()));
                     }
                 }
                 catch
@@ -678,7 +690,7 @@ namespace Platforms
                         {
                             lock (Platform.IoLock)
                             {
-                                exis = File.Exists(UserApplicationDataPath + re.Trim());
+                                exis = File.Exists(GetUserFilePath(re.Trim()));
                             }
                         }
                         catch
@@ -705,15 +717,17 @@ namespace Platforms
         {
             try
             {
-                DelUserFiles(new string[] { res }, null);
+                string path = GetUserFilePath(res, fullPathProvided);
                 lock (Platform.IoLock)
                 {
-                    File.WriteAllText(UserApplicationDataPath + res, content);
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    File.WriteAllText(path, content);
                 }
             }
             catch (Exception ex)
             {
                 WebTools.TakeWarnMsg("保存用户文本失败:" + res, "SaveUserFile:" + UserApplicationDataPath + res, ex);
+                throw;
             }
         }
         ///// <summary>
@@ -761,17 +775,11 @@ namespace Platforms
         {
             try
             {
-                DelUserFiles(new string[] { res }, null);
-                //File.WriteAllBytes(UserApplicationDataPath + res, bytes);
+                string path = GetUserFilePath(res);
                 lock (Platform.IoLock)
                 {
-                    using (var isolatedFileStream = File.OpenWrite(UserApplicationDataPath + res))
-                    {
-                        using (var fileWriter = new BinaryWriter(isolatedFileStream))
-                        {
-                            fileWriter.Write(bytes);
-                        }
-                    }
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    File.WriteAllBytes(path, bytes);
                 }
                 if (action != null)
                 {
@@ -798,7 +806,7 @@ namespace Platforms
                     {
                         lock (Platform.IoLock)
                         {
-                            File.Delete(UserApplicationDataPath + file.Trim());
+                            File.Delete(GetUserFilePath(file.Trim()));
                         }
                     }
                     catch (Exception ex)
