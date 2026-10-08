@@ -407,7 +407,7 @@ namespace Platforms
             }
         }
 
-        private string GetUserFilePath(string path, bool fullPathProvided = false)
+        public string GetUserFilePath(string path, bool fullPathProvided = false)
         {
             // Legacy callers use Windows separators even on macOS and Linux.
             path = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
@@ -646,25 +646,21 @@ namespace Platforms
             }
         }
 
+        /// <summary>
+        /// 判断用户文件是否存在
+        /// </summary>
+        /// <param name="res"></param>
+        /// <returns></returns>
         public bool UserFileExist(string res)
         {
-            bool exis = false;
-            if (!String.IsNullOrEmpty(res.Trim()))
+            if (string.IsNullOrWhiteSpace(res)) return false;
+
+            var path = GetUserFilePath(res.Trim());
+
+            lock (Platform.IoLock)
             {
-                try
-                {
-                    lock (Platform.IoLock)
-                    {
-                        exis = File.Exists(GetUserFilePath(res.Trim()));
-                    }
-                }
-                catch
-                {
-
-                }
+                return File.Exists(path);
             }
-
-            return exis;
         }
 
         /// <summary>
@@ -708,6 +704,7 @@ namespace Platforms
                 return null;
             }
         }
+
         /// <summary>
         /// 保存用戶文本
         /// </summary>

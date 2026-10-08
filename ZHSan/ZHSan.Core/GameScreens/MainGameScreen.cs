@@ -57,7 +57,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         public GamePlugin Plugins;
         private Point position;
         private RoutewayLayer routewayLayer;
-        private string SaveFileName;
         private ScreenManager screenManager;
         private float scrollSpeedScale;
         private float scrollSpeedScaleDefault;
@@ -124,25 +123,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             Platform.MainGame.Activated += this.Game_Activated;  // new EventHandler(this.Game_Activated);
             Platform.MainGame.Deactivated += this.Game_Deactivated;  // new EventHandler(this.Game_Deactivated);
         }        
-
-        private string SaveFileExtension
-        {
-            get
-            {
-                return ".json";
-#pragma warning disable CS0162 // Unreachable code detected
-                if (Session.GlobalVariables.EncryptSave)
-#pragma warning restore CS0162 // Unreachable code detected
-                {
-                    return ".zhs";
-                }
-                else
-                {
-                    return ".mdb";
-                }
-            }
-        }
-
 
         private void CalculateFrameRate(GameTime gameTime)
         {
@@ -1674,29 +1654,29 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         public override void SaveGame()
         {
-            this.Plugins.OptionDialogPlugin.SetStyle("SaveAndLoad");
-            this.Plugins.OptionDialogPlugin.SetTitle("存储进度");
-            this.Plugins.OptionDialogPlugin.Clear();
+            var dialog = Plugins.OptionDialogPlugin;
 
-            //throw new Exception("SaveGame");
+            dialog.SetStyle("SaveAndLoad");
+            dialog.SetTitle("存储进度");
+            dialog.Clear();
 
             var saves = GameScenario.LoadScenarioSaves();
+
+            // 0 为自动存档，手动存档从 1 开始
             for (int i = 1; i <= GameScenario.savemaxcounts; i++)
             {
-                string ss = i < 10 ? "0" + i.ToString() : i.ToString();
-                GameDelegates.VoidFunction voidFunction = delegate
-                {
-                    this.SaveFileName = "Save" + ss + this.SaveFileExtension;
-                    this.SaveGameToDisk(this.SaveFileName);
-                };
-                saves[i].ID = ss;
-                this.Plugins.OptionDialogPlugin.AddOption(saves[i].Summary, null, voidFunction);
+                dialog.AddOption(saves[i].Summary, null, () => SaveGameToDisk("Save" + i.ToString("D2")));
             }
-            this.Plugins.OptionDialogPlugin.EndAddOptions();
-            this.Plugins.OptionDialogPlugin.ShowOptionDialog(ShowPosition.Center);
+
+            dialog.EndAddOptions();
+            dialog.ShowOptionDialog(ShowPosition.Center);
         }
 
-        public void SaveGameToDisk(string LoadedFileName)
+        /// <summary>
+        /// 存档
+        /// </summary>
+        /// <param name="fileName"></param>
+        private void SaveGameToDisk(string fileName)
         {
             Session.Current.Scenario.EnableLoadAndSave = false;
 
@@ -1705,27 +1685,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 this.mainMapLayer.freeTilesMemory();
 
                 if (!Platform.Current.UserDirectoryExist("Save"))
-                {
                     Platform.Current.UserDirectoryCreate("Save");
-                }
 
-                bool saveMap;
+                bool saveMap = Session.Current.Scenario.UsingOwnCommonData;
 
-                if (Session.Current.Scenario.UsingOwnCommonData)
-                {
-                    saveMap = false;
-                }
-                else
-                {
-                    saveMap = false;
-                }
+                Session.Current.Scenario.ScenarioMap.JumpPosition = mainMapLayer.GetCurrentScreenCenter(viewportSize);
+                saveMap = saveMap || mapEdited;
 
-                Session.Current.Scenario.ScenarioMap.JumpPosition = this.mainMapLayer.GetCurrentScreenCenter(base.viewportSize);
-                saveMap = saveMap || this.mapEdited;
+                Session.Current.Scenario.SaveGameScenario(fileName, saveMap, saveMap);
 
-                Session.Current.Scenario.SaveGameScenario(LoadedFileName, saveMap, saveMap, true);
-
-                this.mainMapLayer.freeTilesMemory();
+                mainMapLayer.freeTilesMemory();
             }
             finally
             {
@@ -1736,20 +1705,17 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         public void SaveGameAutoPosition()
         {
-            this.SaveFileName = "Save00" + this.SaveFileExtension; //"AutoSave" + this.SaveFileExtension;
-            this.SaveGameToDisk(this.SaveFileName);
+            SaveGameToDisk("Save00");
         }
 
         private void SaveGameQuitPosition()
         {
-            this.SaveFileName = "QuitSave" + this.SaveFileExtension;
-            this.SaveGameToDisk(this.SaveFileName);
+            SaveGameToDisk("QuitSave");
         }
  
-        public void SaveGameWhenCrash(String _savePath)
+        public void SaveGameWhenCrash(string _savePath)
         {
-            this.SaveFileName = _savePath;
-            this.SaveGameToDisk(this.SaveFileName);
+            SaveGameToDisk(_savePath);
         }
 
         private void Scenario_OnNewFactionAppear(Faction faction)

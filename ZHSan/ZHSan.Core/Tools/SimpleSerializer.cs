@@ -127,59 +127,36 @@ namespace Tools
             }
         }
 
-        public static T DeserializeJson<T>(string s, bool zip = false, bool Net = false)
+        public static T DeserializeJson<T>(string s)
         {
-            if (zip)
+            T t;
+            
+            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(T));
+            byte[] buffer = Encoding.UTF8.GetBytes(s);
+            using (MemoryStream stream = new MemoryStream(buffer))
             {
-                s = s.GZipDecompressString();
+                //try
+                //{
+                //lock (Platform.SerializerLock)
+                //{
+                    t = (T)serializer.ReadObject(stream);
+                //}
+                //}
+                //catch (Exception ex)
+                //{
+                //    t = default(T);
+                //}
             }
 
-            T t;
-            if (Net)
-            {
-                try
-                {
-                    lock (Platform.SerializerLock)
-                    {
-                        t = JsonConvert.DeserializeObject<T>(s);
-                    }
-                }
-#pragma warning disable CS0168 // The variable 'ex' is declared but never used
-                catch (Exception ex)
-#pragma warning restore CS0168 // The variable 'ex' is declared but never used
-                {
-                    t = DeserializeJson<T>(s, false, false);
-                }
-            }
-            else
-            {
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(T));
-                byte[] buffer = Encoding.UTF8.GetBytes(s);
-                using (MemoryStream stream = new MemoryStream(buffer))
-                {
-                    //try
-                    //{
-                    //lock (Platform.SerializerLock)
-                    //{
-                        t = (T)serializer.ReadObject(stream);
-                    //}
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    t = default(T);
-                    //}
-                }
-            }
             return t;
         }
 
-        public static bool SerializeJsonFile<T>(T t, string file, bool zip = false, bool Net = false, bool fullPathProvided = false)
+        public static void SerializeJsonFile<T>(T t, string file)
         {
             try
             {
-                string json = SerializeJson(t, zip, Net);
-                Platform.Current.SaveUserFile(file, json, fullPathProvided);
-                return true;
+                string json = SerializeJson(t);
+                Platform.Current.SaveUserFile(file, json);
             }
             catch (Exception ex)
             {
@@ -187,12 +164,11 @@ namespace Tools
                 throw ex;
 #else
                 WebTools.TakeWarnMsg("序列用户对象失败:" + file, "SerializeJson:" + t.GetType(), ex);
-                return false;
 #endif
             }
         }
 
-        public static T DeserializeJsonFile<T>(string file, bool isUserFile, bool zip = false, bool Net = false)
+        public static T DeserializeJsonFile<T>(string file, bool isUserFile)
         {
             try
             {
@@ -201,7 +177,7 @@ namespace Tools
 
                 //string str = WordTools.ConvertJsonString(content);
 
-                return DeserializeJson<T>(content, zip, Net);
+                return DeserializeJson<T>(content);
             }
             catch (Exception ex)
             {

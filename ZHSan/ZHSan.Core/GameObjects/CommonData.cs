@@ -318,7 +318,7 @@ namespace GameObjects
                 Current.PersonGeneratorSetting = new PersonGeneratorSetting(personGeneratorSettings.FirstOrDefault());
                 Current.AllTreasureCreationSettings = treasureCreationSettings.Select(x => new TreasureCreationSetting(x)).ToDictionary(x => x.ID);
                 Current.AllAttackDefaultKinds = attackDefaultKinds.Select(x => new AttackDefaultKind(x)).ToList();
-                Current.AllAttackTargetKinds = attackDefaultKinds.Select(x => new AttackTargetKind(x)).ToList();
+                Current.AllAttackTargetKinds = attackTargetKinds.Select(x => new AttackTargetKind(x)).ToList();
                 Current.AllCastDefaultKinds = castDefaultKinds.Select(x => new CastDefaultKind(x)).ToList();
                 Current.AllCastTargetKinds = castTargetKinds.Select(x => new CastTargetKind(x)).ToList();
                 Current.AllStatusEffects = statusEffects.Select(x => new StatusEffect(x)).ToDictionary(x => x.ID);

@@ -588,9 +588,9 @@ namespace WorldOfTheThreeKingdoms
             base.Draw(gameTime);
         }
 
-        public void SaveGameWhenCrash(String _savePath)
+        public void SaveGameWhenCrash(string _savePath)
         {
-            this.mainGameScreen.SaveGameWhenCrash(_savePath);
+            mainGameScreen.SaveGameWhenCrash(_savePath);
         }
 
         public List<int> InitializationFactionIDs

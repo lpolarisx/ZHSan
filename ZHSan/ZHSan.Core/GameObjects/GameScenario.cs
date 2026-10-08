@@ -66,7 +66,7 @@ namespace GameObjects
         public Dictionary<Event, Architecture> YesEventsToApply = new Dictionary<Event, Architecture>();
         public Dictionary<Event, Architecture> NoEventsToApply = new Dictionary<Event, Architecture>();
 
-        public static int savemaxcounts=49;
+        public static int savemaxcounts = 49;
         // public Dictionary<Event, Architecture> YesArchiEventsToApply = new Dictionary<Event, Architecture>();
         //public Dictionary<Event, Architecture> NoArchiEventsToApply = new Dictionary<Event, Architecture>();
 
@@ -4704,136 +4704,99 @@ namespace GameObjects
             }
         }
 
-        public bool SaveGameScenario(string LoadedFileName, bool saveMap, bool saveCommonData, bool saveSettings, bool disposeMemory = true, bool fullPathProvided = false, bool editing = false)
+        public bool SaveGameScenario(string fileName, bool saveMap, bool saveCommonData, bool disposeMemory = true)
         {
-            if (this.GameTime < 0)
+            if (GameTime < 0)
             {
-                this.GameTime = 0;
+                GameTime = 0;
             }
-            if(!editing)
-            {
-                this.GameTime += (int)DateTime.Now.Subtract(sessionStartTime).TotalSeconds;
-            }
-            sessionStartTime = DateTime.Now;
 
-            List<string> errors = new List<string>();
+            GameTime += (int)DateTime.Now.Subtract(sessionStartTime).TotalSeconds;
+            sessionStartTime = DateTime.Now;
 
             ClearPersonStatusCache();
             ClearPersonWorkCache();
 
-            if(editing)
-            {
-                this.FatherIds = this.FatherIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.MotherIds = this.MotherIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.SpouseIds = this.SpouseIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.BrotherIds = this.BrotherIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.SuoshuIds = this.SuoshuIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.CloseIds = this.CloseIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.HatedIds = this.HatedIds.OrderBy(x => x.Key).ToDictionary(x => x.Key, y => y.Value);
-                this.PersonRelationIds = this.PersonRelationIds.OrderBy(x => x.PersonID1).ToList();
-            }
-
             if (!disposeMemory)
             {
-                this.DisposeLotsOfMemory();
+                DisposeLotsOfMemory();
             }
 
-            if (!editing)
+            foreach (var faction in Factions.Values)
             {
-                foreach (var faction in Factions.Values)
-                {
-                    faction.SectionsString = StaticMethods.SaveIdToString(faction.Sections);
-                    faction.ArchitecturesString = StaticMethods.SaveIdToString(faction.Architectures);
-                    faction.TroopListString = StaticMethods.SaveIdToString(faction.Troops);
-                    faction.InformationsString = StaticMethods.SaveIdToString(faction.Informations);
-                    faction.RoutewaysString = StaticMethods.SaveIdToString(faction.Routeways);
-                    faction.LegionsString = StaticMethods.SaveIdToString(faction.Legions);
-                    faction.BaseMilitaryKindsString = StaticMethods.SaveIdToString(faction.GetMilitaryKinds());
-                    faction.AvailableTechniquesString = StaticMethods.SaveIdToString(faction.AvailableTechniques.Values);
-                    faction.PlanTechniqueString = faction.PlanTechnique?.ID ?? -1;
-                    faction.GetGeneratorPersonCountString = faction.SaveGeneratorPersonCountToString();
-                    faction.TransferingMilitariesString = StaticMethods.SaveIdToString(faction.TransferingMilitaries);
-                    faction.MilitariesString = StaticMethods.SaveIdToString(faction.Militaries);
-                    faction.PrinceID = faction.Prince != null ? faction.Prince.ID : -1;
-                }
+                faction.SectionsString = StaticMethods.SaveIdToString(faction.Sections);
+                faction.ArchitecturesString = StaticMethods.SaveIdToString(faction.Architectures);
+                faction.TroopListString = StaticMethods.SaveIdToString(faction.Troops);
+                faction.InformationsString = StaticMethods.SaveIdToString(faction.Informations);
+                faction.RoutewaysString = StaticMethods.SaveIdToString(faction.Routeways);
+                faction.LegionsString = StaticMethods.SaveIdToString(faction.Legions);
+                faction.BaseMilitaryKindsString = StaticMethods.SaveIdToString(faction.GetMilitaryKinds());
+                faction.AvailableTechniquesString = StaticMethods.SaveIdToString(faction.AvailableTechniques.Values);
+                faction.PlanTechniqueString = faction.PlanTechnique?.ID ?? -1;
+                faction.GetGeneratorPersonCountString = faction.SaveGeneratorPersonCountToString();
+                faction.TransferingMilitariesString = StaticMethods.SaveIdToString(faction.TransferingMilitaries);
+                faction.MilitariesString = StaticMethods.SaveIdToString(faction.Militaries);
+                faction.PrinceID = faction.Prince != null ? faction.Prince.ID : -1;
             }
 
             foreach (var section in Sections.Values)
             {
                 section.EnsureSectionArchitecture();
-                if (!editing)
-                {
-                    section.AIDetailIDString = section.AIDetail.ID;
-                    section.OrientationFactionID = section.OrientationFaction?.ID ?? -1;
-                    section.OrientationSectionID = section.OrientationSection?.ID ?? -1;
-                    section.OrientationStateID = section.OrientationState?.ID ?? -1;
-                    section.OrientationArchitectureID = section.OrientationArchitecture?.ID ?? -1;
-                    section.ArchitecturesString = StaticMethods.SaveIdToString(section.Architectures);
-                }
+                section.AIDetailIDString = section.AIDetail.ID;
+                section.OrientationFactionID = section.OrientationFaction?.ID ?? -1;
+                section.OrientationSectionID = section.OrientationSection?.ID ?? -1;
+                section.OrientationStateID = section.OrientationState?.ID ?? -1;
+                section.OrientationArchitectureID = section.OrientationArchitecture?.ID ?? -1;
+                section.ArchitecturesString = StaticMethods.SaveIdToString(section.Architectures);
             }
 
-            if (!editing)
+            foreach (var architecture in Architectures.Values)
             {
-                foreach (var architecture in Architectures.Values)
-                {
-                    architecture.KindId = architecture.Kind.ID;
-                    architecture.StateID = architecture.LocationState.ID;
-                    architecture.CharacteristicsString = StaticMethods.SaveIdToString(architecture.Characteristics.Values);
+                architecture.KindId = architecture.Kind.ID;
+                architecture.StateID = architecture.LocationState.ID;
+                architecture.CharacteristicsString = StaticMethods.SaveIdToString(architecture.Characteristics.Values);
+                architecture.ArchitectureAreaString = StaticMethods.SaveToString(architecture.ArchitectureArea.Area);
+                architecture.PersonsString = StaticMethods.SaveIdToString(architecture.Persons);
+                architecture.MovingPersonsString = StaticMethods.SaveIdToString(architecture.GetMovingPersons());
+                architecture.NoFactionPersonsString = StaticMethods.SaveIdToString(architecture.GetNoFactionPersons());
+                architecture.NoFactionMovingPersonsString = StaticMethods.SaveIdToString(architecture.GetNoFactionMovingPersons());
 
-                    architecture.ArchitectureAreaString = StaticMethods.SaveToString(architecture.ArchitectureArea.Area);
+                //row["AgricultureWorkingPersons"] = architecture.AgricultureWorkingPersons.SaveToString();
+                //row["CommerceWorkingPersons"] = architecture.CommerceWorkingPersons.SaveToString();
+                //row["TechnologyWorkingPersons"] = architecture.TechnologyWorkingPersons.SaveToString();
+                //row["DominationWorkingPersons"] = architecture.DominationWorkingPersons.SaveToString();
+                //row["MoraleWorkingPersons"] = architecture.MoraleWorkingPersons.SaveToString();
+                //row["EnduranceWorkingPersons"] = architecture.EnduranceWorkingPersons.SaveToString();
+                //row["zhenzaiWorkingPersons"] = architecture.ZhenzaiWorkingPersons.SaveToString();
+                //row["TrainingWorkingPersons"] = architecture.TrainingWorkingPersons.SaveToString();
 
-                    architecture.PersonsString = StaticMethods.SaveIdToString(architecture.Persons);
-                    architecture.MovingPersonsString = StaticMethods.SaveIdToString(architecture.GetMovingPersons());
-                    architecture.NoFactionPersonsString = StaticMethods.SaveIdToString(architecture.GetNoFactionPersons());
-                    architecture.NoFactionMovingPersonsString = StaticMethods.SaveIdToString(architecture.GetNoFactionMovingPersons());
+                architecture.feiziliebiaoString = StaticMethods.SaveIdToString(architecture.GetConcubines());
+                architecture.MilitariesString = StaticMethods.SaveIdToString(architecture.Militaries);
+                architecture.FacilitiesString = StaticMethods.SaveIdToString(architecture.Facilities);
+                architecture.PlanFacilityKindID = architecture.PlanFacilityKind?.ID ?? -1;
+                architecture.FundPacksString = architecture.SaveFundPacksToString();
+                architecture.FoodPacksString = architecture.SaveFoodPacksToString();
+                architecture.PopulationPacksString = architecture.SavePopulationPacksToString();
+                architecture.PlanArchitectureID = architecture.PlanArchitecture?.ID ?? -1;
+                architecture.TransferFundArchitectureID = architecture.TransferFundArchitecture?.ID ?? -1;
+                architecture.TransferFoodArchitectureID = architecture.TransferFoodArchitecture?.ID ?? -1;
+                architecture.DefensiveLegionID = architecture.DefensiveLegion?.ID ?? -1;
+                architecture.CaptivesString = StaticMethods.SaveIdToString(architecture.Captives);
+                architecture.RobberTroopID = architecture.RobberTroop?.ID ?? -1;
+                architecture.AILandLinksString = StaticMethods.SaveIdToString(architecture.AILandLinks);
+                architecture.AIWaterLinksString = StaticMethods.SaveIdToString(architecture.AIWaterLinks);
 
-                    //row["AgricultureWorkingPersons"] = architecture.AgricultureWorkingPersons.SaveToString();
-                    //row["CommerceWorkingPersons"] = architecture.CommerceWorkingPersons.SaveToString();
-                    //row["TechnologyWorkingPersons"] = architecture.TechnologyWorkingPersons.SaveToString();
-                    //row["DominationWorkingPersons"] = architecture.DominationWorkingPersons.SaveToString();
-                    //row["MoraleWorkingPersons"] = architecture.MoraleWorkingPersons.SaveToString();
-                    //row["EnduranceWorkingPersons"] = architecture.EnduranceWorkingPersons.SaveToString();
-                    //row["zhenzaiWorkingPersons"] = architecture.ZhenzaiWorkingPersons.SaveToString();
-                    //row["TrainingWorkingPersons"] = architecture.TrainingWorkingPersons.SaveToString();
+                //row["zainanleixing"] = architecture.zainan.zainanzhonglei.ID;
+                //row["zainanshengyutianshu"] = architecture.zainan.shengyutianshu;
 
-                    architecture.feiziliebiaoString = StaticMethods.SaveIdToString(architecture.GetConcubines());
-                    architecture.MilitariesString = StaticMethods.SaveIdToString(architecture.Militaries);
-                    architecture.FacilitiesString = StaticMethods.SaveIdToString(architecture.Facilities);
+                architecture.InformationsString = StaticMethods.SaveIdToString(architecture.Informations);
 
-                    architecture.PlanFacilityKindID = architecture.PlanFacilityKind?.ID ?? -1;
-
-                    architecture.FundPacksString = architecture.SaveFundPacksToString();
-                    architecture.FoodPacksString = architecture.SaveFoodPacksToString();
-                    architecture.PopulationPacksString = architecture.SavePopulationPacksToString();
-
-                    architecture.PlanArchitectureID = (architecture.PlanArchitecture != null) ? architecture.PlanArchitecture.ID : -1;
-
-                    architecture.TransferFundArchitectureID = (architecture.TransferFundArchitecture != null) ? architecture.TransferFundArchitecture.ID : -1;
-
-                    architecture.TransferFoodArchitectureID = (architecture.TransferFoodArchitecture != null) ? architecture.TransferFoodArchitecture.ID : -1;
-
-                    architecture.DefensiveLegionID = (architecture.DefensiveLegion != null) ? architecture.DefensiveLegion.ID : -1;
-
-                    architecture.CaptivesString = StaticMethods.SaveIdToString(architecture.Captives);
-
-                    architecture.RobberTroopID = (architecture.RobberTroop != null) ? architecture.RobberTroop.ID : -1;
-
-                    architecture.AILandLinksString = StaticMethods.SaveIdToString(architecture.AILandLinks);
-
-                    architecture.AIWaterLinksString = StaticMethods.SaveIdToString(architecture.AIWaterLinks);
-
-                    //row["zainanleixing"] = architecture.zainan.zainanzhonglei.ID;
-                    //row["zainanshengyutianshu"] = architecture.zainan.shengyutianshu;
-
-                    architecture.InformationsString = StaticMethods.SaveIdToString(architecture.Informations);
-
-                    //string s = "";
-                    //foreach (Architecture i in architecture.AIBattlingArchitectures)
-                    //{
-                    //    s += i.ID + " ";
-                    //}
-                    //row["AIBattlingArchitectures"] = s;
-                }
+                //string s = "";
+                //foreach (Architecture i in architecture.AIBattlingArchitectures)
+                //{
+                //    s += i.ID + " ";
+                //}
+                //row["AIBattlingArchitectures"] = s;
             }
 
             foreach (var legion in Legions.Values)
@@ -4860,7 +4823,7 @@ namespace GameObjects
                 troop.WillTroopID = troop.RealWillTroop?.ID ?? -1;
                 troop.WillArchitectureID = troop.RealWillArchitecture?.ID ?? -1;
 
-                if (!editing) troop.CaptivesString = StaticMethods.SaveIdToString(troop.Captives);  //0413剧本编辑器部队可以存储俘虏  
+                troop.CaptivesString = StaticMethods.SaveIdToString(troop.Captives);  //0413剧本编辑器部队可以存储俘虏  
 
                 troop.EventInfluencesString = StaticMethods.SaveIdToString(troop.EventInfluences);
                 troop.CombatMethodsString = StaticMethods.SaveIdToString(troop.CombatMethods.Values);
@@ -4890,7 +4853,7 @@ namespace GameObjects
 
                 var belongedSection = startArchitecture.BelongedSection;
 
-                if ((routeway.Building || routeway.LastActivePointIndex >= 0 || (belongedSection == null || (!belongedSection.AIDetail.AutoRun && IsPlayer(startArchitecture.BelongedFaction)))))
+                if (routeway.Building || routeway.LastActivePointIndex >= 0 || belongedSection == null || (!belongedSection.AIDetail.AutoRun && IsPlayer(startArchitecture.BelongedFaction)))
                 {
                     routeway.StartArchitectureString = routeway.StartArchitecture?.ID ?? -1;
                     routeway.EndArchitectureString = routeway.EndArchitecture?.ID ?? -1;
@@ -4919,165 +4882,64 @@ namespace GameObjects
                 captive.RansomArchitectureID = captive.RansomArchitecture?.ID ?? -1; 
             }
 
-            if (!editing)
-            {
-                ClearTempDic();
-            }
+            ClearTempDic();
 
-            if (!editing)
+            foreach (var person in AllPersons.Values)
             {
-                foreach (var person in AllPersons.Values)
+                person.IdealTendencyIDString = person.IdealTendency?.ID ?? -1;
+                if (person.Character != null)
                 {
-                    person.UniqueTitlesString = StaticMethods.SaveIdToString(person.UniqueTitles);
-                    // person.UniqueMilitaryKindsString = person.UniqueMilitaryKinds.SaveToString();
-                    person.IdealTendencyIDString = (person.IdealTendency != null) ? person.IdealTendency.ID : -1;
-                    if (person.Character != null)
+                    person.PCharacter = person.Character.ID;
+                }
+                person.UniqueTitlesString = StaticMethods.SaveIdToString(person.UniqueTitles);
+                person.UniqueMilitaryKindsString = StaticMethods.SaveIdToString(person.UniqueMilitaryKinds);
+
+                //row["Braveness"] = person.BaseBraveness;                    
+                //row["Calmness"] = person.BaseCalmness;
+                //row["Loyalty"] = person.Loyalty;
+
+                FatherIds[person.ID] = person.Father?.ID ?? -1;
+                MotherIds[person.ID] = person.Mother?.ID ?? -1;
+                SpouseIds[person.ID] = person.Spouse?.ID ?? -1;
+                BrotherIds.TryAdd(person.ID, person.Brothers.Select(x => x.ID).ToArray());
+                SuoshuIds.TryAdd(person.ID, person.suoshurenwuList.Select(x => x.ID).ToArray());
+                CloseIds.TryAdd(person.ID, person.GetClosePersons().Select(x => x.ID).ToArray());
+                HatedIds.TryAdd(person.ID, person.GetHatedPersons().Select(x => x.ID).ToArray());
+
+                MarriageGranterId.Add(person.ID, person.marriageGranter?.ID ?? -1);
+
+                //row["TrainingMilitaryID"] = -1;
+                //row["RecruitmentMilitaryID"] = person.RecruitmentMilitary == null ? -1 : person.RecruitmentMilitary.ID;
+
+                person.ConvincingPersonID = person.ConvincingPerson?.ID ?? -1;
+                person.SkillsString = StaticMethods.SaveIdToString(person.Skills.Values);
+                person.RealTitlesString = StaticMethods.SaveIdToString(person.RealTitles);
+                person.StudyingTitleString = person.StudyingTitle?.ID ?? -1;
+                person.StuntsString = StaticMethods.SaveIdToString(person.Stunts.Values);
+                person.StudyingStuntString = person.StudyingStunt?.ID ?? -1;
+                person.waitForFeiziId = person.WaitForFeiZi?.ID ?? -1;
+                person.preferredTroopPersonsString = StaticMethods.SaveIdToString(person.PreferredTroopPersons);
+                person.TrainPolicyIDString = person.TrainPolicy?.ID ?? -1;
+
+                foreach (var (key, value) in person.GetRelations())
+                {
+                    var personIDRelation = new PersonIDRelation()
                     {
-                        person.PCharacter = person.Character.ID;
-                    }
-                    person.UniqueTitlesString = StaticMethods.SaveIdToString(person.UniqueTitles);
-                    person.UniqueMilitaryKindsString = StaticMethods.SaveIdToString(person.UniqueMilitaryKinds);
-
-                    //row["Braveness"] = person.BaseBraveness;                    
-                    //row["Calmness"] = person.BaseCalmness;
-                    //row["Loyalty"] = person.Loyalty;
-
-                    FatherIds[person.ID] = person.Father?.ID ?? -1;
-                    MotherIds[person.ID] = person.Mother?.ID ?? -1;
-                    SpouseIds[person.ID] = person.Spouse?.ID ?? -1;
-
-                    String brotherStr = "";
-                    foreach (Person p in person.Brothers)
-                    {
-                        brotherStr += p.ID + " ";
-                    }
-
-                    String str;
-                    char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-                    String[] strArray;
-                    int[] intArray;
-                    try
-                    {
-                        str = brotherStr;
-                        strArray = str.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                        intArray = new int[strArray.Length];
-                        for (int i = 0; i < strArray.Length; i++)
-                        {
-                            intArray[i] = int.Parse(strArray[i]);
-                        }
-                        BrotherIds.Add(person.ID, intArray);
-                    }
-                    catch
-                    {
-                        errors.Add("义兄弟一栏应为半型空格分隔的人物ID");
-                    }
-
-                    String suoshuStr = "";
-                    foreach (Person p in person.suoshurenwuList)
-                    {
-                        suoshuStr += p.ID + " ";
-                    }
-
-                    if (suoshuStr != null)
-                    {
-                        try
-                        {
-                            strArray = suoshuStr.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                            intArray = new int[strArray.Length];
-                            for (int i = 0; i < strArray.Length; i++)
-                            {
-                                intArray[i] = int.Parse(strArray[i]);
-                            }
-                            SuoshuIds.Add(person.ID, intArray);
-                        }
-                        catch
-                        {
-                            errors.Add("所属人物表一栏应为半型空格分隔的人物ID");
-                        }
-                    }
-
-                    String closeStr = "";
-                    String hatedStr = "";
-                    foreach (Person p in person.GetClosePersons())
-                    {
-                        closeStr += p.ID + " ";
-                    }
-                    foreach (Person p in person.GetHatedPersons())
-                    {
-                        hatedStr += p.ID + " ";
-                    }
-
-                    try
-                    {
-                        str = closeStr;
-                        strArray = str.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                        intArray = new int[strArray.Length];
-                        for (int i = 0; i < strArray.Length; i++)
-                        {
-                            intArray[i] = int.Parse(strArray[i]);
-                        }
-                        CloseIds.Add(person.ID, intArray);
-                    }
-                    catch
-                    {
-                        errors.Add("亲爱武将一栏应为半型空格分隔的人物ID");
-                    }
-
-                    try
-                    {
-                        str = hatedStr;
-                        strArray = str.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-                        intArray = new int[strArray.Length];
-                        for (int i = 0; i < strArray.Length; i++)
-                        {
-                            intArray[i] = int.Parse(strArray[i]);
-                        }
-                        HatedIds.Add(person.ID, intArray);
-                    }
-                    catch
-                    {
-                        errors.Add("厌恶武将一栏应为半型空格分隔的人物ID");
-                    }
-
-                    MarriageGranterId.Add(person.ID, person.marriageGranter != null ? person.marriageGranter.ID : -1);
-
-                    //row["TrainingMilitaryID"] = -1;
-                    //row["RecruitmentMilitaryID"] = person.RecruitmentMilitary == null ? -1 : person.RecruitmentMilitary.ID;
-
-                    person.ConvincingPersonID = (person.ConvincingPerson != null) ? person.ConvincingPerson.ID : -1;
-
-                    person.SkillsString = StaticMethods.SaveIdToString(person.Skills.Values);
-                    person.RealTitlesString = StaticMethods.SaveIdToString(person.RealTitles);
-                    person.StudyingTitleString = (person.StudyingTitle != null) ? person.StudyingTitle.ID : -1;
-
-                    person.StuntsString = StaticMethods.SaveIdToString(person.Stunts.Values);
-                    person.StudyingStuntString = (person.StudyingStunt != null) ? person.StudyingStunt.ID : -1;
-
-                    person.waitForFeiziId = (person.WaitForFeiZi != null) ? person.WaitForFeiZi.ID : -1;
-                    person.preferredTroopPersonsString = StaticMethods.SaveIdToString(person.PreferredTroopPersons);
-
-                    person.TrainPolicyIDString = person.TrainPolicy == null ? -1 : person.TrainPolicy.ID;
-
-                    foreach (KeyValuePair<Person, int> pi in person.GetRelations())
-                    {
-                        var personIDRelation = new PersonIDRelation()
-                        {
-                            PersonID1 = person.ID,
-                            PersonID2 = pi.Key.ID,
-                            Relation = pi.Value
-                        };
-                        PersonRelationIds.Add(personIDRelation);
-                    }
+                        PersonID1 = person.ID,
+                        PersonID2 = key.ID,
+                        Relation = value
+                    };
+                    PersonRelationIds.Add(personIDRelation);
                 }
             }
-            if(!editing)
-            {
-                captiveData = GetCaptives();
-            }
+            
+            captiveData = GetCaptives();
 
             if (saveMap)
             {
-                this.ScenarioMap.MapDataString = ScenarioMap.SaveToString();//修复游戏中编辑地形后无法保存
+                // 修复游戏中编辑地形后无法保存
+                ScenarioMap.MapDataString = ScenarioMap.SaveToString();
+
                 foreach (var region in Regions.Values)
                 {
                     region.StatesListString = StaticMethods.SaveIdToString(region.States);
@@ -5112,7 +4974,7 @@ namespace GameObjects
                 yearTableEntry.FactionsString = StaticMethods.SaveIdToString(yearTableEntry.Factions);
             }
 
-            if (saveMap && !editing)
+            if (saveMap)
             {
                 foreach (var e in AllEvents.Values)
                 {
@@ -5136,21 +4998,19 @@ namespace GameObjects
                 }
             }
 
-            this.CurrentPlayerID = ((this.CurrentPlayer != null) ? this.CurrentPlayer.ID : -1).ToString();
-            if(!editing)
-            {
-                PlayerList = PlayerFactions.Select(x => x.ID).ToList();
-                this.PlayerInfo = this.GetPlayerInfo();
-            }
+            int currentPlayerId = CurrentPlayer?.ID ?? -1;
+            CurrentPlayerID = currentPlayerId.ToString();
+            
+            PlayerList = PlayerFactions.Select(x => x.ID).ToList();
+            PlayerInfo = GetPlayerInfo();
 
             FactionsQueue.FactionQueue = FactionsQueue.SaveQueueToString();
 
-
             //row["JumpPosition"] = StaticMethods.SaveToString(new Point?(ScenarioMap.JumpPosition));
 
-            if (this.OnAfterSaveScenario != null)
+            if (OnAfterSaveScenario != null)
             {
-                this.OnAfterSaveScenario();
+                OnAfterSaveScenario();
             }
 
             foreach (var biography in AllBiographies.Values)
@@ -5158,33 +5018,13 @@ namespace GameObjects
                 biography.MilitaryKindsString = StaticMethods.SaveIdToString(biography.MilitaryKinds);
             }
 
-            var scenarioClone = this.Clone();            
+            var scenarioClone = Clone();            
 
             if (!saveCommonData && !UsingOwnCommonData)
             {
                 scenarioClone.GameCommonData = null;
             }
             
-
-
-            if (saveSettings)
-            {
-
-            }
-            else
-            {
-                //scenarioClone.Parameters = null;
-                //scenarioClone.GlobalVariables = null;
-            }
-
-            var saves = LoadScenarioSaves();
-            string file = LoadedFileName;
-            if (!fullPathProvided)
-            {
-                file = @"Save\" + LoadedFileName;
-            }
-
-            string fileName = Path.GetFileNameWithoutExtension(LoadedFileName);
             string savePath = GetSavePath(fileName);
             using var archive = GameDataArchive.Open(savePath);
 
@@ -5260,61 +5100,38 @@ namespace GameObjects
             archive.Save("YearTables.json", yearTableConfigs);
             archive.Save("GameScenarios.json", scenarioConfig);
 
-            //bool zip = true;
+            var saves = LoadScenarioSaves();
 
-            //if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
-            //{
-            //    zip = false;
-            //}
-
-            bool result = SimpleSerializer.SerializeJsonFile(scenarioClone, file, false, false, fullPathProvided);
-
-            if (result)
+            if (int.TryParse(fileName.Replace("Save", ""), out int id))
             {
-                string name = LoadedFileName.Replace(".json", "");
+                GameDate gameDate = scenarioClone.Date;
+                DateTime time = new DateTime(gameDate.Year, gameDate.Month, gameDate.Day);
 
-                if (int.TryParse(name.Replace("Save", ""), out int id))
+                saves[id] = new Scenario()
                 {
-                    GameDate gameDate = scenarioClone.Date;
-                    DateTime time = new DateTime(gameDate.Year, gameDate.Month, gameDate.Day);
-
-                    saves[id] = new Scenario()
-                    {
-                        Create = DateTime.Now.ToSeasonDateTime(),
-                        Desc = scenarioClone.ScenarioDescription,
-                        IDs = "",
-                        Info = scenarioClone.PlayerInfo,
-                        Name = name,
-                        Names = "",
-                        Path = "",
-                        PlayTime = GameTime.ToString(),
-                        Player = "",
-                        Players = String.Join(",", scenarioClone.PlayerList.NullToEmptyList()),
-                        Time = time.ToSeasonDate(),
-                        Title = scenarioClone.ScenarioTitle,
-                        Mod = scenarioClone.MOD
-                    };
-                    
-                    if(!editing)
-                    {
-                        SaveScenarioSaves(saves);
-                    }
-                    else 
-                    {
-                        string saveDir = @"Save\";
-                        string saveFile = saveDir + "Saves.json";
-                        SimpleSerializer.SerializeJsonFile(saves, saveFile);
-                    }
-                }
+                    Create = DateTime.Now.ToSeasonDateTime(),
+                    Desc = scenarioClone.ScenarioDescription,
+                    IDs = "",
+                    Info = scenarioClone.PlayerInfo,
+                    Name = fileName,
+                    Names = "",
+                    Path = "",
+                    PlayTime = GameTime.ToString(),
+                    Player = "",
+                    Players = string.Join(",", scenarioClone.PlayerList.NullToEmptyList()),
+                    Time = time.ToSeasonDate(),
+                    Title = scenarioClone.ScenarioTitle,
+                    Mod = scenarioClone.MOD
+                };
+                
+                SaveScenarioSaves(saves);
             }
 
             scenarioClone = null;
 
-            JustSaved = result;
+            JustSaved = true;
 
-            //ExtensionInterface.call("Save", new Object[] { this });
-
-            return result;
+            return true;
         }
 
         public static void LoadGameCommonData()
@@ -5380,58 +5197,39 @@ namespace GameObjects
 
         public static List<Scenario> LoadScenarioSaves()
         {
-            string saveDir = @"Save\";
+            const string saveDir = @"Save\";
+            const string saveFile = saveDir + "Saves.json";
 
             if (!Platform.Current.UserDirectoryExist(saveDir))
-            {
                 Platform.Current.UserDirectoryCreate(saveDir);
-            }
 
-            string saveFile = saveDir + "Saves.json";
+            var scenarios = new List<Scenario>();
 
-            List<Scenario> scesList = null;
-
-            if (Platform.Current.UserFileExist(new String[] {saveFile})[0])
+            if (Platform.Current.UserFileExist(saveFile))
             {
-                scesList = SimpleSerializer.DeserializeJsonFile<List<Scenario>>(saveFile, true).NullToEmptyList();
+                var saveStore = new JsonStore<ScenarioConfig>(saveFile);
+                scenarios = saveStore.Load().Select(x => new Scenario(x)).ToList();
             }
-            
-            if (scesList == null)
-            {
-                scesList = new List<Scenario>();
+                
+            // 索引 0 为自动存档（AutoSaveID），1..savemaxcounts 为手动存档
+            for (int i = scenarios.Count; i <= savemaxcounts; i++)
+                scenarios.Add(new Scenario { ID = i.ToString("D2") });
 
-                for (int i = 0; i <= savemaxcounts+1; i++)
-                {
-                    var sce = new Scenario()
-                    {
-                        ID = i < 10 ? "0" + i.ToString() : i.ToString()
-                    };
-                    scesList.Add(sce);
-                }
-            }
-            else if(scesList.Count<=GameScenario.savemaxcounts)
-            {
-                for (int i = scesList.Count; i <= savemaxcounts ; i++)
-                {
-                    var sce = new Scenario()
-                    {
-                        ID = i < 10 ? "0" + i.ToString() : i.ToString()
-                    };
-                    scesList.Add(sce);
-                }
-            }
-
-            return scesList;
+            return scenarios;
         }
 
         public static void SaveScenarioSaves(List<Scenario> saves)
         {
             string saveDir = @"Save\";
             string saveFile = saveDir + "Saves.json";
+            // string savePath = Path.Combine(PlatformBase.Current.UserApplicationDataPath, "save", "Saves.json");
 
-            SimpleSerializer.SerializeJsonFile(saves, saveFile);
+            // SimpleSerializer.SerializeJsonFile(saves, saveFile);
 
-            if (Session.MainGame.mainMenuScreen.MenuType == WorldOfTheThreeKingdoms.GameScreens.MenuType.Save)
+            var saveStore = new JsonStore<ScenarioConfig>(saveFile);
+            saveStore.Save(saves.Select(x => x.ToConfig()).ToList());
+
+            if (Session.MainGame.mainMenuScreen.MenuType == MenuType.Save)
             {
                 Session.MainGame.mainMenuScreen.InitScenarioSaveList();
             }

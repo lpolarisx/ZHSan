@@ -6,7 +6,7 @@ namespace GameObjects.TroopDetail;
 [DataContract]
 public class AttackTargetKind : GameObject
 {
-    public AttackTargetKind(AttackDefaultKindConfig config)
+    public AttackTargetKind(AttackTargetKindConfig config)
     {
         ID = config.Id;
         Name = config.Name;
