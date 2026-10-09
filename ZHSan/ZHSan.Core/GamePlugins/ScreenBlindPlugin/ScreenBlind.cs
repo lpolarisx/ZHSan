@@ -112,6 +112,7 @@ namespace ScreenBlindPlugin
                 this.SeasonTexture = this.WinterTexture;
             }
             this.DateText.Text = Session.Current.Scenario.Date.ToDateString();
+            this.FactionTechText.Text = string.Empty;
             if (Session.Current.Scenario.CurrentFaction != null)
             {
                 if ((Session.Current.Scenario.CurrentFaction == Session.Current.Scenario.CurrentPlayer) || Session.GlobalVariables.SkyEye)
@@ -153,7 +154,7 @@ namespace ScreenBlindPlugin
                     this.FactionText.Text = string.Concat(new object[] { Session.Current.Scenario.CurrentFaction.Name, " • ", Session.Current.Scenario.CurrentFaction.TotalTechniquePoint, });
 
                     var techniqueId = Session.Current.Scenario.CurrentFaction.UpgradingTechnique;
-                    if (Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(techniqueId, out var technique))
+                    if (techniqueId >= 0 && Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(techniqueId, out var technique))
                     {
                         FactionTechText.Text = $"{technique.Name}•余{Session.Current.Scenario.CurrentFaction.UpgradingDaysLeft * Session.Parameters.DayInTurn}天";
                     }

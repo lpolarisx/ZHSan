@@ -4424,7 +4424,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 if (btnDantiao.Visible)
                 {
-                    CacheManager.DrawString(Session.Current.Font, "单挑", btnDantiao.Position + new Vector2(20, 7), Color.DarkRed, 0f, Vector2.Zero, 1f, SpriteEffects.None, 1f);
+                    const string label = "单挑";
+                    var textBounds = CacheManager.CalculateTextBounds(Session.Current.Font, label, Vector2.Zero, 1f)[0];
+                    float textScale = Math.Min(btnDantiao.Height * 0.5f / textBounds.Height(), btnDantiao.Width * 0.6f / textBounds.Width());
+                    textBounds = CacheManager.CalculateTextBounds(Session.Current.Font, label, Vector2.Zero, textScale)[0];
+                    // Center the visible glyphs, accounting for the font's bearing and baseline.
+                    var textPosition = btnDantiao.Position + new Vector2(
+                        (btnDantiao.Width - textBounds.Width()) / 2f - textBounds.X,
+                        (btnDantiao.Height - textBounds.Height()) / 2f - textBounds.Y);
+                    CacheManager.DrawString(Session.Current.Font, label, textPosition, Color.DarkRed, 0f, Vector2.Zero, textScale, SpriteEffects.None, 1f);
                 }
             }
             else if (MenuType == MenuType.New)
