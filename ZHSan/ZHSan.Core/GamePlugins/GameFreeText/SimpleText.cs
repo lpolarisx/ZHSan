@@ -35,6 +35,8 @@ namespace GameFreeText
         {
             get
             {
+                if (string.IsNullOrEmpty(Text)) return 0;
+                
                 return Convert.ToInt32(OneWidthHeight.X * Text.Length * Builder.Scale);  // ((this.TextTexture != null) ? this.TextTexture.Width : 0);
             }
         }

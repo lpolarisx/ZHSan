@@ -615,42 +615,23 @@ public class MilitaryKind : GameObject
 
     public int GetTerrainAdaptability(TerrainKind terrain)
     {
-        switch (terrain)
+        const int DefaultAdaptability = 3500;
+
+        return terrain switch
         {
-            case TerrainKind.无:
-                return 0xdac;
-
-            case TerrainKind.平原:
-                return PlainAdaptability;
-
-            case TerrainKind.草原:
-                return GrasslandAdaptability;
-
-            case TerrainKind.森林:
-                return ForrestAdaptability;
-
-            case TerrainKind.湿地:
-                return MarshAdaptability;
-
-            case TerrainKind.山地:
-                return MountainAdaptability;
-
-            case TerrainKind.水域:
-                return WaterAdaptability;
-
-            case TerrainKind.峻岭:
-                return RidgeAdaptability;
-
-            case TerrainKind.荒地:
-                return WastelandAdaptability;
-
-            case TerrainKind.沙漠:
-                return DesertAdaptability;
-
-            case TerrainKind.栈道:
-                return CliffAdaptability;
-        }
-        return 0xdac;
+            TerrainKind.None => DefaultAdaptability,
+            TerrainKind.Plain => PlainAdaptability,
+            TerrainKind.Grassland => GrasslandAdaptability,
+            TerrainKind.Forrest => ForrestAdaptability,
+            TerrainKind.Marsh => MarshAdaptability,
+            TerrainKind.Mountain => MountainAdaptability,
+            TerrainKind.Water => WaterAdaptability,
+            TerrainKind.Ridge => RidgeAdaptability,
+            TerrainKind.Wasteland => WaterAdaptability,
+            TerrainKind.Desert => DesertAdaptability,
+            TerrainKind.Cliff => CliffAdaptability,
+            _ => DefaultAdaptability,
+        };
     }
 
     public bool IsMovableOnPosition(Point position)

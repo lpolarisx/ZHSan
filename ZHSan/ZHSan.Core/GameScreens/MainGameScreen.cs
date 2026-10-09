@@ -1663,7 +1663,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             var saves = GameScenario.LoadScenarioSaves();
 
             // 0 为自动存档，手动存档从 1 开始
-            for (int i = 1; i <= GameScenario.savemaxcounts; i++)
+            foreach (int i in Enumerable.Range(1, GameScenario.savemaxcounts))
             {
                 dialog.AddOption(saves[i].Summary, null, () => SaveGameToDisk("Save" + i.ToString("D2")));
             }

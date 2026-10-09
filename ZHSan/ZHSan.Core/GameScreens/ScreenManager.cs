@@ -742,10 +742,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             if (CurrentArchitecture == null) return;
             
-            var military = CurrentArchitecture.GetCampaignMilitaryList().FirstOrDefault(x => x.Selected);
-            if (military != null)
+            var militaries = CurrentArchitecture.GetCampaignMilitaryList().Where(x => x.Selected).ToList();
+            if (militaries.Count > 0)
             {
-                CurrentMilitary= military;
+                CurrentMilitary = militaries.FirstOrDefault();
+                CurrentMilitaries = [.. militaries];
                 Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.ArchitectureAvailableContactArea));
             }
         }

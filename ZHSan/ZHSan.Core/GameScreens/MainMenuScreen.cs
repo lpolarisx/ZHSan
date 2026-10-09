@@ -2523,9 +2523,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             btScenarioPlayersList = new List<CheckBox>();
             CurrentScenario = null;
 
-            ScenarioList = SimpleSerializer.DeserializeJsonFile<List<Scenario>>(file, false, false, false);
+            ScenarioList = SimpleSerializer.DeserializeJsonFile<List<Scenario>>(file, false);
             //var str = SimpleSerializer.SerializeJson(ScenarioList, false, true, true);
-            
+
             #region 预处理剧本列表信息
 
             frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);

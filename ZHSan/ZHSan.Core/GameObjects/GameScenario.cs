@@ -1693,19 +1693,19 @@ namespace GameObjects
                     int chance = 0;
                     switch (this.GetTerrainKindByPosition(position))
                     {
-                        case TerrainKind.平原:
+                        case TerrainKind.Plain:
                             chance = 3;
                             break;
 
-                        case TerrainKind.草原:
+                        case TerrainKind.Grassland:
                             chance = 4;
                             break;
 
-                        case TerrainKind.森林:
+                        case TerrainKind.Forrest:
                             chance = 10;
                             break;
 
-                        case TerrainKind.山地:
+                        case TerrainKind.Mountain:
                             chance = 6;
                             break;
                     }
@@ -2162,9 +2162,9 @@ namespace GameObjects
 
         public TerrainKind GetTerrainKindByPosition(Point position)
         {
-            if (this.PositionOutOfRange(position))
+            if (PositionOutOfRange(position))
             {
-                return TerrainKind.无;
+                return TerrainKind.None;
             }
             return (TerrainKind)ScenarioMap.MapData[position.X, position.Y];
         }
@@ -2626,7 +2626,7 @@ namespace GameObjects
                 return false;
             }
             TerrainKind terrainKindByPosition = this.GetTerrainKindByPosition(position);
-            return (((typevalid && (type == MilitaryType.Navy)) && (terrainKindByPosition == TerrainKind.水域)) || ((((terrainKindByPosition == TerrainKind.平原) || (terrainKindByPosition == TerrainKind.草原)) || (terrainKindByPosition == TerrainKind.森林)) || (terrainKindByPosition == TerrainKind.山地)));
+            return (((typevalid && (type == MilitaryType.Navy)) && (terrainKindByPosition == TerrainKind.Water)) || ((((terrainKindByPosition == TerrainKind.Plain) || (terrainKindByPosition == TerrainKind.Grassland)) || (terrainKindByPosition == TerrainKind.Forrest)) || (terrainKindByPosition == TerrainKind.Mountain)));
         }
 
         public bool IsLastPlayer(Faction faction)
@@ -4813,7 +4813,7 @@ namespace GameObjects
                 troop.LeaderIDString = troop.Leader.ID;
                 troop.MilitaryID = troop.Army.ID;
                 troop.StartingArchitectureString = troop.StartingArchitecture?.ID ?? -1;
-                troop.PersonsString = troop.SavePersonsToString();
+                troop.PersonsString = StaticMethods.SaveIdToString(troop.Persons);
 
                 //row["PositionX"] = troop.Position.X;
                 //row["PositionY"] = troop.Position.Y;
@@ -5207,7 +5207,7 @@ namespace GameObjects
 
             if (Platform.Current.UserFileExist(saveFile))
             {
-                var saveStore = new JsonStore<ScenarioConfig>(saveFile);
+                var saveStore = new JsonStore<ScenarioConfig>(Platform.Current.GetUserFilePath(saveFile));
                 scenarios = saveStore.Load().Select(x => new Scenario(x)).ToList();
             }
                 
@@ -5226,7 +5226,7 @@ namespace GameObjects
 
             // SimpleSerializer.SerializeJsonFile(saves, saveFile);
 
-            var saveStore = new JsonStore<ScenarioConfig>(saveFile);
+            var saveStore = new JsonStore<ScenarioConfig>(Platform.Current.GetUserFilePath(saveFile));
             saveStore.Save(saves.Select(x => x.ToConfig()).ToList());
 
             if (Session.MainGame.mainMenuScreen.MenuType == MenuType.Save)

@@ -228,46 +228,6 @@ namespace GameObjects
             return false;
         }
 
-        public int GetTerrainAdaptability(TerrainKind terrain)
-        {
-            switch (terrain)
-            {
-                case TerrainKind.无:
-                    return 0xdac;
-
-                case TerrainKind.平原:
-                    return this.Kind.PlainAdaptability;
-
-                case TerrainKind.草原:
-                    return this.Kind.GrasslandAdaptability;
-
-                case TerrainKind.森林:
-                    return this.Kind.ForrestAdaptability;
-
-                case TerrainKind.湿地:
-                    return this.Kind.MarshAdaptability;
-
-                case TerrainKind.山地:
-                    return this.Kind.MountainAdaptability;
-
-                case TerrainKind.水域:
-                    return this.Kind.WaterAdaptability;
-
-                case TerrainKind.峻岭:
-                    return this.Kind.RidgeAdaptability;
-
-                case TerrainKind.荒地:
-                    return this.Kind.WastelandAdaptability;
-
-                case TerrainKind.沙漠:
-                    return this.Kind.DesertAdaptability;
-
-                case TerrainKind.栈道:
-                    return this.Kind.CliffAdaptability;
-            }
-            return 0xdac;
-        }
-
         public int IncreaseCombativity(int value)
         {
             var increment = Math.Min(CombativityCeiling - Combativity, value);
@@ -368,7 +328,7 @@ namespace GameObjects
                 var architecture = Session.Current.Scenario.GetArchitectureByPosition(point);
                 var terrainKind = Session.Current.Scenario.GetTerrainKindByPosition(point);
 
-                if ((architecture == null || BelongedFaction != architecture.BelongedFaction) && GetTerrainAdaptability(terrainKind) > movability)
+                if ((architecture == null || BelongedFaction != architecture.BelongedFaction) && Kind.GetTerrainAdaptability(terrainKind) > movability)
                 {
                     area.Area.RemoveAt(i);
                 } 
@@ -677,14 +637,14 @@ namespace GameObjects
             var result = Session.GlobalVariables.LandArmyCanGoDownWater 
                          && kind != null 
                          && kind.Type != MilitaryType.Navy 
-                         && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域;
+                         && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.Water;
             
             return result;
         }
 
         public bool bushiShuijunBingqieChuyuShuiyu()
         {
-            return bushiShuijunBingqieChuyuShuiyu(this.Position);
+            return bushiShuijunBingqieChuyuShuiyu(Position);
         }
 
         public string KindString => Kind.Name;

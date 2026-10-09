@@ -7405,7 +7405,7 @@ namespace GameObjects
             {
                 foreach (Point point in this.ContactArea.Area)
                 {
-                    if (a.IsRoutewayPossible(point) && (!nowater || (Session.Current.Scenario.GetTerrainKindByPosition(point) != TerrainKind.水域)))
+                    if (a.IsRoutewayPossible(point) && (!nowater || (Session.Current.Scenario.GetTerrainKindByPosition(point) != TerrainKind.Water)))
                     {
                         area.AddPoint(point);
                     }
@@ -7415,7 +7415,7 @@ namespace GameObjects
             {
                 foreach (Point point in this.GetRoutewayStartArea().Area)
                 {
-                    if (a.IsRoutewayPossible(point) && (!nowater || (Session.Current.Scenario.GetTerrainKindByPosition(point) != TerrainKind.水域)))
+                    if (a.IsRoutewayPossible(point) && (!nowater || (Session.Current.Scenario.GetTerrainKindByPosition(point) != TerrainKind.Water)))
                     {
                         area.AddPoint(point);
                     }
@@ -10137,19 +10137,19 @@ namespace GameObjects
                     TerrainKind t2 = Session.Current.Scenario.GetTerrainKindByPosition(new Point(i.X + 1, i.Y));
                     TerrainKind t3 = Session.Current.Scenario.GetTerrainKindByPosition(new Point(i.X, i.Y - 1));
                     TerrainKind t4 = Session.Current.Scenario.GetTerrainKindByPosition(new Point(i.X, i.Y + 1));
-                    if (t1 != TerrainKind.水域 && t1 != TerrainKind.无)
+                    if (t1 != TerrainKind.Water && t1 != TerrainKind.None)
                     {
                         a.AddPoint(i);
                     }
-                    else if (t2 != TerrainKind.水域 && t2 != TerrainKind.无)
+                    else if (t2 != TerrainKind.Water && t2 != TerrainKind.None)
                     {
                         a.AddPoint(i);
                     }
-                    else if (t3 != TerrainKind.水域 && t3 != TerrainKind.无)
+                    else if (t3 != TerrainKind.Water && t3 != TerrainKind.None)
                     {
                         a.AddPoint(i);
                     }
-                    else if (t4 != TerrainKind.水域 && t4 != TerrainKind.无)
+                    else if (t4 != TerrainKind.Water && t4 != TerrainKind.None)
                     {
                         a.AddPoint(i);
                     }
@@ -15003,10 +15003,7 @@ namespace GameObjects
             }
 
             if (groupsToCreate.Count == 0)
-            {
-                Console.WriteLine("没有可创建的宝物");
                 return;
-            }
 
             // 随机选择一个TreasureCreationSetting
             var selectedSetting = groupsToCreate.ElementAt(GameObject.Random(groupsToCreate.Count));
@@ -15062,8 +15059,6 @@ namespace GameObjects
             Session.Current.Scenario.Treasures.Add(treasure.ID, treasure);
 
             p.ReceiveTreasure(treasure);
-
-            Console.WriteLine($"成功创建宝物: {treasure.Name} (ID: {treasure.ID})");
         }
 
         #region 宝物
