@@ -103,7 +103,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                                 //Session.MainGame.mainGameScreen.qizidezi.Position = this.mainMapLayer.huoquqizijuxing (architecture.jianzhuqizi.qizipoint);
                                 //Session.MainGame.mainGameScreen.qizidezi.Draw(0.7999f, Session.MainGame.mainGameScreen.qizidezi.Position);
 
-                                var scale = Convert.ToSingle(des.Width) / 30f;
+                                // var scale = Convert.ToSingle(des.Width) / 30f;
+                                var scale = 1f;
 
                                 var text = architecture.BelongedFaction.ToString().Substring(0, 1);
                                 var pos = Session.MainGame.mainGameScreen.mainMapLayer.huoquqizijuxing(architecture.jianzhuqizi.qizipoint);
@@ -111,7 +112,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
                                 //"方正北魏楷书繁体", 30f
                                 //depth:  0.7999f
-                                CacheManager.DrawString(Session.Current.Font, architecture.BelongedFaction.ToString().Substring(0, 1), new Vector2(pos.X, pos.Y), color, 0f, Vector2.Zero, 0.5f * scale, SpriteEffects.None, 0.7999f);
+                                CacheManager.DrawString(Session.Current.Font, architecture.BelongedFaction.ToString().Substring(0, 1), new Vector2(pos.X, pos.Y), color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.7999f);
 
                                 if (architecture.huangdisuozai)
                                 {

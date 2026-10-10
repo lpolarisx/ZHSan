@@ -111,6 +111,7 @@ namespace ScreenBlindPlugin
             {
                 this.SeasonTexture = this.WinterTexture;
             }
+            
             this.DateText.Text = Session.Current.Scenario.Date.ToDateString();
             this.FactionTechText.Text = string.Empty;
             if (Session.Current.Scenario.CurrentFaction != null)
