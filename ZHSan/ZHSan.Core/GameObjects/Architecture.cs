@@ -4414,6 +4414,7 @@ namespace GameObjects
                         if (count >= personsCount) break;
 
                         destScale += military.FightingForce;
+                        count++;
                     }
                 }
 
@@ -7383,7 +7384,10 @@ namespace GameObjects
             }
         }
 
-        public List<Architecture> GetAILinks() => AIWaterLinks.ToList();
+        public List<Architecture> GetAILinks()
+        {
+            return AILandLinks.Concat(AIWaterLinks).DistinctBy(architecture => architecture.ID).ToList();
+        }
 
         public GameObjectList GetAILinks(int level)
         {

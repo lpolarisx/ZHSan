@@ -489,7 +489,7 @@ namespace TabListPlugin
                     {
                         g.Selected = true;
                     }
-                    this.ResetEditableTextures();
+                    this.RefreshEditable();
                 }
                 else
                 {
@@ -499,7 +499,7 @@ namespace TabListPlugin
                     {
                         g.Selected = false;
                     }
-                    this.ResetEditableTextures();
+                    this.RefreshEditable();
                 }
             }
 
@@ -912,6 +912,9 @@ namespace TabListPlugin
             {
                 obj2.Selected = false;
             }
+            // 换了列表后所有对象都未选中，全选按钮也要恢复，否则下次打开还显示“取消全选”
+            this.SellectAllTexture = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TabList\Data\CheckBox.png");
+            this.selectallstring = " 全 选 ";
             this.FullLowerClient.Height = (gameObjectList.Count * this.rowHeight) + this.columnheaderHeight;
         }
 

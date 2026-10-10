@@ -1,101 +1,100 @@
-﻿using GameManager;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace GameObjects.Animations
 {
-    [DataContract]
     public class CombatNumberItem
     {
-        [DataMember]
+        #region  常量
+
+        private const float NumberDepth = 0.649f;
+        private const float TroopQuantityDepth = 0.449f;
+
+        #endregion
+
         public CombatNumberKind Kind;
-        [DataMember]
+
         public int Number;
-        [DataMember]
+
         public Point Position;
 
-        public void DrawLeft(CombatNumberGenerator generator, Point start, float scale)
+        public void Draw(CombatNumberGenerator generator, CombatNumberDirection direction, Point anchor, float scale)
         {
-            int x = start.X;
-            var rec = new Rectangle?(generator.GetCurrentArrowRectangle(this.Kind, CombatNumberDirection.上));
-            CacheManager.Draw(generator.Texture, new Vector2((float) x, start.Y - (generator.DigitHeight * scale)), rec, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.649f);
-            int number = this.Number;
-            List<int> list = new List<int>();
-            if (number == 0)
+            if (direction == CombatNumberDirection.上)
             {
-                list.Add(0);
+                DrawUp(generator, anchor, scale);
             }
             else
             {
-                while (number > 0)
-                {
-                    list.Add(number % 10);
-                    number /= 10;
-                }
-            }
-            list.Reverse();
-            foreach (int num3 in list)
-            {
-                x += (int) (generator.DigitWidth * scale);
-                CacheManager.Draw(generator.Texture, new Vector2((float) x, start.Y - (generator.DigitHeight * scale)), new Rectangle?(generator.GetCurrentDigitRectangle(this.Kind, CombatNumberDirection.上, num3)), Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.649f);
+                DrawDown(generator, anchor, scale);
             }
         }
 
-        public void DrawRight(CombatNumberGenerator generator, Point start, float scale)
+        // 箭头在左，数字向右排列，整体位于锚点上方
+        private void DrawUp(CombatNumberGenerator generator, Point anchor, float scale)
         {
-            int num = start.X - generator.DigitWidth;
-            var rec = new Rectangle?(generator.GetCurrentArrowRectangle(this.Kind, CombatNumberDirection.下));
-            CacheManager.Draw(generator.Texture, new Vector2((float) num, (float) start.Y), rec, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.649f);
-            int number = this.Number;
-            int renshuYanseXuhao=0;
-            float renshuFangdaBeishu=1f;
-            if (this.Kind == CombatNumberKind.人数)
+            int step = (int)(generator.DigitWidth * scale);
+            float y = anchor.Y - generator.DigitHeight * scale;
+
+            generator.Draw(generator.GetArrowRectangle(Kind, CombatNumberDirection.上), new Vector2(anchor.X, y), scale, NumberDepth);
+
+            int right = anchor.X + CountDigits(Number) * step;
+            DrawDigits(generator, Kind, CombatNumberDirection.上, right, y, step, scale, NumberDepth);
+        }
+
+        // 箭头在右，数字向左排列，整体位于锚点下方
+        private void DrawDown(CombatNumberGenerator generator, Point anchor, float scale)
+        {
+            int arrowX = anchor.X - (int)(generator.DigitWidth * scale);
+            generator.Draw(generator.GetArrowRectangle(Kind, CombatNumberDirection.下), new Vector2(arrowX, anchor.Y), scale, NumberDepth);
+
+            CombatNumberKind digitKind = Kind;
+            float digitScale = scale;
+            float depth = NumberDepth;
+            if (Kind == CombatNumberKind.人数)
             {
-                if (this.Number < 1000)
-                {
-                    renshuYanseXuhao = 0;
-                    renshuFangdaBeishu = 1f;
-                }
-                else if (this.Number >= 1000 && this.Number < 3000)
-                {
-                    renshuYanseXuhao = 1;
-                    renshuFangdaBeishu = 1.3f;
-                }
-                else if (this.Number >= 3000 && this.Number < 5000)
-                {
-                    renshuYanseXuhao = 2;
-                    renshuFangdaBeishu = 1.5f;
-                }
-                else
-                {
-                    renshuYanseXuhao = 3;
-                    renshuFangdaBeishu = 1.8f;
-                }
+                (digitKind, float enlarge) = GetTroopQuantityStyle(Number);
+                digitScale = scale * enlarge;
+                depth = TroopQuantityDepth;
             }
+
+            int step = (int)(generator.DigitWidth * digitScale);
+            DrawDigits(generator, digitKind, CombatNumberDirection.下, arrowX - step, anchor.Y, step, digitScale, depth);
+        }
+
+        // 从个位开始由右向左绘制，right为个位的x坐标
+        private void DrawDigits(CombatNumberGenerator generator, CombatNumberKind kind, CombatNumberDirection direction, int right, float y, int step, float scale, float depth)
+        {
+            int x = right;
+            int number = Number;
             do
             {
-                
-                
-                if (this.Kind != CombatNumberKind.人数)
-                {
-                    num -= (int)(generator.DigitWidth * scale);
-                    var rec0 = new Rectangle?(generator.GetCurrentDigitRectangle(this.Kind, CombatNumberDirection.下, number % 10));
-                    CacheManager.Draw(generator.Texture, new Vector2((float)num , (float)start.Y), rec0, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.649f);
-                }
-                else
-                {
-                    num -= (int)(generator.DigitWidth * scale * renshuFangdaBeishu);
-                    var rec0 = new Rectangle ? (generator.GetCurrentDigitRectangle((CombatNumberKind)renshuYanseXuhao, CombatNumberDirection.下, number % 10));
-                    CacheManager.Draw(generator.Texture, new Vector2((float)num , (float)start.Y), rec0, Color.White, 0f, Vector2.Zero, renshuFangdaBeishu, SpriteEffects.None, 0.449f);
-
-                }
+                generator.Draw(generator.GetDigitRectangle(kind, direction, number % 10), new Vector2(x, y), scale, depth);
+                x -= step;
                 number /= 10;
             }
             while (number > 0);
         }
+
+        // 人数减少越多，数字越大，并借用其他类型所在行的颜色
+        private static (CombatNumberKind Kind, float Enlarge) GetTroopQuantityStyle(int number)
+        {
+            return number switch
+            {
+                < 1000 => (CombatNumberKind.人数, 1f),
+                < 3000 => (CombatNumberKind.士气, 1.3f),
+                < 5000 => (CombatNumberKind.战意, 1.5f),
+                _ => (CombatNumberKind.资金, 1.8f),
+            };
+        }
+
+        private static int CountDigits(int number)
+        {
+            int count = 1;
+            while ((number /= 10) > 0)
+            {
+                count++;
+            }
+            return count;
+        }
     }
 }
-

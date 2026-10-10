@@ -3221,7 +3221,7 @@ namespace GameObjects
 
                             Captive captive = Captive.Create(this.ConvincingPerson, this.BelongedFaction);
                             this.ConvincingPerson.Status = PersonStatus.Captive;
-                            foreach (var treasure in ConvincingPerson.Treasures)
+                            foreach (var treasure in ConvincingPerson.Treasures.ToList())
                             {
                                 this.ConvincingPerson.LoseTreasure(treasure);
                                 this.BelongedFaction.Leader.ReceiveTreasure(treasure);

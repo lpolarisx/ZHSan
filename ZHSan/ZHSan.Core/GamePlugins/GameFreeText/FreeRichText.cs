@@ -46,8 +46,10 @@ namespace GameFreeText
 
         public int GetTextWidth(string text)
         {
-            float scale = Builder == null ? 1f : Builder.Size / 20;
-            return Convert.ToInt32(28 * text.Length * scale);
+            return (int)Math.Ceiling(TextManager.MeasureText(text, Builder.Scale).X);
+
+            // float scale = Builder == null ? 1f : Builder.Size / 20;
+            // return Convert.ToInt32(28 * text.Length * scale);
             //return this.myDrawing.MeasureString(text, this.font).ToSize().Width;
         }
 
@@ -223,6 +225,7 @@ namespace GameFreeText
                 Text = str.Substring(length - 1),
                 TextColor = this.Texts[index].TextColor,
                 Row = this.Texts[index].Row + 1,
+                Builder = this.Builder,
                 //TextTexture = this.Builder.CreateTextTexture(text.Text)
                 //TextTexture = this.Builder.CreateTextTexture(str.Substring(length - 1))
             };
@@ -409,25 +412,27 @@ namespace GameFreeText
             }
         }
 
-        public int RowHeight
-        {
-            get
-            {
-                if (this.Texts != null && this.Texts.Count > 0)
-                {
-                    return this.Texts[0].Height;
-                }
-                else
-                {
-                    return 0;
-                }
-                //if (this.Texts.Count > 0 && this.Texts[0].TextTexture != null)
-                //{
-                //    return (this.Texts[0].TextTexture.Height + this.RowMargin);
-                //}
-                //return (int) this.Builder.font.Size;
-            }
-        }
+        // public int RowHeight
+        // {
+        //     get
+        //     {
+        //         if (this.Texts != null && this.Texts.Count > 0)
+        //         {
+        //             return this.Texts[0].Height;
+        //         }
+        //         else
+        //         {
+        //             return 0;
+        //         }
+        //         //if (this.Texts.Count > 0 && this.Texts[0].TextTexture != null)
+        //         //{
+        //         //    return (this.Texts[0].TextTexture.Height + this.RowMargin);
+        //         //}
+        //         //return (int) this.Builder.font.Size;
+        //     }
+        // }
+
+        public int RowHeight => Math.Max(1,(int)Math.Ceiling(TextManager.MeasureText("国", Builder.Scale).Y) + RowMargin);
     }
 }
 

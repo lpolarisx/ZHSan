@@ -1,49 +1,95 @@
-﻿using GameManager;
+using GameManager;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Platforms;
 using System;
-using System.Runtime.Serialization;
-using WorldOfTheThreeKingdoms;
-
-
 
 namespace GameObjects.Animations
 {
-    [DataContract]
     public class CombatNumberGenerator
     {
-        [DataMember]
-        public int DigitHeight = 20;
-        [DataMember]
-        public int DigitWidth = 12;
-        private PlatformTexture texture;
-        [DataMember]
+        #region  常量
+
+        // 贴图布局：每行12列（10个数字+上下两个箭头），每种类型占上下两行
+        private const int ColumnCount = 12;
+        private const int ArrowColumn = 10;
+        private const int RowsPerKind = 2;
+        private const int DefaultTextureWidth = 144;
+        private const int DefaultTextureHeight = 200;
+
+        private static readonly int KindCount = Enum.GetValues(typeof(CombatNumberKind)).Length;
+
+        #endregion
+
         public string TextureFileName;
 
-        public Rectangle GetCurrentArrowRectangle(CombatNumberKind kind, CombatNumberDirection direction)
+        private PlatformTexture texture;
+        private int digitWidth = DefaultTextureWidth / ColumnCount;
+        private int digitHeight = DefaultTextureHeight / KindCount / RowsPerKind;
+
+        public int DigitWidth
         {
-            return new Rectangle(this.DigitWidth * (10 + (int) direction), this.DigitHeight * (((int) kind *(int)  CombatNumberKind.战意) + (((int) direction))), this.DigitWidth, this.DigitHeight);
+            get
+            {
+                EnsureLoaded();
+                return digitWidth;
+            }
         }
 
-        public Rectangle GetCurrentDigitRectangle(CombatNumberKind kind, CombatNumberDirection direction, int digit)
+        public int DigitHeight
         {
-            return new Rectangle(this.DigitWidth * digit, this.DigitHeight * (((int) kind *(int)  CombatNumberKind.战意) + ( ((int) direction))), this.DigitWidth, this.DigitHeight);
+            get
+            {
+                EnsureLoaded();
+                return digitHeight;
+            }
         }
 
         public PlatformTexture Texture
         {
             get
             {
-                if (this.texture == null)
-                {
-                    this.texture = CacheManager.GetTempTexture(this.TextureFileName);
-                    this.DigitWidth = 144 / 12;  // this.texture.Width / 12;
-                    this.DigitHeight = (200 / Enum.GetValues(typeof(CombatNumberKind)).Length) / 2;   //this.texture.Height
-                }
-                return this.texture;
+                EnsureLoaded();
+                return texture;
+            }
+        }
+
+        public Rectangle GetArrowRectangle(CombatNumberKind kind, CombatNumberDirection direction)
+        {
+            return GetCellRectangle(ArrowColumn + (int)direction, kind, direction);
+        }
+
+        public Rectangle GetDigitRectangle(CombatNumberKind kind, CombatNumberDirection direction, int digit)
+        {
+            return GetCellRectangle(digit, kind, direction);
+        }
+
+        public void Draw(Rectangle source, Vector2 position, float scale, float depth)
+        {
+            CacheManager.Draw(Texture, position, source, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, depth);
+        }
+
+        private Rectangle GetCellRectangle(int column, CombatNumberKind kind, CombatNumberDirection direction)
+        {
+            int row = (int)kind * RowsPerKind + (int)direction;
+            return new Rectangle(DigitWidth * column, DigitHeight * row, DigitWidth, DigitHeight);
+        }
+
+        private void EnsureLoaded()
+        {
+            if (texture != null || string.IsNullOrEmpty(TextureFileName))
+            {
+                return;
+            }
+
+            texture = CacheManager.GetTempTexture(TextureFileName);
+
+            // 按贴图实际尺寸计算单字大小
+            Texture2D tex = CacheManager.LoadTexture(TextureFileName);
+            if (tex != null)
+            {
+                digitWidth = tex.Width / ColumnCount;
+                digitHeight = tex.Height / KindCount / RowsPerKind;
             }
         }
     }
 }
-

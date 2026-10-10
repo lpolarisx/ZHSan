@@ -58,8 +58,8 @@ namespace GameManager
             for (int i = 0; i < texs.Length; i++)
             {
                 var te = texs[i];
-                Session.Current.SpriteBatch.DrawString(font.GetFont(16), te, pos + new Vector2(0, i * pair.Size * scale), color,
-                    0, new Vector2(scale, scale), null, depth ?? 0);
+                Session.Current.SpriteBatch.DrawString(font.GetFont(30), te, pos + new Vector2(0, i * pair.Size * scale), color,
+                    rotation: 0f, origin: Vector2.Zero, scale: new Vector2(scale, scale), layerDepth: depth ?? 0f);
                 //font.DrawString(Session.Current.SpriteBatch, te, pos + new Vector2(0, i * pair.Size * scale), color, new Vector2(scale, scale), depth == null ? 0 : (float)depth);
             }
 
@@ -69,7 +69,7 @@ namespace GameManager
         private static Bounds GetTextBounds(string text, Vector2 position, float scale)
         {
             // TextBounds scales its position too; measure locally, then translate to the drawing position.
-            Bounds bound = font.GetFont(16).TextBounds(text, Vector2.Zero, new Vector2(scale, scale));
+            Bounds bound = font.GetFont(30).TextBounds(text, Vector2.Zero, new Vector2(scale, scale));
             bound.X += position.X;
             bound.Y += position.Y;
             bound.X2 += position.X;
@@ -94,8 +94,8 @@ namespace GameManager
             {
                 var te = texs[i];
 
-                Session.Current.SpriteBatch.DrawString(font.GetFont(16), te, pos + new Vector2(0, i * pair.Size * scale), color,
-                    depth == null ? 0 : (float)depth, new Vector2(scale, scale));
+                Session.Current.SpriteBatch.DrawString(font.GetFont(30), te, pos + new Vector2(0, i * pair.Size * scale), color,
+                    rotation: 0f, origin: Vector2.Zero, scale: new Vector2(scale, scale), layerDepth: depth ?? 0f);
                 bound = GetTextBounds(te, pos + new Vector2(0, i * pair.Size * scale), scale);
                 //bound = font.DrawStringReturnBounds(Session.Current.SpriteBatch, te, pos + new Vector2(0, i * pair.Size * scale), color, new Vector2(scale, scale), depth == null ? 0 : (float)depth);
                 bounds.Add(bound);
@@ -122,8 +122,8 @@ namespace GameManager
             {
                 var te = texs[i];
 
-                batch.DrawString(font.GetFont(16), te, pos + new Vector2(0, i * pair.Size * scale), color,
-                    depth == null ? 0 : (float)depth, new Vector2(scale, scale));
+                batch.DrawString(font.GetFont(30), te, pos + new Vector2(0, i * pair.Size * scale), color,
+                    rotation: 0f, origin: Vector2.Zero, scale: new Vector2(scale, scale), layerDepth: depth ?? 0f);
                 bound = GetTextBounds(te, pos + new Vector2(0, i * pair.Size * scale), scale);
                 //bound = font.DrawStringReturnBounds(batch, te, pos + new Vector2(0, i * pair.Size * scale), color, new Vector2(scale, scale), depth == null ? 0 : (float)depth);
                 bounds.Add(bound);
@@ -197,7 +197,7 @@ namespace GameManager
                 {
 
                     currentLine = te.Substring(currentIndex, j - currentIndex + 1);//取出当前索引位置前的所有文字用于判断这些文字是否超过行宽度
-                    bound = font.GetFont(16).TextBounds(currentLine, new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
+                    bound = font.GetFont(30).TextBounds(currentLine, new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
                     //bound = font.CalcStringBounds(currentLine.ToString(), new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
 
                     if (bound.Width() * scale > lineWidth)//如果当前这些文字超过行宽的
@@ -212,7 +212,16 @@ namespace GameManager
             }
             return autoWrapText;
         }
+
+        public static Vector2 MeasureText(string text, float scale)
+        {
+            if (font == null)
+                Init(CacheManager.FontPair.Name, CacheManager.FontPair.Size);
+
+            return font.GetFont(30).MeasureString(text ?? "") * scale;
+        }
         /*
+        
 
     //public static void Init(string name)
     //{
@@ -642,7 +651,7 @@ public static void DrawTexts(string text, FontPair pair, Vector2 pos, Color colo
             }
             else if (LITTLECHARS.Contains(ch))
             {
-                targetWidth = LittleWidth;  // tex == null ? LittleWidth : Convert.ToInt16(Convert.ToSingle(tex.Width) * scale);
+                targetWidth = LittleWidth;  // tex == null ? LittleWidth : Convert.ToInt20(Convert.ToSingle(tex.Width) * scale);
             }
 
             if (tex == null)

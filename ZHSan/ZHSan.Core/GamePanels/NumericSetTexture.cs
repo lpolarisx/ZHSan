@@ -185,6 +185,8 @@ namespace GamePanels
 
         public bool DisNumberText = true;
 
+        public float NumberTextScale { get; set; } = 1f;
+
         public string ViewText = "";
 
         public Color NumColor = Color.White;
@@ -337,7 +339,7 @@ namespace GamePanels
             }
             else
             {
-                CacheManager.DrawString(Session.Current.Font, DisNumberText ? ViewText + NowNumber.ToString() : NowNumber.ToString(),new Vector2(( leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8))).X, (leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8))).Y+Heightchange), Color.White * alpha,0f,Vector2.Zero,((float)leftTexture.Height+Heightchange)/leftTexture.Height,SpriteEffects.None,0f);
+                CacheManager.DrawString(Session.Current.Font, DisNumberText ? ViewText + NowNumber.ToString() : NowNumber.ToString(),new Vector2(( leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8))).X, (leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8))).Y+Heightchange), Color.White * alpha,0f,Vector2.Zero,((float)leftTexture.Height+Heightchange)/leftTexture.Height * NumberTextScale,SpriteEffects.None,0f);
             }
         }
 
