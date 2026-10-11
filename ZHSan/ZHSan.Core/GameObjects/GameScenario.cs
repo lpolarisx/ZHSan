@@ -1,4 +1,4 @@
-using GameGlobal;
+﻿using GameGlobal;
 using GameObjects.Animations;
 using GameObjects.ArchitectureDetail;
 using GameObjects.ArchitectureDetail.EventEffect;
@@ -4971,7 +4971,7 @@ namespace GameObjects
             var yearTableEntries = YearTable.GetYearTableEntries();
             foreach (var yearTableEntry in yearTableEntries)
             {
-                yearTableEntry.FactionsString = StaticMethods.SaveIdToString(yearTableEntry.Factions);
+                yearTableEntry.RefreshFactionStrings();
             }
 
             if (saveMap)

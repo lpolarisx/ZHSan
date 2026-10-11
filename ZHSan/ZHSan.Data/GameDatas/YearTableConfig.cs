@@ -1,4 +1,4 @@
-
+﻿
 namespace GameDatas;
 
 public class YearTableConfig
@@ -10,6 +10,8 @@ public class YearTableConfig
     public string Content { get; set; }
 
     public string FactionsString { get; set; }
+
+    public string FactionNamesString { get; set; }
 
     public bool IsGloballyKnown { get; set; }
 }
