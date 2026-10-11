@@ -323,10 +323,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (person != null)
             {
-                if (CurrentArchitecture.Fund >= 50000)
+                if (CurrentArchitecture.Fund >= 50000 && person.GoToQuanXiangDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 50000;
-                    person.GoToQuanXiangDiplomatic(CurrentDiplomaticRelation);
                 }
             }
         }
@@ -350,10 +349,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             foreach (var diplomaticperson in persons)
             {
-                if (CurrentArchitecture.Fund >= 10000)
+                if (CurrentArchitecture.Fund >= 10000 && diplomaticperson.GoToDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 10000;
-                    diplomaticperson.GoToDiplomatic(CurrentDiplomaticRelation);
                 }
             }
         }
@@ -364,10 +362,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             foreach (var diplomaticperson in persons)
             {
-                if (CurrentArchitecture.Fund >= 50000)
+                if (CurrentArchitecture.Fund >= 50000 && diplomaticperson.GoToTruceDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 50000;
-                    diplomaticperson.GoToTruceDiplomatic(CurrentDiplomaticRelation);
                 }
             }
         }
@@ -378,10 +375,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             foreach (var diplomaticperson in persons)
             {
-                if (CurrentArchitecture.Fund >= 20000)
+                if (CurrentArchitecture.Fund >= 20000 && diplomaticperson.GoToAllyDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 20000;
-                    diplomaticperson.GoToAllyDiplomatic(CurrentDiplomaticRelation);
                 }
             }
         }

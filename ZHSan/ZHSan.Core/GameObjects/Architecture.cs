@@ -11817,21 +11817,7 @@ namespace GameObjects
         {
             if (BelongedFaction == null) return false;
 
-            int relationThreshold = Session.GlobalVariables.FriendlyDiplomacyThreshold;
-            var persons = GetPersonsExcludeNvGuan();
-
-            foreach (var diplomaticRelation in GetDiplomaticRelations())
-            {
-                if (diplomaticRelation.Relation <= relationThreshold 
-                    && diplomaticRelation.Relation >= relationThreshold * 0.9 
-                    && Fund > 20000 
-                    && persons.Count > 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return Fund > 20000 && GetPersonsExcludeNvGuan().Count > 0 && GetAllyDiplomaticRelationList().Count > 0;
         }
 
         public bool EnhanceDiplomaticRelationAvail()

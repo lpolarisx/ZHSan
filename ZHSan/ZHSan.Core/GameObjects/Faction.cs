@@ -5008,7 +5008,7 @@ namespace GameObjects
         {
             var encircleList = GetEncircleFactionList(target, false);
 
-            if (encircleList.Count == 0) return;
+            if (encircleList == null || encircleList.Count == 0) return;
 
             Session.MainGame.mainGameScreen.xianshishijiantupian(this.Leader, this.Leader.Name, TextMessageKind.EncircleDiplomaticRelation, "EncircleDiplomaticRelation", "EncircleDiplomaticRelation.jpg", "EncircleDiplomaticRelation", target.Name, true);
             foreach (var i in encircleList)
@@ -5046,6 +5046,9 @@ namespace GameObjects
             int relationThreshold = Session.GlobalVariables.FriendlyDiplomacyThreshold / 2;
             foreach (var diplomaticRelation in toEncircle.GetDiplomaticRelations())
             {
+                // 声讨方与被声讨方的关系上面已经扣过
+                if (diplomaticRelation.GetTheOtherFactionID(toEncircle.ID) == ID) continue;
+
                 if (diplomaticRelation.Relation < relationThreshold)
                 {
                     diplomaticRelation.Relation -= 100;
@@ -5134,14 +5137,17 @@ namespace GameObjects
                     int unAmbition = 4 - Leader.Ambition;
                     if (nonFriendlyFactions.Count == 0 && faction.Power < Power)
                     {
-                        power = faction.Power;
-                        toBreak = faction;
+                        if (faction.Power < power)
+                        {
+                            power = faction.Power;
+                            toBreak = faction;
+                        }
                     }
                     else if (Power > totalPower * ((unAmbition * unAmbition + (Leader.Calmness - Leader.Braveness) / 4) * 0.2 + 0.6) 
                             && relation >= relationThreshold)
                     {
                         float ratio = (float)Power / faction.Power;
-                        if (GameObject.GetChance((int)((ratio - 1) * Leader.Ambition * 10)))
+                        if (GameObject.GetChance((int)((ratio - 1) * Leader.Ambition * 10)) && faction.Power < power)
                         {
                             power = faction.Power;
                             toBreak = faction;

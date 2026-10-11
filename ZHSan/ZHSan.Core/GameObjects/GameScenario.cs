@@ -95,7 +95,7 @@ namespace GameObjects
 
         public GameDate Date = new GameDate();
 
-        public Dictionary<int, DiplomaticRelation> DiplomaticRelations { get; set; } = new();
+        public Dictionary<long, DiplomaticRelation> DiplomaticRelations { get; set; } = new();
         
         /// <summary>
         /// 设施
@@ -1099,7 +1099,7 @@ namespace GameObjects
             {
                 if (faction2 != newFaction)
                 {
-                    int key = GetDiplomaticRelationKey(newFactionId, faction2.ID);
+                    long key = GetDiplomaticRelationKey(newFactionId, faction2.ID);
                     DiplomaticRelations.TryAdd(key, new DiplomaticRelation(newFactionId, faction2.ID, 0));
                 }
             }
@@ -4127,7 +4127,7 @@ namespace GameObjects
                 }
             }
 
-            if (strongestAI == null || strongestPlayer == null) return;
+            if (strongestAI == null || strongestPlayer == null || strongestAIPower <= 0) return;
 
 
             if (GameObject.GetChance((int)(((float)strongestPlayerPower / strongestAIPower - Session.GlobalVariables.AIMergeAgainstPlayer) * 100)))
@@ -4142,7 +4142,7 @@ namespace GameObjects
 
                     if (!f.Leader.Hates(strongestAI.Leader))
                     {
-                        if (GameObject.GetChance((int)(Person.GetIdealAttraction(strongestAI.Leader, f.Leader) + strongestPlayerPower / strongestAIPower * 100)))
+                        if (GameObject.GetChance((int)(Person.GetIdealAttraction(strongestAI.Leader, f.Leader) + (float)strongestPlayerPower / strongestAIPower * 100)))
                         {
                             if (strongestAI.adjacentTo(f) && this.GetDiplomaticRelation(strongestAI.ID, f.ID) > 0)
                             {
@@ -6152,7 +6152,7 @@ namespace GameObjects
 
         public int GetDiplomaticRelation(int factionId1, int factionId2)
         {
-            int key = GetDiplomaticRelationKey(factionId1, factionId2);
+            long key = GetDiplomaticRelationKey(factionId1, factionId2);
             if (DiplomaticRelations.TryGetValue(key, out var diplomaticRelation))
             {
                 return diplomaticRelation.Relation;
@@ -6168,7 +6168,7 @@ namespace GameObjects
 
         public int GetDiplomaticRelationTruce(int factionId1, int factionId2)
         {
-            int key = GetDiplomaticRelationKey(factionId1, factionId2);
+            long key = GetDiplomaticRelationKey(factionId1, factionId2);
             if (DiplomaticRelations.TryGetValue(key, out var diplomaticRelation))
             {
                 return diplomaticRelation.Truce;
@@ -6181,7 +6181,7 @@ namespace GameObjects
         {
             if (factionId1 == factionId2) return;
 
-            int key = GetDiplomaticRelationKey(factionId1, factionId2);
+            long key = GetDiplomaticRelationKey(factionId1, factionId2);
 
             if (DiplomaticRelations.TryGetValue(key, out var diplomaticRelation))
             {
@@ -6193,7 +6193,7 @@ namespace GameObjects
         {
             if (factionId1 == factionId2) return;
 
-            int key = GetDiplomaticRelationKey(factionId1, factionId2);
+            long key = GetDiplomaticRelationKey(factionId1, factionId2);
 
             if (DiplomaticRelations.TryGetValue(key, out var diplomaticRelation))
             {
@@ -6205,7 +6205,7 @@ namespace GameObjects
         {
             if (factionId1 == factionId2) return;
 
-            int key = GetDiplomaticRelationKey(factionId1, factionId2);
+            long key = GetDiplomaticRelationKey(factionId1, factionId2);
 
             if (DiplomaticRelations.TryGetValue(key, out var diplomaticRelation))
             {
@@ -6217,7 +6217,7 @@ namespace GameObjects
         {
             if (factionId1 == factionId2) return;
 
-            int key = GetDiplomaticRelationKey(factionId1, factionId2);
+            long key = GetDiplomaticRelationKey(factionId1, factionId2);
 
             if (DiplomaticRelations.TryGetValue(key, out var diplomaticRelation))
             {
@@ -6233,12 +6233,13 @@ namespace GameObjects
             }
         }
 
-        private int GetDiplomaticRelationKey(int factionId1, int factionId2)
+        private long GetDiplomaticRelationKey(int factionId1, int factionId2)
         {
             int x = Math.Max(factionId1, factionId2);
             int y = Math.Min(factionId1, factionId2);
 
-            return HashCode.Combine(x, y);
+            // 高32位放较大ID，低32位放较小ID，保证每对势力的key唯一且确定
+            return ((long)x << 32) | (uint)y;
         }
 
         private void InitDiplomaticRelations()
@@ -6252,7 +6253,7 @@ namespace GameObjects
 
                     if (factionId == otherFactionId) continue;
 
-                    int key = GetDiplomaticRelationKey(factionId, otherFactionId);
+                    long key = GetDiplomaticRelationKey(factionId, otherFactionId);
 
                     if (!DiplomaticRelations.ContainsKey(key))
                     {
