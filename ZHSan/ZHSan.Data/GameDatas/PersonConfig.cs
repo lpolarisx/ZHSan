@@ -189,6 +189,8 @@ public class PersonConfig : BaseConfig
 
     public OutsideTaskKind OutsideTask { get; set; }
 
+    public int DiplomaticTargetFactionID { get; set; } = -1;
+
     public int PersonalLoyalty { get; set; }
 
     public int PictureIndex { get; set; }

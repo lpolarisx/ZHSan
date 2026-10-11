@@ -238,6 +238,7 @@ namespace GameObjects
             ProhibitedFactionID = config.ProhibitedFactionID ?? new();
             OutsideDestination = config.OutsideDestination;
             OutsideTask = config.OutsideTask;
+            DiplomaticTargetFactionID = config.DiplomaticTargetFactionID;
             PersonalLoyalty = config.PersonalLoyalty;
             PictureIndex = config.PictureIndex;
             PoliticsExperience = config.PoliticsExperience;
@@ -362,6 +363,7 @@ namespace GameObjects
                 ProhibitedFactionID = ProhibitedFactionID,
                 OutsideDestination = OutsideDestination,
                 OutsideTask = OutsideTask,
+                DiplomaticTargetFactionID = DiplomaticTargetFactionID,
                 PersonalLoyalty = PersonalLoyalty,
                 PictureIndex = PictureIndex,
                 PoliticsExperience = PoliticsExperience,
@@ -3832,7 +3834,7 @@ namespace GameObjects
                 int cd = Session.Current.Scenario.GetDiplomaticRelation(this.BelongedFaction.ID, this.TargetArchitecture.BelongedFaction.ID);
                 if (((cd + g) > Session.GlobalVariables.FriendlyDiplomacyThreshold * 0.95) && cd < Session.GlobalVariables.FriendlyDiplomacyThreshold)
                 {
-                    g = (int) (Session.GlobalVariables.FriendlyDiplomacyThreshold * 0.95 - cd);
+                    g = Math.Max(0, (int) (Session.GlobalVariables.FriendlyDiplomacyThreshold * 0.95 - cd));
                 }
                 Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedFaction.ID, this.TargetArchitecture.BelongedFaction.ID, g);
                 this.TargetArchitecture.Fund += 10000;
@@ -3891,7 +3893,6 @@ namespace GameObjects
                     Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedFaction.ID, this.TargetArchitecture.BelongedFaction.ID, 36);
                     this.TargetArchitecture.Fund += 20000;
                     Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.CreateAlly, "AllyDiplomaticRelation", "AllyDiplomaticRelation.jpg", "AllyDiplomaticRelation", this.TargetArchitecture.BelongedFaction.Name, true);
-                    this.TargetArchitecture = this.LocationArchitecture;
                     this.AddPoliticsExperience(50);
                     this.IncreaseKarma(10);
                     this.BelongedFaction.Leader.IncreaseKarma(10);
@@ -3900,6 +3901,7 @@ namespace GameObjects
                     this.BelongedFaction.Leader.IncreaseReputation(1000);
                     this.TargetArchitecture.BelongedFaction.Leader.IncreaseReputation(1000);
                     this.IncreaseOfficerMerit(1000);
+                    this.TargetArchitecture = this.LocationArchitecture;
                 }
                 else
                 {
@@ -4173,7 +4175,6 @@ namespace GameObjects
                     Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.Truce, "TruceDiplomaticRelation", "TruceDiplomaticRelation.jpg", "TruceDiplomaticRelation", this.TargetArchitecture.BelongedFaction.Name, true);
                     //设置停战
                     Session.Current.Scenario.SetDiplomaticRelationTruce(this.BelongedFaction.ID, this.TargetArchitecture.BelongedFaction.ID, 30);
-                    this.TargetArchitecture = this.LocationArchitecture;
                     this.AddPoliticsExperience(5);
                     this.IncreaseReputation(500);
                     this.BelongedFaction.Leader.IncreaseReputation(500);
@@ -4182,6 +4183,7 @@ namespace GameObjects
                     this.BelongedFaction.Leader.IncreaseKarma(5);
                     this.TargetArchitecture.BelongedFaction.Leader.IncreaseKarma(5);
                     this.IncreaseOfficerMerit(500);
+                    this.TargetArchitecture = this.LocationArchitecture;
                 }
                 else
                 {
@@ -4251,15 +4253,15 @@ namespace GameObjects
                     break;
 
                 case OutsideTaskKind.亲善:
-                    this.DoEnhanceDiplomatic();
+                    if (!this.CancelDiplomaticTaskIfTargetLost(10000)) this.DoEnhanceDiplomatic();
                     break;
 
                 case OutsideTaskKind.结盟:
-                    this.DoAllyDiplomatic();
+                    if (!this.CancelDiplomaticTaskIfTargetLost(20000)) this.DoAllyDiplomatic();
                     break;
 
                 case OutsideTaskKind.停战:
-                    this.DoTruceDiplomatic();
+                    if (!this.CancelDiplomaticTaskIfTargetLost(50000)) this.DoTruceDiplomatic();
                     break;
 
                 case OutsideTaskKind.劫狱:
@@ -4271,13 +4273,39 @@ namespace GameObjects
                     break;
 
                 case OutsideTaskKind.劝降:
-                    this.DoQuanXiangDiplomatic();
+                    if (!this.CancelDiplomaticTaskIfTargetLost(50000)) this.DoQuanXiangDiplomatic();
                     break ;
 
                 case OutsideTaskKind.割地:
-                    this.DoGeDiDiplomatic();
+                    if (!this.CancelDiplomaticTaskIfTargetLost(0)) this.DoGeDiDiplomatic();
                     break;
             }
+        }
+
+        // 使者到达时目的地已不属于出发时的目标势力（易主或成为空城）：任务作废，费用退回出发城池
+        private bool CancelDiplomaticTaskIfTargetLost(int refund)
+        {
+            int targetFactionID = this.DiplomaticTargetFactionID;
+            this.DiplomaticTargetFactionID = -1;
+
+            Faction currentFaction = null;
+            if (this.OutsideDestination.HasValue)
+            {
+                currentFaction = Session.Current.Scenario.GetArchitectureByPosition(this.OutsideDestination.Value)?.BelongedFaction;
+            }
+
+            // 旧存档中在途的使者没有记录目标势力，只要目的地有主就照常执行
+            if (currentFaction != null && (targetFactionID < 0 || currentFaction.ID == targetFactionID)) return false;
+
+            this.OutsideTask = OutsideTaskKind.无;
+            this.OutsideDestination = null;
+            this.TargetArchitecture = this.LocationArchitecture;
+            if (this.BelongedArchitecture != null)
+            {
+                this.BelongedArchitecture.Fund += refund;
+            }
+
+            return true;
         }
 
         
@@ -6176,13 +6204,13 @@ namespace GameObjects
             }
         }
 
-        public void GoToGeDiDiplomatic(DiplomaticRelation relation) //割地
+        public bool GoToGeDiDiplomatic(DiplomaticRelation relation) //割地
         {
-            if (relation == null) return;
+            if (relation == null) return false;
 
-            var factionName = relation.RelationFaction1 == BelongedFaction ? relation.RelationFaction2String : relation.RelationFaction1String;
+            Faction targetFaction = relation.GetDiplomaticFaction(this.BelongedFaction.ID);
 
-            Faction targetFaction = this.BelongedFaction.GetFactionByName(factionName);
+            if (targetFaction == null) return false;
             //bool isAI = !Session.Current.Scenario.IsPlayer(this.BelongedFaction);
             //bool isPlayer = Session.Current.Scenario.IsPlayer(targetFaction);
             //if (isAI && isPlayer) return;
@@ -6193,7 +6221,7 @@ namespace GameObjects
             if (targetArchitecture == null)
             {
                 Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.QuanXiang, "QuanXiangDiplomaticRelation", "TruceDiplomaticRelation.jpg", "TruceDiplomaticRelation", "啊，出错了!", true);
-                return;
+                return false;
             }
 
             if (this.LocationArchitecture != targetArchitecture)
@@ -6215,6 +6243,7 @@ namespace GameObjects
                 this.LocationArchitecture = this.BelongedArchitecture;
                 this.WorkKind = ArchitectureWorkKind.无;
                 this.OutsideTask = OutsideTaskKind.割地;
+                this.DiplomaticTargetFactionID = targetFaction.ID;
                 Session.MainGame.mainGameScreen.renwukaishitishi(this, this.TargetArchitecture);
 
                 if (this.BelongedFaction != null)
@@ -6225,19 +6254,22 @@ namespace GameObjects
                 {
                     this.Status = PersonStatus.NoFactionMoving;
                 }
+                return true;
             }
+
+            return false;
         }
 
-        public void GoToQuanXiangDiplomatic(DiplomaticRelation relation) //劝降
+        public bool GoToQuanXiangDiplomatic(DiplomaticRelation relation) //劝降
         {
-            if (relation == null) return;
+            if (relation == null) return false;
 
-            var factionName = relation.RelationFaction1 == BelongedFaction ? relation.RelationFaction2String : relation.RelationFaction1String;
+            Faction targetFaction = relation.GetDiplomaticFaction(this.BelongedFaction.ID);
 
-            Faction targetFaction = this.BelongedFaction.GetFactionByName(factionName);
+            if (targetFaction == null) return false;
             bool isAI = !Session.Current.Scenario.IsPlayer(this.BelongedFaction);
             bool isPlayer = Session.Current.Scenario.IsPlayer (targetFaction);
-            if (isAI && isPlayer ) return;
+            if (isAI && isPlayer ) return false;
             //Architecture targetArchitecture = targetFaction.Leader.BelongedArchitecture;
             Architecture targetArchitecture = targetFaction.Capital;
 
@@ -6245,7 +6277,7 @@ namespace GameObjects
             if (targetArchitecture == null)
             {
                 Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.QuanXiang, "QuanXiangDiplomaticRelation", "TruceDiplomaticRelation.jpg", "TruceDiplomaticRelation", "啊，出错了!", true);
-                return;
+                return false;
             }
 
             if (this.LocationArchitecture != targetArchitecture)
@@ -6263,6 +6295,7 @@ namespace GameObjects
                 this.LocationArchitecture = this.BelongedArchitecture;
                 this.WorkKind = ArchitectureWorkKind.无;
                 this.OutsideTask = OutsideTaskKind.劝降;
+                this.DiplomaticTargetFactionID = targetFaction.ID;
                 Session.MainGame.mainGameScreen.renwukaishitishi(this, this.TargetArchitecture);
              
                if (this.BelongedFaction != null)
@@ -6273,25 +6306,28 @@ namespace GameObjects
                 {
                     this.Status = PersonStatus.NoFactionMoving;
                 }
+                return true;
             }
+
+            return false;
         }
 
 
 
-        public void GoToDiplomatic(DiplomaticRelation relation)
+        public bool GoToDiplomatic(DiplomaticRelation relation)
         {
-            if (relation == null) return;
+            if (relation == null) return false;
 
-            var factionName = relation.RelationFaction1 == BelongedFaction ? relation.RelationFaction2String : relation.RelationFaction1String;
+            Faction targetFaction = relation.GetDiplomaticFaction(this.BelongedFaction.ID);
 
-            Faction targetFaction = this.BelongedFaction.GetFactionByName(factionName);
+            if (targetFaction == null) return false;
             //Architecture targetArchitecture = targetFaction.Leader.BelongedArchitecture;
             Architecture targetArchitecture = targetFaction.Capital;
 
             if (targetArchitecture == null)
             {
                 Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.EnhanceDiplomaticRelation, "EnhaneceDiplomaticRelation", "EnhaneceDiplomaticRelation.jpg", "EnhaneceDiplomaticRelation", "啊，出错了!", true);
-                return;
+                return false;
             }
 
             if (this.LocationArchitecture != targetArchitecture)
@@ -6310,6 +6346,7 @@ namespace GameObjects
                 this.LocationArchitecture = this.BelongedArchitecture;
                 this.WorkKind = ArchitectureWorkKind.无;
                 this.OutsideTask = OutsideTaskKind.亲善;
+                this.DiplomaticTargetFactionID = targetFaction.ID;
                 Session.MainGame.mainGameScreen.renwukaishitishi(this, this.TargetArchitecture);
                 if (this.BelongedFaction != null)
                 {
@@ -6319,22 +6356,25 @@ namespace GameObjects
                 {
                     this.Status = PersonStatus.NoFactionMoving;
                 }
+                return true;
             }
+
+            return false;
         }
 
-        public void GoToTruceDiplomatic(DiplomaticRelation relation)
+        public bool GoToTruceDiplomatic(DiplomaticRelation relation)
         {
-            if (relation == null) return;
+            if (relation == null) return false;
 
-            var factionName = relation.RelationFaction1 == BelongedFaction ? relation.RelationFaction2String : relation.RelationFaction1String;
+            Faction targetFaction = relation.GetDiplomaticFaction(this.BelongedFaction.ID);
 
-            Faction targetFaction = this.BelongedFaction.GetFactionByName(factionName);
+            if (targetFaction == null) return false;
             Architecture targetArchitecture = targetFaction.Capital;
 
             if (targetArchitecture == null)
             {
                 Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.Truce, "TruceDiplomaticRelation", "TruceDiplomaticRelation.jpg", "TruceDiplomaticRelation", "啊，出错了!", true);
-                return;
+                return false;
             }
 
             if (this.LocationArchitecture != targetArchitecture)
@@ -6353,6 +6393,7 @@ namespace GameObjects
                 this.LocationArchitecture = this.BelongedArchitecture;
                 this.WorkKind = ArchitectureWorkKind.无;
                 this.OutsideTask = OutsideTaskKind.停战;
+                this.DiplomaticTargetFactionID = targetFaction.ID;
                 Session.MainGame.mainGameScreen.renwukaishitishi(this, this.TargetArchitecture);
                 if (this.BelongedFaction != null)
                 {
@@ -6363,23 +6404,26 @@ namespace GameObjects
                     this.Status = PersonStatus.NoFactionMoving;
                 }
 
+                return true;
             }
+
+            return false;
         }
 
-        public void GoToAllyDiplomatic(DiplomaticRelation relation)
+        public bool GoToAllyDiplomatic(DiplomaticRelation relation)
         {
-            if (relation == null) return;
+            if (relation == null) return false;
 
-            var factionName = relation.RelationFaction1 == BelongedFaction ? relation.RelationFaction2String : relation.RelationFaction1String;
+            Faction targetFaction = relation.GetDiplomaticFaction(this.BelongedFaction.ID);
 
-            Faction targetFaction = this.BelongedFaction.GetFactionByName(factionName);
+            if (targetFaction == null) return false;
             //Architecture targetArchitecture = targetFaction.Leader.BelongedArchitecture;
             Architecture targetArchitecture = targetFaction.Capital;
 
             if (targetArchitecture == null)
             {
                 Session.MainGame.mainGameScreen.xianshishijiantupian(this, this.BelongedFaction.Leader.Name, TextMessageKind.EnhanceDiplomaticRelation, "EnhaneceDiplomaticRelation", "EnhaneceDiplomaticRelation.jpg", "EnhaneceDiplomaticRelation", "啊，出错了!", true);
-                return;
+                return false;
             }
 
             if (this.LocationArchitecture != targetArchitecture)
@@ -6398,6 +6442,7 @@ namespace GameObjects
                 this.LocationArchitecture = this.BelongedArchitecture;
                 this.WorkKind = ArchitectureWorkKind.无;
                 this.OutsideTask = OutsideTaskKind.结盟;
+                this.DiplomaticTargetFactionID = targetFaction.ID;
                 Session.MainGame.mainGameScreen.renwukaishitishi(this, this.TargetArchitecture);
                 if (this.BelongedFaction != null)
                 {
@@ -6408,7 +6453,10 @@ namespace GameObjects
                     this.Status = PersonStatus.NoFactionMoving;
                 }
 
+                return true;
             }
+
+            return false;
         }
 
         public void NoFactionMove()
@@ -8078,6 +8126,10 @@ namespace GameObjects
 
         [DataMember]
         public OutsideTaskKind OutsideTask { get; set; }
+
+        // 外交任务出发时的目标势力ID，到达时用于判断目的地是否已易主；-1表示未记录
+        [DataMember]
+        public int DiplomaticTargetFactionID { get; set; } = -1;
 
         public string OutsideTaskDaysString => TaskDays > 0 ? $"{TaskDays * Session.Parameters.DayInTurn}天" : "----";
 
