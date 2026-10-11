@@ -52,7 +52,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 {
                     //try
                     //{
-                        maptile.TileTexture = Platform.Current.LoadTexture("Content/Textures/Resources/ditu/" + Session.Current.Scenario.ScenarioMap.MapName + "/" + maptile.number + ".jpg", false);
+                        //加载失败时返回null，用占位材质代替，避免加载线程对同一块不停重试
+                        maptile.TileTexture = Platform.Current.LoadTexture("Content/Textures/Resources/ditu/" + Session.Current.Scenario.ScenarioMap.MapName + "/" + maptile.number + ".jpg", false)
+                            ?? new Texture2D(Platform.GraphicsDevice, 1, 1);
                     //}
                     //catch (FileNotFoundException)
                     //{
@@ -439,25 +441,23 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         {
             if (this.MapTiles != null)
             {
-                var nums = GetCurrentViewMapTileNumsAll();
+                int minX = 0, minY = 0, maxX = -1, maxY = -1;
+                bool hasView = !clearAll && GetDisplayingMapTileBounds(out minX, out minY, out maxX, out maxY);
 
                 foreach (MapTile maptile in this.MapTiles)
                 {
-                    if (nums.Contains(int.Parse(maptile.number)) && !clearAll)
+                    //保留当前视野及其外围一圈
+                    if (hasView
+                        && maptile.Position.X >= minX - 1 && maptile.Position.X <= maxX + 1
+                        && maptile.Position.Y >= minY - 1 && maptile.Position.Y <= maxY + 1)
                     {
                         continue;
                     }
-                    //try
-                    //{
                     if (maptile.TileTexture != null)
                     {
                         maptile.TileTexture.Dispose();
                         maptile.TileTexture = null;
                     }
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //}                    
                 }
             }
 
@@ -473,191 +473,177 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             }
         }
 
-        private int[] GetCurrentViewMapTileNums1()
+        private bool GetDisplayingMapTileBounds(out int minX, out int minY, out int maxX, out int maxY)
         {
-            lock (this.DisplayingMapTiles)
+            minX = minY = int.MaxValue;
+            maxX = maxY = int.MinValue;
+
+            var displaying = this.DisplayingMapTiles;
+            if (displaying == null)
             {
-                var disNums = this.DisplayingMapTiles.Select(di => int.Parse(di.number)).ToArray();
-                return disNums;
+                return false;
             }
-        }
 
-        private int[] GetCurrentViewMapTileNums2()
-        {
-            var disNums = GetCurrentViewMapTileNums1();
-            var nums = new int[] { -1, +1, -30, +30, -31, -29, +29, +31 };
-            var expandNums = disNums.SelectMany(nu => nums.Select(num => num + nu)).Where(num => 0 <= num && num <= 899 && !disNums.Contains(num)).ToArray();
-            return expandNums.Distinct().ToArray();
-        }
-
-        private int[] GetCurrentViewMapTileNumsAll()
-        {
-            var disNums = GetCurrentViewMapTileNums1();
-            var nums = new int[] { -1, +1, -30, +30, -31, -29, +29, +31 };
-            var exceptNums = disNums.SelectMany(nu => nums.Select(num => num + nu)).Where(num => 0 <= num && num <= 899).ToArray();
-            return disNums.Union(exceptNums).Distinct().ToArray();
+            lock (displaying)
+            {
+                foreach (MapTile maptile in displaying)
+                {
+                    if (maptile == null)
+                    {
+                        continue;
+                    }
+                    minX = Math.Min(minX, maptile.Position.X);
+                    minY = Math.Min(minY, maptile.Position.Y);
+                    maxX = Math.Max(maxX, maptile.Position.X);
+                    maxY = Math.Max(maxY, maptile.Position.Y);
+                }
+            }
+            return maxX >= minX;
         }
 
         public void StopThreads()
         {
-            var mapThread1 = MapThread1;
-            var mapThread2 = MapThread2;
-            mapThread1?.Abort();
-            mapThread2?.Abort();
-            MapThread1 = null;
-            MapThread2 = null;
+            var mapThreads = MapThreads;
+            MapThreads = null;
+            if (mapThreads != null)
+            {
+                foreach (var mapThread in mapThreads)
+                {
+                    mapThread.Abort();
+                }
 
-            // 纹理加载可能等待主线程，退出时不能无限等待。
-            mapThread1?.Join(1000);
-            mapThread2?.Join(1000);
+                // 纹理加载可能等待主线程，退出时不能无限等待。
+                var deadline = DateTime.UtcNow.AddMilliseconds(1000);
+                foreach (var mapThread in mapThreads)
+                {
+                    mapThread.Join(Math.Max(0, (int)(deadline - DateTime.UtcNow).TotalMilliseconds));
+                }
+            }
             freeTilesMemory();
         }
 
-        PlatformTask MapThread1;
-        PlatformTask MapThread2;
+        PlatformTask[] MapThreads;
 
-        private void ProcessMapTileTextureSync()
+        //地图块加载完成后由默认地图块淡入到真实地图块的时长
+        private const double MapTileFadeSeconds = 0.15;
+        private readonly System.Diagnostics.Stopwatch mapTileFadeWatch = System.Diagnostics.Stopwatch.StartNew();
+
+        //正在加载中的地图块，避免多个线程重复加载同一块
+        private readonly HashSet<MapTile> loadingMapTiles = new HashSet<MapTile>();
+
+        /// <summary>
+        /// 取下一块待加载的地图块：优先当前视野（由中心向外），视野加载完后再预加载外围一圈
+        /// </summary>
+        private MapTile TakeNextMapTileToLoad()
         {
-            if (MapThread1 == null)
+            var mapTiles = this.MapTiles;
+            if (mapTiles == null || !GetDisplayingMapTileBounds(out int minX, out int minY, out int maxX, out int maxY))
             {
-                PlatformTask mapThread1 = null;
-                mapThread1 = new PlatformTask(() =>
+                return null;
+            }
+
+            float centerX = (minX + maxX) / 2f;
+            float centerY = (minY + maxY) / 2f;
+            int fromX = Math.Max(minX - 1, 0);
+            int fromY = Math.Max(minY - 1, 0);
+            int toX = Math.Min(maxX + 1, mapTiles.GetLength(0) - 1);
+            int toY = Math.Min(maxY + 1, mapTiles.GetLength(1) - 1);
+
+            MapTile best = null;
+            float bestScore = float.MaxValue;
+
+            lock (this.loadingMapTiles)
+            {
+                for (int x = fromX; x <= toX; x++)
                 {
-                    while (true)
+                    for (int y = fromY; y <= toY; y++)
                     {
-                        if (mapThread1.IsStop)
+                        MapTile maptile = mapTiles[x, y];
+                        if (maptile == null || maptile.TileTexture != null || this.loadingMapTiles.Contains(maptile))
                         {
-                            break;
+                            continue;
                         }
 
-                        try
+                        bool inView = x >= minX && x <= maxX && y >= minY && y <= maxY;
+                        float dx = x - centerX;
+                        float dy = y - centerY;
+                        float score = dx * dx + dy * dy + (inView ? 0f : 1000000f);
+                        if (score < bestScore)
                         {
-                            MapTile mapTile = null;
-
-                            //var tileNums1 = GetCurrentViewMapTileNums1();                            
-
-                            lock (this.DisplayingMapTiles)
-                            {
-                                var maps = this.DisplayingMapTiles.Where(ma => ma != null && ma.TileTexture == null).ToArray();  // tileNums1.Select(num => this.MapTiles[num % 30, num / 30]).Where(ma => ma.TileTexture == null).ToArray();                            
-                                if (maps != null && maps.Length > 0)
-                                {
-                                    mapTile = maps.FirstOrDefault();                                    
-                                }
-                            }
-
-                            if (mapTile != null)
-                            {
-                                CheckMapTileTexture(mapTile);
-                            }
-
-                            Platform.Sleep(30);
-                        }
-                        //catch (ThreadAbortException)
-                        //{
-                        //    break;
-                        //}
-                        catch (Exception e)
-                        {
-                            //DateTime dt = System.DateTime.Now;
-                            //String dateSuffix = "_" + dt.Year + "_" + dt.Month + "_" + dt.Day + "_" + dt.Hour + "h" + dt.Minute;
-                            //String logPath = "CrashLog" + dateSuffix + ".log";
-                            //StreamWriter sw = new StreamWriter(new FileStream(logPath, FileMode.Create));
-
-                            //sw.WriteLine("==================== Message ====================");
-                            //sw.WriteLine(e.Message);
-                            //sw.WriteLine("=================== StackTrace ==================");
-                            //sw.WriteLine(e.StackTrace);
-
-                            //sw.Close();
-
-                            Platform.Sleep(1000);
+                            bestScore = score;
+                            best = maptile;
                         }
                     }
                 }
-                );
-                MapThread1 = mapThread1;
-                MapThread1.Start();
-            }
-            if (MapThread2 == null)
-            {
-                PlatformTask mapThread2 = null;
-                mapThread2 = new PlatformTask(() =>
+
+                if (best != null)
                 {
-                    while (true)
-                    {
-                        if (mapThread2.IsStop)
-                        {
-                            break;
-                        }
-
-                        try
-                        {
-                            MapTile mapTile = null;
-
-                            lock (this.DisplayingMapTiles)
-                            {
-                                var maps0 = this.DisplayingMapTiles.Where(ma => ma != null && ma.TileTexture == null).ToArray();
-
-                                //如果当前地图未绘制完，暂停绘制周边
-                                if (maps0 != null && maps0.Length > 0)
-                                {
-                                    mapTile = maps0.FirstOrDefault();
-                                }
-                            }
-
-                            if (mapTile != null)
-                            {
-                                //CheckMapTileTexture(mapTile);
-                                Platform.Sleep(80);
-                                continue;
-                            }
-
-                            var tileNums2 = GetCurrentViewMapTileNums2();
-
-                            int mapsN = 30;
-                            if (Setting.Current.MODRuntime == "Shanshui") 
-                            { 
-                                mapsN = 12;//原为30，但丝路山水版会一直报错
-                                //this.DisplayingMapTiles.Add(this.MapTiles[i / Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile, j / Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile]);
-                            }                   
-                            var maps = tileNums2.Select(num => this.MapTiles[num % mapsN, num / mapsN]).Where(ma => ma != null && ma.TileTexture == null).ToArray();
-
-                            if (maps != null && maps.Length > 0)
-                            {
-                                mapTile = maps.FirstOrDefault();
-                                CheckMapTileTexture(mapTile);
-                            }
-
-                            Platform.Sleep(50);
-                        }
-                        catch   (Exception e)
-                        {
-                            //DateTime dt = System.DateTime.Now;
-                            //String dateSuffix = "_" + dt.Year + "_" + dt.Month + "_" + dt.Day + "_" + dt.Hour + "h" + dt.Minute;
-                            //String logPath = "CrashLog" + dateSuffix + ".log";
-                            //StreamWriter sw = new StreamWriter(new FileStream(logPath, FileMode.Create));
-
-                            //sw.WriteLine("==================== Message ====================");
-                            //sw.WriteLine(e.Message);
-                            //sw.WriteLine("=================== StackTrace ==================");
-                            //sw.WriteLine(e.StackTrace);
-
-                            //sw.Close();
-
-                            Platform.Sleep(1000);
-                        }
-                        //catch (ThreadAbortException)
-                        //{
-                        //    break;
-                        //}
-                    }
-                });
-                MapThread2 = mapThread2;
-                MapThread2.Start();
+                    this.loadingMapTiles.Add(best);
+                }
             }
 
+            return best;
         }
 
+        private void MapTileLoadLoop(PlatformTask task)
+        {
+            while (!task.IsStop)
+            {
+                try
+                {
+                    MapTile mapTile = TakeNextMapTileToLoad();
+                    if (mapTile == null)
+                    {
+                        Platform.Sleep(15);
+                        continue;
+                    }
+
+                    try
+                    {
+                        CheckMapTileTexture(mapTile);
+                    }
+                    finally
+                    {
+                        lock (this.loadingMapTiles)
+                        {
+                            this.loadingMapTiles.Remove(mapTile);
+                        }
+                    }
+
+                    //停止后才加载完成的材质不会再被清理，这里直接释放
+                    if (task.IsStop && mapTile.TileTexture != null)
+                    {
+                        mapTile.TileTexture.Dispose();
+                        mapTile.TileTexture = null;
+                    }
+                }
+                catch (Exception)
+                {
+                    Platform.Sleep(1000);
+                }
+            }
+        }
+
+        private void ProcessMapTileTextureSync()
+        {
+            if (MapThreads == null)
+            {
+                //解码在后台线程并行进行，材质上传仍由主线程每帧统一处理
+                int count = Math.Max(2, Math.Min(4, Environment.ProcessorCount - 1));
+                var mapThreads = new PlatformTask[count];
+                for (int i = 0; i < count; i++)
+                {
+                    PlatformTask mapThread = null;
+                    mapThread = new PlatformTask(() => MapTileLoadLoop(mapThread));
+                    mapThreads[i] = mapThread;
+                }
+                MapThreads = mapThreads;
+                foreach (var mapThread in mapThreads)
+                {
+                    mapThread.Start();
+                }
+            }
+        }
 
         public void Draw(Point viewportSize)
         {
@@ -668,6 +654,21 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 if (Session.Current.Scenario.ScenarioMap.MapName != null)
                 {
                     ProcessMapTileTextureSync();
+
+                    //本帧淡入的进度增量，卡顿时限制单帧步长
+                    float mapTileFadeStep = (float)(Math.Min(mapTileFadeWatch.Elapsed.TotalSeconds, 0.05) / MapTileFadeSeconds);
+                    mapTileFadeWatch.Restart();
+
+                    //地图块尚未加载完时，先用默认地图块（0号）代替，避免露出黑块
+                    Texture2D defaultTileTexture = null;
+                    if (this.DisplayingMapTiles.Exists(ma => ma != null && (ma.TileTexture == null || ma.FadeAlpha < 1f)))
+                    {
+                        defaultTileTexture = CacheManager.LoadTexture("Content/Textures/Resources/ditu/" + Session.Current.Scenario.ScenarioMap.MapName + "/0.jpg");
+                        if (defaultTileTexture != null && defaultTileTexture.IsDisposed)
+                        {
+                            defaultTileTexture = null;
+                        }
+                    }
 
                     foreach (MapTile maptile in this.DisplayingMapTiles)
                     {
@@ -680,7 +681,24 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
                         if (maptile != null && maptile.TileTexture != null)
                         {
-                            spriteBatch.Draw(maptile.TileTexture, maptile.Destination, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                            //显示过默认地图块的，加载完成后淡入；视野外预加载好的直接显示
+                            if (maptile.FadeAlpha < 1f)
+                            {
+                                maptile.FadeAlpha = Math.Min(1f, maptile.FadeAlpha + mapTileFadeStep);
+                                if (maptile.FadeAlpha < 1f && defaultTileTexture != null)
+                                {
+                                    spriteBatch.Draw(defaultTileTexture, maptile.Destination, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.9001f);
+                                }
+                            }
+                            spriteBatch.Draw(maptile.TileTexture, maptile.Destination, sourceRectangle, Color.White * maptile.FadeAlpha, 0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        else if (maptile != null)
+                        {
+                            maptile.FadeAlpha = 0f;
+                            if (defaultTileTexture != null)
+                            {
+                                spriteBatch.Draw(defaultTileTexture, maptile.Destination, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                            }
                         }
 
                         List<Texture2D> decorativeTextures = null;
@@ -1012,22 +1030,22 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
             if (this.MapTiles != null)
             {
-                lock (this.DisplayingMapTiles)
-                {
-                    this.DisplayingMapTiles.Clear();
-                }
+                //先在临时列表中算好再一次性替换，避免加载线程读到只填了一半的列表
+                var displayingMapTiles = new List<MapTile>(this.DisplayingMapTiles.Count);
                 for (int i = screen.TopLeftPosition.X; i <= screen.BottomRightPosition.X + Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile; i += Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile)
                 {
                     for (int j = screen.TopLeftPosition.Y; j <= screen.BottomRightPosition.Y + Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile; j += Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile)
                     {
                         if ((((i >= 0) && (i < Session.Current.Scenario.ScenarioMap.MapDimensions.X)) && (j >= 0)) && (j < Session.Current.Scenario.ScenarioMap.MapDimensions.Y))
                         {
-                            lock (this.DisplayingMapTiles)
-                            {
-                                this.DisplayingMapTiles.Add(this.MapTiles[i / Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile, j / Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile]);
-                            }
+                            displayingMapTiles.Add(this.MapTiles[i / Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile, j / Session.Current.Scenario.ScenarioMap.NumberOfSquaresInEachTile]);
                         }
                     }
+                }
+                lock (this.DisplayingMapTiles)
+                {
+                    this.DisplayingMapTiles.Clear();
+                    this.DisplayingMapTiles.AddRange(displayingMapTiles);
                 }
             }
         }

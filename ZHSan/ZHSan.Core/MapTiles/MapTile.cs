@@ -17,6 +17,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         public Texture2D TileTexture;
 #pragma warning restore CS0108 // 'MapTile.TileTexture' hides inherited member 'Tile.TileTexture'. Use the new keyword if hiding was intended.
 
+        //淡入进度，0为刚加载完（仍显示默认地图块），1为完全显示
+        public float FadeAlpha = 1f;
+
          
     }
 
