@@ -187,6 +187,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             //base.Draw(gameTime);
             //Begin(SpriteSortMode.Deferred);
             //Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.BackToFront, SaveStateMode.None);
+            this.drawnSinceAIBudget = true;
             this.Drawing(gameTime);
             //End();
         }
@@ -1429,7 +1430,58 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
 
-        private const double TroopMoveTimeBudgetMs = 10;
+        // 势力运行和部队移动共用的时间预算，按“两次绘制之间”计而不是按每次Update计：
+        // Update+Draw超过一帧时MonoGame会连续补跑Update而不绘制，若每次补跑都再用满预算，帧率会越掉越低，自绘的鼠标指针就会卡顿
+        private const double FrameTimeMs = 1000.0 / 60;
+        private const double MaxAIBudgetMs = 10;
+        private const double MinAIBudgetMs = 2;
+        private const double AIBudgetMarginMs = 2;
+        // 窗口最小化等情况下可能长时间不绘制，超过这个时间就不再等绘制
+        private const double MaxWaitForDrawMs = 200;
+
+        private long aiBudgetStartTimestamp;
+        private long aiDeadlineTimestamp;
+        private bool aiRanInBudget;
+        private bool drawnSinceAIBudget = true;
+
+        private void ResetAIBudget()
+        {
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (!this.drawnSinceAIBudget
+                && System.Diagnostics.Stopwatch.GetElapsedTime(this.aiBudgetStartTimestamp, now).TotalMilliseconds < MaxWaitForDrawMs)
+            {
+                return;
+            }
+            this.drawnSinceAIBudget = false;
+            this.aiRanInBudget = false;
+            this.aiBudgetStartTimestamp = now;
+            // 一帧里扣掉绘制耗时后剩下的时间才留给AI
+            double budgetMs = Math.Clamp(FrameTimeMs - Session.MainGame.LastDrawMs - AIBudgetMarginMs, MinAIBudgetMs, MaxAIBudgetMs);
+            this.aiDeadlineTimestamp = now + (long)(budgetMs * System.Diagnostics.Stopwatch.Frequency / 1000);
+        }
+
+        private bool HasAITimeLeft
+        {
+            get
+            {
+                return System.Diagnostics.Stopwatch.GetTimestamp() < this.aiDeadlineTimestamp;
+            }
+        }
+
+        // 本次预算已经用完时跳过这次Update的AI推进，等下一次绘制后再继续；每次预算至少保证推进一步
+        private bool ShouldSkipAIStep()
+        {
+            if (Session.GlobalVariables.EnableResposiveThreading)
+            {
+                return false;
+            }
+            if (this.aiRanInBudget && !this.HasAITimeLeft)
+            {
+                return true;
+            }
+            this.aiRanInBudget = true;
+            return false;
+        }
 
         // 有动画、弹出界面，或有伤害/计略效果等待在绘制时结算，都要等到下一帧再继续
         private bool CanContinueMovingTroops()
@@ -1493,8 +1545,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 if (!Session.Current.Scenario.Animating || Setting.Current.GlobalVariables.FastBattleSpeed < 2)
                 //if (!Session.Current.Scenario.Animating)
                 {
+                    if (this.ShouldSkipAIStep())
+                    {
+                        return true;
+                    }
                     // 没有需要展示的动画时，在一帧的时间预算内连续推进多支部队，避免部队多时每帧只走一步
-                    long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                     do
                     {
                         Session.Current.Scenario.TroopsQueue.CurrentQueueTroopMove();
@@ -1504,8 +1559,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             return false;
                         }
                     }
-                    while (this.CanContinueMovingTroops()
-                        && System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds < TroopMoveTimeBudgetMs);
+                    while (this.HasAITimeLeft && this.CanContinueMovingTroops());
                 }
                 else if (gameTime.ElapsedGameTime.TotalMilliseconds > Session.GlobalVariables.MaxTimeOfAnimationFrame-(10- Setting.Current.GlobalVariables.FastBattleSpeed)*2.5f)
                 //else if (gameTime.ElapsedGameTime.TotalMilliseconds > Session.GlobalVariables.MaxTimeOfAnimationFrame)
@@ -1699,8 +1753,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.CurrentRouteway = obj as Routeway;
         }
 
-        private const double FactionRunTimeBudgetMs = 10;
-
         // 玩家势力正在操作，或AI弹出了界面、触发了视角移动，都要等到下一帧再继续
         private bool CanContinueRunningFactions()
         {
@@ -1716,9 +1768,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             try
             {
+                if (this.ShouldSkipAIStep())
+                {
+                    return true;
+                }
                 // 在一帧的时间预算内连续推进多个势力，避免势力多时每个势力至少占用两帧
                 var factionsQueue = Session.Current.Scenario.FactionsQueue;
-                long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 do
                 {
                     factionsQueue.RunQueue();
@@ -1727,8 +1782,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         return false;
                     }
                 }
-                while (this.CanContinueRunningFactions()
-                    && System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds < FactionRunTimeBudgetMs);
+                while (this.HasAITimeLeft && this.CanContinueRunningFactions());
                 return true;
             }
             catch (OutOfMemoryException)
@@ -2826,6 +2880,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         public override void Update(GameTime gameTime)   //视野内容更新
         {
+            this.ResetAIBudget();
+
             if (toggleScreen)
             {
                 toggleScreenTime += Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds);

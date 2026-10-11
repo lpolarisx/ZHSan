@@ -75,6 +75,9 @@ namespace WorldOfTheThreeKingdoms
         
         public Texture2D renderLast = null;
 
+        // 上一次绘制的耗时（毫秒），不含垂直同步等待
+        public double LastDrawMs;
+
         public bool isDebug = false;
         public bool loaded2 = false;
         public MainGame()
@@ -401,6 +404,8 @@ namespace WorldOfTheThreeKingdoms
         {
             //第五步
 
+            long drawStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+
             if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.UWP || Platform.PlatFormType == PlatFormType.Android || Platform.PlatFormType == PlatFormType.Desktop)
             {
                 if (takePicture == true)
@@ -584,6 +589,8 @@ namespace WorldOfTheThreeKingdoms
                     WebTools.TakeWarnMsg("游戏界面截屏失败:", "takePicture：", ex);
                 }
             }
+
+            LastDrawMs = System.Diagnostics.Stopwatch.GetElapsedTime(drawStartTimestamp).TotalMilliseconds;
 
             base.Draw(gameTime);
         }
