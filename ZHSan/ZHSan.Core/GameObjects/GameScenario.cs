@@ -2389,6 +2389,8 @@ namespace GameObjects
             {
                 SetMapTileArchitecture(architecture);
             }
+
+            MapDetail.TerritoryCalculator.Calculate(this);
         }
 
         private void InitializeArchitectureData()
