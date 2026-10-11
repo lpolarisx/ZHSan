@@ -1940,7 +1940,7 @@ namespace GameObjects
                 }
                 if (killer.BelongedFaction != null)
                 {
-                    foreach (var treasure in Treasures)
+                    foreach (var treasure in Treasures.ToList())
                     {
                         this.LoseTreasure(treasure);
                         killer.BelongedFaction.Leader.ReceiveTreasure(treasure);
@@ -4556,7 +4556,7 @@ namespace GameObjects
                     this.OutsideTask = OutsideTaskKind.无;
                     Captive captive = Captive.Create(this, a.BelongedFaction);
                     this.Status = PersonStatus.Captive;
-                    foreach (var treasure in Treasures)
+                    foreach (var treasure in Treasures.ToList())
                     {
                         this.LoseTreasure(treasure);
                         a.BelongedFaction.Leader.ReceiveTreasure(treasure);

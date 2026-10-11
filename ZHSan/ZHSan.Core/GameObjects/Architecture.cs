@@ -11984,11 +11984,8 @@ namespace GameObjects
                         }
                     }
 
-                    var movingPersons = GetMovingPersons();
-                    
-                    while (movingPersons.Count > 0)
+                    foreach (var person2 in GetMovingPersons())
                     {
-                        var person2 = movingPersons[0];
                         Session.Current.Scenario.YearTable.addBecomeNoFactionDueToDestructionEntry(Session.Current.Scenario.Date, person2, this.BelongedFaction);
                         person2.OutsideTask = OutsideTaskKind.无;
                         person2.TaskDays = 0;
@@ -12047,12 +12044,11 @@ namespace GameObjects
                         }
                     }
 
-                    var movingPersons = GetMovingPersons();
-                    while (movingPersons.Count > 0)
+                    foreach (var movingPerson in GetMovingPersons())
                     {
-                        if (movingPersons[0].LocationArchitecture != null)
+                        if (movingPerson.LocationArchitecture != null)
                         {
-                            movingPersons[0].MoveToArchitecture(BelongedFaction.Capital, Position, false, true, null);
+                            movingPerson.MoveToArchitecture(BelongedFaction.Capital, Position, false, true, null);
                         }
                     }
                     foreach (var military in BelongedFaction.TransferingMilitaries)
@@ -14478,6 +14474,11 @@ namespace GameObjects
         /// </summary>
         /// <returns></returns>
         public List<Facility> GetCanRemoveFacilities() => Facilities.Where(CanRemoveFacility).ToList();
+
+        /// <summary>
+        /// 是否有可拆除的设施（ContextMenuData.xml中“拆除”菜单项按此方法名反射调用，不可改名）
+        /// </summary>
+        public bool HaskechaichuFacility() => Facilities.Any(CanRemoveFacility);
 
         /// <summary>
         /// 获取设施列表

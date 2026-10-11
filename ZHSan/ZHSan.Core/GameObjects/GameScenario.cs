@@ -6159,6 +6159,11 @@ namespace GameObjects
             return 0;
         }
 
+        public bool TryGetDiplomaticRelation(int factionId1, int factionId2, out DiplomaticRelation diplomaticRelation)
+        {
+            return DiplomaticRelations.TryGetValue(GetDiplomaticRelationKey(factionId1, factionId2), out diplomaticRelation);
+        }
+
         public int GetDiplomaticRelationTruce(int factionId1, int factionId2)
         {
             int key = GetDiplomaticRelationKey(factionId1, factionId2);

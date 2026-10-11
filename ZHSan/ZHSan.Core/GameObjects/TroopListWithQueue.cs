@@ -250,7 +250,7 @@ namespace GameObjects
                 }
                 else troop.RealDestination = troop.Position;
             }
-            else if (troop.TargetTroop != null && troop.Will.ToString() == "行军" && troop.mingling!= "Move" )//&& 
+            else if (troop.TargetTroop != null && troop.Will == TroopWill.行军 && troop.mingling!= "Move" )//&& 
                 //((troop.CurrentStratagem==null && troop.CanAttack(troop.TargetTroop))
                 //|| (troop.CurrentStratagem != null && troop.CanStratagem(troop.TargetTroop))))//ai//取消见面能打就站桩
             {

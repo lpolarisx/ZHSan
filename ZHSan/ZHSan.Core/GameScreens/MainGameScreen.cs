@@ -1429,18 +1429,83 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
 
+        private const double TroopMoveTimeBudgetMs = 10;
+
+        // 有动画、弹出界面，或有伤害/计略效果等待在绘制时结算，都要等到下一帧再继续
+        private bool CanContinueMovingTroops()
+        {
+            if (this.PeekUndoneWork().Kind != UndoneWorkKind.None || !this.EnableUpdate || this.dantiaoLayer != null)
+            {
+                return false;
+            }
+            foreach (var troop in Session.Current.Scenario.Troops.Values)
+            {
+                if (troop.Action != TroopAction.Stop || troop.ShowNumber || troop.PreAction != TroopPreAction.None
+                    || troop.WaitForDeepChaosFrameCount > 0 || troop.HasPendingEffect)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // 与TroopLayer.Draw中决定是否绘制部队的条件保持一致
+        private bool IsTroopDisplayed(Troop troop)
+        {
+            if (!troop.DrawAnimation || !this.mainMapLayer.TileInScreen(troop.Position))
+            {
+                return false;
+            }
+            var scenario = Session.Current.Scenario;
+            if (Session.GlobalVariables.SkyEye || scenario.NoCurrentPlayer)
+            {
+                return true;
+            }
+            if (troop.Status == TroopStatus.Ambushing && !troop.IsFriendly(scenario.CurrentPlayer))
+            {
+                return false;
+            }
+            return scenario.CurrentPlayer.IsFriendly(troop.BelongedFaction) || scenario.CurrentPlayer.IsPositionKnown(troop.Position);
+        }
+
+        // 不会显示在屏幕上的部队，动画、数字和待结算效果原本要等到下一次绘制才清除，这里直接结算，不用白等一帧绘制
+        private void SettleUndisplayedTroops()
+        {
+            foreach (var troop in Session.Current.Scenario.Troops.Values)
+            {
+                if (troop.Destroyed)
+                {
+                    continue;
+                }
+                if ((troop.Action != TroopAction.Stop || troop.ShowNumber || troop.PreAction != TroopPreAction.None
+                    || troop.WaitForDeepChaosFrameCount > 0 || troop.HasPendingEffect) && !this.IsTroopDisplayed(troop))
+                {
+                    troop.SetNotShowing();
+                }
+            }
+        }
+
         private bool MoveTheTroops(GameTime gameTime)
         {
             if (!Session.Current.Scenario.Threading)
             {
+                this.SettleUndisplayedTroops();
                 if (!Session.Current.Scenario.Animating || Setting.Current.GlobalVariables.FastBattleSpeed < 2)
                 //if (!Session.Current.Scenario.Animating)
                 {
-                    Session.Current.Scenario.TroopsQueue.CurrentQueueTroopMove();
-                    if (Session.Current.Scenario.TroopsQueue.TotallyEmpty)
+                    // 没有需要展示的动画时，在一帧的时间预算内连续推进多支部队，避免部队多时每帧只走一步
+                    long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                    do
                     {
-                        return false;
+                        Session.Current.Scenario.TroopsQueue.CurrentQueueTroopMove();
+                        this.SettleUndisplayedTroops();
+                        if (Session.Current.Scenario.TroopsQueue.TotallyEmpty)
+                        {
+                            return false;
+                        }
                     }
+                    while (this.CanContinueMovingTroops()
+                        && System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds < TroopMoveTimeBudgetMs);
                 }
                 else if (gameTime.ElapsedGameTime.TotalMilliseconds > Session.GlobalVariables.MaxTimeOfAnimationFrame-(10- Setting.Current.GlobalVariables.FastBattleSpeed)*2.5f)
                 //else if (gameTime.ElapsedGameTime.TotalMilliseconds > Session.GlobalVariables.MaxTimeOfAnimationFrame)
@@ -1634,15 +1699,36 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.CurrentRouteway = obj as Routeway;
         }
 
+        private const double FactionRunTimeBudgetMs = 10;
+
+        // 玩家势力正在操作，或AI弹出了界面、触发了视角移动，都要等到下一帧再继续
+        private bool CanContinueRunningFactions()
+        {
+            if (this.PeekUndoneWork().Kind != UndoneWorkKind.None || !this.EnableUpdate || this.viewMove != ViewMove.Stop)
+            {
+                return false;
+            }
+            var runningFaction = Session.Current.Scenario.FactionsQueue.RunningFaction;
+            return runningFaction == null || !runningFaction.Controlling;
+        }
+
         private bool RunTheFactions(GameTime gameTime)
         {
             try
             {
-                Session.Current.Scenario.FactionsQueue.RunQueue();
-                if (Session.Current.Scenario.FactionsQueue.QueueEmpty)
+                // 在一帧的时间预算内连续推进多个势力，避免势力多时每个势力至少占用两帧
+                var factionsQueue = Session.Current.Scenario.FactionsQueue;
+                long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                do
                 {
-                    return false;
+                    factionsQueue.RunQueue();
+                    if (factionsQueue.QueueEmpty)
+                    {
+                        return false;
+                    }
                 }
+                while (this.CanContinueRunningFactions()
+                    && System.Diagnostics.Stopwatch.GetElapsedTime(startTimestamp).TotalMilliseconds < FactionRunTimeBudgetMs);
                 return true;
             }
             catch (OutOfMemoryException)

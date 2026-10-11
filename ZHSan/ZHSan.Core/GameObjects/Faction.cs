@@ -4476,10 +4476,13 @@ namespace GameObjects
 
             if (faction == this) return true;
 
-            var relation = Session.Current.Scenario.GetDiplomaticRelation(base.ID, faction.ID);
-            var truceRelation = Session.Current.Scenario.GetDiplomaticRelationTruce(base.ID, faction.ID);
+            // 友好度和停战在同一条外交关系上，只查一次
+            if (!Session.Current.Scenario.TryGetDiplomaticRelation(base.ID, faction.ID, out var diplomaticRelation))
+            {
+                return 0 >= Session.GlobalVariables.FriendlyDiplomacyThreshold;
+            }
 
-            return relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold || truceRelation > 0;
+            return diplomaticRelation.Relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold || diplomaticRelation.Truce > 0;
         }
 
         public bool IsFriendlyWithoutTruce(Faction faction)

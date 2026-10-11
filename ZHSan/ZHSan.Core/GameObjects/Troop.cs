@@ -973,7 +973,7 @@ namespace GameObjects
             captivePerson.LocationTroop = this;
             if (BelongedFaction != null)
             {
-                foreach (var treasure in captivePerson.Treasures)
+                foreach (var treasure in captivePerson.Treasures.ToList())
                 {
                     captivePerson.LoseTreasure(treasure);
                     BelongedFaction.Leader.ReceiveTreasure(treasure);
@@ -2002,6 +2002,10 @@ namespace GameObjects
             ob.CalmDay = 0;
         }
         */
+        // 是否有伤害或计略效果尚未结算（在SetNotShowing或动画结束时结算）
+        public bool HasPendingEffect => TroopDamageList.Count > 0 || ArchitectureDamageList.Count > 0
+            || (CurrentStratagem != null && (StratagemApplyed || WaitForDeepChaos));
+
         public void ApplyDamageList()
         {
             foreach (TroopDamage damage in this.TroopDamageList)
