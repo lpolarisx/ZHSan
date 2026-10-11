@@ -53,6 +53,7 @@ namespace AirViewPlugin
         int millisecondsPerFrame = 240;
         bool drawTroopFlag = true;
         bool showTroop = true;
+        const float TerritoryAlpha = 0.5f;
 
         internal void AddDisableRects()
         {
@@ -73,6 +74,8 @@ namespace AirViewPlugin
                     sourceRectangle = null;
                     CacheManager.Draw(this.MapTexture, this.MapPosition, sourceRectangle, new Color(1f, 1f, 1f, this.Transparent), 0f, Vector2.Zero, SpriteEffects.None, 0.1f);
                 }
+                // 各势力领地的色块，盖在地图上、建筑和部队之下
+                Session.MainGame.mainGameScreen.factionBorderLayer.DrawTerritory(this.MapPosition, TerritoryAlpha * this.Transparent, 0.099995f);
                 /*
                 if (this.TroopTexture != null)
                 {
@@ -101,8 +104,11 @@ namespace AirViewPlugin
                     {
                         white = architecture.BelongedFaction.FactionColor;
                     }
+                    // 城池标记和领地色块同色，加一圈反差色的描边才看得清：深色势力描白边，浅色势力描黑边
+                    Color outline = (white.R * 299 + white.G * 587 + white.B * 114) / 1000 < 128 ? Color.White : Color.Black;
                     foreach (Point point in architecture.ArchitectureArea.Area)
                     {
+                        CacheManager.Draw(this.ArchitectureUnitTexture, new Rectangle(((point.X * this.TileLength) + this.MapDisplayOffset.X) - 2, ((point.Y * this.TileLength) + this.MapDisplayOffset.Y) - 2, this.TileLength + 4, this.TileLength + 4), null, outline, 0f, Vector2.Zero, SpriteEffects.None, 0.099992f);
                         sourceRectangle = null;
                         CacheManager.Draw(this.ArchitectureUnitTexture, new Rectangle(((point.X * this.TileLength) + this.MapDisplayOffset.X) - 1, ((point.Y * this.TileLength) + this.MapDisplayOffset.Y) - 1, this.TileLength + 2, this.TileLength + 2), sourceRectangle, white, 0f, Vector2.Zero, SpriteEffects.None, 0.09999f);
                     }

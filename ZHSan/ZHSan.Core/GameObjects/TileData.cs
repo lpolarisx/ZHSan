@@ -11,6 +11,8 @@ namespace GameObjects
     public struct TileData
     {
         public Architecture TileArchitecture;
+        // 该格子所属辖区的建筑，由TerritoryCalculator计算，无主地为null
+        public Architecture OwnerArchitecture;
         public Troop TileTroop;
         public int TroopCount;
         public List<AreaInfluenceData> AreaInfluenceList;

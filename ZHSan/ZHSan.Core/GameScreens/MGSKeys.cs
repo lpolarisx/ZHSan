@@ -240,6 +240,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.currentKey = Keys.L;
                     this.ShowArchitectureConnectedLine = !this.ShowArchitectureConnectedLine;
                 }
+                else if (InputManager.KeyBoardState.IsKeyDown(Keys.B))
+                {
+                    this.currentKey = Keys.B;
+                    this.ShowFactionBorder = !this.ShowFactionBorder;
+                }
             }
             if (InputManager.KeyBoardState.IsKeyDown(Keys.Space))
             {

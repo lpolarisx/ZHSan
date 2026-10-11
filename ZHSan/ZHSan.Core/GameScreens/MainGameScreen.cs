@@ -32,6 +32,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
     {
         private string bianduiLiebiaoBiaoji;
         private ArchitectureLayer architectureLayer;
+        public FactionBorderLayer factionBorderLayer;
         private Keys currentKey;
         private bool drawingSelector;
         private bool tufashijianzantingyinyue=false ;
@@ -74,6 +75,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         //public FreeText qizidezi;
         public bool editMode = false;
         public bool ShowArchitectureConnectedLine = false;
+        public bool ShowFactionBorder = true;
         private int ditukuaidezhi = 1;
 
         private bool mapEdited = false;
@@ -90,6 +92,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.Textures = new GameTextures();
             this.mainMapLayer = new MainMapLayer();
             this.architectureLayer = new ArchitectureLayer();
+            this.factionBorderLayer = new FactionBorderLayer();
             this.mapVeilLayer = new MapVeilLayer();
             this.troopLayer = new TroopLayer();
             this.selectingLayer = new SelectingLayer();
@@ -260,6 +263,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private void Drawing(GameTime gameTime)            //绘制游戏屏幕
         {
             this.mainMapLayer.Draw(base.viewportSize);
+            this.factionBorderLayer.Draw();
             this.architectureLayer.Draw(base.viewportSize, gameTime);
             this.routewayLayer.Draw(base.viewportSize);
 

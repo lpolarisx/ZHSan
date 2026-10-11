@@ -14266,6 +14266,7 @@ namespace GameObjects
             foreach (Point point in this.ArchitectureArea.Area)
             {
                 Session.Current.Scenario.MapTileData[point.X, point.Y].TileArchitecture = this;
+                Session.Current.Scenario.MapTileData[point.X, point.Y].OwnerArchitecture = this;
             }
 
             Session.Current.Scenario.SetMapTileArchitecture(this);
