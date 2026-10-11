@@ -8817,6 +8817,7 @@ namespace GameObjects
             if (BelongedFaction == null || !Session.Current.Scenario.IsPlayer(BelongedFaction)) return result;
 
             int relationThreshold = Session.GlobalVariables.FriendlyDiplomacyThreshold;
+            var adjacentFactions = BelongedFaction.GetAdjecentFactions();
 
             foreach (var diplomaticRelation in GetDiplomaticRelations())
             {
@@ -8824,7 +8825,7 @@ namespace GameObjects
                 var faction2 = diplomaticRelation.RelationFaction2;
 
                 if (diplomaticRelation.Relation < relationThreshold && faction1 != null && faction2 != null
-                    && (BelongedFaction.AdjecentFactionList.Contains(faction1) || BelongedFaction.AdjecentFactionList.Contains(faction2)))
+                    && (adjacentFactions.Contains(faction1) || adjacentFactions.Contains(faction2)))
                 {
                     result.Add(diplomaticRelation);
                 }
