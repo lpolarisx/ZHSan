@@ -6123,9 +6123,12 @@ namespace GameObjects
         {
             var result = new List<DiplomaticRelation>();
 
-            foreach (var relation in DiplomaticRelations.Values)
+            // 每对势力只有一条关系，按势力逐个查表，避免扫描整张关系表
+            foreach (var faction in Factions.Values)
             {
-                if (relation.RelationFaction1ID == factionId || relation.RelationFaction2ID == factionId)
+                if (faction.ID == factionId) continue;
+
+                if (DiplomaticRelations.TryGetValue(GetDiplomaticRelationKey(factionId, faction.ID), out var relation))
                 {
                     result.Add(relation);
                 }
@@ -6138,13 +6141,10 @@ namespace GameObjects
         {
             var result = new List<DiplomaticRelationDisplay>();
 
-            foreach (var relation in DiplomaticRelations.Values)
+            foreach (var relation in GetDiplomaticRelationListByFactionID(factionId))
             {
-                if (relation.RelationFaction1ID == factionId || relation.RelationFaction2ID == factionId)
-                {
-                    string displayName = relation.RelationFaction1ID == factionId ? relation.RelationFaction2String : relation.RelationFaction1String;
-                    result.Add(new DiplomaticRelationDisplay(relation, displayName));
-                }
+                string displayName = relation.RelationFaction1ID == factionId ? relation.RelationFaction2String : relation.RelationFaction1String;
+                result.Add(new DiplomaticRelationDisplay(relation, displayName));
             }
 
             return result;

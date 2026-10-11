@@ -4885,19 +4885,28 @@ namespace GameObjects
 
         public bool adjacentTo(Faction f)
         {
-            if (this == f) return false;
-            if (f != null)
+            if (this == f || f == null) return false;
+
+            foreach (var i in Architectures)
             {
-                foreach (var i in Architectures)
+                if (HasArchitectureOf(i.AILandLinks, f) || HasArchitectureOf(i.AIWaterLinks, f))
                 {
-                    foreach (var j in f.Architectures)
-                    {
-                        if (i.AILandLinks.Contains(j) || i.AIWaterLinks.Contains(j))
-                        {
-                            return true;
-                        }
-                    }
+                    return true;
                 }
+            }
+            return false;
+        }
+
+        private static bool HasArchitectureOf(List<Architecture> links, Faction f)
+        {
+            foreach (var j in links)
+            {
+                if (j == null) continue;
+
+                if (j.BelongedFaction == f) return true;
+
+                // 中立建筑每天会把 BelongedFaction 置空，但可能仍留在势力的城池列表里，需回查列表
+                if (j.BelongedFaction == null && f.Architectures.Contains(j)) return true;
             }
             return false;
         }
@@ -5068,10 +5077,13 @@ namespace GameObjects
 
         private void ResetFriendlyDiplomaticRelations()
         {
+            // 本方法内势力不会增减，关系列表只取一次
+            var diplomaticRelations = GetDiplomaticRelations();
+
             if (!IsAlien)
             {
                 int relationThreshold = Session.GlobalVariables.FriendlyDiplomacyThreshold;
-                foreach (var relation in GetDiplomaticRelations())
+                foreach (var relation in diplomaticRelations)
                 {
                     var opposite = relation.GetDiplomaticFaction(ID);
 
@@ -5089,7 +5101,7 @@ namespace GameObjects
 
             if (Session.GlobalVariables.PinPointAtPlayer)
             {
-                foreach (var i in GetDiplomaticRelations())
+                foreach (var i in diplomaticRelations)
                 {
                     Faction opposite = i.GetDiplomaticFaction(ID);
                     if (i.Relation >= -Session.GlobalVariables.FriendlyDiplomacyThreshold && !this.IsFriendly(opposite) &&
@@ -5104,16 +5116,8 @@ namespace GameObjects
             {
                 // Break Relations
                 int relationThreshold = Session.GlobalVariables.FriendlyDiplomacyThreshold;
-                var nonFriendlyFactions = new List<Faction>();
-
-                foreach (var faction in Session.Current.Scenario.Factions.Values)
-                {
-                    if (adjacentTo(faction) && Session.Current.Scenario.GetDiplomaticRelation(ID, faction.ID) < relationThreshold)
-                    {
-                        nonFriendlyFactions.Add(faction);
-                    }
-                }
-                
+                // 非友好的接壤势力：数量与实力总和
+                int nonFriendlyCount = 0;
                 int totalPower = 0;
                 var nearbyFactions = GetAdjecentFactions();
 
@@ -5121,6 +5125,7 @@ namespace GameObjects
                 {
                     if (Session.Current.Scenario.GetDiplomaticRelation(ID, faction.ID) < relationThreshold)
                     {
+                        nonFriendlyCount++;
                         totalPower += faction.Power;
                     }
                 }
@@ -5130,13 +5135,18 @@ namespace GameObjects
 
                 foreach (var faction in nearbyFactions)
                 {
-                    int truce = Session.Current.Scenario.GetDiplomaticRelationTruce(ID, faction.ID);
-                    int relation = Session.Current.Scenario.GetDiplomaticRelation(ID, faction.ID);
+                    int truce = 0;
+                    int relation = 0;
+                    if (Session.Current.Scenario.TryGetDiplomaticRelation(ID, faction.ID, out var nearbyRelation))
+                    {
+                        truce = nearbyRelation.Truce;
+                        relation = nearbyRelation.Relation;
+                    }
 
                     if (truce > 0) continue;
 
                     int unAmbition = 4 - Leader.Ambition;
-                    if (nonFriendlyFactions.Count == 0 && faction.Power < Power)
+                    if (nonFriendlyCount == 0 && faction.Power < Power)
                     {
                         if (faction.Power < power)
                         {
@@ -5167,7 +5177,7 @@ namespace GameObjects
                 }
 
                 // Randomly alter relations
-                foreach (var rel in GetDiplomaticRelations())
+                foreach (var rel in diplomaticRelations)
                 {
                     Faction opposite = rel.GetDiplomaticFaction(this.ID);
                     if (opposite != null)
