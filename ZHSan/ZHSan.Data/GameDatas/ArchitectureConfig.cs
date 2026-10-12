@@ -127,6 +127,11 @@ public class ArchitectureConfig : BaseConfig
     public int Technology { get; set; }
 
     /// <summary>
+    /// 辖区影响力（百分比），0表示尚未计算
+    /// </summary>
+    public int TerritoryInfluence { get; set; }
+
+    /// <summary>
     /// 有灾难
     /// </summary>
     public bool HasDisaster { get; set; }

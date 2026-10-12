@@ -1364,6 +1364,7 @@ namespace GameObjects
             {
                 architecture.DayEvent();
             }
+            MapDetail.TerritoryCalculator.Update(this);
             foreach (var routeway in StaticMethods.GetRandomList(Routeways.Values.ToList()))
             {
                 routeway.DayEvent();
@@ -2389,8 +2390,6 @@ namespace GameObjects
             {
                 SetMapTileArchitecture(architecture);
             }
-
-            MapDetail.TerritoryCalculator.Calculate(this);
         }
 
         private void InitializeArchitectureData()
@@ -3979,6 +3978,8 @@ namespace GameObjects
             ApplyArchitectureInfluences();
             ApplyPersonInfluences();
             this.Preparing = false;
+            // 影响力要用到统治、民心上限，所以放在各种影响生效之后
+            MapDetail.TerritoryCalculator.Initialize(this);
             this.InitialGameData();
             Session.Parameters.InitBaseRates();
 
@@ -4011,6 +4012,8 @@ namespace GameObjects
             ApplyPersonInfluences();
 
             this.Preparing = false;
+
+            MapDetail.TerritoryCalculator.Initialize(this);
 
             this.InitialGameData();
 
