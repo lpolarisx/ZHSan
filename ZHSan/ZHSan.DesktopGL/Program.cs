@@ -4,11 +4,20 @@ using System.IO;
 using Microsoft.Xna.Framework.Input;
 using Serilog;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace WorldOfTheThreeKingdoms;
 
 public static class Program
 {
+    private const uint SDL_MESSAGEBOX_ERROR = 0x00000010;
+
+    [DllImport("SDL2", CallingConvention = CallingConvention.Cdecl)]
+    private static extern int SDL_ShowSimpleMessageBox(uint flags,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string title,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message,
+        IntPtr window);
+
     [STAThread]
     static void Main()
     {
@@ -56,7 +65,17 @@ public static class Program
                     {
                         Log.Error(ex, "游戏启动或运行失败");
 
-                        MessageBox.Show("游戏错误", "中华三国志遇到严重错误，请提交游戏目录/logs/下的日志文件。", ["OK"]);
+                        var title = "游戏错误";
+                        var message = "中华三国志遇到严重错误，请提交游戏目录/logs/下的日志文件。";
+                        try
+                        {
+                            // MonoGame的MessageBox按系统代码页(GBK)传给SDL，中文会乱码，这里直接按UTF-8调用SDL
+                            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, IntPtr.Zero);
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show(title, message, ["OK"]);
+                        }
                     }
                 }
             }

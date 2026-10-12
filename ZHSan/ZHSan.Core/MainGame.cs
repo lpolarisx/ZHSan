@@ -121,12 +121,6 @@ namespace WorldOfTheThreeKingdoms
             //this.graphics.PreferredBackBufferWidth = this.previousWindowWidth;
             //this.graphics.PreferredBackBufferHeight = this.previousWindowHeight;                      
 
-            if (Platform.PlatFormType == PlatFormType.Win)  //Platform.PlatFormType == PlatFormType.UWP
-            {
-                DateTime buildDate = new FileInfo(Platform.Current.Location).LastWriteTime;
-                base.Window.Title = "中华三国志(v1.25.1) - build-" + buildDate.Year + "-" + buildDate.Month + "-" + buildDate.Day;
-            }
-
             Platform.Current.SetMouseVisible(false);
             Platform.Current.SetBarStyle();
             Platform.Current.SetTimerDisabled(true);
@@ -151,6 +145,31 @@ namespace WorldOfTheThreeKingdoms
             //base.Components.Add(this.mainGameScreen);
         }
 
+        private void SetWindowTitle()
+        {
+            if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)  //Platform.PlatFormType == PlatFormType.UWP
+            {
+                DateTime buildDate = new FileInfo(Platform.Current.Location).LastWriteTime;
+                //版本号从程序目录下的version.txt读取，改版本号不需要改代码
+                string version = "";
+                string versionFile = Path.Combine(AppContext.BaseDirectory, "version.txt");
+                if (File.Exists(versionFile))
+                {
+                    version = File.ReadAllText(versionFile).Trim();
+                }
+                string title = "中华三国志" + (version == "" ? "" : "(" + version + ")") + " - build-" + buildDate.Year + "-" + buildDate.Month + "-" + buildDate.Day;
+                try
+                {
+                    //MonoGame的Window.Title按系统代码页(GBK)传给SDL，中文会乱码，这里直接按UTF-8调用SDL
+                    SDL_SetWindowTitle(base.Window.Handle, title);
+                }
+                catch (Exception)
+                {
+                    base.Window.Title = title;
+                }
+            }
+        }
+
         //private static bool AltComboPressed(KeyboardState state, Microsoft.Xna.Framework.Input.Keys key)
         //{
         //    return (state.IsKeyDown(key) && (state.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftAlt) || state.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightAlt)));
@@ -171,6 +190,9 @@ namespace WorldOfTheThreeKingdoms
             //{
                 Session.ChangeDisplay(true);
             //}
+
+            //窗口在构造函数之后才真正创建，标题要在这里设置才不会被默认标题覆盖
+            SetWindowTitle();
 
             //基本材質初始化
             Session.TextureRecs = TextureRecsManager.AllTextureRectangles();
@@ -671,6 +693,9 @@ namespace WorldOfTheThreeKingdoms
                 base.Dispose(disposing);
             }
         }
+
+        [System.Runtime.InteropServices.DllImport("SDL2", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
+        private static extern void SDL_SetWindowTitle(IntPtr window, [System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.LPUTF8Str)] string title);
 
         //[DllImport("user32.dll")]
         //public static extern int GetMenuItemCount(IntPtr hMenu);
