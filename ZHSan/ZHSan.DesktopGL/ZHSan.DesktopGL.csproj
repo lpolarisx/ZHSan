@@ -15,6 +15,11 @@
         </MonoGameContentReference>
     </ItemGroup>
     <ItemGroup>
+        <None Update="version.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
         <ProjectReference Include="..\ZHSan.Core\ZHSan.Core.csproj" />
     </ItemGroup>
     <ItemGroup>
