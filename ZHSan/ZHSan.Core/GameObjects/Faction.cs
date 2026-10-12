@@ -3037,11 +3037,12 @@ namespace GameObjects
 
         public void ChangeFaction(Faction faction)
         {
-            foreach (var architecture in Architectures)
+            var architectures = Architectures.ToList();
+            foreach (var architecture in architectures)
             {
                 architecture.ChangeFaction(faction);
             }
-            foreach (var architecture in Architectures)
+            foreach (var architecture in architectures)
             {
                 architecture.CheckIsFrontLine();
             }

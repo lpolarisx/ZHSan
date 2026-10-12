@@ -123,6 +123,12 @@ namespace TabListPlugin
             {
                 selectallX = this.listKindToDisplay.AllColumns[0].ColumnTextList[0].Position.X;
                 selectallY = base.RealClient.Bottom + (int)(1.2f * rowHeight);
+                // 有“从大地图视角选择”按钮时，全选挪到按钮右侧，避免重叠
+                if (this.listKindToDisplay != null && this.MapViewSelectorButtonEnabled)
+                {
+                    selectallX = base.FramePosition.X + this.MapViewSelectorButtonPosition.X + this.MapViewSelectorButtonSize.X + 3 * checkboxWidth;
+                    selectallY = base.FramePosition.Y + this.MapViewSelectorButtonPosition.Y + 2;
+                }
             }
             base.Draw();
             if (this.listKindToDisplay != null)

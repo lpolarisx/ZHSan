@@ -159,7 +159,7 @@ namespace MarshalSectionDialogPlugin
                 this.OriginalSection.OrientationState = this.EditingSection.OrientationState;
                 this.OriginalSection.OrientationArchitecture = this.EditingSection.OrientationArchitecture;
 
-                var architectures = OriginalSection.Architectures;
+                var architectures = OriginalSection.Architectures.ToList();
                 foreach (var architecture in architectures)
                 {
                     OriginalSection.RemoveArchitecture(architecture);
@@ -188,7 +188,7 @@ namespace MarshalSectionDialogPlugin
                 }
             }
 
-            var sections = EditingFaction.Sections;
+            var sections = EditingFaction.Sections.ToList();
             var allSectionAIDetails = Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values;
 
             foreach (var section in sections)
