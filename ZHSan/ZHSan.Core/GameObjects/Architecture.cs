@@ -180,6 +180,7 @@ namespace GameObjects
             Morale = config.Morale;
             Population = config.Population;
             Technology = config.Technology;
+            TerritoryInfluence = config.TerritoryInfluence;
             youzainan = config.HasDisaster;
             huangdisuozai = config.HasEmperor;
             MayorID = config.MayorId;
@@ -248,6 +249,7 @@ namespace GameObjects
                 Morale = Morale,
                 Population = Population,
                 Technology = Technology,
+                TerritoryInfluence = TerritoryInfluence,
                 HasDisaster = youzainan,
                 HasEmperor = huangdisuozai,
                 MayorId = MayorID,
@@ -13970,6 +13972,11 @@ namespace GameObjects
         /// </summary>
         [DataMember]
         public int Technology { get; set; }
+
+        /// <summary>
+        /// 辖区影响力（百分比），由TerritoryCalculator更新，0表示尚未计算
+        /// </summary>
+        public int TerritoryInfluence { get; set; }
 
         /// <summary>
         /// 技术最大值

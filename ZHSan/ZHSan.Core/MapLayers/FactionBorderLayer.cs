@@ -126,8 +126,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             var tiles = Session.Current.Scenario.MapTileData;
             if (tiles == null) return;
 
-            // 建筑的归属势力或势力颜色变了才重新生成贴图
+            // 辖区重算过，或者建筑的归属势力、势力颜色变了才重新生成贴图
             var signature = new HashCode();
+            signature.Add(GameObjects.MapDetail.TerritoryCalculator.Version);
             foreach (var architecture in Session.Current.Scenario.Architectures.Values)
             {
                 signature.Add(architecture.ID);
