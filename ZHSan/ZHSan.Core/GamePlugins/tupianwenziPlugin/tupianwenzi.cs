@@ -23,10 +23,6 @@ namespace tupianwenziPlugin
     {
         internal Point BackgroundSize;
         internal PlatformTexture BackgroundTexture;
-        internal Queue<PlatformTexture> shijiantupianduilie = new Queue<PlatformTexture>();
-        internal Queue<Rectangle> juxingduilie = new Queue<Rectangle>();
-        internal Queue<string> shijianshengyinduilie = new Queue<string>();
-
 
         internal Rectangle shijiantupianjuxing;
         internal PlatformTexture shijiantupian;
@@ -62,6 +58,7 @@ namespace tupianwenziPlugin
 
         internal event GameDelegates.VoidFunction CloseFunction;
         internal string TryToShowString = "";
+        private static readonly Color EffectTextColor = new Color(255, 220, 110);
 
         internal void Close(Screen screen)
         {
@@ -80,21 +77,18 @@ namespace tupianwenziPlugin
             {
                 this.startShowingTime = DateTime.Now;
                 GameObjectAndBranchName name = this.DisplayQueue.Dequeue();
-                this.shijiantupian = this.shijiantupianduilie.Dequeue();
-                this.shijiantupianjuxing = this.juxingduilie.Dequeue();
+                this.shijiantupian = name.shijiantupian;
+                this.shijiantupianjuxing = name.shijiantupianjuxing;
                 this.SetPosition(ShowPosition.Bottom, screen);
-                this.shijianshengyin = this.shijianshengyinduilie.Dequeue();
+                this.shijianshengyin = name.shijianshengyin;
                 this.SpeakingPerson = name.person;
-                this.NameText.Text = name.person.Name;
+                // 没有说话人时照常显示台词，只是不画头像和名字
+                this.NameText.Text = name.person != null ? name.person.Name : "";
                 if (name.TryToShowString != null && name.TryToShowString.Length > 1)
                 {
                     this.TryToShowString = name.TryToShowString;
                 }
                 else this.TryToShowString = "";
-                if(TryToShowString != null && TryToShowString.Length > 1)
-                {
-                    this.SetPosition(ShowPosition.BottomLeft, screen);
-                }
                 this.RichText.Clear();
                 if (this.diyigeshengyin)
                 {
@@ -103,6 +97,12 @@ namespace tupianwenziPlugin
                 }
 
                 this.RichText.Texts = name.texts;
+                // 效果说明接在台词后面另起一行，和台词共用一个对话框，由RichText负责换行和翻页
+                foreach (string effectLine in this.TryToShowString.Split(new char[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    this.RichText.AddNewLine();
+                    this.RichText.AddText(effectLine, EffectTextColor);
+                }
                 this.RichText.ResortTexts();
                 if (name.iConfirmationDialog != null)
                 {
@@ -125,11 +125,13 @@ namespace tupianwenziPlugin
 
         internal void Draw()
         {
-            if (this.SpeakingPerson != null)
             {
                 Rectangle? sourceRectangle = null;
 
-                CacheManager.DrawZhsanAvatar(this.SpeakingPerson, this.PortraitDisplayPosition, 0.201f);
+                if (this.SpeakingPerson != null)
+                {
+                    CacheManager.DrawZhsanAvatar(this.SpeakingPerson, this.PortraitDisplayPosition, 0.201f);
+                }
 
                 sourceRectangle = null;
                 CacheManager.Draw(this.BackgroundTexture, this.BackgroundDisplayPosition, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.2f);
@@ -147,11 +149,6 @@ namespace tupianwenziPlugin
                 
                 this.NameText.Draw(0.1999f);
                 CacheManager.Draw(this.FirstPageButtonDisplayTexture, this.FirstPageButtonDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.199f);
-                if(TryToShowString!=null && TryToShowString.Length>1)
-                {
-                    CacheManager.Draw(@"Content\Textures\GameComponents\tupianwenzi\Data\Background2.png", new Rectangle(this.BackgroundDisplayPosition.X + this.BackgroundDisplayPosition.Width + 100, this.DisplayOffset.Y+115, 460, 165), sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.2f);
-                    CacheManager.DrawString(Session.Current.Font,TryToShowString.Replace(" ","\n"),new Vector2(this.BackgroundDisplayPosition.X + this.BackgroundDisplayPosition.Width + 120, this.DisplayOffset.Y + 135),Color.White,0f, Vector2.Zero, 0.8f, SpriteEffects.None, 0.1999f);
-                }
                 this.RichText.Draw(0.1999f);
             }
         }
@@ -173,7 +170,10 @@ namespace tupianwenziPlugin
                 //this.RichText.FirstPage();
                 //this.FirstPageButtonDisplayTexture = this.FirstPageButtonDisabledTexture;
             }
-            else if ((this.RichText.CurrentPageIndex >= (this.RichText.PageCount - 1)) && ((this.iConfirmationDialog == null) || !this.iConfirmationDialog.IsShowing))
+            else if (this.TryNextPage())
+            {
+            }
+            else if ((this.iConfirmationDialog == null) || !this.iConfirmationDialog.IsShowing)
             {
                 if (!this.firstShowing)
                 {
@@ -181,15 +181,19 @@ namespace tupianwenziPlugin
                 }
                 this.firstShowing = false;
             }
-            else
+        }
+
+        // 还有下一页就翻页并重新计时，返回false表示已经是最后一页
+        private bool TryNextPage()
+        {
+            if (this.RichText.CurrentPageIndex >= (this.RichText.PageCount - 1))
             {
-                this.RichText.NextPage();
-                this.startShowingTime = DateTime.Now;
-                if (this.RichText.CurrentPageIndex > 0)
-                {
-                    this.FirstPageButtonDisplayTexture = this.FirstPageButtonTexture;
-                }
+                return false;
             }
+            this.RichText.NextPage();
+            this.startShowingTime = DateTime.Now;
+            this.FirstPageButtonDisplayTexture = this.FirstPageButtonTexture;
+            return true;
         }
 
         private void screen_OnMouseMove(Point position, bool leftDown)
@@ -207,7 +211,7 @@ namespace tupianwenziPlugin
             }
         }
 
-        internal void SetGameObjectBranch(GameObject gongfang, GameObject gameObject, string branchName,string TryToShowString = "")
+        internal void SetGameObjectBranch(GameObject gongfang, GameObject gameObject, string branchName, string TryToShowString, PlatformTexture shijiantupian, Rectangle shijiantupianjuxing, string shijianshengyin)
         {
             this.BuildingRichText.Clear();
             if (gameObject != null)
@@ -237,20 +241,22 @@ namespace tupianwenziPlugin
             if (DisplayQueue.Count > Session.GlobalVariables.MaxTupianwenzi)
             {
                 this.DisplayQueue.Dequeue();
-                this.shijiantupian = this.shijiantupianduilie.Dequeue();
-                this.shijiantupianjuxing = this.juxingduilie.Dequeue();
-                this.shijianshengyin = this.shijianshengyinduilie.Dequeue();
             }
+            GameObjectAndBranchName item;
             if (this.HasConfirmationDialog)
             {
-                this.DisplayQueue.Enqueue(new GameObjectAndBranchName(gongfang, this.BuildingRichText.Texts, branchName, this.iConfirmationDialog, this.YesFunction, this.NoFunction,TryToShowString));
+                item = new GameObjectAndBranchName(gongfang, this.BuildingRichText.Texts, branchName, this.iConfirmationDialog, this.YesFunction, this.NoFunction, TryToShowString);
                 this.YesFunction = null;
                 this.NoFunction = null;
             }
             else
             {
-                this.DisplayQueue.Enqueue(new GameObjectAndBranchName(gongfang, this.BuildingRichText.Texts, branchName, null, null, null, TryToShowString));
+                item = new GameObjectAndBranchName(gongfang, this.BuildingRichText.Texts, branchName, null, null, null, TryToShowString);
             }
+            item.shijiantupian = shijiantupian;
+            item.shijiantupianjuxing = shijiantupianjuxing;
+            item.shijianshengyin = shijianshengyin;
+            this.DisplayQueue.Enqueue(item);
             this.HasConfirmationDialog = false;
         }
 
@@ -321,14 +327,18 @@ namespace tupianwenziPlugin
                 if (InputManager.KeyBoardState.IsKeyDown(Keys.Enter))
                 {
                     this.currentKey = Keys.Enter;
-                    this.Close(Session.MainGame.mainGameScreen);
+                    if (!this.TryNextPage())
+                    {
+                        this.Close(Session.MainGame.mainGameScreen);
+                    }
+                    return;
                 }
                 TimeSpan span = (TimeSpan) (DateTime.Now - this.startShowingTime);
-                if (span.Milliseconds >= 300)
+                if (span.TotalMilliseconds >= 300)
                 {
                     this.firstShowing = false;
                 }
-                if (span.Seconds >= Setting.Current.GlobalVariables.DialogShowTime)
+                if (span.TotalSeconds >= Setting.Current.GlobalVariables.DialogShowTime && !this.TryNextPage())
                 {
                     this.Close(Session.MainGame.mainGameScreen);
                 }
@@ -365,7 +375,8 @@ namespace tupianwenziPlugin
 
         public void SetIsShowing(Screen screen, bool value)
         {
-            if (this.isShowing != value && Setting.Current.GlobalVariables.DialogShowTime > 0)
+            // DialogShowTime为0只阻止打开，已经打开的必须能关掉
+            if (this.isShowing != value && (!value || Setting.Current.GlobalVariables.DialogShowTime > 0))
             {
                 this.isShowing = value;
                 if (value)

@@ -4,6 +4,8 @@ using PluginInterface;
 using System;
 using System.Collections.Generic;
 using GameFreeText;
+using GameManager;
+using Microsoft.Xna.Framework;
 
 namespace tupianwenziPlugin
 {
@@ -29,6 +31,10 @@ namespace tupianwenziPlugin
         }
 
         public string TryToShowString = "";
+
+        internal PlatformTexture shijiantupian;
+        internal Rectangle shijiantupianjuxing;
+        internal string shijianshengyin;
     }
 }
 
