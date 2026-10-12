@@ -73,6 +73,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                             //CacheManager.Draw(Session.MainGame.mainGameScreen.Textures.jianzhubiaotibeijing, jianzhubiaotibeijingweizhi, null, Color.White, 0, Vector2.Zero, SpriteEffects.None, 0.79996f);
                             CacheManager.Draw(architecture.CaptionTexture, jianzhubiaotibeijingweizhi, null, Color.White, 0, Vector2.Zero, SpriteEffects.None, 0.79996f);
 
+                            if (architecture.ResourceKinds.Count > 0)
+                            {
+                                this.drawResourceKinds(architecture, jianzhubiaotibeijingweizhi);
+                            }
+
                             if (architecture.BelongedFaction != null && Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(architecture.jianzhuqizi.qizipoint))      //不是空城的话绘制旗子
                             {
                                 timeSinceLastFrame += gameTime.ElapsedGameTime.Milliseconds;
@@ -149,6 +154,27 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                         architecture.DecrementNumberList.Clear();
                     }
                 }
+            }
+        }
+
+        // 资源图标画在城名左侧并与城名垂直居中，压住城名左端一点，多个资源依次向左排
+        private void drawResourceKinds(Architecture architecture, Rectangle captionPosition)
+        {
+            const int spacing = 2;
+            const int overlap = 4;
+            // 与城名等高，和城名一样不随地图缩放
+            int size = captionPosition.Height;
+            int x = captionPosition.X + overlap - size;
+            int y = captionPosition.Y + captionPosition.Height / 2 - size / 2;
+
+            foreach (var resourceKind in architecture.ResourceKinds.Values)
+            {
+                var texture = Session.MainGame.mainGameScreen.Textures.GetResourceKindTexture(resourceKind.ID);
+                if (texture != null)
+                {
+                    CacheManager.Draw(texture, new Rectangle(x, y, size, size), null, Color.White, 0, Vector2.Zero, SpriteEffects.None, 0.79995f);
+                }
+                x -= size + spacing;
             }
         }
 

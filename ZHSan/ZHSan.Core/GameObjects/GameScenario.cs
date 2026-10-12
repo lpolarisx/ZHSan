@@ -3419,6 +3419,7 @@ namespace GameObjects
                 }
 
                 architecture.Characteristics = StaticMethods.LoadFromString(GameCommonData.AllInfluences, architecture.CharacteristicsString);
+                architecture.ResourceKinds = StaticMethods.LoadFromString(GameCommonData.AllResourceKinds, architecture.ResourceKindsString);
 
                 architecture.LoadFromString(architecture.ArchitectureArea, architecture.ArchitectureAreaString);
 
@@ -4760,6 +4761,7 @@ namespace GameObjects
                 architecture.KindId = architecture.Kind.ID;
                 architecture.StateID = architecture.LocationState.ID;
                 architecture.CharacteristicsString = StaticMethods.SaveIdToString(architecture.Characteristics.Values);
+                architecture.ResourceKindsString = StaticMethods.SaveIdToString(architecture.ResourceKinds.Values);
                 architecture.ArchitectureAreaString = StaticMethods.SaveToString(architecture.ArchitectureArea.Area);
                 architecture.PersonsString = StaticMethods.SaveIdToString(architecture.Persons);
                 architecture.MovingPersonsString = StaticMethods.SaveIdToString(architecture.GetMovingPersons());

@@ -130,6 +130,7 @@ namespace GameObjects
             AIWaterLinksString = config.AIWaterLinksString;
             ArchitectureAreaString = config.ArchitectureAreaString;
             CharacteristicsString = config.CharacteristicsString;
+            ResourceKindsString = config.ResourceKindsString;
             DefensiveLegionID = config.DefensiveLegionId;
             FacilitiesString = config.FacilitiesString;
             FundPacksString = config.FundPacksString;
@@ -199,6 +200,7 @@ namespace GameObjects
                 AIWaterLinksString = AIWaterLinksString,
                 ArchitectureAreaString = ArchitectureAreaString,
                 CharacteristicsString = CharacteristicsString,
+                ResourceKindsString = ResourceKindsString,
                 DefensiveLegionId = DefensiveLegionID,
                 FacilitiesString = FacilitiesString,
                 FundPacksString = FundPacksString,
@@ -308,6 +310,11 @@ namespace GameObjects
         /// </summary>
         public Dictionary<int, Influence> Characteristics { get; set; } = new();
 
+        /// <summary>
+        /// 资源
+        /// </summary>
+        public Dictionary<int, ResourceKind> ResourceKinds { get; set; } = new();
+
         public List<Architecture> ClosestArchitectures;
 
         public List<Facility> Facilities { get; set; } = new();
@@ -329,6 +336,9 @@ namespace GameObjects
 
         [DataMember]
         public string CharacteristicsString { get; set; }
+
+        [DataMember]
+        public string ResourceKindsString { get; set; }
 
         public int CombativityOfRecruitment = 50;
         
