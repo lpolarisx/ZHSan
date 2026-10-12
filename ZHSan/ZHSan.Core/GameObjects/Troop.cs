@@ -4743,14 +4743,10 @@ namespace GameObjects
             foreach (var point in area.Area)
             {
                 var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop == null || !CurrentStratagem.IsValid(troop)) continue;
 
-                bool isFriendlyFaction = IsFriendly(troop.BelongedFaction);
-                bool isValid = CurrentStratagem.IsValid(troop);
-                bool skip = CurrentStratagem.Friendly
-                            ? !isFriendlyFaction || !isValid
-                            : isFriendlyFaction || !isValid;
-
-                if (troop != null && CurrentStratagem.IsValid(troop) && skip)
+                // 友方计略只作用于友军，敌方计略只作用于敌军
+                if (CurrentStratagem.Friendly == IsFriendly(troop.BelongedFaction))
                 {
                     result.Add(troop);
                 }
