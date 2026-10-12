@@ -220,6 +220,11 @@ namespace GameObjects
         /// </summary>
         public Dictionary<int, StatusEffect> AllStatusEffects { get; set; } = new();
 
+        /// <summary>
+        /// 资源种类
+        /// </summary>
+        public Dictionary<int, ResourceKind> AllResourceKinds { get; set; } = new();
+
         public CommonData Clone()
         {
             var commonData = this.MemberwiseClone() as CommonData;
@@ -281,6 +286,8 @@ namespace GameObjects
                 var castDefaultKinds = archive.Load<List<CastDefaultKindConfig>>("CastDefaultKinds.json");
                 var castTargetKinds = archive.Load<List<CastTargetKindConfig>>("CastTargetKinds.json");
                 var statusEffects = archive.Load<List<StatusEffectConfig>>("StatusEffects.json");
+                // 旧版数据包及MOD可能没有资源种类
+                var resourceKinds = archive.Load<List<ResourceKindConfig>>("ResourceKinds.json") ?? new();
 
                 Current.AllTerrainDetails = terrainDetails.Select(x => new TerrainDetail(x)).ToDictionary(x => x.ID);
                 Current.AllCombatMethods = combatMethods.Select(x => new CombatMethod(x)).ToDictionary(x => x.ID);
@@ -322,6 +329,7 @@ namespace GameObjects
                 Current.AllCastDefaultKinds = castDefaultKinds.Select(x => new CastDefaultKind(x)).ToList();
                 Current.AllCastTargetKinds = castTargetKinds.Select(x => new CastTargetKind(x)).ToList();
                 Current.AllStatusEffects = statusEffects.Select(x => new StatusEffect(x)).ToDictionary(x => x.ID);
+                Current.AllResourceKinds = resourceKinds.Select(x => new ResourceKind(x)).ToDictionary(x => x.ID);
 
                 GameScenario.ProcessCommonData(Current);
 

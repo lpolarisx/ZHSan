@@ -22,6 +22,11 @@ public class ArchitectureConfig : BaseConfig
 
     public string CharacteristicsString { get; set; }
 
+    /// <summary>
+    /// 资源种类Id，空格分隔
+    /// </summary>
+    public string ResourceKindsString { get; set; }
+
     public int DefensiveLegionId { get; set; }
 
     public string FacilitiesString { get; set; }

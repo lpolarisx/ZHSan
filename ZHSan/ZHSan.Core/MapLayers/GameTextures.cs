@@ -36,6 +36,22 @@ namespace WorldOfTheThreeKingdoms.Resources
         public PlatformTexture zidongcundangtupian;
         public Dictionary<int, PlatformTexture> mediumCityImg = new Dictionary<int, PlatformTexture>();
         public Dictionary<int, PlatformTexture> largeCityImg = new Dictionary<int, PlatformTexture>();
+        private Dictionary<int, PlatformTexture> resourceKindImg = new Dictionary<int, PlatformTexture>();
+
+        /// <summary>
+        /// 获取资源种类图标，图标文件不存在时返回null
+        /// </summary>
+        public PlatformTexture GetResourceKindTexture(int resourceKindId)
+        {
+            if (!resourceKindImg.TryGetValue(resourceKindId, out var texture))
+            {
+                var path = "Content/Textures/Resources/Architecture/Resource/" + resourceKindId + ".png";
+                texture = Platform.Current.FileExists(Platform.Current.GetMODFile(path)) ? CacheManager.GetTempTexture(path) : null;
+                resourceKindImg.Add(resourceKindId, texture);
+            }
+
+            return texture;
+        }
         public PlatformTexture[] guandetupian = new PlatformTexture[3];
         public PlatformTexture wanggetupian;
         public PlatformTexture EditModeGrid;
