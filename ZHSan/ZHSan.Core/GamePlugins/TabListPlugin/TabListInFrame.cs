@@ -981,6 +981,15 @@ namespace TabListPlugin
             }
         }
 
+        public override bool ButtonsVisible
+        {
+            get
+            {
+                // 纯查看的列表没有可确认的内容；带勾选框的（如变更控制）仍需要确定
+                return (base.Function != FrameFunction.Browse) || this.ShowCheckBox;
+            }
+        }
+
         public override bool CanClose
         {
             get

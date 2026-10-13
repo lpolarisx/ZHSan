@@ -172,6 +172,12 @@ namespace TabListPlugin
             return s;
         }
 
+        private string FitText(string s)
+        {
+            // 最多占到列分隔条为止，再长就会压到后面的列上，截断后以省略号结尾
+            return this.ColumnTextList.TruncateText(s, this.Text.Position.Width + this.tabList.columnspliterWidth);
+        }
+
         public void ReCalculate(int top, ref int previousRight)
         {
             if (!this.Visible) return;
@@ -190,7 +196,7 @@ namespace TabListPlugin
                 {
                     for (num2 = 0; num2 < this.tabList.gameObjectList.Count; num2++)
                     {
-                        string s = GetDataString(num2);
+                        string s = this.FitText(GetDataString(num2));
                         this.ColumnTextList.AddText(s);
                     }
                     //this.ColumnTextList.ResetAllTextTextures();
@@ -231,7 +237,7 @@ namespace TabListPlugin
             {
                 for (num = 0; num < this.tabList.gameObjectList.Count; num++)
                 {
-                    string s = this.GetDataString(num);
+                    string s = this.FitText(this.GetDataString(num));
                     this.ColumnTextList[num].Text = s;
                 }
                 //this.ColumnTextList.ResetAllTextTextures();

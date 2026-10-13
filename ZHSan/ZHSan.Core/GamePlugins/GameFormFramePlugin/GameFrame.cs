@@ -166,7 +166,10 @@ namespace GameFormFramePlugin
 
             CacheManager.Draw(this.backgroundTexture, this.backgroundRectangle, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, depth);
 
-            if (this.OKButtonEnabled)
+            if (!this.ButtonsVisible)
+            {
+            }
+            else if (this.OKButtonEnabled)
             {
                 switch (this.OKButtonState)
                 {
@@ -216,7 +219,10 @@ namespace GameFormFramePlugin
                 CacheManager.Draw(this.selectallbuttonDisabledTexture, this.selectallbuttonRectangle, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, depth + this.buttonDepthOffset);
             }
              */
-            if (this.CancelButtonEnabled)
+            if (!this.ButtonsVisible)
+            {
+            }
+            else if (this.CancelButtonEnabled)
             {
                 switch (this.CancelButtonState)
                 {
@@ -295,7 +301,7 @@ namespace GameFormFramePlugin
         {
             if (Session.MainGame.mainGameScreen.PeekUndoneWork().Kind == UndoneWorkKind.Frame)
             {
-                if (this.OKButtonEnabled)
+                if (this.ButtonsVisible && this.OKButtonEnabled)
                 {
                     if (StaticMethods.PointInRectangle(position, this.okbuttonRectangle))
                     {
@@ -306,7 +312,7 @@ namespace GameFormFramePlugin
                         this.OKButtonState = FrameButtonState.Normal;
                     }
                 }
-                if (this.CancelButtonEnabled)
+                if (this.ButtonsVisible && this.CancelButtonEnabled)
                 {
                     if (StaticMethods.PointInRectangle(position, this.cancelbuttonRectangle))
                     {
@@ -340,7 +346,7 @@ namespace GameFormFramePlugin
             if (Session.MainGame.mainGameScreen.PeekUndoneWork().Kind == UndoneWorkKind.Frame)
             {
                 this.Draging = false;
-                if ((this.OKButtonEnabled && (this.OKButtonState == FrameButtonState.Pressed)) && StaticMethods.PointInRectangle(position, this.okbuttonRectangle))
+                if (((this.ButtonsVisible && this.OKButtonEnabled) && (this.OKButtonState == FrameButtonState.Pressed)) && StaticMethods.PointInRectangle(position, this.okbuttonRectangle))
                 {
                     Session.MainGame.mainGameScreen.PlayNormalSound(this.OKSoundFile);
                     this.OKButtonState = FrameButtonState.Selected;
@@ -352,7 +358,7 @@ namespace GameFormFramePlugin
                     }
                     this.IsShowing = false;
                 }
-                if ((this.CancelButtonEnabled && (this.CancelButtonState == FrameButtonState.Pressed)) && StaticMethods.PointInRectangle(position, this.cancelbuttonRectangle))
+                if (((this.ButtonsVisible && this.CancelButtonEnabled) && (this.CancelButtonState == FrameButtonState.Pressed)) && StaticMethods.PointInRectangle(position, this.cancelbuttonRectangle))
                 {
                     Session.MainGame.mainGameScreen.PlayNormalSound(this.CancelSoundFile);
                     this.CancelButtonState = FrameButtonState.Selected;
@@ -382,7 +388,7 @@ namespace GameFormFramePlugin
         {
             if (Session.MainGame.mainGameScreen.PeekUndoneWork().Kind == UndoneWorkKind.Frame)
             {
-                if (this.OKButtonEnabled)
+                if (this.ButtonsVisible && this.OKButtonEnabled)
                 {
                     if (StaticMethods.PointInRectangle(position, this.okbuttonRectangle))
                     {
@@ -400,7 +406,7 @@ namespace GameFormFramePlugin
                         this.OKButtonState = FrameButtonState.Normal;
                     }
                 }
-                if (this.CancelButtonEnabled)
+                if (this.ButtonsVisible && this.CancelButtonEnabled)
                 {
                     if (StaticMethods.PointInRectangle(position, this.cancelbuttonRectangle))
                     {
@@ -497,6 +503,14 @@ namespace GameFormFramePlugin
         {
             this.Position = position;
             this.ResetRectangles();
+        }
+
+        private bool ButtonsVisible
+        {
+            get
+            {
+                return (this.frameContent == null) || this.frameContent.ButtonsVisible;
+            }
         }
 
         public bool CancelButtonEnabled
