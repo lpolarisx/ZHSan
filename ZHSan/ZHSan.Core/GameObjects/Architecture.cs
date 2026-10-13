@@ -5729,7 +5729,7 @@ namespace GameObjects
         private void resolveAIQuickBattle()
         {
 
-            foreach (var a in AIBattlingArchitectures)
+            foreach (var a in AIBattlingArchitectures.ToList())
             {
                 bool aborted = false;
 
