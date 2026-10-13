@@ -84,7 +84,7 @@ namespace GamePanels.Scrollbar
         Auto,
         None
     }
-    public class Frame
+    public class Frame : IDisposable
     {
         /// <summary>
         /// 框架的位置坐标
@@ -175,6 +175,11 @@ namespace GamePanels.Scrollbar
         /// </summary>
         public Color BlankBlockColor =new Color(57,57,57,255);
         /// <summary>
+        /// 两种滚动条交界处空白块的材质，尺寸或颜色变化时才重新生成
+        /// </summary>
+        private Texture2D blankBlock;
+        private Color blankBlockTextureColor;
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="pos">框架的位置</param>
@@ -196,7 +201,7 @@ namespace GamePanels.Scrollbar
             Depth = 0f;
             frameScrollbarType = framescrollbartype;
             CanvasWidth = CanvasHeight = 0;
-            CanvasRightPadding = canvasBottomPadding;
+            CanvasRightPadding = canvasRightPadding;
             CanvasBottomPadding = canvasBottomPadding;
             FixedBackground = fixBackground;
 
@@ -240,6 +245,9 @@ namespace GamePanels.Scrollbar
 
             lock (batchlock)//锁定并绘制控件
             {
+                EnsureRenderTarget();
+
+                RenderTargetBinding[] previousTargets = Platform.GraphicsDevice.GetRenderTargets();
                 Platform.GraphicsDevice.SetRenderTarget(renderTarget2D);//设置Draw到画布上
 
                 batch.Begin();
@@ -255,7 +263,7 @@ namespace GamePanels.Scrollbar
                 ContentContorls.ForEach(cc => cc.DrawToCanvas(batch));//绘制每个控件
                 batch.End();
 
-                Platform.GraphicsDevice.SetRenderTarget(null);//恢复绘制到屏幕上
+                Platform.GraphicsDevice.SetRenderTargets(previousTargets);//恢复到之前的绘制目标（没有则是屏幕）
 
                 Canvas = renderTarget2D;//将所绘制内容赋值给画布
 
@@ -263,7 +271,9 @@ namespace GamePanels.Scrollbar
                     Session.Current.SpriteBatch.Draw(BackgroundPic, Position, null, Color.White * BackgroundAlpha, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0);
 
                 //在屏幕上将画布绘制到相应的可视框架内
-                Session.Current.SpriteBatch.Draw(Canvas, Position, VisualFrame, color * Aplha, 0f, Vector2.Zero, 1f, SpriteEffects.None, Depth);
+                //画布比可视框架小时只取画布内的部分，超出材质范围取样会把边缘像素拉伸出来
+                Rectangle source = Rectangle.Intersect(VisualFrame, Canvas.Bounds);
+                Session.Current.SpriteBatch.Draw(Canvas, Position, source, color * Aplha, 0f, Vector2.Zero, 1f, SpriteEffects.None, Depth);
             }
 
             //处理Auto类型的滚动条
@@ -278,7 +288,8 @@ namespace GamePanels.Scrollbar
                 else if (HasHorizontalScrollbar && CanvasWidth <= VisualFrame.Width)//如果画布宽度小于可视框架宽度且还有水平滚动条则删除水平滚动条
                 {
                     HasHorizontalScrollbar = false;
-                    Scrollbars.Remove(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Horizontal).FirstOrDefault());
+                    RemoveScrollbar(ScrollbarType.Horizontal);
+                    VisualFrame.X = 0;
                 }
 
                 if (!HasVerticalScrollbar && CanvasHeight > VisualFrame.Height)//如果画布高度大于可视框架高度且还没有垂直滚动条则生成垂直滚动条
@@ -289,7 +300,8 @@ namespace GamePanels.Scrollbar
                 else if (HasVerticalScrollbar && CanvasHeight <= VisualFrame.Height)//如果画布高度小于可视框架高度且有垂直滚动条则删除垂直滚动条
                 {
                     HasVerticalScrollbar = false;
-                    Scrollbars.Remove(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Vertical).FirstOrDefault());
+                    RemoveScrollbar(ScrollbarType.Vertical);
+                    VisualFrame.Y = 0;
                 }
             }
 
@@ -301,11 +313,64 @@ namespace GamePanels.Scrollbar
                 Scrollbar verticalScrollbar = Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Vertical).FirstOrDefault();
                 int width = verticalScrollbar.ButtonTexture.Width;
                 int height = horizontalScrollbar.ButtonTexture.Height;
-                Texture2D BlankBlock = new Texture2D(Platform.GraphicsDevice, width, height);
-                Color[] blankBlockColor = Enumerable.Repeat(BlankBlockColor, width * height).ToArray();
-                BlankBlock.SetData(blankBlockColor);
-                Session.Current.SpriteBatch.Draw(BlankBlock, new Vector2(verticalScrollbar.BarPos.X, horizontalScrollbar.BarPos.Y), Color.White);
+                //不能每帧都新建材质，否则显存会一直增长
+                if (blankBlock == null || blankBlock.IsDisposed || blankBlock.Width != width || blankBlock.Height != height || blankBlockTextureColor != BlankBlockColor)
+                {
+                    if (blankBlock != null)
+                        blankBlock.Dispose();
+                    blankBlock = new Texture2D(Platform.GraphicsDevice, width, height);
+                    blankBlock.SetData(Enumerable.Repeat(BlankBlockColor, width * height).ToArray());
+                    blankBlockTextureColor = BlankBlockColor;
+                }
+                Session.Current.SpriteBatch.Draw(blankBlock, new Vector2(verticalScrollbar.BarPos.X, horizontalScrollbar.BarPos.Y), Color.White);
             }
+        }
+
+        /// <summary>
+        /// 保证画布的RenderTarget2D存在且与当前画布大小一致
+        /// </summary>
+        private void EnsureRenderTarget()
+        {
+            int width = Math.Max(CanvasWidth.ConvertToIntPlus(), 1);
+            int height = Math.Max(CanvasHeight.ConvertToIntPlus(), 1);
+            if (renderTarget2D == null || renderTarget2D.IsDisposed || renderTarget2D.Width != width || renderTarget2D.Height != height)
+            {
+                if (renderTarget2D != null)
+                    renderTarget2D.Dispose();
+                renderTarget2D = new RenderTarget2D(Platform.GraphicsDevice, width, height);
+            }
+        }
+
+        /// <summary>
+        /// 移除指定类型的滚动条并释放它的材质
+        /// </summary>
+        private void RemoveScrollbar(ScrollbarType type)
+        {
+            Scrollbar scrollbar = Scrollbars.Where(sb => sb.scrollbarType == type).FirstOrDefault();
+            if (scrollbar == null)
+                return;
+            Scrollbars.Remove(scrollbar);
+            scrollbar.Dispose();
+        }
+
+        /// <summary>
+        /// 释放框架占用的显存资源，框架不再使用时调用
+        /// </summary>
+        public void Dispose()
+        {
+            if (renderTarget2D != null)
+                renderTarget2D.Dispose();
+            renderTarget2D = null;
+            Canvas = null;
+            if (blankBlock != null)
+                blankBlock.Dispose();
+            blankBlock = null;
+            Scrollbars.ForEach(sb => sb.Dispose());
+            Scrollbars.Clear();
+            HasHorizontalScrollbar = HasVerticalScrollbar = false;
+            if (batch != null)
+                batch.Dispose();
+            batch = null;
         }
 
         /// <summary>
@@ -327,10 +392,7 @@ namespace GamePanels.Scrollbar
 
                 CanvasWidth = Math.Max(CanvasWidth, 10);
                 CanvasHeight = Math.Max(CanvasHeight, 10);
-
-                if (renderTarget2D != null)
-                    renderTarget2D.Dispose();
-                renderTarget2D = new RenderTarget2D(Platform.GraphicsDevice, CanvasWidth.ConvertToIntPlus(), CanvasHeight.ConvertToIntPlus());
+                //RenderTarget2D在Draw时按最终大小生成一次，不必每加一个控件就重建
             }
 
         }
@@ -352,9 +414,8 @@ namespace GamePanels.Scrollbar
             CanvasWidth += CanvasRightPadding;
             CanvasHeight += CanvasBottomPadding;
 
-            if (renderTarget2D != null)
-                renderTarget2D.Dispose();
-            renderTarget2D = new RenderTarget2D(Platform.GraphicsDevice, CanvasWidth.ConvertToIntPlus(), CanvasHeight.ConvertToIntPlus());
+            CanvasWidth = Math.Max(CanvasWidth, 10);
+            CanvasHeight = Math.Max(CanvasHeight, 10);
         }
 
         /// <summary>
@@ -376,8 +437,10 @@ namespace GamePanels.Scrollbar
             CanvasWidth = CanvasHeight = 0;
             if (renderTarget2D != null)
                 renderTarget2D.Dispose();
-            if (Canvas != null)
-                Canvas.Dispose();
+            //Canvas和renderTarget2D是同一个对象，释放后不能再留着引用
+            renderTarget2D = null;
+            Canvas = null;
+            VisualFrame.X = VisualFrame.Y = 0;
         }
 
         public void Update()
@@ -388,10 +451,11 @@ namespace GamePanels.Scrollbar
             //根据滚动条的位置重新计算可视框架在画布上的坐标，以用于显示相应范围的画布内容
             if (Canvas != null)
             {
+                //画布比可视框架小时没有可滚动的距离，不能算出负的偏移
                 if (HasHorizontalScrollbar)
-                    VisualFrame.X = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Horizontal).FirstOrDefault().Value * (Canvas.Width - VisualFrame.Width));
+                    VisualFrame.X = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Horizontal).FirstOrDefault().Value * Math.Max(Canvas.Width - VisualFrame.Width, 0));
                 if (HasVerticalScrollbar)
-                    VisualFrame.Y = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Vertical).FirstOrDefault().Value * (Canvas.Height - VisualFrame.Height));
+                    VisualFrame.Y = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Vertical).FirstOrDefault().Value * Math.Max(Canvas.Height - VisualFrame.Height, 0));
             }
 
             ContentContorls.ForEach(cc => cc.UpdateCanvas());

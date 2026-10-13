@@ -121,6 +121,9 @@ namespace GamePanels
             }
         }
 
+        /// <summary>
+        /// 按钮的宽高始终由材质尺寸和缩放决定，set仅为满足IFrameContent接口
+        /// </summary>
         public float Width
         {
             get
@@ -129,10 +132,8 @@ namespace GamePanels
             }
             set
             {
-                width = value;
             }
         }
-        public float width;
         public float Height
         {
             get
@@ -141,10 +142,8 @@ namespace GamePanels
             }
             set
             {
-                height = value;
             }
         }
-        public float height;
         public event ButtonPressEventHandler OnMouseOver, OnButtonPress;
         public Color ViewTextColor1 = Color.White;
         public Color ViewTextColor2 = Color.White;
@@ -163,6 +162,7 @@ namespace GamePanels
             Alpha = 1f;
             Scale = 1f;
             Depth = 0f;
+            color = Color.White;
         }
 
         /// <summary>
@@ -187,17 +187,25 @@ namespace GamePanels
         public void PressButton()
         {
             InputManager.ClickTime++;
+            if (!Platform.IsActive)
+            {
+                return;
+            }
             DateTime now = DateTime.Now;
             if (prePressTime != null)
             {
                 TimeSpan ts = now - (DateTime)prePressTime;
-                if (ts.TotalSeconds < 0.3f || !Platform.IsActive)
+                if (ts.TotalSeconds < 0.3f)
                 {
                     return;
                 }
             }
             prePressTime = now;
             if (OnButtonPress != null) OnButtonPress.Invoke(this, null);
+        }
+        public bool IsInTexture(int poX, int poY, Vector2? basePos)
+        {
+            return IsInTexture((float)poX, (float)poY, basePos);
         }
         public bool IsInTexture(float poX, float poY, Vector2? basePos)
         {
@@ -213,28 +221,6 @@ namespace GamePanels
                 {
                     MouseOver = this.Position.X + ((Vector2)basePos).X - ExtDis <= poX && poX <= this.Position.X + ((Vector2)basePos).X + OriginWidth * Scale + ExtDis
                         && this.Position.Y + ((Vector2)basePos).Y - ExtDis <= poY && poY <= this.Position.Y + ((Vector2)basePos).Y + OriginHeight * Scale + ExtDis;
-                }
-            }
-            else
-            {
-                MouseOver = false;
-            }
-            return MouseOver;
-        }
-        public bool IsInTexture(int poX, int poY, Vector2? basePos)
-        {
-            if (Visible && (Enable || FireEventWhenUnEnable))
-            {
-                PreMouseOver = MouseOver;
-                if (basePos == null)
-                {
-                    MouseOver = this.Position.X - ExtDis <= poX && poX <= this.Position.X + Width + ExtDis
-                        && this.Position.Y - ExtDis <= poY && poY <= this.Position.Y + Height + ExtDis;
-                }
-                else
-                {
-                    MouseOver = this.Position.X + ((Vector2)basePos).X - ExtDis <= poX && poX <= this.Position.X + ((Vector2)basePos).X + Width + ExtDis
-                        && this.Position.Y + ((Vector2)basePos).Y - ExtDis <= poY && poY <= this.Position.Y + ((Vector2)basePos).Y + Height + ExtDis;
                 }
             }
             else
@@ -266,11 +252,10 @@ namespace GamePanels
                     //player.Play();
                     Platform.Current.PlayEffect(@"Content\Sound\Select");
                 }
-                if (OnMouseOver != null) OnMouseOver.Invoke(null, null);
+                if (OnMouseOver != null) OnMouseOver.Invoke(this, null);
                 if (press)
                 {
                     PressButton();
-                    press = false;
                 }
             }
         }
@@ -280,7 +265,7 @@ namespace GamePanels
         }
         public void Draw(Vector2? basePos)
         {
-            Draw(basePos, Color.White * Alpha, Alpha, null);
+            Draw(basePos, Color.White, Alpha, null);
         }
         public void Draw(Vector2? basePos, Color color)
         {
@@ -306,11 +291,11 @@ namespace GamePanels
             {
                 bounds = new List<Bounds>();
                 batch.Draw(CacheManager.LoadTexture(Text), Position * DrawScale, Rectangle, color * Alpha, 0f, Vector2.Zero, Scale, SpriteEffects.None, Depth);
-                bounds.Add(new Bounds() { X = Position.X, Y = Position.Y, X2 = Position.X + ((Rectangle)Rectangle).Width, Y2 = Position.Y + ((Rectangle)Rectangle).Height });
+                bounds.Add(new Bounds() { X = Position.X, Y = Position.Y, X2 = Position.X + Width, Y2 = Position.Y + Height });
                 if (!String.IsNullOrEmpty(ViewText))
                 {
 
-                    List<Bounds> textBounds = CacheManager.DrawStringReturnBounds(batch, Session.Current.Font, Text, Position * DrawScale, (MouseOver || Selected) ? ViewTextColor2 * Alpha : ViewTextColor1 * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
+                    List<Bounds> textBounds = CacheManager.DrawStringReturnBounds(batch, ViewFont == null ? Session.Current.Font : ViewFont, ViewText, (Position + ViewTextPos) * DrawScale, (MouseOver || Selected) ? ViewTextColor2 * Alpha : ViewTextColor1 * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
                     //处理文字边界范围
                     textBounds.Add(bounds[0]);
                     bounds = textBounds;
@@ -322,20 +307,11 @@ namespace GamePanels
         public void CalculateControlSize()
         {
             if (!String.IsNullOrEmpty(ViewText))
-                bounds = CacheManager.CalculateTextBounds(Session.Current.Font, Text, OffsetPos, Scale);
+                bounds = CacheManager.CalculateTextBounds(ViewFont == null ? Session.Current.Font : ViewFont, ViewText, OffsetPos + ViewTextPos, Scale * ViewTextScale);
             else
                 bounds = new List<Bounds>();
 
-            bounds.Add(new Bounds() { X = OffsetPos.X, Y = OffsetPos.Y, X2 = OffsetPos.X + ((Rectangle)Rectangle).Width, Y2 = OffsetPos.Y + ((Rectangle)Rectangle).Height });//加上复选框的范围
-            Width = 0;
-            Height = 0;
-            bounds.ForEach(b =>
-            {
-                Width = Width > b.Width() ? Width : b.Width();
-                Height = Height > b.Height() ? Height : b.Height();
-            });
-
-
+            bounds.Add(new Bounds() { X = OffsetPos.X, Y = OffsetPos.Y, X2 = OffsetPos.X + Width, Y2 = OffsetPos.Y + Height });//加上按钮材质的范围
         }
 
         public void UpdateCanvas()
@@ -351,7 +327,7 @@ namespace GamePanels
                     //player.Play();
                     Platform.Current.PlayEffect(@"Content\Sound\Select");
                 }
-                if (OnMouseOver != null) OnMouseOver.Invoke(null, null);
+                if (OnMouseOver != null) OnMouseOver.Invoke(this, null);
                 if (press)
                 {
                     PressButton();
@@ -367,10 +343,11 @@ namespace GamePanels
         /// <returns>返回是否经过控件的布尔值</returns>
         public bool IsInCanvasTexture(float poX, float poY)
         {
-            if (Visible && (Enable || FireEventWhenUnEnable))
+            if (Visible && (Enable || FireEventWhenUnEnable) && bounds != null && baseFrame != null)
             {
 
                 PreMouseOver = MouseOver;
+                MouseOver = false;//所有范围都不在可视框架内时不能沿用上一帧的结果
 
                 foreach (Bounds relativeBound in bounds)
                     //通过三个条件相与判定鼠标是否经过控件
@@ -408,28 +385,10 @@ namespace GamePanels
         /// <returns>返回是否在框架内的布尔值</returns>
         protected bool IsInFrame(Bounds bound)
         {
-            return (bound.X > baseFrame.VisualFrame.X && bound.X < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width) ||
-                (bound.X2 > baseFrame.VisualFrame.X && bound.X2 < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width) ||
-                (bound.Y > baseFrame.VisualFrame.Y && bound.Y < baseFrame.VisualFrame.Y + baseFrame.VisualFrame.Height) ||
-                (bound.Y2 > baseFrame.VisualFrame.Y && bound.Y2 < baseFrame.VisualFrame.Y + baseFrame.VisualFrame.Height);
+            //横向和纵向都要与可视框架相交才算在框架之内
+            return bound.X < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width && bound.X2 > baseFrame.VisualFrame.X
+                && bound.Y < baseFrame.VisualFrame.Y + baseFrame.VisualFrame.Height && bound.Y2 > baseFrame.VisualFrame.Y;
         }
     }
 
 }
-
-/*
-        public ButtonTexture(string name, Texture2D tex1, Texture2D tex2, Texture2D tex3, Vector2? pos)
-        {
-            Name = name;
-            Textures = new Texture2D[] { tex1, tex2, tex3 };
-            if (pos != null) Position = (Vector2)pos;
-        }
-        public ButtonTexture(string text, string name, Rectangle[] recs, Vector2? pos, bool live)
-        {
-            Text = text;
-            Name = name;
-            Recs = recs;
-            if (pos != null) Position = (Vector2)pos;
-            Textures = new Texture2D[] { FontCharacter.Load(Text, "", live ? CacheLiveType.Live : CacheLiveType.Scene, false) };
-        }
-*/

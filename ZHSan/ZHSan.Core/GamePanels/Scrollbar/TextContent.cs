@@ -38,15 +38,20 @@ namespace GamePanels.Scrollbar
         public bool AutoWrap = false;
         public void DrawToCanvas(SpriteBatch batch)
         {
-            CacheManager.DrawStringReturnBounds(batch, Session.Current.Font, Text, OffsetPos, color * Alpha, 0f, Vector2.Zero, Scale, SpriteEffects.None, Depth);
+            CacheManager.DrawStringReturnBounds(batch, Font, Text, OffsetPos, color * Alpha, 0f, Vector2.Zero, Scale, SpriteEffects.None, Depth);
 
         }
         public void CalculateControlSize()
         {
-            bounds = CacheManager.CalculateTextBounds(Session.Current.Font, Text, OffsetPos, Scale);
-            Width = 0;
-            bounds.ForEach(b => Width = Width > b.Width() ? Width : b.Width());
-            Height = bounds[bounds.Count - 1].Y2 - bounds[0].Y;
+            bounds = CacheManager.CalculateTextBounds(Font, Text, OffsetPos, Scale);
+            if (bounds.Count == 0)//文本为空
+            {
+                Width = Height = 0;
+                return;
+            }
+            //宽高是从控件位置到所有行最右、最下边界的距离，框架据此计算画布大小
+            Width = bounds.Max(b => b.X2) - OffsetPos.X;
+            Height = bounds.Max(b => b.Y2) - OffsetPos.Y;
         }
 
         /// <summary>
@@ -82,7 +87,7 @@ namespace GamePanels.Scrollbar
 
         public void AutoWrapText()
         {
-            if (OffsetPos.X < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width)//自动换行以当前可视框架为范围，超过框架范围则无法自动换行
+            if (baseFrame != null && OffsetPos.X < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width)//自动换行以当前可视框架为范围，超过框架范围则无法自动换行
                 Text=CacheManager.AutoWrap(Font, Text, baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width - OffsetPos.X, Scale);
         }
     }

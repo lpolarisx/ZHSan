@@ -211,7 +211,7 @@ namespace GamePanels
             if (pos != null) Position = (Vector2)pos;
             Scale = 1f;
             Alpha = 1f;
-
+            color = Color.White;
         }
 
         /// <summary>
@@ -239,11 +239,15 @@ namespace GamePanels
         public void PressButton()
         {
             InputManager.ClickTime++;
+            if (!Platform.IsActive)
+            {
+                return;
+            }
             DateTime now = DateTime.Now;
             if (prePressTime != null)
             {
                 TimeSpan ts = now - (DateTime)prePressTime;
-                if (ts.TotalSeconds < 0.3f || !Platform.IsActive)
+                if (ts.TotalSeconds < 0.3f)
                 {
                     return;
                 }
@@ -265,6 +269,9 @@ namespace GamePanels
             if (Visible && (Enable || FireEventWhenUnEnable))
             {
                 PreMouseOver = MouseOver;
+                MouseOver = false;
+                if (bounds == null)//范围在Draw时才生成，第一次Draw之前还没有范围
+                    return MouseOver;
                 foreach (Bounds bound in bounds)//搜索控件的所有范围矩形列表
                 {
 
@@ -300,30 +307,7 @@ namespace GamePanels
         /// <returns>返回鼠标是否经过控件</returns>
         public bool IsInTexture(int poX, int poY, Vector2? basePos)
         {
-            if (Visible && (Enable || FireEventWhenUnEnable))
-            {
-                PreMouseOver = MouseOver;
-                foreach (Bounds bound in bounds)
-                {
-                    if (basePos == null)
-                    {
-                        MouseOver = bound.X - ExtDis <= poX && poX <= bound.X2 + ExtDis
-                            && bound.Y - ExtDis <= poY && poY <= bound.Y2 + ExtDis;
-                    }
-                    else
-                    {
-                        MouseOver = bound.X + ((Vector2)basePos).X - ExtDis <= poX && poX <= bound.X2 + ((Vector2)basePos).X + ExtDis
-                            && bound.Y + ((Vector2)basePos).Y - ExtDis <= poY && poY <= bound.Y2 + ((Vector2)basePos).Y + ExtDis;
-                    }
-                    if (MouseOver)
-                        return MouseOver;//一旦判断鼠标在一个范围内则停止其他范围矩形的判断检索
-                }
-            }
-            else
-            {
-                MouseOver = false;
-            }
-            return MouseOver;
+            return IsInTexture((float)poX, (float)poY, basePos);
         }
         public void Update()
         {
@@ -348,7 +332,7 @@ namespace GamePanels
                     //player.Play();
                     Platform.Current.PlayEffect(@"Content\Sound\Select");
                 }
-                if (OnMouseOver != null) OnMouseOver.Invoke(null, null);
+                if (OnMouseOver != null) OnMouseOver.Invoke(this, null);
                 if (press)
                 {
                     PressButton();
@@ -361,7 +345,7 @@ namespace GamePanels
         /// </summary>
         public void Draw()
         {
-            Draw(null, Color.White * Alpha, 1f, null, null, null);
+            Draw(null, Color.White, Alpha, null, null, null);
         }
 
         /// <summary>
@@ -375,8 +359,7 @@ namespace GamePanels
             ViewTextColor = cbSetting.ViewTextColor ?? ViewTextColor;
             ViewTextColorMouseOver = cbSetting.ViewTextColorMouseOver ?? ViewTextColorMouseOver;
             Scale = cbSetting.Scale ?? Scale;
-            cbSetting.basPos = cbSetting.basPos ?? new Vector2(0, 0);
-            Draw(Position + cbSetting.basPos, Color.White * Alpha, 1f, null, cbSetting.Offset, cbSetting.ViewFont);
+            Draw(cbSetting.basPos, Color.White, Alpha, null, cbSetting.Offset, cbSetting.ViewFont);
         }
 
         /// <summary>
@@ -400,7 +383,9 @@ namespace GamePanels
                 //此处必须新建一个新变量，否会可能发生自己累加情况
                 Vector2 _offset = (Vector2)(offset == null ? new Vector2(bound.Width(), 2) : offset + new Vector2(bound.Width(), 0));//如果偏移量为空则加上默认的偏移量
 
-                bounds = CacheManager.DrawStringReturnBounds(viewFont ?? Session.Current.Font, Text, (basePos == null ? (Vector2)(Position + _offset) : (Vector2)(Position + basePos + _offset)) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
+                SpriteFont font = viewFont ?? ViewFont ?? Session.Current.Font;
+
+                bounds = CacheManager.DrawStringReturnBounds(font, Text, (basePos == null ? (Vector2)(Position + _offset) : (Vector2)(Position + basePos + _offset)) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
 
                 bounds.Add(bound);
 
@@ -410,16 +395,25 @@ namespace GamePanels
                     List<Bounds> _b;//处理Text为空的情况
                     AlignTexts.ForEach(at =>
                     {
-                        _b = CacheManager.DrawStringReturnBounds(viewFont ?? Session.Current.Font, at.Text, (basePos == null ? (Vector2)(Position + _offset + at.Offset) : (Vector2)(Position + basePos + _offset + at.Offset)) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
+                        _b = CacheManager.DrawStringReturnBounds(font, at.Text, (basePos == null ? (Vector2)(Position + _offset + at.Offset) : (Vector2)(Position + basePos + _offset + at.Offset)) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
                         if (_b.Count > 0)//处理Text为空的情况
                             b.Add(_b[0]);
                     });
-                    //添加范围
-                    bounds.Add(new Bounds() { X = b.OrderBy(bb => bb.X).FirstOrDefault().X, Y = b.OrderBy(bb => bb.Y).FirstOrDefault().Y, X2 = b.OrderByDescending(bb => bb.X2).FirstOrDefault().X2, Y2 = b.OrderByDescending(bb => bb.Y2).FirstOrDefault().Y2 });
+                    AddAlignTextBounds(b);
                 }
 
             }
 
+        }
+
+        /// <summary>
+        /// 把所有对齐文本的范围合并成一个矩形加入控件范围
+        /// </summary>
+        private void AddAlignTextBounds(List<Bounds> b)
+        {
+            if (b.Count == 0)//所有对齐文本都为空
+                return;
+            bounds.Add(new Bounds() { X = b.Min(bb => bb.X), Y = b.Min(bb => bb.Y), X2 = b.Max(bb => bb.X2), Y2 = b.Max(bb => bb.Y2) });
         }
 
         public void DrawToCanvas(SpriteBatch batch)
@@ -432,7 +426,9 @@ namespace GamePanels
                 //此处必须新建一个新变量，否会可能发生自己累加情况
                 Vector2 _offsetText = (Vector2)(offsetText == null ? new Vector2(((Rectangle)cbRectangle).Width, 2) : offsetText + new Vector2(((Rectangle)cbRectangle).Width, 0));//如果偏移量为空则加上默认的偏移量
 
-                bounds = CacheManager.DrawStringReturnBounds(batch, ViewFont, Text, (Vector2)(Position + _offsetText) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
+                SpriteFont font = ViewFont ?? Session.Current.Font;
+
+                bounds = CacheManager.DrawStringReturnBounds(batch, font, Text, (Vector2)(Position + _offsetText) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
                 bounds.Add(new Bounds() { X = Position.X, Y = Position.Y, X2 = Position.X + ((Rectangle)cbRectangle).Width * Scale, Y2 = Position.Y + ((Rectangle)cbRectangle).Height * Scale });
 
                 if (AlignTexts.Count > 0)
@@ -441,12 +437,11 @@ namespace GamePanels
                     List<Bounds> _b;//处理Text为空的情况
                     AlignTexts.ForEach(at =>
                     {
-                        _b = CacheManager.DrawStringReturnBounds(batch, ViewFont, at.Text, (Vector2)(Position + _offsetText + at.Offset) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
+                        _b = CacheManager.DrawStringReturnBounds(batch, font, at.Text, (Vector2)(Position + _offsetText + at.Offset) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
                         if (_b.Count > 0)//处理Text为空的情况
                             b.Add(_b[0]);
                     });
-                    //添加范围
-                    bounds.Add(new Bounds() { X = b.OrderBy(bb => bb.X).FirstOrDefault().X, Y = b.OrderBy(bb => bb.Y).FirstOrDefault().Y, X2 = b.OrderByDescending(bb => bb.X2).FirstOrDefault().X2, Y2 = b.OrderByDescending(bb => bb.Y2).FirstOrDefault().Y2 });
+                    AddAlignTextBounds(b);
                 }
 
             }
@@ -456,14 +451,11 @@ namespace GamePanels
         {
             //此处必须新建一个新变量，否会可能发生自己累加情况
             Vector2 _offsetText = (Vector2)(offsetText == null ? new Vector2(((Rectangle)cbRectangle).Width, 2) : offsetText + new Vector2(((Rectangle)cbRectangle).Width, 0));
-            bounds = CacheManager.CalculateTextBounds(ViewFont, Text, OffsetPos + _offsetText, Scale);
+            SpriteFont font = ViewFont ?? Session.Current.Font;
+
+            //位置和缩放要与DrawToCanvas保持一致
+            bounds = CacheManager.CalculateTextBounds(font, Text, (OffsetPos + _offsetText) * DrawScale, Scale * ViewTextScale);
             bounds.Add(new Bounds() { X = OffsetPos.X, Y = OffsetPos.Y, X2 = OffsetPos.X + ((Rectangle)cbRectangle).Width * Scale, Y2 = OffsetPos.Y + ((Rectangle)cbRectangle).Height * Scale });//加上复选框的范围
-            Width = 0;
-            bounds.ForEach(b => Width = Width > b.Width() ? Width : b.Width());
-            if (bounds.Count > 1)
-                Height = bounds[bounds.Count - 2].Y2 - bounds[0].Y;//倒数第二行才是最后一行文字
-            else
-                Height = bounds[bounds.Count - 1].Y2 - bounds[0].Y;
 
             //计算可对齐文本的范围
             if (AlignTexts.Count > 0)
@@ -472,13 +464,16 @@ namespace GamePanels
                 List<Bounds> _b;//处理Text为空的情况
                 AlignTexts.ForEach(at =>
                 {
-                    _b = CacheManager.CalculateTextBounds(ViewFont, at.Text, (Vector2)(Position + _offsetText + at.Offset) * DrawScale, Scale);
+                    _b = CacheManager.CalculateTextBounds(font, at.Text, (Vector2)(OffsetPos + _offsetText + at.Offset) * DrawScale, Scale * ViewTextScale);
                     if (_b.Count > 0)//处理Text为空的情况
                         b.Add(_b[0]);
                 });
-                //添加范围
-                bounds.Add(new Bounds() { X = b.OrderBy(bb => bb.X).FirstOrDefault().X, Y = b.OrderBy(bb => bb.Y).FirstOrDefault().Y, X2 = b.OrderByDescending(bb => bb.X2).FirstOrDefault().X2, Y2 = b.OrderByDescending(bb => bb.Y2).FirstOrDefault().Y2 });
+                AddAlignTextBounds(b);
             }
+
+            //宽高是从控件位置到所有范围最右、最下边界的距离，框架据此计算画布大小
+            Width = bounds.Max(b => b.X2) - OffsetPos.X;
+            Height = bounds.Max(b => b.Y2) - OffsetPos.Y;
         }
 
         public void UpdateCanvas()
@@ -495,7 +490,7 @@ namespace GamePanels
                     //player.Play();
                     Platform.Current.PlayEffect(@"Content\Sound\Select");
                 }
-                if (OnMouseOver != null) OnMouseOver.Invoke(null, null);
+                if (OnMouseOver != null) OnMouseOver.Invoke(this, null);
                 if (press)
                 {
                     PressButton();
@@ -513,7 +508,7 @@ namespace GamePanels
         {
             PreMouseOver = MouseOver;
             MouseOver = false;
-            if (Visible && (Enable || FireEventWhenUnEnable))
+            if (Visible && (Enable || FireEventWhenUnEnable) && bounds != null && baseFrame != null)
             {
 
                 foreach (Bounds relativeBound in bounds)
@@ -552,10 +547,9 @@ namespace GamePanels
         /// <returns>返回是否在框架内的布尔值</returns>
         protected bool IsInFrame(Bounds bound)
         {
-            return (bound.X > baseFrame.VisualFrame.X && bound.X < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width) ||
-                (bound.X2 > baseFrame.VisualFrame.X && bound.X2 < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width) ||
-                (bound.Y > baseFrame.VisualFrame.Y && bound.Y < baseFrame.VisualFrame.Y + baseFrame.VisualFrame.Height) ||
-                (bound.Y2 > baseFrame.VisualFrame.Y && bound.Y2 < baseFrame.VisualFrame.Y + baseFrame.VisualFrame.Height);
+            //横向和纵向都要与可视框架相交才算在框架之内
+            return bound.X < baseFrame.VisualFrame.X + baseFrame.VisualFrame.Width && bound.X2 > baseFrame.VisualFrame.X
+                && bound.Y < baseFrame.VisualFrame.Y + baseFrame.VisualFrame.Height && bound.Y2 > baseFrame.VisualFrame.Y;
         }
     }
 }

@@ -50,14 +50,22 @@ namespace GamePanels.Scrollbar
         public SpriteEffects spriteEffects;
         public void DrawToCanvas(SpriteBatch batch)
         {
-            batch.Draw(Texture, OffsetPos, source, color, Rotation, Origin, Scale, spriteEffects, Depth);
+            if (Texture == null || Texture.IsDisposed)
+                return;
+            batch.Draw(Texture, OffsetPos, source, color * Alpha, Rotation, Origin, Scale, spriteEffects, Depth);
         }
 
         public void CalculateControlSize()
         {
-            Width = Texture.Width * Scale;
-            Height = Texture.Height * Scale;
             bounds = new List<Bounds>();
+            if (Texture == null)//没有材质或材质加载失败
+            {
+                Width = Height = 0;
+                return;
+            }
+            //设置了源矩形时，画出来的大小是源矩形的大小
+            Width = (source == null ? Texture.Width : source.Value.Width) * Scale;
+            Height = (source == null ? Texture.Height : source.Value.Height) * Scale;
             bounds.Add(new Bounds() { X = OffsetPos.X, Y = OffsetPos.Y, X2 = OffsetPos.X + Width, Y2 = OffsetPos.Y + Height });
         }
 
@@ -79,6 +87,7 @@ namespace GamePanels.Scrollbar
             Scale = scale;
             Depth = depth;
             source = null;
+            Alpha = 1f;
             color = Color.White;
             Rotation = 0f;
             Origin = Vector2.Zero;

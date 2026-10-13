@@ -1874,6 +1874,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             };
             btSettingList.Add(btOne);
 
+            frame_about?.Dispose();
             frame_about = new Frame(new Vector2(50, 80), new Rectangle(0, 0, 1150, 500), null, 1f, FrameScrollbarType.Vertical);
             //frame.BackgroundColor = Color.Black;
             frame_about.FixedBackground = false;
@@ -2528,6 +2529,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             #region 预处理剧本列表信息
 
+            frame_PlayersList?.Dispose();
             frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);
             foreach (var sce in ScenarioList)
             {
@@ -2640,6 +2642,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         // 否则隐藏列表中已经勾选的势力仍会写入 Players。
                         btScenarioPlayersList = new List<CheckBox>();
 
+                        //每次选剧本都会新建框架，旧框架的画布和滚动条材质要先释放
+                        frame_PlayersList?.Dispose();
                         frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);
                         frame_PlayersList.FixedBackground = false;
                         frame_PlayersList.CanvasRightPadding = 1030;
@@ -3637,7 +3641,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     for (int i = 0; i < btScenarioSelectListPaged.Count; i++)
                     {
                         var btOne = btScenarioSelectListPaged[i];
-                        btOne.Position = new Vector2(50, 75 + 27 * i);
+                        btOne.Position = new Vector2(100, 150 + 54 * i);
                         btOne.Visible = true;
                         btOne.Update();
                     }
@@ -4220,7 +4224,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 for (int i = 0; i < btScenarioSelectListPaged.Count; i++)
                 {
                     var btOne = btScenarioSelectListPaged[i];
-                    btOne.Position = new Vector2(180, 40 + 23 * i);
+                    btOne.Position = new Vector2(360, 80 + 46 * i);
                     btOne.Visible = true;
                     btOne.Update();
                 }
@@ -4280,7 +4284,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 //btnTextureAlpha.Update();
 
-                Setting.Current.GamerName = tbGamerName.Text.NullToStringTrim();
+                //tbGamerName的输入和绘制都已停用，Text恒为空，这里赋值会把配置里的玩家名清空
+                //Setting.Current.GamerName = tbGamerName.Text.NullToStringTrim();
 
                 var nsts = new NumericSetTextureF[] { nstMusic, nstSound, nstArmySpeed, nstDialogTime, nstBattleSpeed, nstAutoSaveTime, nstShowNumberAddTime, nstSpeedUp };//后面没有战斗速度的处理，虽然此参数并无用
 
