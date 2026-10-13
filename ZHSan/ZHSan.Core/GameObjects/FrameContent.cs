@@ -91,6 +91,17 @@ namespace GameObjects
         //    }
         //}
         
+        /// <summary>
+        /// 是否显示确定、取消按钮。只是查看的窗口不需要按钮，右键即可关闭
+        /// </summary>
+        public virtual bool ButtonsVisible
+        {
+            get
+            {
+                return true;
+            }
+        }
+
         public virtual bool CanClose
         {
             get
@@ -217,6 +228,11 @@ namespace GameObjects
                    // this.SelectAllButtonPosition.Y += num2;
                     this.CancelButtonPosition.Y += num2;
                     this.MapViewSelectorButtonPosition.Y += num2;
+                }
+                if (!this.ButtonsVisible)
+                {
+                    // 不显示按钮时，把底部留给按钮的那一行也让给内容
+                    client.Height = this.framePosition.Height - client.Y;
                 }
                 this.realClient = new Rectangle(this.framePosition.X + client.X, this.framePosition.Y + client.Y, client.Width, client.Height);
 

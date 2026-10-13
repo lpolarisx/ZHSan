@@ -223,6 +223,44 @@ namespace GameManager
 
             return font.GetFont(30).MeasureString(text ?? "") * scale;
         }
+
+        /// <summary>
+        /// 文字超过指定宽度时截断，并在末尾加上省略号
+        /// </summary>
+        /// <param name="text">要处理的文字</param>
+        /// <param name="maxWidth">允许的最大宽度</param>
+        /// <param name="scale">缩放倍数</param>
+        /// <param name="ellipsis">截断后追加的省略号</param>
+        /// <returns>返回不超过最大宽度的文字</returns>
+        public static string TruncateText(string text, float maxWidth, float scale, string ellipsis = "...")
+        {
+            //每个字最宽也就是字号30，按这个算都放得下就不用实际测量了
+            if (string.IsNullOrEmpty(text) || maxWidth <= 0 || text.Length * 30 * scale <= maxWidth)
+            {
+                return text;
+            }
+            if (MeasureText(text, scale).X <= maxWidth)
+            {
+                return text;
+            }
+
+            //二分查找加上省略号后还能放下的最长前缀
+            int low = 0;
+            int high = text.Length - 1;
+            while (low < high)
+            {
+                int mid = (low + high + 1) / 2;
+                if (MeasureText(text.Substring(0, mid) + ellipsis, scale).X <= maxWidth)
+                {
+                    low = mid;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+            return text.Substring(0, low) + ellipsis;
+        }
         /*
         
 

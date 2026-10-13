@@ -15052,7 +15052,8 @@ namespace GameObjects
 
             treasure.Name = p.Name + selectedSetting.Name;
 
-            treasure.Description = treasure.AppearYear + "由" + p.Name + "打造" + selectedSetting.Name;
+            // 与自带宝物的简介保持同样的“【品级】种类 说明”格式
+            treasure.Description = "【打造】" + selectedSetting.Name + " " + treasure.AppearYear + "年由" + p.Name + "打造。";
 
             // 计算新的宝物ID（应该是最大ID+1）
             //var maxId = 0;

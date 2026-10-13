@@ -176,6 +176,11 @@ namespace GameFreeText
             this.TextList.Clear();
         }
 
+        public string TruncateText(string text, int maxWidth)
+        {
+            return TextManager.TruncateText(text, maxWidth, Font.Scale);
+        }
+
         public int Width(int index)
         {
             var item = this.TextList[index];
