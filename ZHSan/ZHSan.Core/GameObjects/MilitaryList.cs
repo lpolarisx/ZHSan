@@ -7,7 +7,7 @@ namespace GameObjects
     {
         public void AddMilitary(Military military)
         {
-            base.GameObjects.Add(military);
+            Add(military);
         }
     }
 }

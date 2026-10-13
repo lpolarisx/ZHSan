@@ -262,6 +262,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             Session.Current.Scenario.Date.SetSeason();
             SwichMusic(Session.Current.Scenario.Date.Season);
             //this.thisGame.jiazaitishi.jiazaijindu.Value = 90;
+            this.shangciCundangShijian = Session.Current.Scenario.DaySince;
         }
 
         private void JumpToFaction()
