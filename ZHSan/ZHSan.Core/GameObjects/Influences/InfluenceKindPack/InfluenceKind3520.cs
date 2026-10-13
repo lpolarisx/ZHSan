@@ -1,40 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3520 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3520 : InfluenceKind
+    public override double AIFacilityValue(Influence influence, Architecture arch)
     {
-        private int cost;
-        
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-           
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.cost = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return a.IsFundAbundant && a.IsFoodAbundant ? a.PersonCount : 0;
-        }
+        return arch.IsFundAbundant && arch.IsFoodAbundant ? arch.PersonCount : 0;
     }
 }
-

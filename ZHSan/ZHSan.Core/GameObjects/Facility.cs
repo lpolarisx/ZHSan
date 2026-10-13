@@ -1,259 +1,139 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameManager;
 using GameObjects.ArchitectureDetail;
+using GameObjects.Conditions;
 using GameObjects.Influences;
 using System;
-using System.Runtime.Serialization;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace GameObjects
 {
-    [DataContract]
+    /// <summary>
+    /// 设施
+    /// </summary>
     public class Facility : GameObject
     {
-        private int endurance;
-        private FacilityKind kind;
-        private int kindID;
+        /// <summary>
+        /// 种类ID
+        /// </summary>
+        public int KindID => facilityLevel.KindId;
 
+        public int LevelId { get; set; }
 
+        /// <summary>
+        /// 耐久
+        /// </summary>
+        public int Endurance { get; private set; }
+
+        public Facility(FacilityConfig config)
+        {
+            ID = config.Id;
+            LevelId = config.LevelId;
+            Endurance = config.Endurance;
+        }
+
+        public FacilityConfig ToConfig()
+        {
+            return new FacilityConfig
+            {
+                Id = ID,
+                LevelId = LevelId,
+                Endurance = Endurance,
+            };
+        }
+
+        public Facility(int id, FacilityKindLevel level)
+        {
+            ID = id;
+            Endurance = level.Endurance;
+            LevelId = level.Id;
+        }
+
+        private FacilityKindLevel facilityLevel => Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.GetValueOrDefault(LevelId);
+
+        /// <summary>
+        /// 耐久下降
+        /// </summary>
+        /// <param name="decrement"></param>
         public void DecreaseEndurance(int decrement)
         {
-            this.endurance -= decrement;
+            Endurance -= decrement;
         }
 
-        public void DoWork(Architecture a)
-        {
-            foreach (Influence influence in this.Kind.Influences.Influences.Values)
-            {
-                influence.DoWork(a);
-            }
-        }
-
-        public GameObjectList GetInfluenceList()
-        {
-            return this.Kind.GetInfluenceList();
-        }
-
-        public GameObjectList GetConditionList()
-        {
-            return this.Kind.GetConditionList();
-        }
-
+        /// <summary>
+        /// 耐久恢复
+        /// </summary>
+        /// <param name="extraInc"></param>
         public void RecoverEndurance(int extraInc)
         {
-            if (this.endurance != this.EnduranceCeiling)
+            // 耐久小于上限时才需要恢复
+            if (Endurance < EnduranceCeiling)
             {
-                int increase = (this.EnduranceCeiling / this.Days) / 2 + extraInc;
-                this.endurance += increase < 1 ? 1 : increase;
-                if (this.endurance > this.EnduranceCeiling)
-                {
-                    this.endurance = this.EnduranceCeiling;
-                }
+                int increase = EnduranceCeiling / facilityLevel.Days / 2 + extraInc;
+
+                Endurance += Math.Max(1, increase);
+
+                Endurance = Math.Max(Endurance, EnduranceCeiling);
             }
         }
 
-        public override string ToString()
+        public void DoWork(Architecture architecture)
         {
-            return this.Name;
-        }
-
-        public int Days
-        {
-            get
+            foreach (var influence in facilityLevel.Influences)
             {
-                return this.Kind.Days;
+                influence.DoWork(architecture);
             }
         }
 
-        public int DaysText
-        {
-            get
-            {
-                return this.Kind.Days * Session.Parameters.DayInTurn;
-            }
-        }
+        public int DaysText => facilityLevel.DaysText;
 
-        public string Description
-        {
-            get
-            {
-                return this.Kind.Description;
-            }
-        }
+        public string Description => facilityLevel.Description;
 
-        public string ConditionString
-        {
-            get
-            {
-                return this.Kind.ConditionString;
-            }
-        }
+        public int EnduranceCeiling => facilityLevel.Endurance;
 
-        [DataMember]
-        public int Endurance
-        {
-            get
-            {
-                return this.endurance;
-            }
-            set
-            {
-                this.endurance = value;
-            }
-        }
-
-        public int EnduranceCeiling
-        {
-            get
-            {
-                return this.Kind.Endurance;
-            }
-        }
-
-        public int FundCost
-        {
-            get
-            {
-                return this.Kind.FundCost;
-            }
-        }
-
-        public int InfluenceCount
-        {
-            get
-            {
-                return this.Kind.Influences.Count;
-            }
-        }
-
-        public InfluenceTable Influences
-        {
-            get
-            {
-                return this.Kind.Influences;
-            }
-        }
+        public List<Influence> Influences => facilityLevel.Influences;
         
-        public FacilityKind Kind
-        {
-            get
-            {
-                if (this.kind == null)
-                {
-                    this.kind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.kindID);
-                }
-                return this.kind;
-            }
-            set
-            {
-                this.kind = value;
-                if (this.kind != null)
-                {
-                    this.kindID = this.kind.ID;
-                }
-            }
-        }
+        public int MaintenanceCost => facilityLevel.MaintenanceCost;
 
-        [DataMember]
-        public int KindID
-        {
-            get
-            {
-                return this.kindID;
-            }
-            set
-            {
-                this.kindID = value;
-            }
-        }
+        public new string Name => facilityLevel.Name;
 
-        public string KindString
-        {
-            get
-            {
-                return this.Kind.Name;
-            }
-        }
+        public int PositionOccupied => facilityLevel.PositionOccupied;
 
-        public int MaintenanceCost
-        {
-            get
-            {
-                return this.Kind.MaintenanceCost;
-            }
-        }
+        public int ArchitectureLimit => facilityLevel.ArchitectureLimit;
 
-        public new string Name
-        {
-            get
-            {
-                return this.KindString;
-            }
-        }
+        public int FactionLimit => facilityLevel.FactionLimit;
 
-        public int PointCost
-        {
-            get
-            {
-                return this.Kind.PointCost;
-            }
-        }
+        public bool IsDemolishable => facilityLevel.IsDemolishable;
 
-        public int PositionOccupied
-        {
-            get
-            {
-                return this.Kind.PositionOccupied;
-            }
-        }
+        public Dictionary<Condition, float> AIBuildConditionWeight => facilityLevel.AIBuildConditionWeight;
 
-        public int TechnologyNeeded
-        {
-            get
-            {
-                return this.Kind.TechnologyNeeded;
-            }
-        }
+        public int rongna => facilityLevel.ConcubineCapacity;
 
-        public int ArchitectureLimit
-        {
-            get
-            {
-                return this.Kind.ArchitectureLimit;
-            }
-        }
+        public bool IsProfitable => facilityLevel.IsProfitable;
 
-        public int FactionLimit
-        {
-            get
-            {
-                return this.Kind.FactionLimit;
-            }
-        }
+        public float AILevel => facilityLevel.AILevel;
 
-        public Architecture location
-        {
-            get
-            {
-                foreach (Architecture a in Session.Current.Scenario.Architectures)
-                {
-                    if (a.Facilities.GameObjects.Contains(this))
-                    {
-                        return a;
-                    }
-                }
-                return null;
-            }
-        }
+        public float AiValue(Architecture architecture) => facilityLevel.AiValue(architecture);
 
-        public double AIValue
-        {
-            get
-            {
-                double val = this.Kind.AIValue(this.location);
-                if (val < 0) val = -1;
-                return val;
-            }
-        }
+        public int TechnologyNeeded => facilityLevel.TechnologyNeeded;
 
+        public int PointCost => facilityLevel.PointCost;
+
+        public int FundCost => facilityLevel.FundCost;
+
+        public string ConditionString => facilityLevel.ConditionString;
+    }
+
+    public class FacilityFactory
+    {
+        public Facility Create(FacilityKindLevel facilityLevel)
+        {
+            var id = Session.Current.Scenario.Facilities.Keys.Max() + 1;
+
+            var facility = new Facility(id, facilityLevel);
+
+            return facility;
+        }
     }
 }
-

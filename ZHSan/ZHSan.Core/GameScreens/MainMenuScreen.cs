@@ -258,9 +258,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     var mod = new MOD();
 
-                    mod.ID = dir.Substring(dir.LastIndexOf('\\') + 1);
+                    mod.ID = Path.GetFileName(dir.Replace('\\', '/').TrimEnd('/'));
 
-                    var lines = Platform.Current.ReadAllLines($@"MODs\{mod.ID}\{mod.ID}.txt").NullToEmptyArray();
+                    var modInfoPath = Path.Combine("MODs", mod.ID, $"{mod.ID}.txt");
+                    var lines = Platform.Current.ReadAllLines(modInfoPath).NullToEmptyArray();
 
                     if (lines.Length > 0)
                     {
@@ -295,16 +296,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             #region 获取头像包
 
-            try
-            {
-                var portraitPackPath = @"Portraits/";
-                var portraitDirNames = Platform.Current.GetDirectoryNames(portraitPackPath);
-                portraitPacks.AddRange(portraitDirNames);
-            }
-            catch (IOException)
-            {
-                // no-op
-            }
+            var portraitPackPath = @"Portraits/";
+            var portraitDirNames = Platform.Current.GetDirectoryNames(portraitPackPath);
+            portraitPacks.AddRange(portraitDirNames);
 
             // 防止修改头像包文件夹名称时，出现没有选中的情况
             var currentPortraitPack = portraitPacks.FirstOrDefault(x => x.Equals(Setting.Current.PortraitPack));
@@ -2135,6 +2129,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                         // 重载CommonData，不同mod的CommonData不一致，例如建筑类型表
                         CommonData.Init();
+                        InitScenarioList();
                     }
                 };
                 btSettingList.Add(btOne);
@@ -2519,9 +2514,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         void InitScenarioList()
         {
-            string path = @"Content\Data\Scenario\";
-
-            string file = path + "Scenarios.json";
+            string file = Platform.Current.GetMODFile(@"Content\Data\Scenario\Scenarios.json");
 
             pageIndex = pageIndex1 = 1;
 
@@ -2529,8 +2522,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             btScenarioPlayersList = new List<CheckBox>();
             CurrentScenario = null;
-            ScenarioList = SimpleSerializer.DeserializeJsonFile<List<Scenario>>(file, false, false, false);
+
+            ScenarioList = SimpleSerializer.DeserializeJsonFile<List<Scenario>>(file, false);
             //var str = SimpleSerializer.SerializeJson(ScenarioList, false, true, true);
+
             #region 预处理剧本列表信息
 
             frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);
@@ -2567,9 +2562,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 Platform.Sleep(100);
                             }
 
-                            var scenarioName = String.Format(@"Content\Data\Scenario\{0}.json", CurrentScenario.Name);
+                            var scenarioName = $@"Content\Data\Scenario\{CurrentScenario.Name}.json";
 
-                            scenario = MainGameScreen.LoadScenarioData(scenarioName, true, null);
+                            scenario = MainGameScreen.LoadScenarioData(scenarioName, true);
 
                             var factions = scenario.Factions;
 
@@ -2588,7 +2583,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                     var btP = (CheckBox)sender0;
                                     var id1 = btP.ID;
 
-                                    faction = scenario.Factions.GameObjects.FirstOrDefault(fi => fi.Name == id1) as Faction;
+                                    faction = scenario.Factions.Values.FirstOrDefault(fi => fi.Name == id1);
 
                                     if (Platform.IsMobilePlatForm)
                                     {
@@ -2609,7 +2604,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                         {
                                             var btG = (ButtonTexture)sender1;
 
-                                            var person = faction.Persons.GameObjects.FirstOrDefault(pe => ((Person)pe).Name == btG.ID) as Person;
+                                            var person = faction.Persons.FirstOrDefault(x => x.Name == btG.ID);
 
                                             ScreenLayers.DantiaoLayer.Persons.Add(person);
 
@@ -2640,6 +2635,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         var iDs = CurrentScenario.IDs.Split(',').NullToEmptyList();
                         var names = CurrentScenario.Names.Split(',').NullToEmptyList();
+
+                        // 切换或重新选择剧本时，不能保留上一份势力控件。
+                        // 否则隐藏列表中已经勾选的势力仍会写入 Players。
+                        btScenarioPlayersList = new List<CheckBox>();
+
                         frame_PlayersList = new Frame(new Vector2(0, 151), new Rectangle(0, 0, 1030, 410), null, 1f, FrameScrollbarType.Vertical);
                         frame_PlayersList.FixedBackground = false;
                         frame_PlayersList.CanvasRightPadding = 1030;
@@ -4424,7 +4424,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 if (btnDantiao.Visible)
                 {
-                    CacheManager.DrawString(Session.Current.Font, "单挑", btnDantiao.Position + new Vector2(20, 7), Color.DarkRed, 0f, Vector2.Zero, 1f, SpriteEffects.None, 1f);
+                    const string label = "单挑";
+                    var textBounds = CacheManager.CalculateTextBounds(Session.Current.Font, label, Vector2.Zero, 1f)[0];
+                    float textScale = Math.Min(btnDantiao.Height * 0.5f / textBounds.Height(), btnDantiao.Width * 0.6f / textBounds.Width());
+                    textBounds = CacheManager.CalculateTextBounds(Session.Current.Font, label, Vector2.Zero, textScale)[0];
+                    // Center the visible glyphs, accounting for the font's bearing and baseline.
+                    var textPosition = btnDantiao.Position + new Vector2(
+                        (btnDantiao.Width - textBounds.Width()) / 2f - textBounds.X,
+                        (btnDantiao.Height - textBounds.Height()) / 2f - textBounds.Y);
+                    CacheManager.DrawString(Session.Current.Font, label, textPosition, Color.DarkRed, 0f, Vector2.Zero, textScale, SpriteEffects.None, 1f);
                 }
             }
             else if (MenuType == MenuType.New)

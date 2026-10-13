@@ -1,38 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind380 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind380 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private float rate;
+        troop.RateOfQibingDamage = influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.RateOfQibingDamage = this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.RateOfQibingDamage = troop.BaseRateOfQibingDamage;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.RateOfQibingDamage = troop.BaseRateOfQibingDamage;
     }
 }
-

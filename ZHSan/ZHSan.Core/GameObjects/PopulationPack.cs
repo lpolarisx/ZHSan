@@ -1,21 +1,14 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿namespace GameObjects;
 
-namespace GameObjects
+public class PopulationPack
 {
-    [DataContract]
-    public class PopulationPack
-    {
-        [DataMember]
-        public int Days;
-        [DataMember]
-        public int Population;
+    public int Days;
 
-        public PopulationPack(int days, int population)
-        {
-            this.Days = days;
-            this.Population = population;
-        }
+    public int Population;
+
+    public PopulationPack(int days, int population)
+    {
+        Days = days;
+        Population = population;
     }
 }
-

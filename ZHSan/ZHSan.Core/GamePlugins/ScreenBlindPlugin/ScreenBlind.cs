@@ -1,4 +1,5 @@
-﻿using GameFreeText;
+﻿using GameEnums;
+using GameFreeText;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -94,15 +95,15 @@ namespace ScreenBlindPlugin
 
         internal void Update()
         {
-            if (Session.Current.Scenario.Date.Season == GameSeason.春)
+            if (Session.Current.Scenario.Date.Season == GameSeason.Spring)
             {
                 this.SeasonTexture = this.SpringTexture;
             }
-            else if (Session.Current.Scenario.Date.Season == GameSeason.夏 )
+            else if (Session.Current.Scenario.Date.Season == GameSeason.Summer)
             {
                 this.SeasonTexture = this.SummerTexture;
             }
-            else if (Session.Current.Scenario.Date.Season == GameSeason.秋 )
+            else if (Session.Current.Scenario.Date.Season == GameSeason.Winter)
             {
                 this.SeasonTexture = this.AutumnTexture;
             }
@@ -110,7 +111,9 @@ namespace ScreenBlindPlugin
             {
                 this.SeasonTexture = this.WinterTexture;
             }
+            
             this.DateText.Text = Session.Current.Scenario.Date.ToDateString();
+            this.FactionTechText.Text = string.Empty;
             if (Session.Current.Scenario.CurrentFaction != null)
             {
                 if ((Session.Current.Scenario.CurrentFaction == Session.Current.Scenario.CurrentPlayer) || Session.GlobalVariables.SkyEye)
@@ -151,7 +154,11 @@ namespace ScreenBlindPlugin
 
                     this.FactionText.Text = string.Concat(new object[] { Session.Current.Scenario.CurrentFaction.Name, " • ", Session.Current.Scenario.CurrentFaction.TotalTechniquePoint, });
 
-                    this.FactionTechText.Text = string.Concat(new object[] { Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(Session.Current.Scenario.CurrentFaction.UpgradingTechnique), "•", "余", Session.Current.Scenario.CurrentFaction.UpgradingDaysLeft * Session.Parameters.DayInTurn, "天" });
+                    var techniqueId = Session.Current.Scenario.CurrentFaction.UpgradingTechnique;
+                    if (techniqueId >= 0 && Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(techniqueId, out var technique))
+                    {
+                        FactionTechText.Text = $"{technique.Name}•余{Session.Current.Scenario.CurrentFaction.UpgradingDaysLeft * Session.Parameters.DayInTurn}天";
+                    }
                 }
                 else
                 {

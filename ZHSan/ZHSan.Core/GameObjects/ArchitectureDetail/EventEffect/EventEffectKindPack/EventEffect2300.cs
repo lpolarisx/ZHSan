@@ -1,51 +1,31 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
+using GameObjects.FactionDetail;
+using System.Collections.Generic;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect2300 : EventEffectKind
 {
-
-
-    [DataContract]public class EventEffect2300 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
-        private int increment;
-        private int targetFactionID;
+        var increment = eventEffect.GetIntParam();
 
-        public override void ApplyEffectKind(Faction f, Event e)
-        {
-            GameObjectList d = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(f.ID);
-            Faction f2 = Session.Current.Scenario.Factions.GetGameObject(targetFactionID) as Faction;
-            //GameObjectList c = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(f2.ID);
-            foreach (GameObjects.FactionDetail.DiplomaticRelation i in d)
-            {
-                if ((i.RelationFaction1ID == f.ID && i.RelationFaction2ID == f2.ID) || (i.RelationFaction1ID == f2.ID && i.RelationFaction2ID == f.ID))
-                {
-                    Session.Current.Scenario.ChangeDiplomaticRelation(f.ID, f2.ID, increment);
-                }
-            }
-               
-            //throw new Exception("targetFactionID=" + targetFactionID + "f的ID=" + f.ID);
-        }
+        var factionId = faction.ID;
+        var scenario = Session.Current.Scenario;
 
-        public override void InitializeParameter(string parameter)
+        var otherFactionId = eventEffect.GetIntParam2();
+        var otherFaction = scenario.Factions.GetValueOrDefault(otherFactionId);
+
+        if (otherFaction == null) return;
+
+        var diplomaticRelations = scenario.GetDiplomaticRelationListByFactionID(factionId);
+        foreach (var relation in diplomaticRelations)
         {
-            try
+            if ((relation.RelationFaction1ID == factionId && relation.RelationFaction2ID == otherFactionId) || (relation.RelationFaction1ID == otherFactionId && relation.RelationFaction2ID == factionId))
             {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.targetFactionID = int.Parse(parameter);
-            }
-            catch
-            {
+                scenario.ChangeDiplomaticRelation(factionId, otherFactionId, increment);
             }
         }
     }

@@ -29,18 +29,18 @@ using GameGlobal;
 
 namespace Platforms
 {
-	/// <summary>
+    /// <summary>
     /// 各平台不同的實現
     /// </summary>
-	public class Platform : PlatformBase
+    public class Platform : PlatformBase
     {
-		public static new PlatFormType PlatFormType = PlatFormType.Desktop;
+        public static new PlatFormType PlatFormType = PlatFormType.Desktop;
 
         public static new bool IsMobilePlatForm = false;
 
-		public static string PreferResolution = "1280*720";
+        public static string PreferResolution = "1280*720";
 
-		public new string PreferFullMode = "Window";
+        public new string PreferFullMode = "Window";
 
         public new string Location
         {
@@ -51,65 +51,65 @@ namespace Platforms
         }
 
         public static bool IsActive
-		{
-			get
-			{
-				return MainGame != null ? MainGame.IsActive : false;
-			}
-		}
+        {
+            get
+            {
+                return MainGame != null ? MainGame.IsActive : false;
+            }
+        }
 
-		public new bool IsGuideVisible
-		{
-			get
+        public new bool IsGuideVisible
+        {
+            get
             {
                 return false;
             }
-		}
+        }
 
-		public new bool KeyBoardAvailable = true;
+        public new bool KeyBoardAvailable = true;
 
-		static GraphicsDeviceManager GraphicsDeviceManager = null;
+        static GraphicsDeviceManager GraphicsDeviceManager = null;
 
-		public static GraphicsDevice GraphicsDevice
-		{
-			get
-			{
-				return GraphicsDeviceManager != null ? GraphicsDeviceManager.GraphicsDevice : null;
-			}
-		}
+        public static GraphicsDevice GraphicsDevice
+        {
+            get
+            {
+                return GraphicsDeviceManager != null ? GraphicsDeviceManager.GraphicsDevice : null;
+            }
+        }
 
-		public static void InitGraphicsDeviceManager()
-		{
-			GraphicsDeviceManager = new GraphicsDeviceManager(MainGame);
+        public static void InitGraphicsDeviceManager()
+        {
+            GraphicsDeviceManager = new GraphicsDeviceManager(MainGame);
 
-			GraphicsDeviceManager.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
-		}
+            GraphicsDeviceManager.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+        }
 
-		public static void SetGraphicsWidthHeight(int width, int height)
-		{
-			GraphicsDeviceManager.PreferredBackBufferWidth = width;  //1024;
-			GraphicsDeviceManager.PreferredBackBufferHeight = height; //680;
-		}
+        public static void SetGraphicsWidthHeight(int width, int height)
+        {
+            GraphicsDeviceManager.PreferredBackBufferWidth = width;  //1024;
+            GraphicsDeviceManager.PreferredBackBufferHeight = height; //680;
+        }
 
-		public static void GraphicsApplyChanges()
-		{
-			GraphicsDeviceManager.ApplyChanges();
-		}
+        public static void GraphicsApplyChanges()
+        {
+            GraphicsDeviceManager.ApplyChanges();
+        }
 
-		public override void SetMouseVisible(bool visible)
-		{
+        public override void SetMouseVisible(bool visible)
+        {
             MainGame.IsMouseVisible = visible;
-		}
+        }
 
-		public override void SetWindowAllowUserResizing(bool allow)
-		{
+        public override void SetWindowAllowUserResizing(bool allow)
+        {
             MainGame.Window.AllowUserResizing = true;
-		}
+        }
 
-		public override void SetFullScreen(bool full)
-		{
-			GraphicsDeviceManager.IsFullScreen = full;
-		}
+        public override void SetFullScreen(bool full)
+        {
+            GraphicsDeviceManager.IsFullScreen = full;
+        }
 
         public override string GetDeviceInfo()
         {
@@ -119,6 +119,39 @@ namespace Platforms
         public override string GetSystemInfo()
         {
             return System.Environment.OSVersion.Platform + " " + System.Environment.OSVersion.VersionString;
+        }
+
+        public override string[] GetDirectories(
+    string dir,
+    bool all,
+    bool full)
+        {
+            if (!Directory.Exists(dir))
+                return Array.Empty<string>();
+
+            return Directory.GetDirectories(
+                dir,
+                "*",
+                all
+                    ? SearchOption.AllDirectories
+                    : SearchOption.TopDirectoryOnly);
+        }
+
+        public override string[] GetDirectoriesBasic(
+            string dir,
+            bool all,
+            bool full)
+        {
+            return GetDirectories(dir, all, full);
+        }
+
+        public override string[] GetDirectoriesExpan(
+            string dir,
+            bool all,
+            bool full)
+        {
+            // Desktop 没有 OBB 扩展包目录。
+            return Array.Empty<string>();
         }
 
         #region 加載資源文件
@@ -132,25 +165,25 @@ namespace Platforms
             res = res.Replace("\\", "/");
             //lock (Platform.IoLock)
             //{
-                return File.ReadAllText(res);
+            return File.ReadAllText(res);
             //}
-			//MacOS
-			//string dir = AppDomain.CurrentDomain.BaseDirectory;
-			//return File.ReadAllText(dir + "Content/Resources/" + res);
+            //MacOS
+            //string dir = AppDomain.CurrentDomain.BaseDirectory;
+            //return File.ReadAllText(dir + "Content/Resources/" + res);
         }
-		/// <summary>
-		/// 加載資源文本
-		/// </summary>
-		/// <param name="res"></param>
-		/// <returns></returns>
-		public string[] LoadTexts(string res)
-		{
+        /// <summary>
+        /// 加載資源文本
+        /// </summary>
+        /// <param name="res"></param>
+        /// <returns></returns>
+        public string[] LoadTexts(string res)
+        {
             res = res.Replace("\\", "/");
             //lock (Platform.IoLock)
             //{
-                return File.ReadAllLines(res);
+            return File.ReadAllLines(res);
             //}
-		}
+        }
         /// <summary>
         /// 加載資源文件
         /// </summary>
@@ -197,27 +230,30 @@ namespace Platforms
                 }
                 else
                 {
-
+                    // All packaged textures use Content/... as their logical path.
+                    // Resolve that path at load time so a selected MOD can override
+                    // maps, architecture images, and any other texture resource.
+                    res = GetMODFile(res);
                 }
 
                 //lock (Platform.IoLock)
                 //{
-                    using (var stream = isUser ? LoadUserFileStream(res) : TitleContainer.OpenStream(res))
-                    {
-                        Texture2D tex = Texture2D.FromStream(Platform.GraphicsDevice, stream);
-                        //if (tex != null && Path.GetExtension(res).ToLower() == ".png")
-                        //{
-                        //    try
-                        //    {
-                        //        Season.Current.PreMultiplyAlphas(tex);
-                        //    }
-                        //    catch (Exception ex)
-                        //    {
-                        //        WebTools.TakeWarnMsg("处理透明层级失败:" + res, "PreMultiplyAlphas:" + UserApplicationDataPath + res, ex);
-                        //    }
-                        //}
-                        return tex;
-                    }
+                using (var stream = isUser ? LoadUserFileStream(res) : TitleContainer.OpenStream(res))
+                {
+                    Texture2D tex = Texture2D.FromStream(Platform.GraphicsDevice, stream);
+                    //if (tex != null && Path.GetExtension(res).ToLower() == ".png")
+                    //{
+                    //    try
+                    //    {
+                    //        Season.Current.PreMultiplyAlphas(tex);
+                    //    }
+                    //    catch (Exception ex)
+                    //    {
+                    //        WebTools.TakeWarnMsg("处理透明层级失败:" + res, "PreMultiplyAlphas:" + UserApplicationDataPath + res, ex);
+                    //    }
+                    //}
+                    return tex;
+                }
                 //}
             }
             catch (Exception ex)
@@ -237,12 +273,37 @@ namespace Platforms
 
         public override string[] GetFiles(string dir, bool all)
         {
-            return Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
+            if (!Directory.Exists(dir))
+            {
+                return Array.Empty<string>();
+            }
+
+            return Directory.GetFiles(dir, "*.*", all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
         }
 
+        public override string[] GetFilesBasic(string dir, bool all = false)
+        {
+            if (!Directory.Exists(dir))
+            {
+                return Array.Empty<string>();
+            }
+
+            return Directory.GetFiles(
+                dir,
+                "*.*",
+                all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+        }
+
+        /// <summary>
+        /// 获取路径下的文件夹名称列表
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <returns></returns>
         public string[] GetDirectoryNames(string dir)
         {
-            return Directory.GetDirectories(dir);
+            if (!Directory.Exists(dir)) return Array.Empty<string>();
+
+            return Directory.GetDirectories(dir).Select(x => Path.GetFileName(x)).ToArray();
         }
 
         public override string ReadAllText(string file)
@@ -329,7 +390,12 @@ namespace Platforms
         {
             get
             {
-                string path = System.Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"/WorldOfTheThreeKingdoms/";
+                // Keep macOS saves local even when the system Documents location
+                // is redirected to iCloud or changes during a running session.
+                string documents = OperatingSystem.IsMacOS()
+                    ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents")
+                    : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string path = Path.Combine(documents, "WorldOfTheThreeKingdoms") + Path.DirectorySeparatorChar;
                 lock (Platform.IoLock)
                 {
                     if (!Directory.Exists(path))
@@ -341,11 +407,18 @@ namespace Platforms
             }
         }
 
+        public string GetUserFilePath(string path, bool fullPathProvided = false)
+        {
+            // Legacy callers use Windows separators even on macOS and Linux.
+            path = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+            return fullPathProvided ? path : Path.Combine(UserApplicationDataPath, path);
+        }
+
         public bool UserDirectoryExist(string path)
         {
             try
             {
-                return DirectoryExists(UserApplicationDataPath + path);
+                return DirectoryExists(GetUserFilePath(path));
             }
             catch (Exception ex)
             {
@@ -358,7 +431,7 @@ namespace Platforms
         {
             try
             {
-                DirectoryCreateDirectory(UserApplicationDataPath + path);
+                DirectoryCreateDirectory(GetUserFilePath(path));
             }
             catch (Exception ex)
             {
@@ -405,11 +478,11 @@ namespace Platforms
                 res = res.Replace("\\", "/");
                 lock (Platform.IoLock)
                 {
-                    if (File.Exists(UserApplicationDataPath + res))
+                    if (File.Exists(GetUserFilePath(res)))
                     {
                         using (var dest = new MemoryStream())
                         {
-                            using (Stream stream = File.Open(UserApplicationDataPath + res, FileMode.Open))
+                            using (Stream stream = File.Open(GetUserFilePath(res), FileMode.Open))
                             {
                                 using (var streamReader = new StreamReader(stream))
                                 {
@@ -441,11 +514,11 @@ namespace Platforms
             {
                 lock (Platform.IoLock)
                 {
-                    if (File.Exists(UserApplicationDataPath + res))
+                    if (File.Exists(GetUserFilePath(res)))
                     {
                         using (var dest = new MemoryStream())
                         {
-                            using (Stream stream = File.Open(UserApplicationDataPath + res, FileMode.Open))
+                            using (Stream stream = File.Open(GetUserFilePath(res), FileMode.Open))
                             {
                                 using (var streamReader = new StreamReader(stream))
                                 {
@@ -485,7 +558,7 @@ namespace Platforms
                 {
                     using (var dest = new MemoryStream())
                     {
-                        using (Stream stream = File.Open(UserApplicationDataPath + res, FileMode.Open))
+                        using (Stream stream = File.Open(GetUserFilePath(res), FileMode.Open))
                         {
                             stream.CopyTo(dest);
                             return dest.ToArray();
@@ -537,9 +610,9 @@ namespace Platforms
         {
             lock (Platform.IoLock)
             {
-                if (write || File.Exists(UserApplicationDataPath + res))
+                if (write || File.Exists(GetUserFilePath(res)))
                 {
-                    return File.Open(UserApplicationDataPath + res, write ? FileMode.OpenOrCreate : FileMode.Open);
+                    return File.Open(GetUserFilePath(res), write ? FileMode.OpenOrCreate : FileMode.Open);
                 }
                 else
                 {
@@ -573,27 +646,23 @@ namespace Platforms
             }
         }
 
+        /// <summary>
+        /// 判断用户文件是否存在
+        /// </summary>
+        /// <param name="res"></param>
+        /// <returns></returns>
         public bool UserFileExist(string res)
         {
-            bool exis = false;
-            if (!String.IsNullOrEmpty(res.Trim()))
+            if (string.IsNullOrWhiteSpace(res)) return false;
+
+            var path = GetUserFilePath(res.Trim());
+
+            lock (Platform.IoLock)
             {
-                try
-                {
-                    lock (Platform.IoLock)
-                    {
-                        exis = File.Exists(UserApplicationDataPath + res.Trim());
-                    }
-                }
-                catch
-                {
-
-                }
+                return File.Exists(path);
             }
-
-            return exis;
         }
-        
+
         /// <summary>
         /// 判斷用戶文件是否存在
         /// </summary>
@@ -617,7 +686,7 @@ namespace Platforms
                         {
                             lock (Platform.IoLock)
                             {
-                                exis = File.Exists(UserApplicationDataPath + re.Trim());
+                                exis = File.Exists(GetUserFilePath(re.Trim()));
                             }
                         }
                         catch
@@ -635,6 +704,7 @@ namespace Platforms
                 return null;
             }
         }
+
         /// <summary>
         /// 保存用戶文本
         /// </summary>
@@ -644,15 +714,17 @@ namespace Platforms
         {
             try
             {
-                DelUserFiles(new string[] { res }, null);
+                string path = GetUserFilePath(res, fullPathProvided);
                 lock (Platform.IoLock)
                 {
-                    File.WriteAllText(UserApplicationDataPath + res, content);
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    File.WriteAllText(path, content);
                 }
             }
             catch (Exception ex)
             {
                 WebTools.TakeWarnMsg("保存用户文本失败:" + res, "SaveUserFile:" + UserApplicationDataPath + res, ex);
+                throw;
             }
         }
         ///// <summary>
@@ -700,17 +772,11 @@ namespace Platforms
         {
             try
             {
-                DelUserFiles(new string[] { res }, null);
-                //File.WriteAllBytes(UserApplicationDataPath + res, bytes);
+                string path = GetUserFilePath(res);
                 lock (Platform.IoLock)
                 {
-                    using (var isolatedFileStream = File.OpenWrite(UserApplicationDataPath + res))
-                    {
-                        using (var fileWriter = new BinaryWriter(isolatedFileStream))
-                        {
-                            fileWriter.Write(bytes);
-                        }
-                    }
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    File.WriteAllBytes(path, bytes);
                 }
                 if (action != null)
                 {
@@ -737,7 +803,7 @@ namespace Platforms
                     {
                         lock (Platform.IoLock)
                         {
-                            File.Delete(UserApplicationDataPath + file.Trim());
+                            File.Delete(GetUserFilePath(file.Trim()));
                         }
                     }
                     catch (Exception ex)
@@ -757,7 +823,7 @@ namespace Platforms
         /// <returns></returns>
         protected IsolatedStorageFile GetIsolatedStorageFile()
         {
-			return null;
+            return null;
         }
 
         #endregion
@@ -767,17 +833,17 @@ namespace Platforms
             Thread.Sleep(time);
         }
 
-		public override void OpenMarket(string key)
+        public override void OpenMarket(string key)
         {
-			 OpenLink(WebTools.WebSite);
+            OpenLink(WebTools.WebSite);
         }
 
-		public override void OpenReview(string key)
+        public override void OpenReview(string key)
         {
-			OpenLink(WebTools.WebSite);
+            OpenLink(WebTools.WebSite);
         }
 
-		public override byte[] ScreenShot(GraphicsDevice graphicsDevice, RenderTarget2D screenshot)
+        public override byte[] ScreenShot(GraphicsDevice graphicsDevice, RenderTarget2D screenshot)
         {
             graphicsDevice.SetRenderTarget(null);
             byte[] shot = null;
@@ -790,17 +856,17 @@ namespace Platforms
             //screenshot = new RenderTarget2D(graphicsDevice, 800, 480, false, SurfaceFormat.Color, DepthFormat.None);
             //screenshot = new RenderTarget2D(Season.GraphicsDevice, Season.GraphicsDevice.Viewport.Width, Season.GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None);
             return shot;
-//            return null;
-//            graphics.GraphicsDevice.SetRenderTarget(null);
-//            byte[] shot = null;
-//            using (MemoryStream ms = new MemoryStream())
-//            {
-//                screenshot.SaveAsJpeg(ms, screenshot.Width, screenshot.Height);
-//                screenshot.Dispose();
-//                shot = ms.ToArray(); //.GetBuffer();
-//                screenshot = new RenderTarget2D(graphics.GraphicsDevice, 800, 480, false, SurfaceFormat.Color, DepthFormat.None);
-//            }
-//            return shot;
+            //            return null;
+            //            graphics.GraphicsDevice.SetRenderTarget(null);
+            //            byte[] shot = null;
+            //            using (MemoryStream ms = new MemoryStream())
+            //            {
+            //                screenshot.SaveAsJpeg(ms, screenshot.Width, screenshot.Height);
+            //                screenshot.Dispose();
+            //                shot = ms.ToArray(); //.GetBuffer();
+            //                screenshot = new RenderTarget2D(graphics.GraphicsDevice, 800, 480, false, SurfaceFormat.Color, DepthFormat.None);
+            //            }
+            //            return shot;
         }
 
         /// <summary>
@@ -902,36 +968,36 @@ namespace Platforms
         }
 
         public void OpenLink(string link)
-		{
-			try
-			{
+        {
+            try
+            {
                 //"IExplore.exe " + 
                 ProcessStartInfo startInfo = new ProcessStartInfo(link);
                 //startInfo.WindowStyle = ProcessWindowStyle.Minimized;
                 startInfo.UseShellExecute = true;
                 Process.Start(startInfo);
             }
-			catch (Exception ex)
-			{
+            catch (Exception ex)
+            {
                 WebTools.TakeWarnMsg("ProcessStartInfo打開IE出錯：", "", ex);
-			}
-		}
+            }
+        }
 
-		public override void Exit()
-		{
-			MainGame.Exit ();
-		}
+        public override void Exit()
+        {
+            MainGame.Exit();
+        }
 
-		public override void ShowKeyBoard(PlayerIndex index, string name, string title, string desc, AsyncCallback CallbackFunction)
-		{			
-			//Guide.BeginShowKeyboardInput(index, name, title, desc, CallbackFunction, null);
-		}
+        public override void ShowKeyBoard(PlayerIndex index, string name, string title, string desc, AsyncCallback CallbackFunction)
+        {
+            //Guide.BeginShowKeyboardInput(index, name, title, desc, CallbackFunction, null);
+        }
 
-		public override string EndShowKeyBoard(IAsyncResult ar)
-		{
-			//return Guide.EndShowKeyboardInput(ar);
-			return "";
-		}
+        public override string EndShowKeyBoard(IAsyncResult ar)
+        {
+            //return Guide.EndShowKeyboardInput(ar);
+            return "";
+        }
 
         public static string picStatus = "";
 
@@ -1030,23 +1096,23 @@ namespace Platforms
             }
             return newSize;
         }
-/*
-        static byte[] SavePngFromBitmap(Bitmap bitmap)
-        {
-            var imageStream = new MemoryStream();
-            using (imageStream)
-            {
-                // Save bitmap in some format.
-                bitmap.Save(imageStream, ImageFormat.Png);
-                imageStream.Position = 0;
+        /*
+                static byte[] SavePngFromBitmap(Bitmap bitmap)
+                {
+                    var imageStream = new MemoryStream();
+                    using (imageStream)
+                    {
+                        // Save bitmap in some format.
+                        bitmap.Save(imageStream, ImageFormat.Png);
+                        imageStream.Position = 0;
 
-                // Do something with the memory stream. For example:
-                byte[] imageBytes = imageStream.ToArray();
-                // Save bytes to the database.
-                return imageBytes;
-            }
-        }
-*/
+                        // Do something with the memory stream. For example:
+                        byte[] imageBytes = imageStream.ToArray();
+                        // Save bytes to the database.
+                        return imageBytes;
+                    }
+                }
+        */
         public override void MirrorPicture(byte[] image, PlatformTask action)
         {
             /*
@@ -1275,7 +1341,7 @@ namespace Platforms
     public class PlatformTask
     {
         Thread thread;
-        public bool IsStop = false;
+        public volatile bool IsStop = false;
         public string[] ParamArray = null;
         public string[] ParamArrayResult = null;
         public byte[] ParamArrayResultBytes = null;
@@ -1292,19 +1358,25 @@ namespace Platforms
                 {
                     OnStartFinish.Invoke(null);
                 }
-            });
+            }) { IsBackground = true };
         }
         public bool IsAlive
         {
             get
             {
-                return thread != null && thread.ThreadState == System.Threading.ThreadState.Running;
+                return thread != null && thread.IsAlive;
             }
         }
 
         public void Abort()
         {
             IsStop = true;
+        }
+
+        public bool Join(int millisecondsTimeout)
+        {
+            return !thread.IsAlive ||
+                (thread != Thread.CurrentThread && thread.Join(millisecondsTimeout));
         }
 
         public void Start()
@@ -1315,27 +1387,27 @@ namespace Platforms
 
     public class PlatformTask2
     {
-		//Action act;
-		//public SeasonTask(Action action)
-		//{
-		//    act = action;
-		//}
-		//public void Start()
-		//{
-		//	act.Invoke();
-		//	//act.BeginInvoke(null, null);
-		//}
+        //Action act;
+        //public SeasonTask(Action action)
+        //{
+        //    act = action;
+        //}
+        //public void Start()
+        //{
+        //	act.Invoke();
+        //	//act.BeginInvoke(null, null);
+        //}
 
-		Thread thread;
-		public PlatformTask2(Action action)
-		{
-			thread = new Thread(() => { action.Invoke(); });
-		}
-		public void Start()
-		{
-			thread.Start();
-		}
-	}
+        Thread thread;
+        public PlatformTask2(Action action)
+        {
+            thread = new Thread(() => { action.Invoke(); });
+        }
+        public void Start()
+        {
+            thread.Start();
+        }
+    }
 
 
 }

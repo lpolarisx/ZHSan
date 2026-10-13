@@ -1,30 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
+using GameObjects.PersonDetail;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind4210 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind4210 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int number = 0;
+        var arch = person.LocationArchitecture;
 
-        public override bool CheckConditionKind(Person person)
-        {
-            return person.LocationArchitecture != null && person.LocationArchitecture.ID == this.number && person.Status == GameObjects.PersonDetail.PersonStatus.Captive;
-        }
+        var result = arch != null && arch.ID == condition.GetIntParam() && person.Status == PersonStatus.Captive;
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return result;
     }
 }
-

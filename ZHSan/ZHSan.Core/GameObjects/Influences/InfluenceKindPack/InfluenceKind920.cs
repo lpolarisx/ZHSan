@@ -1,13 +1,7 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
-
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
-{
-
-    /*
+namespace GameObjects.Influences.InfluenceKindPack;
+/*
     [DataContract]public class InfluenceKind920 : InfluenceKind
     {
         private int number = -1;
@@ -40,4 +34,3 @@ using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKin
             return ((person.BelongedFaction!= null) && (person.LocationTroop.Army != null) && (person.LocationTroop.Army.KindID == this.militaryKindID));
         }
     }*/
-}

@@ -1,36 +1,28 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind330 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind330 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int combatMethodID;
+        var stuntId = influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(stuntId, out var stunt))
         {
-            troop.Stunts.AddStunt(Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(this.combatMethodID));
+            troop.AddStunt(stunt);
         }
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.combatMethodID = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        var stuntId = influence.GetIntParam();
 
-        public override void PurifyInfluenceKind(Troop troop)
+        if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(stuntId, out var stunt))
         {
-            troop.Stunts.RemoveStunt(Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(this.combatMethodID));
+            troop.RemoveStunt(stunt);
         }
     }
 }
-

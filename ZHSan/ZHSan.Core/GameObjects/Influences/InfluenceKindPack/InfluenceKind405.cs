@@ -1,46 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind405 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind405 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int decrement;
+        troop.ChanceDecrementOfCriticalStrike += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.ChanceDecrementOfCriticalStrike += this.decrement;
-        }
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.ChanceDecrementOfCriticalStrike += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture a)
-        {
-            a.ChanceDecrementOfCriticalStrike += this.decrement;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.ChanceDecrementOfCriticalStrike -= influence.GetIntParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.decrement = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.ChanceDecrementOfCriticalStrike -= this.decrement;
-        }
-
-        public override void PurifyInfluenceKind(Architecture a)
-        {
-            a.ChanceDecrementOfCriticalStrike -= this.decrement;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.ChanceDecrementOfCriticalStrike -= influence.GetIntParam();
     }
 }
-

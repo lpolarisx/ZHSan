@@ -10,6 +10,8 @@ using Microsoft.Xna.Framework.Audio;
 using System.Globalization;
 using GameManager;
 using Tools;
+using Serilog.Core;
+using Serilog;
 
 namespace Platforms
 {
@@ -27,6 +29,8 @@ namespace Platforms
 
     public abstract class PlatformBase
     {
+        private ILogger logger = Log.ForContext<PlatformBase>();
+
         public static string Product = "WorldOfTheThreeKingdoms";
 
         public static PlatFormType PlatFormType;
@@ -432,11 +436,9 @@ namespace Platforms
                 //string directory = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
 
             }
-#pragma warning disable CS0168 // The variable 'ex' is declared but never used
             catch (Exception ex)
-#pragma warning restore CS0168 // The variable 'ex' is declared but never used
             {
-                //监控此
+                logger.Error(ex, "播放背景音乐失败");
             }
         }
         List<string> songs2 = new List<string>();
@@ -450,11 +452,13 @@ namespace Platforms
                 songslist = new List<Song>();
                 foreach (var item in songs)
                 {
+                    if (Platform.PlatFormType == PlatFormType.Desktop && !item.EndsWith(".ogg")) continue;
+
                     res = item;
-                    if ((!item.EndsWith(".mp3") && !item.EndsWith(".wav")))
-                    {
-                        continue;
-                    }
+                    // if (!item.EndsWith(".mp3") && !item.EndsWith(".wav"))
+                    // {
+                    //     continue;
+                    // }
                     if (Platform.PlatFormType == PlatFormType.Android)
                     {
                         if (res.Contains("\\"))

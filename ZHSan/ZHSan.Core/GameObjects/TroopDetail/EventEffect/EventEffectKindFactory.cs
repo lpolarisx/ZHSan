@@ -1,22 +1,18 @@
 ﻿using System;
 
+namespace GameObjects.TroopDetail.EventEffect;
 
-namespace GameObjects.TroopDetail.EventEffect
+public class EventEffectKindFactory
 {
-
-    public class EventEffectKindFactory
+    public static EventEffectKind CreateEventEffectKindByID(int id)
     {
-        public static EventEffectKind CreateEventEffectKindByID(int id)
+        try
         {
-            try
-            {
-                return (Activator.CreateInstance(Type.GetType("GameObjects.TroopDetail.EventEffect.EventEffectKindPack.EventEffectKind" + id.ToString())) as EventEffectKind);
-            }
-            catch
-            {
-                return null;
-            }
+            return Activator.CreateInstance(Type.GetType("GameObjects.TroopDetail.EventEffect.EventEffectKindPack.EventEffectKind" + id.ToString())) as EventEffectKind;
+        }
+        catch
+        {
+            return null;
         }
     }
 }
-

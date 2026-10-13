@@ -14,6 +14,7 @@ using GameObjects.ArchitectureDetail;
 using Platforms;
 using GameManager;
 using Tools;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.Resources
 {
@@ -69,7 +70,7 @@ namespace WorldOfTheThreeKingdoms.Resources
             }
             try
             {
-                foreach (TerrainDetail detail in Session.Current.Scenario.GameCommonData.AllTerrainDetails.TerrainDetails.Values)
+                foreach (var detail in Session.Current.Scenario.GameCommonData.AllTerrainDetails.Values)
                 {
                     detail.Textures = new TerrainTextures();
                     str = "Content/Textures/Resources/Terrain/" + detail.ID.ToString() + "/";
@@ -164,7 +165,7 @@ namespace WorldOfTheThreeKingdoms.Resources
             //}
             try
             {
-                foreach (MilitaryKind kind2 in Session.Current.Scenario.GameCommonData.AllMilitaryKinds.MilitaryKinds.Values)
+                foreach (var kind2 in Session.Current.Scenario.GameCommonData.AllMilitaryKinds.Values)
                 {
                     str = "Content/Textures/Resources/Troop/" + kind2.ID.ToString() + "/";
 
@@ -269,7 +270,7 @@ namespace WorldOfTheThreeKingdoms.Resources
             }
             //try
             //{
-                foreach (Animation animation in Session.Current.Scenario.GameCommonData.AllTileAnimations.Animations.Values)
+                foreach (var animation in Session.Current.Scenario.GameCommonData.AllTileAnimations.Values)
                 {
                     //animation.Device = device;
                     animation.TextureFileName = "Content/Textures/Resources/Effects/TileEffect/" + animation.Name + ".png";
@@ -349,7 +350,9 @@ namespace WorldOfTheThreeKingdoms.Resources
             string[] filePaths = Platform.Current.GetMODFiles("Content/Textures/Resources/Architecture/", false).NullToEmptyList().Where(fi => fi.EndsWith(".png")).NullToEmptyArray();
             foreach (String s in filePaths)
             {
+                // string fileName = s.Substring(s.LastIndexOf('/') + 1, s.LastIndexOf('.') - s.LastIndexOf('/') - 1);
                 string fileName = s.Substring(s.LastIndexOf('/') + 1, s.LastIndexOf('.') - s.LastIndexOf('/') - 1);
+
                 if (fileName.IndexOf('-') < 0)
                 {
                     continue;

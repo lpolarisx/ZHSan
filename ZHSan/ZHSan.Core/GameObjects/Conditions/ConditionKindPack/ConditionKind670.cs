@@ -1,34 +1,13 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using GameGlobal;
-using System;
-
-
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
 using GameManager;
 
-namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+public class ConditionKind670 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind670 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int number = 0;
-
-        public override bool CheckConditionKind(Person person)
-        {
-            return (person.Age < this.number || !((bool)Session.GlobalVariables.PersonNaturalDeath));
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return person.Age < condition.GetIntParam() || !Session.GlobalVariables.PersonNaturalDeath.Value;
     }
 }
-

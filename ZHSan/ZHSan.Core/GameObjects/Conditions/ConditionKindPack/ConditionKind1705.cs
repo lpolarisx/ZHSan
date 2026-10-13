@@ -1,30 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind1705 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1705 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        private int val;
-
-        public override bool CheckConditionKind(Troop t)
-        {
-            return t.Tiredness < val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return troop.Tiredness < condition.GetIntParam();
     }
 }
-

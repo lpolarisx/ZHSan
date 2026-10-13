@@ -1,29 +1,12 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect410 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect410 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int type;
-
-        public override void ApplyEffectKind(Person person, Event e)
-        {
-            person.Braveness += type;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        person.Braveness += eventEffect.GetIntParam();
     }
 }
-

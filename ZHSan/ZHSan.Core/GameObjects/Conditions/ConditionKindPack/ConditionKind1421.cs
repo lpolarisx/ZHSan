@@ -1,18 +1,15 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+public class ConditionKind1421 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1421 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        public override bool CheckConditionKind(Troop troop)
-        {
-            Architecture architectureByPositionNoCheck = Session.Current.Scenario.GetArchitectureByPositionNoCheck(troop.Position);
-            return ((architectureByPositionNoCheck == null) || !troop.IsFriendly(architectureByPositionNoCheck.BelongedFaction));
-        }
+        var arch = Session.Current.Scenario.GetArchitectureByPositionNoCheck(troop.Position);
+        
+        return arch == null || !troop.IsFriendly(arch.BelongedFaction);
     }
 }
-

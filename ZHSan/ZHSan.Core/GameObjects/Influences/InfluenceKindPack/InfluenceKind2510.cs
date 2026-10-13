@@ -1,47 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2510 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2510 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int rate = 0;
-        private int type = 0;
+        faction.AntiCriticalOfMillitaryType[influence.GetIntParam()] += influence.GetIntParam2();
+    }
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.AntiCriticalOfMillitaryType[this.type] += this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.rate = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            faction.AntiCriticalOfMillitaryType[this.type] -= this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.AntiCriticalOfMillitaryType[influence.GetIntParam()] -= influence.GetIntParam2();
     }
 }
-

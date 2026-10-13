@@ -1,142 +1,148 @@
-﻿using GameManager;
-using GameObjects;
+﻿using GameDatas;
+using GameManager;
 using System;
-using System.Runtime.Serialization;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace GameObjects
+namespace GameObjects;
+
+public class YearTableEntry : GameObject
 {
-    [DataContract]
-    public class YearTableEntry : GameObject
-	{
-        private GameDate date;
-        private string content;
-        private FactionList factions;
-        private bool isGloballyKnown;
-        
-        [DataMember]
-        public GameDate Date
-        {
-            get
-            {
-                return date;
-            }
-            set
-            {
-                date = value;
-            }
-        }
+    private const char NameSeparator = '•';
 
-        [DataMember]
-        public string Content
-        {
-            get
-            {
-                return content;
-            }
-            set
-            {
-                content = value;
-            }
-        }
+    public GameDate Date { get; set; }
 
-        [DataMember]
-        public string FactionsString { get; set; }
+    public string Content { get; set; }
 
-        public FactionList Factions
+    public string FactionsString { get; set; }
+
+    public string FactionNamesString { get; set; }
+
+    public bool IsGloballyKnown { get; set; }
+
+    public YearTableEntry(YearTableConfig config)
+    {
+        ID = config.Id;
+        Date = new GameDate(config.Date);
+        Content = config.Content;
+        FactionsString = config.FactionsString ?? "";
+        FactionNamesString = config.FactionNamesString;
+        IsGloballyKnown = config.IsGloballyKnown;
+    }
+
+    public YearTableConfig ToConfig()
+    {
+        return new YearTableConfig
         {
-            get
+            Id = ID,
+            Date = Date.ToConfig(),
+            Content = Content,
+            FactionsString = FactionsString,
+            FactionNamesString = FactionNamesString,
+            IsGloballyKnown = IsGloballyKnown,
+        };
+    }
+
+    private List<Faction> factions;
+
+    /// <summary>
+    /// 仅包含现存势力；已灭亡势力的名称通过FactionName1~5仍可取得
+    /// </summary>
+    public List<Faction> Factions
+    {
+        get
+        {
+            if (factions == null)
             {
-                if (factions == null)
+                var allFactions = Session.Current.Scenario.Factions;
+                factions = new List<Faction>();
+                foreach (int id in GetFactionIds())
                 {
-                    factions = new FactionList();
-                    string[] ids = FactionsString.Split(' ');
-                    foreach (string id in ids)
+                    if (allFactions.TryGetValue(id, out var faction) && !factions.Contains(faction))
                     {
-                        int iid;
-                        if (int.TryParse(id, out iid))
-                        {
-                            factions.Add(Session.Current.Scenario.Factions.GetGameObject(iid));
-                        }
+                        factions.Add(faction);
                     }
                 }
-                return factions;
             }
-            set
-            {
-                factions = value;
-            }
+
+            return factions;
+        }
+        set
+        {
+            factions = value;
+            FactionsString = null;
+        }
+    }
+
+    public override string ToString() => Content;
+
+    public string FactionName1 => GetFactionName(0);
+
+    public string FactionName2 => GetFactionName(1);
+
+    public string FactionName3 => GetFactionName(2);
+
+    public string FactionName4 => GetFactionName(3);
+
+    public string FactionName5 => GetFactionName(4);
+
+    /// <summary>
+    /// 存档前刷新势力ID与名称，已灭亡的势力保留ID和灭亡前的名称
+    /// </summary>
+    public void RefreshFactionStrings()
+    {
+        var ids = GetFactionIds();
+        var names = new List<string>();
+        for (int i = 0; i < ids.Count; i++)
+        {
+            names.Add(GetFactionName(i));
         }
 
-        public String FactionName1
+        FactionsString = string.Join(" ", ids);
+        FactionNamesString = string.Join(NameSeparator, names);
+    }
+
+    // 本局新增的条目没有FactionsString，以势力对象为准；读档得到的条目以FactionsString为准（其中可能有已灭亡的势力）
+    private List<int> GetFactionIds()
+    {
+        if (FactionsString == null)
         {
-            get
-            {
-                if (factions.Count < 1 || factions[0] == null) return "";
-                return factions[0].Name;
-            }
+            return factions == null ? new List<int>() : factions.Select(faction => faction.ID).ToList();
         }
 
-        public String FactionName2
+        var ids = new List<int>();
+        foreach (var idString in FactionsString.Split((char[])null, StringSplitOptions.RemoveEmptyEntries))
         {
-            get
+            if (int.TryParse(idString, out var id))
             {
-                if (factions.Count < 2 || factions[1] == null) return "";
-                return factions[1].Name;
+                ids.Add(id);
             }
         }
+        return ids;
+    }
 
-        public String FactionName3
-        {
-            get
-            {
-                if (factions.Count < 3) return "";
-                return factions[2].Name;
-            }
-        }
+    private string GetFactionName(int index)
+    {
+        var ids = GetFactionIds();
+        if (index >= ids.Count) return "";
 
-        public String FactionName4
-        {
-            get
-            {
-                if (factions.Count < 4) return "";
-                return factions[3].Name;
-            }
-        }
+        int id = ids[index];
+        if (Session.Current.Scenario.Factions.TryGetValue(id, out var faction)) return faction.Name;
 
-        public String FactionName5
-        {
-            get
-            {
-                if (factions.Count < 5) return "";
-                return factions[4].Name;
-            }
-        }
+        // 势力已灭亡：本局内灭亡的仍能从对象上取到名称，否则用存档里记录的名称
+        var destroyed = factions?.FirstOrDefault(f => f.ID == id);
+        if (destroyed != null) return destroyed.Name;
 
-        [DataMember]
-        public bool IsGloballyKnown
-        {
-            get
-            {
-                return isGloballyKnown;
-            }
-            set
-            {
-                isGloballyKnown = value;
-            }
-        }
+        var savedNames = (FactionNamesString ?? "").Split(NameSeparator);
+        return index < savedNames.Length ? savedNames[index] : "";
+    }
 
-        public YearTableEntry(int id, GameDate date, FactionList faction, string content, bool isGloballyKnown)
-        {
-            this.ID = id;
-            this.date = new GameDate(date);
-            this.content = content;
-            this.factions = faction;
-            this.isGloballyKnown = isGloballyKnown;
-        }
-
-        public override string ToString()
-        {
-            return this.content;
-        }
-	}
+    public YearTableEntry(int id, GameDate date, List<Faction> factions, string content, bool isGloballyKnown)
+    {
+        ID = id;
+        Date = new GameDate(date);
+        Content = content;
+        this.factions = factions;
+        IsGloballyKnown = isGloballyKnown;
+    }
 }

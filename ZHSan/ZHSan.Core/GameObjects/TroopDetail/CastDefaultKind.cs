@@ -1,16 +1,14 @@
-﻿using GameObjects;
-using System;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using GameDatas;
 
-namespace GameObjects.TroopDetail
+namespace GameObjects.TroopDetail;
+
+[DataContract]
+public class CastDefaultKind : GameObject
 {
-    [DataContract]
-    public class CastDefaultKind : GameObject
+    public CastDefaultKind(CastDefaultKindConfig config)
     {
-        public void Apply(Troop troop)
-        {
-            troop.CastDefaultKind = (TroopCastDefaultKind) base.ID;
-        }
+        ID = config.Id;
+        Name = config.Name;
     }
 }
-

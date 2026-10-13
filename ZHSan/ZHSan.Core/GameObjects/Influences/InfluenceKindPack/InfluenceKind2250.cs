@@ -1,89 +1,57 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2250 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2250 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private float rate = 0f;
-        private int type = 0;
+        var type = influence.GetIntParam();
+        var rate = influence.GetFloatParam2();
 
-        public override void ApplyInfluenceKind(Faction faction)
+        switch (type)
         {
-            switch (this.type)
-            {
-                case 0:
-                    faction.DefenceRateOfBubing += this.rate;
-                    break;
-
-                case 1:
-                    faction.DefenceRateOfNubing += this.rate;
-                    break;
-
-                case 2:
-                    faction.DefenceRateOfQibing += this.rate;
-                    break;
-
-                case 3:
-                    faction.DefenceRateOfShuijun += this.rate;
-                    break;
-
-                case 4:
-                    faction.DefenceRateOfQixie += this.rate;
-                    break;
-            }
+            case 0:
+                faction.DefenceRateOfBubing += rate;
+                break;
+            case 1:
+                faction.DefenceRateOfNubing += rate;
+                break;
+            case 2:
+                faction.DefenceRateOfQibing += rate;
+                break;
+            case 3:
+                faction.DefenceRateOfShuijun += rate;
+                break;
+            case 4:
+                faction.DefenceRateOfQixie += rate;
+                break;
         }
+    }
 
-        public override void InitializeParameter(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        var type = influence.GetIntParam();
+        var rate = influence.GetFloatParam2();
+
+        switch (type)
         {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            switch (this.type)
-            {
-                case 0:
-                    faction.DefenceRateOfBubing -= this.rate;
-                    break;
-
-                case 1:
-                    faction.DefenceRateOfNubing -= this.rate;
-                    break;
-
-                case 2:
-                    faction.DefenceRateOfQibing -= this.rate;
-                    break;
-
-                case 3:
-                    faction.DefenceRateOfShuijun -= this.rate;
-                    break;
-
-                case 4:
-                    faction.DefenceRateOfQixie -= this.rate;
-                    break;
-            }
+            case 0:
+                faction.DefenceRateOfBubing -= rate;
+                break;
+            case 1:
+                faction.DefenceRateOfNubing -= rate;
+                break;
+            case 2:
+                faction.DefenceRateOfQibing -= rate;
+                break;
+            case 3:
+                faction.DefenceRateOfShuijun -= rate;
+                break;
+            case 4:
+                faction.DefenceRateOfQixie -= rate;
+                break;
         }
     }
 }
-

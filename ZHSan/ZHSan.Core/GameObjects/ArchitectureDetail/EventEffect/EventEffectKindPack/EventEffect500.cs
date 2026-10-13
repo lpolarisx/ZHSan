@@ -1,35 +1,24 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect500 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect500 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int type;
+        int treasureId = eventEffect.GetIntParam();
+        var treasure = Session.Current.Scenario.Treasures.GetValueOrDefault(treasureId);
 
-        public override void ApplyEffectKind(Person person, Event e)
+        if (treasure == null) return;
+
+        if (treasure.BelongedPerson != null)
         {
-            Treasure t = Session.Current.Scenario.Treasures.GetGameObject(type) as Treasure;
-            if (t.BelongedPerson != null)
-            {
-                t.BelongedPerson.LoseTreasure(t);
-            }
-            person.ReceiveTreasure(t);
+            treasure.BelongedPerson.LoseTreasure(treasure);
         }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        person.ReceiveTreasure(treasure);
     }
 }
-

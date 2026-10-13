@@ -1,53 +1,31 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3270 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3270 : InfluenceKind
+    public override void DoWork(Influence influence, Architecture arch)
     {
-        private int kind = 0;
-        private float rate = 0f;
+        var kindId = influence.GetIntParam();
+        var rate = influence.GetFloatParam2();
 
-        public override void DoWork(Architecture architecture)
+        foreach (Military military in arch.Militaries)
         {
-            foreach (Military military in architecture.Militaries)
+            if (military.Kind.ID == kindId && military.InjuryQuantity == 0)
             {
-                if ((military.Kind.ID == this.kind) && (military.InjuryQuantity == 0))
-                {
-                    architecture.RecruitmentMilitary(military, this.rate);
-                }
+                arch.RecruitmentMilitary(military, rate);
             }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.kind = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return (a.FrontLine ? 1 : 0.001) * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1) * (this.rate * 10);
         }
     }
-}
 
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var frontLineFirst = arch.FrontLine ? 1 : 0.001;
+        var frontLineSecond = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1;
+
+        return frontLineFirst * frontLineSecond * hostileLine * criticalHostile * influence.GetFloatParam2() * 10;
+    }
+}

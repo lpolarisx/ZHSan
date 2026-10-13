@@ -1,40 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3157 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3157 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float rate = 1f;
+        arch.RateOfJailBreakArchitecture -= 1 - influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateOfJailBreakArchitecture -= 1 - this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.RateOfJailBreakArchitecture += 1 - influence.GetFloatParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateOfJailBreakArchitecture += 1 - this.rate;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.rate * (a.HostileLine ? 2 : 1);
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetFloatParam() * (arch.HostileLine ? 2 : 1);
     }
 }
-

@@ -1,41 +1,23 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3230 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3230 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
     {
-        private int increment = 0;
+        architecture.IncrementOfDominationPerDay += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfDominationPerDay += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        architecture.IncrementOfDominationPerDay -= influence.GetIntParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfDominationPerDay -= this.increment;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            if (!a.Kind.HasDomination) return -1;
-            return (a.DominationCeiling - a.Domination) * this.increment + 1;
-        }
+    public override double AIFacilityValue(Influence influence, Architecture a)
+    {
+        if (!a.Kind.HasDomination) return -1;
+        return (a.DominationCeiling - a.Domination) * influence.GetIntParam() + 1;
     }
 }
-

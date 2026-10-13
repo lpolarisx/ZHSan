@@ -1,38 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2100 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2100 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int kind;
+        faction.AddTechniqueMilitaryKind(influence.GetIntParam());
+    }
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.AddTechniqueMilitaryKind(this.kind);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.kind = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            if (faction.TechniqueMilitaryKinds.MilitaryKinds.ContainsKey(this.kind))
-            {
-                faction.TechniqueMilitaryKinds.MilitaryKinds.Remove(this.kind);
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.RemoveTechniuqeMilitaryKind(influence.GetIntParam());
     }
 }
-

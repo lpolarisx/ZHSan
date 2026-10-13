@@ -1,40 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6155 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6155 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int rate;
+        arch.StrengthExperienceIncrease += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.StrengthExperienceIncrease += rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.StrengthExperienceIncrease -= influence.GetIntParam();
+    }
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.StrengthExperienceIncrease -= rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.rate * a.PersonCount / 200;
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetIntParam() * arch.PersonCount / 200;
     }
 }
-

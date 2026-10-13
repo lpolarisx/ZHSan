@@ -1,87 +1,71 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System;
+using System.Runtime.Serialization;
+using GameEnums;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind399 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind399 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private float rate;
+        var rate = influence.GetFloatParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        var friendly = troop.OrientationTroop;
+
+        if (troop.GetCurrentStratagemSuccess(friendly, false, false, false))
         {
-            int recoverQuantity;
-            if (troop.GetCurrentStratagemSuccess(troop.OrientationTroop, false, false, false))
-            {
-                troop.OrientationTroop.PreAction = TroopPreAction.恢复;
-                recoverQuantity = (int)(this.rate * troop.OrientationTroop.Army.Kind.MinScale);
-                if (recoverQuantity > troop.OrientationTroop.InjuryQuantity)
-                {
-                    recoverQuantity = troop.OrientationTroop.InjuryQuantity;
-                }
-                recoverQuantity = troop.OrientationTroop.IncreaseQuantity(recoverQuantity);
-                troop.OrientationTroop.InjuryQuantity -= recoverQuantity;
-            }
-            foreach (Troop troop2 in troop.AreaStratagemTroops)
-            {
-                if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
-                {
-                    troop2.PreAction = TroopPreAction.恢复;
-                    recoverQuantity = (int)(this.rate * troop2.Army.Kind.MinScale);
-                    if (recoverQuantity > troop2.InjuryQuantity)
-                    {
-                        recoverQuantity = troop2.InjuryQuantity;
-                    }
-                    recoverQuantity = troop2.IncreaseQuantity(recoverQuantity);
-                    if (troop2.OrientationTroop != null)
-                    {
-                        troop2.OrientationTroop.InjuryQuantity -= recoverQuantity;
-                    }
-                }
-            }
+            friendly.PreAction = TroopPreAction.Recover;
+            var recoverQuantity = (int)(rate * friendly.Army.Kind.MinScale);
+
+            recoverQuantity = Math.Min(recoverQuantity, friendly.InjuryQuantity);
+
+            recoverQuantity = friendly.IncreaseQuantity(recoverQuantity);
+            friendly.InjuryQuantity -= recoverQuantity;
         }
 
-        public override int GetCredit(Troop source, Troop destination)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
-            if (!this.IsVaild(destination))
+            if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
             {
-                return 0;
-            }
-            int num = 0;
-            int fightingForce = source.FightingForce;
-            foreach (Troop troop in source.GetAreaStratagemTroops(destination, true))
-            {
-                float rate = ((float) troop.InjuryQuantity) / ((float) troop.Army.Kind.MinScale);
-                int num4 = source.GetStratagemSuccessChanceCredit(troop, false, false, false);
-                if (num4 > 0)
+                troop2.PreAction = TroopPreAction.Recover;
+                var recoverQuantity = (int)(rate * troop2.Army.Kind.MinScale);
+                
+                recoverQuantity = Math.Min(recoverQuantity, troop2.InjuryQuantity);
+
+                recoverQuantity = troop2.IncreaseQuantity(recoverQuantity);
+                if (troop2.OrientationTroop != null)
                 {
-                    if (rate > this.rate)
-                    {
-                        rate = this.rate;
-                    }
-                    num += (int) ((((num4 * rate) / this.rate) * troop.FightingForce) / ((float) fightingForce));
+                    troop2.OrientationTroop.InjuryQuantity -= recoverQuantity;
                 }
             }
-            return num;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override bool IsVaild(Troop troop)
-        {
-            return (troop.InjuryQuantity > 0);
         }
     }
-}
 
+    public override int GetCredit(Influence influence, Troop source, Troop destination)
+    {
+        if (!IsVaild(influence, destination)) return 0;
+
+        var baseRate = influence.GetFloatParam();
+
+        var sum = 0;
+        int fightingForce = source.FightingForce;
+        foreach (var troop in source.GetAreaStratagemTroops(destination, true))
+        {
+            var rate = (float)troop.InjuryQuantity / troop.Army.Kind.MinScale;
+            int num4 = source.GetStratagemSuccessChanceCredit(troop, false, false, false);
+            if (num4 > 0)
+            {
+                rate = Math.Min(rate, baseRate);
+
+                sum += (int)(num4 * rate / baseRate * troop.FightingForce / fightingForce);
+            }
+        }
+        return sum;
+    }
+
+    public override bool IsVaild(Influence influence, Troop troop)
+    {
+        return troop.InjuryQuantity > 0;
+    }
+}

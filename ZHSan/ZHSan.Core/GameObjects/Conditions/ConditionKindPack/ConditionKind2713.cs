@@ -1,36 +1,32 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2713 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2713 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        public override bool CheckConditionKind(Architecture a)
+        int hostile = 0;
+        int friendly = 0;
+        foreach (Point point in arch.LongViewArea.Area)
         {
-            int hostile = 0;
-            int friendly = 0;
-            foreach (Microsoft.Xna.Framework.Point point in a.LongViewArea.Area)
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if (troopByPosition != null)
+                if (troopByPosition.IsFriendly(arch.BelongedFaction))
                 {
-                    if (troopByPosition.IsFriendly(a.BelongedFaction))
-                    {
-                        friendly++;
-                    }
-                    else
-                    {
-                        hostile++;
-                    }
+                    friendly++;
+                }
+                else
+                {
+                    hostile++;
                 }
             }
-            return friendly > 0 && hostile > 0 && hostile >= friendly;
         }
-
+        
+        return friendly > 0 && hostile > 0 && hostile >= friendly;
     }
 }
-

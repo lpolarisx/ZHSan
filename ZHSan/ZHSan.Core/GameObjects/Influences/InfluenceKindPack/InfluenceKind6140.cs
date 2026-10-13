@@ -1,53 +1,36 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
+using System.Collections.Generic;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6140 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6140 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment;
-        private int threshold;
+        var threshold = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void ApplyInfluenceKind(Architecture a)
-        {
-            a.captiveLoyaltyFall.Add(new System.Collections.Generic.KeyValuePair<int, int>(this.threshold, this.increment));
-        }
+        arch.captiveLoyaltyFall.Add(new KeyValuePair<int, int>(threshold, increment));
+    }
 
-        public override void PurifyInfluenceKind(Architecture a)
-        {
-            a.captiveLoyaltyFall.Remove(new System.Collections.Generic.KeyValuePair<int, int>(this.threshold, this.increment));
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        var threshold = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        arch.captiveLoyaltyFall.Remove(new KeyValuePair<int, int>(threshold, increment));
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.threshold = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var threshold = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override double AIFacilityValue(Architecture a)
-        {
-            if (this.threshold > 110 && a.FrontLine) return 100;
-            return this.increment * this.threshold * 2 / (double)a.BelongedFaction.PersonCount * (a.FrontLine ? 1 : 0.2);
-        }
+        if (threshold > 110 && arch.FrontLine) return 100;
+
+        var frontLine = arch.FrontLine ? 1 : 0.2;
+
+        return increment * threshold * 2 / (double)arch.BelongedFaction.PersonCount * frontLine;
     }
 }
-

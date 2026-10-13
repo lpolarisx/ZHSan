@@ -1,41 +1,28 @@
-﻿using GameObjects;
-using GameObjects.TroopDetail.EventEffect;
-using System;
+﻿using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.TroopDetail.EventEffect.EventEffectKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.TroopDetail.EventEffect.EventEffectKindPack
+[DataContract]
+public class EventEffectKind50 : EventEffectKind
 {
-
-    [DataContract]public class EventEffectKind50 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person)
     {
-        private float rate = 1f;
+        var troop = person.LocationTroop;
 
-        public override void ApplyEffectKind(Person person)
+        if (troop != null)
         {
-            if (person.LocationTroop != null)
-            {
-                float num = this.rate - 1f;
-                if (num > 0f)
-                {
-                    person.LocationTroop.IncreaseQuantity((int) (person.LocationTroop.Quantity * num));
-                }
-                else if (num < 0f)
-                {
-                    person.LocationTroop.DecreaseQuantity(Math.Abs((int) (person.LocationTroop.Quantity * num)));
-                }
-            }
-        }
+            var rate = eventEffect.GetFloatParam() - 1;
+            var quantity = (int)Math.Abs(troop.Quantity * rate);
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
+            if (rate >= 0)
             {
-                this.rate = float.Parse(parameter);
+                person.LocationTroop.IncreaseQuantity(quantity);
             }
-            catch
+            else
             {
+                person.LocationTroop.DecreaseQuantity(quantity);
             }
         }
     }
 }
-

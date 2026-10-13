@@ -1,41 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind860 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind860 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int id;
+        var strategemId = influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        if (!troop.AllowedStrategems.Contains(strategemId))
         {
-            if (troop != null && !troop.AllowedStrategems.Contains(id))
-            {
-                troop.AllowedStrategems.Add(id);
-            }
+            troop.AllowedStrategems.Add(strategemId);
         }
+    }
 
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null && troop.AllowedStrategems.Contains(id))
-            {
-                troop.AllowedStrategems.Remove(id);
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        var strategemId = influence.GetIntParam();
 
-        public override void InitializeParameter(string parameter)
+        if (troop.AllowedStrategems.Contains(strategemId))
         {
-            try
-            {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            troop.AllowedStrategems.Remove(strategemId);
         }
     }
 }
-

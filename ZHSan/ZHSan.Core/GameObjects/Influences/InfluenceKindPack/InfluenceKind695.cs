@@ -1,63 +1,47 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind695 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind695 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private float rate;
+        troop.DefenceRateDecrementInViewArea += influence.GetFloatParam();
+    }
 
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.DefenceRateDecrementInViewArea -= influence.GetFloatParam();
+    }
 
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var rate = influence.GetFloatParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            troop.DefenceRateDecrementInViewArea += this.rate;
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.DefenceRateDecrementInViewArea -= this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && !architecture.IsFriendly(troopByPosition.BelongedFaction))
             {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
+                troopByPosition.RateOfDefence -= rate;
             }
         }
+    }
 
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var rate = influence.GetFloatParam();
 
-        public override void ApplyInfluenceKind(Architecture architecture)
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && !architecture.IsFriendly(troopByPosition.BelongedFaction))
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && !architecture.IsFriendly(troopByPosition.BelongedFaction))
-                {
-                    troopByPosition.RateOfDefence -= this.rate;
-                }
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
-            {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && !architecture.IsFriendly(troopByPosition.BelongedFaction))
-                {
-                    troopByPosition.RateOfDefence += this.rate;
-                }
+                troopByPosition.RateOfDefence += rate;
             }
         }
     }
 }
-

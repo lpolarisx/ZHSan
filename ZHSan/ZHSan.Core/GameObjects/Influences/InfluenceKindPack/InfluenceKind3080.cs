@@ -1,36 +1,37 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3080 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3080 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.NoCounterStrikeInArchitecture = true;
-        }
+        arch.NoCounterStrikeInArchitecture = true;
+    }
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.NoCounterStrikeInArchitecture = false;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.NoCounterStrikeInArchitecture = false;
+    }
 
-        public override double AIFacilityValue(Architecture a)
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        if (!arch.FrontLine) return -1;
+
+        int count = 0;
+        foreach (Military m in arch.Militaries)
         {
-            if (!a.FrontLine) return -1;
-            int counterStrikeMilitaryCount = 0;
-            foreach (Military m in a.Militaries)
+            if (m.Kind.BeCountered)
             {
-                if (m.Kind.BeCountered)
-                {
-                    counterStrikeMilitaryCount++;
-                }
+                count++;
             }
-            return (double)counterStrikeMilitaryCount / a.EffectiveMilitaryCount * 2 * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1);
         }
+
+        var frontLine = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1;
+
+        return (double)count / arch.EffectiveMilitaryCount * 2 * frontLine * hostileLine * criticalHostile;
     }
 }
-

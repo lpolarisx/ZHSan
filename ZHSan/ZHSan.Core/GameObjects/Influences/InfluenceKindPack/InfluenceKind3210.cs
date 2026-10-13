@@ -1,41 +1,24 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3210 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3210 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment = 0;
+        arch.IncrementOfCommercePerDay += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfCommercePerDay += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.IncrementOfCommercePerDay -= influence.GetIntParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        if (!arch.Kind.HasCommerce) return -1;
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfCommercePerDay -= this.increment;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            if (!a.Kind.HasCommerce) return -1;
-            return (a.CommerceCeiling - a.Commerce) * this.increment + 1;
-        }
+        return (arch.CommerceCeiling - arch.Commerce) * influence.GetIntParam() + 1;
     }
 }
-

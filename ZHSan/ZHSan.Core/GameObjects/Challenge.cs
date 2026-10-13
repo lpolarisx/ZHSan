@@ -16,6 +16,7 @@ using System.Threading;
 using System.Diagnostics;
 using GameManager;
 using WorldOfTheThreeKingdoms.GameScreens.ScreenLayers;
+using System.Linq;
 
 namespace GameObjects
 {
@@ -26,10 +27,10 @@ namespace GameObjects
 
         public void ChallgenEvent(Troop sourceTroop, Troop troop, TroopDamage damage)
         {
-            if ((!sourceTroop.IsFriendly(troop.BelongedFaction) && !sourceTroop.AirOffence) && (this.ChallengeOftenShow || GameObject.Chance(20)))
+            if ((!sourceTroop.IsFriendly(troop.BelongedFaction) && !sourceTroop.AirOffence) && (this.ChallengeOftenShow || GameObject.GetChance(20)))
             {
-                Person maxStrengthPerson = sourceTroop.Persons.GetMaxStrengthPerson();
-                Person destination = troop.Persons.GetMaxStrengthPerson();
+                Person maxStrengthPerson = sourceTroop.Persons.MaxBy(x => x.Strength);
+                Person destination = troop.Persons.MaxBy(x => x.Strength);
                 if (((maxStrengthPerson != null) && (destination != null)) && (this.ChallengeOftenShow || (GameObject.Random(GameObject.Square(destination.Calmness)) < GameObject.Random(0x19))))
                 {
                     if (maxStrengthPerson.IsCivil() || destination.IsCivil())  //文官不单挑
@@ -75,13 +76,13 @@ namespace GameObjects
                 }
                 catch
                 {
-                    flag = (GameObject.Chance(chance) ? 1 : 2);
+                    flag = (GameObject.GetChance(chance) ? 1 : 2);
                     damage.ChallengeHappened = true;  //单挑发生
                 }
             }
             else
             {
-                flag = (GameObject.Chance(chance) ? 1 : 2);
+                flag = (GameObject.GetChance(chance) ? 1 : 2);
                 damage.ChallengeHappened = true;  //单挑发生
             }
 

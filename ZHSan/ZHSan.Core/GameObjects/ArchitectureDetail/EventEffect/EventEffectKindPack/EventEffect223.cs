@@ -1,24 +1,21 @@
-﻿using GameObjects;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffect223 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect223 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        public override void ApplyEffectKind(Person person, Event e)
+        foreach (Person p in Session.Current.Scenario.AllPersons.Values)
         {
-            foreach (Person p in Session.Current.Scenario.Persons)
+            if (p.Brothers.Contains(p))
             {
-                if (p.Brothers.GameObjects.Contains(p))
-                {
-                    p.Brothers.Remove(p);
-                }
+                p.Brothers.Remove(p);
             }
-            person.Brothers.Clear();
         }
 
+        person.Brothers.Clear();
     }
 }
-

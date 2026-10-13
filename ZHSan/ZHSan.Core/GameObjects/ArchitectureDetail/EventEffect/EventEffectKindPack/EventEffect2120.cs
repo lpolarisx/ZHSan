@@ -1,29 +1,12 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect2120 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect2120 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
-        private int increment;
-
-        public override void ApplyEffectKind(Faction f, Event e)
-        {
-            f.guanjue = increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        faction.guanjue = eventEffect.GetIntParam();
     }
 }
-

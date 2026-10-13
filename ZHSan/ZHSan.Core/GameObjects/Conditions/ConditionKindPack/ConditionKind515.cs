@@ -1,60 +1,42 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind515 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind515 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int number = 0;
+        return person.TreasureCount < condition.GetIntParam();
+    }
 
-        public override bool CheckConditionKind(Person person)
+    public override bool CheckConditionKind(Condition condition, Architecture architecture)
+    {
+        int result = 0;
+        foreach (Person p in architecture.Persons)
         {
-            return person.TreasureCount < number;
+            result += p.TreasureCount;
         }
+        return result < condition.GetIntParam();
+    }
 
-        public override bool CheckConditionKind(Architecture architecture)
+    public override bool CheckConditionKind(Condition condition, Faction faction)
+    {
+        int result = 0;
+        foreach (Person p in faction.Persons)
         {
-            int result = 0;
-            foreach (Person p in architecture.Persons)
-            {
-                result += p.TreasureCount;
-            }
-            return result < number;
+            result += p.TreasureCount;
         }
+        return result < condition.GetIntParam();
+    }
 
-        public override bool CheckConditionKind(Faction faction)
+    public override bool CheckConditionKind(Condition condition, Troop troop)
+    {
+        int result = 0;
+        foreach (Person p in troop.Persons)
         {
-            int result = 0;
-            foreach (Person p in faction.Persons)
-            {
-                result += p.TreasureCount;
-            }
-            return result < number;
+            result += p.TreasureCount;
         }
-
-        public override bool CheckConditionKind(Troop troop)
-        {
-            int result = 0;
-            foreach (Person p in troop.Persons)
-            {
-                result += p.TreasureCount;
-            }
-            return result < number;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return result < condition.GetIntParam();
     }
 }
-

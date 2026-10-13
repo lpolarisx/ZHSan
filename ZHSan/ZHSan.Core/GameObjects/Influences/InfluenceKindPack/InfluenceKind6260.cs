@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6260 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6260 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int increment;
+        troop.MovabilityIncreaseInViewArea += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop t)
-        {
-            t.MovabilityIncreaseInViewArea += this.increment;
-        }
-
-        public override void PurifyInfluenceKind(Troop t)
-        {
-            t.MovabilityIncreaseInViewArea -= this.increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.MovabilityIncreaseInViewArea -= influence.GetIntParam();
     }
 }
-

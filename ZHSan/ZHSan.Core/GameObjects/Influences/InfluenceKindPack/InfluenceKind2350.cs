@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2350 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2350 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private float rate = 0f;
+        faction.RateOfCombativityRecoveryAfterAttacked += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.RateOfCombativityRecoveryAfterAttacked += this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            faction.RateOfCombativityRecoveryAfterAttacked -= this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.RateOfCombativityRecoveryAfterAttacked -= influence.GetFloatParam();
     }
 }
-

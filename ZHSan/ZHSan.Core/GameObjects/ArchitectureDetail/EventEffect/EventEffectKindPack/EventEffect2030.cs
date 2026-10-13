@@ -1,34 +1,23 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
+using GameObjects.Influences;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect2030 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect2030 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
-        private int increment;
+        var techniqueId = eventEffect.GetIntParam();
 
-        public override void ApplyEffectKind(Faction f, Event e)
+        if (Session.Current.Scenario.GameCommonData.AllTechniques.TryGetValue(techniqueId, out var technique))
         {
-            GameObjects.FactionDetail.Technique technique = Session.Current.Scenario.GameCommonData.AllTechniques.GetTechnique(increment);
-            f.AvailableTechniques.RemoveTechniuqe(increment);
+            faction.RemoveTechniuqe(techniqueId);
+
             Session.Current.Scenario.NewInfluence = true;
-            technique.Influences.PurifyInfluence(f, GameObjects.Influences.Applier.Technique, increment);
+            Influence.PurifyInfluenceList(technique.Influences, faction, Applier.Technique, techniqueId);
             Session.Current.Scenario.NewInfluence = false;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
         }
     }
 }
-

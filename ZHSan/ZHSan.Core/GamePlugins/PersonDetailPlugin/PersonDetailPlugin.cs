@@ -83,6 +83,7 @@ namespace PersonDetailPlugin
             node = nextSibling.ChildNodes.Item(4);
             this.personDetail.PortraitClient = StaticMethods.LoadRectangleFromXMLNode(node);
             node = nextSibling.ChildNodes.Item(5);
+
             for (int i = 0; i < node.ChildNodes.Count; i += 2)
             {
                 LabelText item = new LabelText();
@@ -257,6 +258,15 @@ namespace PersonDetailPlugin
             this.personDetail.PersonBG = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\PersonDetail\Data\" + node.Attributes.GetNamedItem("FileName").Value);
             node = nextSibling.ChildNodes.Item(0x27);
             this.personDetail.PortraitL = StaticMethods.LoadRectangleFromXMLNode(node);
+
+            // 临时状态
+            node = nextSibling.ChildNodes.Item(61);
+            rectangle = StaticMethods.LoadRectangleFromXMLNode(node);
+            StaticMethods.LoadFontAndColorFromXMLNode(node, out font, out color);
+            personDetail.statusEffectText = new FreeText(font, Color.Red);
+            personDetail.statusEffectText.Position = rectangle;
+            personDetail.statusEffectText.Align = (TextAlign) Enum.Parse(typeof(TextAlign), node.Attributes.GetNamedItem("Align").Value);
+
             /*
             node = nextSibling.ChildNodes.Item(12);
             this.personDetail.GuanzhiClient = StaticMethods.LoadRectangleFromXMLNode(node);

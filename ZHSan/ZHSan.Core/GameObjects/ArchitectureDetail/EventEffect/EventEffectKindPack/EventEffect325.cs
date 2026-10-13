@@ -1,31 +1,18 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect325 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect325 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
+        var stuntId = eventEffect.GetIntParam();
 
-        public override void ApplyEffectKind(Person person, Event e)
+        if (Session.Current.Scenario.GameCommonData.AllStunts.TryGetValue(stuntId, out var stunt))
         {
-            GameObjects.PersonDetail.Stunt stunt = Session.Current.Scenario.GameCommonData.AllStunts.GetStunt(increment);
-            person.Stunts.Stunts.Remove(increment);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.Stunts.Remove(stuntId);
         }
     }
 }
-

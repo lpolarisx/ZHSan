@@ -1,52 +1,38 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2430 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2430 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private float rate = 1f;
+        var rate = influence.GetFloatParam();
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.RateOfRoutewayConsumption += 1 - this.rate;
-            if (Session.Current.Scenario.NewInfluence)
-            {
-                faction.ClosedRouteways.Clear();
-                foreach (Routeway routeway in faction.Routeways)
-                {
-                    routeway.ResetRoutePointConsumptionRate(this.rate);
-                }
-            }
-        }
+        faction.RateOfRoutewayConsumption += 1 - rate;
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        ResetRoutePointConsumptionRate(faction, rate);
+    }
 
-        public override void PurifyInfluenceKind(Faction faction)
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        var rate = influence.GetFloatParam();
+
+        faction.RateOfRoutewayConsumption -= 1 - rate;
+
+        ResetRoutePointConsumptionRate(faction, rate);
+    }
+
+    private void ResetRoutePointConsumptionRate(Faction faction, float rate)
+    {
+        if (Session.Current.Scenario.NewInfluence)
         {
-            faction.RateOfRoutewayConsumption -= 1 - this.rate;
-            if (Session.Current.Scenario.NewInfluence)
+            faction.ClosedRouteways.Clear();
+            foreach (var routeway in faction.Routeways)
             {
-                faction.ClosedRouteways.Clear();
-                foreach (Routeway routeway in faction.Routeways)
-                {
-                    routeway.ResetRoutePointConsumptionRate(this.rate);
-                }
+                routeway.ResetRoutePointConsumptionRate(rate);
             }
         }
     }
 }
-

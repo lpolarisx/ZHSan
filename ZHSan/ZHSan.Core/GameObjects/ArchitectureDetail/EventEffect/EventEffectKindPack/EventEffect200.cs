@@ -1,32 +1,15 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect200 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect200 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
-
-        public override void ApplyEffectKind(Person person, Event e)
+        if (person.BelongedFaction?.Leader != person)
         {
-            if (person.BelongedFaction != null && person.BelongedFaction.Leader != person)
-            {
-                person.TempLoyaltyChange += increment;
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.TempLoyaltyChange += eventEffect.GetIntParam();
         }
     }
 }
-

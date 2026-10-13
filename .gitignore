@@ -311,3 +311,9 @@ Output/
 References/Win/steam_appid.txt
 
 MODs
+
+# Mac
+.DS_Store
+
+# OmniSharp / VS Code C#
+*.csproj.lscache

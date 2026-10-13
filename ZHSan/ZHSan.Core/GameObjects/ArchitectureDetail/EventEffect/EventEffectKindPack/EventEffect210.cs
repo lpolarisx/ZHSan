@@ -1,27 +1,28 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
+using GameObjects.PersonDetail;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect210 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect210 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        public override void ApplyEffectKind(Person person, Event e)
+        var location = person.LocationArchitecture;
+
+        if (location != null)
         {
-            if (person.BelongedFaction == null && person.LocationArchitecture != null)
+            if (person.BelongedFaction == null)
             {
-                person.Status = GameObjects.PersonDetail.PersonStatus.Normal;
-                person.ChangeFaction(person.LocationArchitecture.BelongedFaction);
+                person.Status = PersonStatus.Normal;
+                person.ChangeFaction(location.BelongedFaction);
             }
-            else if (person.LocationArchitecture != null && person.BelongedCaptive != null)
+            else if (person.BelongedCaptive != null)
             {
-                Faction f = person.BelongedCaptive.LocationArchitecture.BelongedFaction;
-                person.SetBelongedCaptive(null, GameObjects.PersonDetail.PersonStatus.Normal);
-                person.ChangeFaction(f);
+                Faction faction = person.BelongedCaptive.LocationArchitecture.BelongedFaction;
+                person.SetBelongedCaptive(null, PersonStatus.Normal);
+                person.ChangeFaction(faction);
             }
         }
-
     }
 }
-

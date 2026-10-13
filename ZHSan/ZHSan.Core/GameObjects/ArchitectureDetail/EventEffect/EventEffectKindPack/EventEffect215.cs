@@ -1,37 +1,37 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect215 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect215 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        public override void ApplyEffectKind(Person person, Event e)
+        person.huaiyun = true;
+        person.huaiyuntianshu = 0;
+
+        var princess = person.BelongedFactionWithPrincess;
+
+        if (princess != null)
         {
-            person.huaiyun = true;
-            person.huaiyuntianshu = 0;
-            if (person.BelongedFactionWithPrincess != null)
+            var leader = princess.Leader;
+
+            person.suoshurenwu = princess.LeaderID;
+            leader.suoshurenwu = person.ID;
+
+            if (!person.suoshurenwuList.Contains(leader))
             {
-                person.suoshurenwu = person.BelongedFactionWithPrincess.LeaderID;
-                person.BelongedFactionWithPrincess.Leader.suoshurenwu = person.ID;
-
-                if (!person.suoshurenwuList.GameObjects.Contains(person.BelongedFactionWithPrincess.Leader))
-                {
-                    person.suoshurenwuList.Add(person.BelongedFactionWithPrincess.Leader);
-                }
-                if (!person.BelongedFactionWithPrincess.Leader.suoshurenwuList.GameObjects.Contains(person))
-                {
-                    person.BelongedFactionWithPrincess.Leader.suoshurenwuList.Add(person);
-                }
-
+                person.suoshurenwuList.Add(leader);
             }
-            else
+
+            if (!leader.suoshurenwuList.Contains(person))
             {
-                person.suoshurenwu = person.ID;
+                leader.suoshurenwuList.Add(person);
             }
         }
-
+        else
+        {
+            person.suoshurenwu = person.ID;
+        }
     }
 }
-

@@ -123,6 +123,12 @@ namespace TabListPlugin
             {
                 selectallX = this.listKindToDisplay.AllColumns[0].ColumnTextList[0].Position.X;
                 selectallY = base.RealClient.Bottom + (int)(1.2f * rowHeight);
+                // 有“从大地图视角选择”按钮时，全选挪到按钮右侧，避免重叠
+                if (this.listKindToDisplay != null && this.MapViewSelectorButtonEnabled)
+                {
+                    selectallX = base.FramePosition.X + this.MapViewSelectorButtonPosition.X + this.MapViewSelectorButtonSize.X + 3 * checkboxWidth;
+                    selectallY = base.FramePosition.Y + this.MapViewSelectorButtonPosition.Y + 2;
+                }
             }
             base.Draw();
             if (this.listKindToDisplay != null)
@@ -489,7 +495,7 @@ namespace TabListPlugin
                     {
                         g.Selected = true;
                     }
-                    this.ResetEditableTextures();
+                    this.RefreshEditable();
                 }
                 else
                 {
@@ -499,7 +505,7 @@ namespace TabListPlugin
                     {
                         g.Selected = false;
                     }
-                    this.ResetEditableTextures();
+                    this.RefreshEditable();
                 }
             }
 
@@ -900,7 +906,7 @@ namespace TabListPlugin
             this.MultiSelecting = multiSelecting;
             if (this.listKindToDisplay != null)
             {
-                this.SetShowCheckBox(showCheckBox);
+                this.SetShowCheckBox(showCheckBox); 
             }
         }
 
@@ -912,6 +918,9 @@ namespace TabListPlugin
             {
                 obj2.Selected = false;
             }
+            // 换了列表后所有对象都未选中，全选按钮也要恢复，否则下次打开还显示“取消全选”
+            this.SellectAllTexture = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TabList\Data\CheckBox.png");
+            this.selectallstring = " 全 选 ";
             this.FullLowerClient.Height = (gameObjectList.Count * this.rowHeight) + this.columnheaderHeight;
         }
 

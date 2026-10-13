@@ -1,40 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3130 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3130 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float multiple = 1;
+        arch.MultipleOfRecovery += influence.GetFloatParam() - 1;
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.MultipleOfRecovery += this.multiple - 1;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.MultipleOfRecovery -= influence.GetFloatParam() - 1;
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.multiple = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var frontLineFirst = arch.FrontLine ? influence.GetFloatParam() - 1 : 0.001;
+        var frontLineSecond = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1; 
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.MultipleOfRecovery -= this.multiple - 1;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return (a.FrontLine ? this.multiple - 1 : 0.001) * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1);
-        }
+        return frontLineFirst * frontLineSecond * hostileLine * criticalHostile;
     }
 }
-

@@ -19,34 +19,34 @@ using System.Runtime.Serialization;
 using GameManager;
 using Platforms;
 using System.Linq;
+using GameEnums;
+using Extensions;
+using GameDatas;
+using GameEvents;
 
 namespace GameObjects
 {
     [DataContract]
     public class Troop : GameObject
     {
+        private EventManager eventManager = EventManager.Instance;
+
         public void Init()
         {
+            eventManager = EventManager.Instance;
+
             weizhixulie = new int[] { 0, 1, -1, 2, -2, 3, -3, 4 };
 
             ArchitectureDamageList = new List<ArchitectureDamage>();
 
-            AreaStratagemTroops = new TroopList();
+            AreaStratagemTroops = new();
 
             AttackedTroopList = new GameObjectList();
 
-            controllable = true;
+            EnterList = new();
 
-            currentCombatMethodID = -1;
+            EventInfluences = new();
 
-           // currentStratagemID = -1;
-
-            direction = TroopDirection.正东;
-
-            EnterList = new ArchitectureList();
-
-            EventInfluences = new InfluenceList();
-            
             moveFrameIndex = 0;
 
             moveStayCount = 0;
@@ -57,18 +57,14 @@ namespace GameObjects
 
             TroopDamageList = new List<TroopDamage>();
 
-            will = TroopWill.行军;
+            friendlyTroopsInView = new();
+            hostileTroopsInView = new();
 
-            friendlyTroopsInView = new TroopList();
-            hostileTroopsInView = new TroopList();
-
-            persons = new PersonList();
+            persons = new();
 
             InfluencesApplying = new List<Influence>();
 
-            CombatMethods = new CombatMethodTable();
-
-            Stunts = new StuntTable();
+            Stunts = new();
 
             BaseRateOfQibingDamage = 1;
 
@@ -114,18 +110,20 @@ namespace GameObjects
 
             attackInjuryRate = 1;
 
-            targetTroop = (Troop) Session.Current.Scenario.Troops.GetGameObject(targetTroopID);
-            targetArchitecture = (Architecture)Session.Current.Scenario.Architectures.GetGameObject(targetArchitectureID);
+            targetTroop = Session.Current.Scenario.Troops.GetValueOrDefault(targetTroopID);
+            targetArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(targetArchitectureID);
         }
 
         private int[] weizhixulie = { 0, 1, -1, 2, -2, 3, -3, 4 };
         private int weizhijishu = 0;
         private int yuanmubiaofangxiang = 0;
         private int chongshemubiaofangxiang = 0;
+
         [DataMember]
-        public bool chongshemubiaoweizhibiaoji = false;
+        public bool chongshemubiaoweizhibiaoji { get; set; }
+
         [DataMember]
-        public Point minglingweizhi;
+        public Point minglingweizhi { get; set; }
 
         private TroopAction action;
         private int antiCriticalStrikeChance;
@@ -136,21 +134,18 @@ namespace GameObjects
         public int AreaAttackRadius;
         public int AreaStratagemRadius;
 
-        public TroopList AreaStratagemTroops = new TroopList();
+        public List<Troop> AreaStratagemTroops { get; set; } = new();
 
         private Military army;
 
         public int AroundAttackRadius;
         public bool AttackAllOffenceArea;
         public int AttackDecrementOfCombativity;
-        private TroopAttackDefaultKind attackDefaultKind;
 
         public GameObjectList AttackedTroopList = new GameObjectList();
 
         public bool AttackEveryAround;
         public bool AttackStarted;
-        private TroopAttackTargetKind attackTargetKind;
-        private bool auto;
         private int avoidSurroundedChance;
         public Person BackupArmyLeader;
         public int BackupArmyLeaderExperience;
@@ -169,8 +164,6 @@ namespace GameObjects
         public Faction BelongedFaction = null;
         public Legion BelongedLegion;
         public bool CanAttackAfterRout;
-        private TroopCastDefaultKind castDefaultKind;
-        private TroopCastTargetKind castTargetKind;
         public int ChanceDecrementOfCriticalStrike;
         public int ChanceDecrementOfCriticalStrikeByViewArea;
         public int ChanceDecrementOfCriticalStrikeInViewArea;
@@ -197,7 +190,6 @@ namespace GameObjects
         private int chaosAfterCriticalStrikeChance;
         private int chaosAfterStratagemSuccessChance;
         private int chaosAfterSurroundAttackChance;
-        private int chaosDayLeft;
         public bool ChaosLastOneDay;
         public int CombativityDecrementOnPower;
         public int CombativityDecrementPerDayByViewArea;
@@ -207,7 +199,7 @@ namespace GameObjects
         public bool CombativityNoChanceAfterAttacked;
         public bool CombatMethodApplied;
 
-        public CombatMethodTable CombatMethods = new CombatMethodTable();
+        public Dictionary<int, CombatMethod> CombatMethods { get; set; } = new();
 
         public string CombatMethodsString { get; set; }
 
@@ -216,8 +208,6 @@ namespace GameObjects
         public int ContactFriendlyTroopCount;
         public int ContactHostileTroopCount;
         public bool ContactingWillArchitecture;
-
-        private bool controllable = true;
 
         public int CounterAttackDecrementOfCombativity;
         public int CriticalChanceIncrementOfCliff;
@@ -233,8 +223,6 @@ namespace GameObjects
         public int CriticalChanceIncrementOfWater;
         private int criticalStrikeChance;
         private CombatMethod currentCombatMethod;
-        private int currentCombatMethodID = -1;
-        private int autoCombatMethodID = -1;
         //private Person CurrentDestinationChallengePerson;
         private Person CurrentDestinationControversyPerson;
         public OutburstKind CurrentOutburstKind;
@@ -242,7 +230,6 @@ namespace GameObjects
         //private Person CurrentSourceChallengePerson;
         private Person CurrentSourceControversyPerson;
         private Stratagem currentStratagem;
-        private int currentStratagemID = -1;
 
         [DataMember]
         public int CurrentStuntIDString { get; set; }
@@ -250,12 +237,10 @@ namespace GameObjects
         public Stunt CurrentStunt;
         private int currentTileAnimationIndex;
         [DataMember]
-        public TileAnimationKind CurrentTileAnimationKind = TileAnimationKind.无;
+        public TileAnimationKind CurrentTileAnimationKind { get; set; } = TileAnimationKind.无;
         private int currentTileStayIndex;
         private int currentTroopAnimationIndex;
         private int currentTroopStayIndex;
-        private int cutRoutewayDays;
-
         public bool LoyaltyNoChange;
         public CombatNumberItemList DecrementNumberList = new CombatNumberItemList(CombatNumberDirection.下);
         public int DecrementOfCliffAdaptability;
@@ -284,44 +269,40 @@ namespace GameObjects
         public float DefenceRateOnSubdueQixie = 1f;
         public float DefenceRateOnSubdueShuijun = 1f;
         private Point destination;
+
         [DataMember]
-        public bool Destroyed;
-        private TroopDirection direction = TroopDirection.正东;
+        public bool Destroyed { get; set; }
         private double DistanceToWillArchitecture;
 
         public int DominationDecrementOfCriticalStrike;
-        private bool drawAnimation = true;
+
         [DataMember]
-        public TroopEffect Effect;
+        public TroopEffect Effect { get; set; }
         private int effectTileAnimationIndex;
         private int effectTileStayIndex;
         public bool EnableOneAdaptablility;
-        public ArchitectureList EnterList = new ArchitectureList();
+        public List<Architecture> EnterList = new();
 
         [DataMember]
         public string EventInfluencesString { get; set; }
 
-        public InfluenceList EventInfluences = new InfluenceList();
+        public List<Influence> EventInfluences = new();
 
         [DataMember]
-        public List<Point> FirstTierPath;
+        public List<Point> FirstTierPath { get; set; }
 
-        private int firstTierPathIndex = 0;
-        private int food;
-        private int zijinzhi;
         [DataMember]
-        public FriendlyActionKind FriendlyAction = FriendlyActionKind.NotCare;
-        private int fund;
+        public FriendlyActionKind FriendlyAction = FriendlyActionKind.Ignore;
         [DataMember]
-        public bool HasPath = false;
+        public bool HasPath { get; set; }
         private bool HasSupply;
         [DataMember]
-        public bool HasToDoCombatAction;
+        public bool HasToDoCombatAction { get; set; }
 
         public bool HighLevelInformationOnInvestigate;
         public bool HighLevelInformationOnScout;
         [DataMember]
-        public HostileActionKind HostileAction = HostileActionKind.EvadeEffect;
+        public HostileActionKind HostileAction { get; set; } = HostileActionKind.EvadeEffect;
 
         public bool ImmunityOfCaptive;
         public bool ImmunityOfDieInBattle;
@@ -359,8 +340,6 @@ namespace GameObjects
 
         public bool LowerLevelInformationWhileInvestigated;
 
-        private int militaryID = -1;
-
         public float MoraleChangeRateOnOutOfFood = 1f;
         public int MoraleDecrementOfCriticalStrike;
         public int MoraleDecrementOnPrestige;
@@ -368,8 +347,7 @@ namespace GameObjects
         public bool MoraleNoChanceAfterAttacked;
         public int MovabilityLeft;
         [DataMember]
-        public List<Point> MoveAnimationFrames = new List<Point>();
-        private bool moved;
+        public List<Point> MoveAnimationFrames { get; set; } = new List<Point>();
         private int moveFrameIndex = 0;
         private int moveStayCount = 0;
         public float MultipleOfArmyExperience = 1;
@@ -397,22 +375,20 @@ namespace GameObjects
         public float OffenceRateOnSubdueShuijun = 1f;
         public bool OffencingWillArchitecture;
         public bool OnlyBeDetectedByHighLevelInformation;
-        private bool operated;
-        private bool operationDone;
 
         public Architecture OrientationArchitecture;
         [DataMember]
-        public Point OrientationPosition;
+        public Point OrientationPosition { get; set; }
 
         public Troop OrientationTroop;
         [DataMember]
-        public int OutburstDefenceMultiple = 1;
+        public int OutburstDefenceMultiple { get; set; } = 1;
         [DataMember]
-        public bool OutburstNeverBeIntoChaos = false;
+        public bool OutburstNeverBeIntoChaos { get; set; }
         [DataMember]
-        public int OutburstOffenceMultiple = 1;
+        public int OutburstOffenceMultiple { get; set; } = 1;
         [DataMember]
-        public bool OutburstPreventCriticalStrike = false;
+        public bool OutburstPreventCriticalStrike { get; set; }
 
         public TroopPathFinder pathFinder;
 
@@ -420,12 +396,12 @@ namespace GameObjects
         private Point position;
         private TroopPreAction preAction;
         [DataMember]
-        public Point PreviousPosition;
+        public Point PreviousPosition { get; set; }
         public bool ProhibitAllAction;
         public bool ProhibitCombatMethod;
         public bool ProhibitStratagem;
         [DataMember]
-        public bool QueueEnded;
+        public bool QueueEnded { get; set; }
         public float RateIncrementOfRateOnWater = 0f;
         public float RateIncrementOfTerrainRateOnCliff = 0f;
         public float RateIncrementOfTerrainRateOnDesert = 0f;
@@ -451,19 +427,17 @@ namespace GameObjects
 
         private Point realDestination;
         [DataMember]
-        public int RecentlyFighting;
+        public int RecentlyFighting { get; set; }
         public int RoutIncrementOfCombativity;
         public bool ScatteredShootingOblique;
         [DataMember]
-        public List<Point> SecondTierPath;
-        private int secondTierPathDestinationIndex = 0;
-        private Point selfCastPosition;
+        public List<Point> SecondTierPath { get; set; }
         private bool showNumber;
         [DataMember]
-        public bool ShowPath = false;
+        public bool ShowPath { get; set; }
         private TierPathFinder simplepathFinder = new TierPathFinder();
         [DataMember]
-        public bool Simulating;
+        public bool Simulating { get; set; }
         //[DataMember]
         public CombatMethod SimulatingCombatMethod;
         private string SoundFileLocation;
@@ -489,7 +463,6 @@ namespace GameObjects
         private TroopStatus status;
         private int statusTileAnimationIndex;
         private int statusTileStayIndex;
-        private bool stepNotFinished = true;
         private int stoppedTroopAnimationIndex;
         private int stoppedTroopStayIndex;
         private bool StratagemApplyed;
@@ -501,10 +474,14 @@ namespace GameObjects
         public bool StuntCanAttackAfterRout;
         public int StuntDayDecrementOfAttack;
         [DataMember]
-        private int stuntDayLeft;
-        public bool StuntMustSurround;
+        public bool StuntMustSurround { get; set; }
         public bool StuntRecoverFromChaos;
-        public StuntTable Stunts = new StuntTable();
+
+        /// <summary>
+        /// 特技
+        /// </summary>
+        public Dictionary<int, Stunt> Stunts { get; set; } = new();
+
         private int stuntTileAnimationIndex;
         private int stuntTileStayIndex;
         public bool Surrounding;
@@ -514,14 +491,12 @@ namespace GameObjects
         private Troop targetTroop;
         [DataMember]
         private int targetTroopID = -1;
-        private int technologyIncrement;
         private Point? TempDestination;
         public float TempRateOfDefence = 1f;
         public float TempRateOfOffence = 1f;
         private float terrainRate = 1f;
         [DataMember]
-        public List<Point> ThirdTierPath;
-        private int thirdTierPathDestinationIndex = 0;
+        public List<Point> ThirdTierPath { get; set; }
         private int troopCommand;
         private List<TroopDamage> TroopDamageList = new List<TroopDamage>();
         private int troopIntelligence;
@@ -555,7 +530,6 @@ namespace GameObjects
         public bool WaitForDeepChaos;
         private int waitForDeepChaosFrameCount;
         public bool WaitOnce = false;
-        private TroopWill will = TroopWill.行军;
         private Architecture willArchitecture;
         [DataMember]
         private int willArchitectureID = -1;
@@ -632,45 +606,189 @@ namespace GameObjects
         public int SpeedIncreaseInViewArea;
         public int SpeedDecreaseInViewArea;
 
-        private TroopList friendlyTroopsInView = new TroopList();
-        private TroopList hostileTroopsInView = new TroopList();
+        private List<Troop> friendlyTroopsInView = new();
+        private List<Troop> hostileTroopsInView = new();
 
         [DataMember]
-        public bool QuickBattling = false;
-
-        private int forceTroopTargetId;
-
-        private Troop forceTroopTarget;
+        public bool QuickBattling { get; set; }
 
         private int tiredness;
 
-        public Troop ForceTroopTarget
+        public Troop(TroopConfig config) : this()
         {
-            get
-            {
-                if (forceTroopTarget == null)
-                {
-                    forceTroopTarget = (Troop)Session.Current.Scenario.Troops.GetGameObject(forceTroopTargetId);
-                }
-                return forceTroopTarget;
-            }
+            ID = config.Id;
+            LeaderIDString = config.LeaderId;
+            Controllable = config.Controllable;
+            Status = config.Status;
+            Direction = config.Direction;
+            Auto = config.Auto;
+            Food = config.Food;
+            StartingArchitectureString = config.StartingArchitectureString;
+            PersonsString = config.PersonsString;
+            position = config.Position;
+            destination = config.Destination;
+            realDestination = config.RealDestination;
+            FirstTierPath = config.FirstTierPath;
+            SecondTierPath = config.SecondTierPath;
+            ThirdTierPath = config.ThirdTierPath;
+            FirstIndex = config.FirstIndex;
+            SecondIndex = config.SecondIndex;
+            ThirdIndex = config.ThirdIndex;
+            MilitaryID = config.MilitaryID;
+            CastDefaultKind = config.CastDefaultKind;
+            CastTargetKind = config.CastTargetKind;
+            AttackDefaultKind = config.AttackDefaultKind;
+            AttackTargetKind = config.AttackTargetKind;
+            TargetTroopID = config.TargetTroopID;
+            TargetArchitectureID = config.TargetArchitectureID;
+            WillTroopID = config.WillTroopID;
+            WillArchitectureID = config.WillArchitectureID;
+            CurrentCombatMethodID = config.CurrentCombatMethodID;
+            CurrentStratagemID = config.CurrentStratagemID;
+            SelfCastPosition = config.SelfCastPosition;
+            ChaosDayLeft = config.ChaosDayLeft;
+            CutRoutewayDays = config.CutRoutewayDays;
+            CaptivesString = config.CaptivesString;
+            RecentlyFighting = config.RecentlyFighting;
+            TechnologyIncrement = config.TechnologyIncrement;
+            EventInfluencesString = config.EventInfluencesString;
+            CurrentStuntIDString = config.CurrentStuntIDString;
+            StuntDayLeft = config.StuntDayLeft;
+            zijin = config.Fund;
+            mingling = config.Order;
+            ManualControl = config.ManualControl;
+            ForceTroopTargetId = config.ForceTroopTargetId;
+            QuickBattling = config.QuickBattling;
+            AllowedStrategems = config.AllowedStrategems;
+            captureChance = config.CaptureChance;
+            chongshemubiaoweizhibiaoji = config.IsTargetPositionReset;
+            CurrentTileAnimationKind = config.CurrentTileAnimationKind;
+            Destroyed = config.Destroyed;
+            Effect = config.Effect;
+            FriendlyAction = config.FriendlyAction;
+            HasPath = config.HasPath;
+            HasToDoCombatAction = config.HasToDoCombatAction;
+            HostileAction = config.HostileAction;
+            minglingweizhi = config.OrderPosition;
+            Morale = config.Morale;
+            MoveAnimationFrames = config.MoveAnimationFrames;
+            Moved = config.Moved;
+            OperationDone = config.OperationDone;
+            OrientationPosition = config.OrientationPosition;
+            OutburstDefenceMultiple = config.OutburstDefenceMultiple;
+            OutburstNeverBeIntoChaos = config.OutburstNeverBeIntoChaos;
+            OutburstOffenceMultiple = config.OutburstOffenceMultiple;
+            OutburstPreventCriticalStrike = config.OutburstPreventCriticalStrike;
+            PreAction = config.PreAction;
+            PreviousPosition = config.PreviousPosition;
+            Quantity = config.Quantity;
+            QueueEnded = config.QueueEnded;
+            ShowPath = config.ShowPath;
+            Simulating = config.Simulating;
+            StepNotFinished = config.StepNotFinished;
+            WaitForDeepChaosFrameCount = config.WaitForDeepChaosFrameCount;
+            TroopStatus = config.TroopStatus;
+            StuntMustSurround = config.StuntMustSurround;
+            // targetArchitectureID = config.targetArchitectureID;
+            // targetTroopID = config.targetTroopID;
+            // willArchitectureID = config.willArchitectureID;
+            // willTroopID = config.willTroopID;
+            AutoCombatMethodID = config.AutoCombatMethodID;
         }
 
-        [DataMember]
-        public int ForceTroopTargetId
+
+        public TroopConfig ToConfig()
         {
-            get
+            return new TroopConfig
             {
-                return forceTroopTargetId;
-            }
-            set
-            {
-                forceTroopTargetId = value;
-            }
+                Id = ID,
+                LeaderId = LeaderIDString,
+                Controllable = Controllable,
+                Status = Status,
+                Direction = Direction,
+                Auto = Auto,
+                Food = Food,
+                StartingArchitectureString = StartingArchitectureString,
+                PersonsString = PersonsString,
+                Position = Position,
+                Destination = Destination,
+                RealDestination = RealDestination,
+                FirstTierPath = FirstTierPath,
+                SecondTierPath = SecondTierPath,
+                ThirdTierPath = ThirdTierPath,
+                FirstIndex = FirstIndex,
+                SecondIndex = SecondIndex,
+                ThirdIndex = ThirdIndex,
+                MilitaryID = MilitaryID,
+                CastDefaultKind = CastDefaultKind,
+                CastTargetKind = CastTargetKind,
+                AttackDefaultKind = AttackDefaultKind,
+                AttackTargetKind = AttackTargetKind,
+                TargetTroopID = TargetTroopID,
+                TargetArchitectureID = TargetArchitectureID,
+                WillTroopID = WillTroopID,
+                WillArchitectureID = WillArchitectureID,
+                CurrentCombatMethodID = CurrentCombatMethodID,
+                CurrentStratagemID = CurrentStratagemID,
+                SelfCastPosition = SelfCastPosition,
+                ChaosDayLeft = ChaosDayLeft,
+                CutRoutewayDays = CutRoutewayDays,
+                CaptivesString = CaptivesString,
+                RecentlyFighting = RecentlyFighting,
+                TechnologyIncrement = TechnologyIncrement,
+                EventInfluencesString = EventInfluencesString,
+                CurrentStuntIDString = CurrentStuntIDString,
+                StuntDayLeft = StuntDayLeft,
+                Fund = zijin,
+                Order = mingling,
+                ManualControl = ManualControl,
+                ForceTroopTargetId = ForceTroopTargetId,
+                QuickBattling = QuickBattling,
+                AllowedStrategems = AllowedStrategems,
+                CaptureChance = captureChance,
+                IsTargetPositionReset = chongshemubiaoweizhibiaoji,
+                CurrentTileAnimationKind = CurrentTileAnimationKind,
+                Destroyed = Destroyed,
+                Effect = Effect,
+                FriendlyAction = FriendlyAction,
+                HasPath = HasPath,
+                HasToDoCombatAction = HasToDoCombatAction,
+                HostileAction = HostileAction,
+                OrderPosition = minglingweizhi,
+                Morale = Morale,
+                MoveAnimationFrames = MoveAnimationFrames,
+                Moved = Moved,
+                OperationDone = OperationDone,
+                OrientationPosition = OrientationPosition,
+                OutburstDefenceMultiple = OutburstDefenceMultiple,
+                OutburstNeverBeIntoChaos = OutburstNeverBeIntoChaos,
+                OutburstOffenceMultiple = OutburstOffenceMultiple,
+                OutburstPreventCriticalStrike = OutburstPreventCriticalStrike,
+                PreAction = PreAction,
+                PreviousPosition = PreviousPosition,
+                Quantity = Quantity,
+                QueueEnded = QueueEnded,
+                ShowPath = ShowPath,
+                Simulating = Simulating,
+                StepNotFinished = StepNotFinished,
+                WaitForDeepChaosFrameCount = WaitForDeepChaosFrameCount,
+                TroopStatus = TroopStatus,
+                StuntMustSurround = StuntMustSurround,
+                // targetArchitectureID = targetArchitectureID,
+                // targetTroopID = targetTroopID,
+                // willArchitectureID = willArchitectureID,
+                // willTroopID = willTroopID,
+                AutoCombatMethodID = AutoCombatMethodID,
+            };
         }
 
+        public Troop ForceTroopTarget => Session.Current.Scenario.Troops.GetValueOrDefault(ForceTroopTargetId);
+
         [DataMember]
-        public bool ManualControl;
+        public int ForceTroopTargetId { get; set; }
+
+        [DataMember]
+        public bool ManualControl { get; set; }
 
         [DataMember]
         public string PersonsString { get; set; }
@@ -678,128 +796,25 @@ namespace GameObjects
         [DataMember]
         public int LeaderIDString { get; set; }
 
-        private PersonList persons = new PersonList();
-        [DataMember]
-        public List<int> AllowedStrategems = new List<int>();
+        private List<Person> persons = new();
 
         [DataMember]
-        public int captureChance = 0;
+        public List<int> AllowedStrategems { get; set; } = new List<int>();
+
+        [DataMember]
+        public int captureChance { get; set; }
 
         public List<Influence> InfluencesApplying = new List<Influence>();
 
-        public GameObjectList Candidates;
-
-#pragma warning disable CS0067 // The event 'Troop.OnAmbush' is never used
-        public event Ambush OnAmbush;
-#pragma warning restore CS0067 // The event 'Troop.OnAmbush' is never used
-
-        public event AntiArrowAttack OnAntiArrowAttack;
-
-        public event AntiAttack OnAntiAttack;
-
-        public event ApplyStunt OnApplyStunt;
-
-        public event BreakWall OnBreakWall;
-
-        public event CastDeepChaos OnCastDeepChaos;
-
-        public event CastStratagem OnCastStratagem;
-
-        public event Chaos OnChaos;
-
-        public event Rumour OnRumour;
-
-        public event Attract OnAttract;
-
-        public event CombatMethodAttack OnCombatMethodAttack;
-
-        public event CriticalStrike OnCriticalStrike;
-
-        public event DiscoverAmbush OnDiscoverAmbush;
-
-        public event EndCutRouteway OnEndCutRouteway;
-
-        public event EndPath OnEndPath;
-
-#pragma warning disable CS0067 // The event 'Troop.OnEnterFactionArea' is never used
-        public event EnterFactionArea OnEnterFactionArea;
-#pragma warning restore CS0067 // The event 'Troop.OnEnterFactionArea' is never used
-
-        public event GetNewCaptive OnGetNewCaptive;
-
-        public event GetSpreadBurnt OnGetSpreadBurnt;
-
-#pragma warning disable CS0067 // The event 'Troop.OnLeaveFactionArea' is never used
-        public event LeaveFactionArea OnLeaveFactionArea;
-#pragma warning restore CS0067 // The event 'Troop.OnLeaveFactionArea' is never used
-
-        public event LevyFieldFood OnLevyFieldFood;
-
-        public event NormalAttack OnNormalAttack;
-
-        public event OccupyArchitecture OnOccupyArchitecture;
-
-        public event Outburst OnOutburst;
-
-        public event PathNotFound OnPathNotFound;
-
-#pragma warning disable CS0067 // The event 'Troop.OnPersonChallenge' is never used
-        public event PersonChallenge OnPersonChallenge;
-#pragma warning restore CS0067 // The event 'Troop.OnPersonChallenge' is never used
-
-        public event PersonControversy OnPersonControversy;
-
-        public event ReceiveCriticalStrike OnReceiveCriticalStrike;
-
-        public event ReceiveWaylay OnReceiveWaylay;
-
-        public event RecoverFromChaos OnRecoverFromChaos;
-
-        public event ReleaseCaptive OnReleaseCaptive;
-
-        public event ResistStratagem OnResistStratagem;
-
-        public event Rout OnRout;
-
-        public event Routed OnRouted;
-
-        public event SetCombatMethod OnSetCombatMethod;
-
-        public event SetStratagem OnSetStratagem;
-
-        public event StartCutRouteway OnStartCutRouteway;
-
-#pragma warning disable CS0067 // The event 'Troop.OnStartPath' is never used
-        public event StartPath OnStartPath;
-#pragma warning restore CS0067 // The event 'Troop.OnStartPath' is never used
-
-        public event StopAmbush OnStopAmbush;
-
-        public event StratagemSuccess OnStratagemSuccess;
-
-        public event Surround OnSurround;
-
-        public event TroopCreate OnTroopCreate;
-
-#pragma warning disable CS0067 // The event 'Troop.OnTroopFound' is never used
-        public event TroopFound OnTroopFound;
-#pragma warning restore CS0067 // The event 'Troop.OnTroopFound' is never used
-
-#pragma warning disable CS0067 // The event 'Troop.OnTroopLost' is never used
-        public event TroopLost OnTroopLost;
-#pragma warning restore CS0067 // The event 'Troop.OnTroopLost' is never used
-
-        public event TransportArrived OnTransportArrived;
-
-        public event Waylay OnWaylay;
+        public List<Person> Candidates;
 
         public Troop()
         {
-            this.pathFinder = new TroopPathFinder(this);
-            this.simplepathFinder.OnGetCost += new TierPathFinder.GetCost(this.simplepathFinder_OnGetCost);
+            pathFinder = new TroopPathFinder(this);
+            simplepathFinder.OnGetCost += new TierPathFinder.GetCost(simplepathFinder_OnGetCost);
         }
 
-        public PersonList Persons
+        public List<Person> Persons
         {
             //get
             //{
@@ -822,29 +837,25 @@ namespace GameObjects
         [DataMember]
         public string CaptivesString { get; set; }
 
-        public CaptiveList Captives
+        public List<Captive> Captives
         {
             get
             {
-                CaptiveList result = new CaptiveList();
-                foreach (Captive i in Session.Current.Scenario.Captives)
+                var result = new List<Captive>();
+                var captives = Session.Current.Scenario.GetCaptives();
+
+                foreach (var captive in captives)
                 {
-                    if (i.LocationTroop == this)
+                    if (captive.LocationTroop == this)
                     {
-                        result.Add(i);
+                        result.Add(captive);
                     }
                 }
                 return result;
             }
         }
 
-        public bool IsTransport
-        {
-            get
-            {
-                return this.Army.IsTransport;
-            }
-        }
+        public bool IsTransport => Army.IsTransport;
 
         private void AddAreaInfluences(Point p)
         {
@@ -955,13 +966,17 @@ namespace GameObjects
 
         public void AddCaptive(Captive captive)
         {
-            captive.CaptivePerson.LocationTroop = this;
-            if (this.BelongedFaction != null)
+            var captivePerson = captive.CaptivePerson;
+
+            if (captivePerson == null) return;
+
+            captivePerson.LocationTroop = this;
+            if (BelongedFaction != null)
             {
-                foreach (Treasure treasure in captive.CaptivePerson.Treasures.GetList())
+                foreach (var treasure in captivePerson.Treasures.ToList())
                 {
-                    captive.CaptivePerson.LoseTreasure(treasure);
-                    this.BelongedFaction.Leader.ReceiveTreasure(treasure);
+                    captivePerson.LoseTreasure(treasure);
+                    BelongedFaction.Leader.ReceiveTreasure(treasure);
                 }
             }
         }
@@ -993,129 +1008,134 @@ namespace GameObjects
             }
         }
 
-        private static string getSoundPath(Troop t, Animation a)
+        private const string SoundRoot = "Content/Sound/Animation/";
+        private static string GetSoundPath(Troop t, Animation a)
         {
-            if (Directory.Exists("Content/Sound/Animation/Person/" + t.Leader.ID))
+            string personDir = SoundRoot + "Person/" + t.Leader.ID;
+
+            if (Directory.Exists(personDir))
             {
-                string[] files = Directory.GetFiles("Content/Sound/Animation/Person/" + t.Leader.ID, a.Name + "*.wav");
-                if (files.Count() > 0)
+                int count = Directory.GetFiles(personDir, a.Name + "*.wav").Length;
+                if (count > 0)
                 {
-                    return "Content/Sound/Animation/Person/" + t.Leader.ID + "/" + a.Name + GameObject.Random(1, files.Count()) + ".wav";
-                }
-                else
-                {
-                    return t.Leader.Sex ? "Content/Sound/Animation/Female/" + a.Name : "Content/Sound/Animation/Male/" + a.Name;
+                    return personDir + "/" + a.Name + GameObject.Random(1, count) + ".wav";
                 }
             }
-            else
-            {
-                return t.Leader.Sex ? "Content/Sound/Animation/Female/" + a.Name : "Content/Sound/Animation/Male/" + a.Name;
-            }
+            
+            string genderDir = t.Leader.Sex ? "Female/" : "Male/";
+            return SoundRoot + genderDir + a.Name + ".wav";
         }
 
         private void AddCastAnimation(Troop troop, bool sound)
         {
-            if (this.CurrentStratagem.AnimationKind != TileAnimationKind.无)
-            {
-                GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(this.CurrentStratagem.AnimationKind, troop.Position, false);
-                if ((animation != null) && sound)
-                {
-                    this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
-                }
-            }
+            if (CurrentStratagem.AnimationKind == TileAnimationKind.无)
+                return;
+            
+            TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(CurrentStratagem.AnimationKind, troop.Position, false);
+
+            if (animation == null || !sound)
+                return;
+
+            TryToPlaySound(Position, getSoundPath(animation.LinkedAnimation));
         }
 
         private void AddzhanfaAnimation(Troop troop, bool sound)
         {
-            if (this.CurrentCombatMethod.AnimationKind != TileAnimationKind.无)
-            {
-                GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(this.CurrentCombatMethod.AnimationKind, troop.Position, false);
-                if ((animation != null) && sound && this.PreAction != TroopPreAction.暴击)
-                {
-                    this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
-                }
-            }
+            if (CurrentCombatMethod.AnimationKind == TileAnimationKind.无)
+                return;
+
+            TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(CurrentCombatMethod.AnimationKind, troop.Position, false);
+
+            if (animation == null || !sound || PreAction == TroopPreAction.CriticalHit)
+                return;
+
+            TryToPlaySound(Position, getSoundPath(animation.LinkedAnimation));
         }
 
         private void AddSelfzhanfaAnimation()
         {
-            if (this.CurrentCombatMethod.AnimationKind != TileAnimationKind.无)
-            {
-                GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(this.CurrentCombatMethod.AnimationKind, this.Position, false);
-                if (animation != null && this.PreAction != TroopPreAction.暴击)
-                {
-                    this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
-                }
-            }
+            if (CurrentCombatMethod.AnimationKind == TileAnimationKind.无)
+                return;
+            
+            TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(CurrentCombatMethod.AnimationKind, Position, false);
+
+            if (animation == null || PreAction == TroopPreAction.CriticalHit)
+                return;
+
+            TryToPlaySound(Position, getSoundPath(animation.LinkedAnimation));
         }
 
         public void AddMoveAnimationIndex(int steps)
         {
-            if (this.Action == TroopAction.Move)
+            if (Action != TroopAction.Move) 
+                return;
+            
+            moveFrameIndex += steps;
+            if (moveFrameIndex >= Session.GlobalVariables.TroopMoveFrameCount)
             {
-                this.moveFrameIndex += steps;
-                if (this.moveFrameIndex >= Session.GlobalVariables.TroopMoveFrameCount)
-                {
-                    this.moveFrameIndex = 0;
-                    this.Action = TroopAction.Stop;
-                }
+                moveFrameIndex = 0;
+                Action = TroopAction.Stop;
             }
         }
 
         public void AddRoutCount()
         {
-            foreach (Person person in this.Persons)
+            var yearTables = Session.Current.Scenario.YearTable;
+            var date = Session.Current.Scenario.Date;
+
+            foreach (var person in Persons)
             {
-                if (person == this.Leader)
+                if (person == Leader)
                 {
                     person.RoutCount++;
-                    Session.Current.Scenario.YearTable.addDefeatedManyTroopsEntry(Session.Current.Scenario.Date, person, person.RoutCount);
+                    yearTables.addDefeatedManyTroopsEntry(date, person, person.RoutCount);
                 }
             }
-            this.Army.RoutCount++;
+
+            Army.RoutCount++;
         }
 
         public void AddRoutedCount()
         {
-            if (!this.IsTransport)
+            if (IsTransport) return;
+            
+            foreach (var person in Persons)
             {
-                foreach (Person person in this.Persons)
-                {
-                    person.RoutedCount++;
-                }
+                person.RoutedCount++;
             }
         }
 
         private void AddSelfCastAnimation()
         {
-            if (this.CurrentStratagem.AnimationKind != TileAnimationKind.无)
-            {
-                GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(this.CurrentStratagem.AnimationKind, this.SelfCastPosition, false);
-                if (animation != null)
-                {
-                    this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
-                }
-            }
+            if (CurrentStratagem.AnimationKind == TileAnimationKind.无) 
+                return;
+            
+            TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(CurrentStratagem.AnimationKind, SelfCastPosition, false);
+
+            if (animation == null)
+                return;
+            
+            TryToPlaySound(Position, getSoundPath(animation.LinkedAnimation));
         }
 
         public void AI()
         {
-            if (this.BelongedLegion == null && this.BelongedFaction != null)
+            if (BelongedLegion == null && BelongedFaction != null)
             {
-                this.BelongedLegion = this.BelongedFaction.GetLegion(this.WillArchitecture == null ? this.StartingArchitecture : this.WillArchitecture);
+                BelongedLegion = BelongedFaction.GetLegion(WillArchitecture == null ? StartingArchitecture : WillArchitecture);
             }
-            
-            if (this.ControlAvail() && !this.Destroyed && !this.ManualControl)
+
+            if (ControlAvail() && !Destroyed && !ManualControl)
             {
-                if (!this.IsRobber && this.BelongedLegion != null)
+                if (!IsRobber && BelongedLegion != null)
                 {
-                    this.PrepareAI();
-                    this.PreActionAI();
+                    PrepareAI();
+                    PreActionAI();
                 }
-                this.WillAI();
-                if (!this.IsRobber && this.BelongedLegion != null)
+                WillAI();
+                if (!IsRobber && BelongedLegion != null)
                 {
-                    this.PostActionAI();
+                    PostActionAI();
                 }
             }
             ExtensionInterface.call("TroopAI", new Object[] { Session.Current.Scenario, this });
@@ -1157,13 +1177,13 @@ namespace GameObjects
                             if (stuckedFor >= 8)
                             {
                                 this.RealDestination = new Point(stuckPosition.X + Random(5) - 2, stuckPosition.Y + Random(5) - 2);
-                                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                                 return false;
                             }
                             else
                             {
                                 this.GoBack();
-                                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                                 return false;
                             }
                         }
@@ -1178,7 +1198,7 @@ namespace GameObjects
                 if (this.WillArchitecture.BelongedFaction != this.BelongedFaction && this.Army.Kind.IsTransport)
                 {
                     this.GoBack();
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     return false;
                 }
                 //retreat if target has too much food/fund that further transfer will fill up there, for transport troop
@@ -1187,21 +1207,21 @@ namespace GameObjects
                     this.Army.Kind.IsTransport && !this.StartingArchitecture.HasHostileTroopsInView())
                 {
                     this.GoBack();
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     return false;
                 }
                 //retreat if morale < 45 or has more injured troop than working troops, with 80 + 2 x calmness chance
-                if (GameObject.Chance(80 + (this.Leader.Calmness * 2)) && ((this.InjuryQuantity > this.Quantity) || (this.Morale < 45)
+                if (GameObject.GetChance(80 + (this.Leader.Calmness * 2)) && ((this.InjuryQuantity > this.Quantity) || (this.Morale < 45)
                         || (this.Army.Scales <= 5 && !this.IsTransport && this.BelongedLegion != null && this.BelongedLegion.Kind == LegionKind.Offensive)))
                 {
                     this.GoBack();
-                    if (GameObject.Chance(50))
+                    if (GameObject.GetChance(50))
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattack;
                     }
                     else
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     }
                     return false;
                 }
@@ -1215,13 +1235,13 @@ namespace GameObjects
                                 !this.BelongedLegion.PreferredRouteway.IsEnough(this.BelongedLegion.PreferredRouteway.LastActivePoint.ConsumptionRate, this.FoodCostPerDay))))
                     {
                         this.GoBack();
-                        if (GameObject.Chance(50))
+                        if (GameObject.GetChance(50))
                         {
-                            this.AttackTargetKind = TroopAttackTargetKind.无反;
+                            this.AttackTargetKind = TroopAttackTargetKind.NoCounterattack;
                         }
                         else
                         {
-                            this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                            this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         }
                         return false;
                     }
@@ -1234,7 +1254,7 @@ namespace GameObjects
                         (this.Morale <= 40 && this.BelongedLegion.Kind == LegionKind.Defensive && this.StartingArchitecture.Endurance > 30)))
                     {
                         this.GoBack();
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.WillTroop = null;
                         this.TargetTroop = null;
                         this.TargetArchitecture = null;
@@ -1246,7 +1266,7 @@ namespace GameObjects
                         (this.BelongedLegion.Kind == LegionKind.Defensive && this.StartingArchitecture.Endurance > 30)))
                 {
                     this.GoBack();
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
 
                     return false;
                 }
@@ -1256,7 +1276,7 @@ namespace GameObjects
                     if (!(this.IsFriendly(this.WillArchitecture.BelongedFaction) || (this.BelongedLegion.Kind != LegionKind.Defensive)))
                     {
                         this.GoBack();
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         return false;
                     }
                 }
@@ -1266,10 +1286,10 @@ namespace GameObjects
                 //3. the target arch does not belong to own faction, and
                 //4. the target arch cannot see this troop
                 //then retreat
-                /*if (!(((!GameObject.Chance(10 + this.Leader.Calmness) || !this.HasHostileTroopInView()) 
+                /*if (!(((!GameObject.Chance(10 + this.Leader.Calmness) || !this.HasHostileTroopInView())
                     || (this.WillArchitecture.BelongedFaction == this.BelongedFaction)) || this.WillArchitecture.ViewTroop(this)))
                 {
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     return false;
                 }*/
                 //if
@@ -1278,28 +1298,30 @@ namespace GameObjects
                 if (!(((this.WillArchitecture.BelongedFaction == this.BelongedFaction) ||
                     !this.IsFriendly(this.WillArchitecture.BelongedFaction)) || this.WillArchitecture.HasHostileTroopsInView()))
                 {
-                    this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                    this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                     this.GoBack();
                     return false;
                 }
                 //retreat if the starting arch is under attack and cannot resist such attack, and enemy city does not seem to fall
                 if (this.BelongedLegion != null)
                 {
-                    if (this.StartingArchitecture.TotalHostileForce > this.StartingArchitecture.TotalFriendlyForce * 1.2 && this.BelongedLegion.Kind == LegionKind.Offensive &&
-                        !this.StartingArchitecture.GetFriendlyTroopsInView().GameObjects.Contains(this) &&
-                        (this.WillArchitecture.Endurance >= 30 || this.StartingArchitecture.Endurance <= 30) && !this.IsTransport)
+                    if (StartingArchitecture.TotalHostileForce > StartingArchitecture.TotalFriendlyForce * 1.2 
+                        && BelongedLegion.Kind == LegionKind.Offensive 
+                        && !StartingArchitecture.GetFriendlyTroopsInView().Contains(this) 
+                        && (WillArchitecture.Endurance >= 30 || StartingArchitecture.Endurance <= 30) 
+                        && !IsTransport)
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
-                        this.GoBack();
+                        AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
+                        GoBack();
                         return false;
                     }
                 }
                 // retreat if anyone in the team is too tired
                 foreach (Person p in this.Persons)
                 {
-                    if (p.TooTiredToBattle && GameObject.Chance(20))
+                    if (p.TooTiredToBattle && GameObject.GetChance(20))
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.GoBack();
                         return false;
                     }
@@ -1330,12 +1352,12 @@ namespace GameObjects
                         friendlyFightingForce += i.FightingForce;
                     }
                     float hostileToFriendlyRatio = (float)hostileFightingForce / friendlyFightingForce;
-                    if (GameObject.Chance((int)((hostileToFriendlyRatio - 1) * 10)) &&
-                        (GameObject.Chance((int)((this.Leader.Calmness - this.Leader.Braveness + 10) * 4 * hostileToFriendlyRatio)) &&
-                        (GameObject.Chance((int)(((this.Experience + (this.Army.FollowedLeader != null ? 1000 : this.Army.LeaderExperience)) / 2000 + 10) * hostileToFriendlyRatio))) ||
-                            !this.BelongedFaction.AvailableMilitaryKinds.GetMilitaryKindList().GameObjects.Contains(this.Army.Kind)))
+                    if (GameObject.GetChance((int)((hostileToFriendlyRatio - 1) * 10)) &&
+                        (GameObject.GetChance((int)((this.Leader.Calmness - this.Leader.Braveness + 10) * 4 * hostileToFriendlyRatio)) &&
+                        (GameObject.GetChance((int)(((this.Experience + (this.Army.FollowedLeader != null ? 1000 : this.Army.LeaderExperience)) / 2000 + 10) * hostileToFriendlyRatio))) ||
+                            !BelongedFaction.AvailableMilitaryKinds.ContainsKey(Army.Kind.ID)))
                     {
-                        this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                        this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                         this.GoBack();
                         return false;
                     }
@@ -1387,8 +1409,8 @@ namespace GameObjects
             }*/
 
             // legion did not see will arch, do not see an enemy
-            /*if (!this.IsRobber && !this.ViewingWillArchitecture && this.Army.Kind.Type != MilitaryType.水军 && this.Morale > 0x4b && this.BelongedLegion.Kind == LegionKind.Offensive && 
-                this.WillArchitecture.BelongedFaction != this.BelongedFaction && !this.HasHostileTroopInView() && !this.BelongedLegion.HasTroopViewingWillArchitecture && 
+            /*if (!this.IsRobber && !this.ViewingWillArchitecture && this.Army.Kind.Type != MilitaryType.Navy && this.Morale > 0x4b && this.BelongedLegion.Kind == LegionKind.Offensive &&
+                this.WillArchitecture.BelongedFaction != this.BelongedFaction && !this.HasHostileTroopInView() && !this.BelongedLegion.HasTroopViewingWillArchitecture &&
                 this.WillArchitecture.BelongedFaction != null)
             {
                 foreach (Point point in dayArea.Area)
@@ -1406,18 +1428,18 @@ namespace GameObjects
             }*/
             this.OffenceOnlyBeforeMoveFlag = false;
 
-            if (this.BelongedLegion != null && this.BelongedLegion.PreferredRouteway != null && 
-                !this.BelongedLegion.PreferredRouteway.Developing && this.BelongedLegion.PreferredRouteway.LastPoint != null 
+            if (this.BelongedLegion != null && this.BelongedLegion.PreferredRouteway != null &&
+                !this.BelongedLegion.PreferredRouteway.Developing && this.BelongedLegion.PreferredRouteway.LastPoint != null
                 && this.BelongedLegion.PreferredRouteway.LastPoint.Index < this.BelongedLegion.PreferredRouteway.RoutePoints.Count - 1)
             {
                 if (this.CurrentCombatMethod == null)
                 {
-                    this.AttackDefaultKind = TroopAttackDefaultKind.防最弱;
-                    this.AttackTargetKind = TroopAttackTargetKind.目标默认;
+                    this.AttackDefaultKind = TroopAttackDefaultKind.WeakestDefense;
+                    this.AttackTargetKind = TroopAttackTargetKind.TargetDefault;
                 }
                 if (this.CurrentStratagem == null)
                 {
-                    this.CastTargetKind = TroopCastTargetKind.特定默认;
+                    this.CastTargetKind = TroopCastTargetKind.SpecificDefault;
                 }
                 this.RealDestination = this.BelongedLegion.PreferredRouteway.LastPoint.Position;
                 return true;
@@ -1452,11 +1474,11 @@ namespace GameObjects
             Point? nullable = null;
             Point? nullable2 = null;
             Session.Current.Scenario.GetClosestPointsBetweenTwoAreas(dayArea, this.WillArchitecture.ArchitectureArea, out nullable, out nullable2);
-            if ((this.CurrentStunt != null) || (GameObject.Random(this.Stunts.Count + 3) < 3))
+            if ((this.CurrentStunt != null) || (StaticMethods.Random(Stunts.Count + 3) < 3))
             {
-                if (hasTargetTroopFlag && ((credit < 500) || (GameObject.Chance(this.Combativity) && GameObject.Chance(90))))
-                { //Label_0712:
-                    foreach (CombatMethod method in this.CombatMethods.CombatMethods.Values.ToArray())//ToArray()添加防止集合已修改;可能无法执行枚举操作
+                if (hasTargetTroopFlag && ((credit < 500) || (GameObject.GetChance(this.Combativity) && GameObject.GetChance(90))))
+                {
+                    foreach (var method in CombatMethods.Values)
                     {
                         if (!this.HasCombatMethod(method.ID))
                         {
@@ -1501,9 +1523,9 @@ namespace GameObjects
                         }
                     }
                 }
-                if ((((this.Morale <= 90) || hasTargetTroopFlag) || ((hasUnAttackableTroop || GameObject.Chance(10)) || this.HasHostileArchitectureInView())) && ((credit < 500) || (GameObject.Chance(this.Combativity) && GameObject.Chance(30))))
+                if ((((this.Morale <= 90) || hasTargetTroopFlag) || ((hasUnAttackableTroop || GameObject.GetChance(10)) || this.HasHostileArchitectureInView())) && ((credit < 500) || (GameObject.GetChance(this.Combativity) && GameObject.GetChance(30))))
                 {
-                    foreach (Stratagem stratagem in this.Stratagems.Stratagems.Values)
+                    foreach (var stratagem in Session.Current.Scenario.GameCommonData.AllStratagems.Values)
                     {
                         if (this.HasStratagem(stratagem.ID))
                         {
@@ -1565,7 +1587,7 @@ namespace GameObjects
                                 {
                                     foreach (Troop troop in hostileTroopList)
                                     {
-                                       
+
                                         moveCreditByPosition = this.GetStratagemCreditByPosition(stratagem, troop);
 
                                         foreach (KeyValuePair<Condition, float> weight in stratagem.AIConditionWeightSelf)
@@ -1598,7 +1620,7 @@ namespace GameObjects
                     }
                 }
             }
-            if (this.OffenceOnlyBeforeMove && ((credit <= 0) || ((credit < 100) && GameObject.Chance(100 - credit))))
+            if (this.OffenceOnlyBeforeMove && ((credit <= 0) || ((credit < 100) && GameObject.GetChance(100 - credit))))
             {
                 this.OffenceOnlyBeforeMoveFlag = true;
                 foreach (Point point in dayArea.Area)
@@ -1618,7 +1640,7 @@ namespace GameObjects
             }
             if (credit < 0)
             {
-                this.AttackTargetKind = TroopAttackTargetKind.攻防皆弱默认;
+                this.AttackTargetKind = TroopAttackTargetKind.AttackAndDefenseWeakDefault;
                 this.TargetTroop = null;
                 this.TargetArchitecture = null;
                 return false;
@@ -1695,7 +1717,7 @@ namespace GameObjects
             }
             if (pack3 == null)
             {
-                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
+                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
                 this.GoBack();
                 return false;
             }
@@ -1719,29 +1741,29 @@ namespace GameObjects
             {
                 if (this.CurrentCombatMethod == null)
                 {
-                    this.AttackDefaultKind = TroopAttackDefaultKind.防最弱;
-                    this.AttackTargetKind = TroopAttackTargetKind.目标默认;
+                    this.AttackDefaultKind = TroopAttackDefaultKind.WeakestDefense;
+                    this.AttackTargetKind = TroopAttackTargetKind.TargetDefault;
                 }
                 if (this.CurrentStratagem == null)
                 {
-                    this.CastTargetKind = TroopCastTargetKind.特定默认;
+                    this.CastTargetKind = TroopCastTargetKind.SpecificDefault;
                 }
                 this.TargetTroop = pack3.TargetTroop;
                 this.TargetArchitecture = null;
             }
             else if (pack3.TargetArchitecture != null)
             {
-                this.AttackDefaultKind = TroopAttackDefaultKind.耐最低;
-                this.AttackTargetKind = TroopAttackTargetKind.目标默认;
-                this.CastTargetKind = TroopCastTargetKind.智低默认;
+                this.AttackDefaultKind = TroopAttackDefaultKind.LowestEndurance;
+                this.AttackTargetKind = TroopAttackTargetKind.TargetDefault;
+                this.CastTargetKind = TroopCastTargetKind.IntelligenceLowDefault;
                 this.TargetTroop = null;
                 this.TargetArchitecture = pack3.TargetArchitecture;
             }
             else
             {
-                this.AttackDefaultKind = TroopAttackDefaultKind.防最弱;
-                this.AttackTargetKind = TroopAttackTargetKind.无反默认;
-                this.CastTargetKind = TroopCastTargetKind.智低默认;
+                this.AttackDefaultKind = TroopAttackDefaultKind.WeakestDefense;
+                this.AttackTargetKind = TroopAttackTargetKind.NoCounterattackDefault;
+                this.CastTargetKind = TroopCastTargetKind.IntelligenceLowDefault;
                 this.TargetTroop = null;
                 this.TargetArchitecture = null;
             }
@@ -1762,21 +1784,18 @@ namespace GameObjects
 
         public bool AmbushAvail(int id)
         {
-            if (this.Status != TroopStatus.埋伏)
+            if (Status != TroopStatus.Ambushing)
             {
-                if (this.ProhibitAllAction || this.ProhibitStratagem)
-                {
-                    return false;
-                }
-                Stratagem stratagem = this.Stratagems.GetStratagem(id);
-                if (stratagem != null)
+                if (ProhibitAllAction || ProhibitStratagem) return false;
+
+                if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
                 {
                     if (stratagem.Combativity <= (this.Combativity + this.DecrementOfStratagemCombativityConsuming))
                     {
                         switch (Session.Current.Scenario.GetTerrainKindByPosition(this.Position))
                         {
-                            case TerrainKind.森林:
-                            case TerrainKind.山地:
+                            case TerrainKind.Forrest:
+                            case TerrainKind.Mountain:
                                 {
                                     if (Session.Current.Scenario.GetArchitectureByPosition(this.Position) != null)
                                     {
@@ -1790,7 +1809,7 @@ namespace GameObjects
                                             continue;
                                         }
                                         Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                                        if ((troopByPosition != null) && !(this.IsFriendly(troopByPosition.BelongedFaction) || (troopByPosition.Status == TroopStatus.埋伏)))
+                                        if ((troopByPosition != null) && !(this.IsFriendly(troopByPosition.BelongedFaction) || (troopByPosition.Status == TroopStatus.Ambushing)))
                                         {
                                             return false;
                                         }
@@ -1812,20 +1831,14 @@ namespace GameObjects
 
         public void AmbushDetected(Troop troop)
         {
-            troop.Status = TroopStatus.一般;
+            troop.Status = TroopStatus.Normal;
             troop.OperationDone = true;
             troop.MovabilityLeft = -1;
-            if (this.OnDiscoverAmbush != null)
-            {
-                if (this != troop)
-                {
-                    this.OnDiscoverAmbush(this, troop);
-                }
-                else
-                {
-                    this.OnDiscoverAmbush(null, troop);
-                }
-            }
+
+            Troop attacker = this != troop ? this : null;
+
+            eventManager.Publish(new DiscoverAmbushEvent(attacker, troop));
+
             ExtensionInterface.call("AmbushDetected", new Object[] { Session.Current.Scenario, this, troop });
         }
 
@@ -1846,17 +1859,15 @@ namespace GameObjects
             {
                 this.CurrentStunt.Apply(this);
                 this.StuntDayLeft += this.IncrementOfStuntDay;
-                if (this.OnApplyStunt != null)
-                {
-                    this.OnApplyStunt(this, this.CurrentStunt);
-                }
+                
+                eventManager.Publish(new ApplyStuntEvent(this, CurrentStunt));
             }
         }
         /*
         private void SetOngoingBattle(Troop other, int selfDamage)
         {
             OngoingBattle ob;
-            if (this.Leader.Battle != null && other.Leader.Battle != null) 
+            if (this.Leader.Battle != null && other.Leader.Battle != null)
             {
                 ob = this.Leader.Battle;
 
@@ -1865,7 +1876,7 @@ namespace GameObjects
                 {
                     p.Battle = ob;
                 }
-            } 
+            }
             else if (this.Leader.Battle != null)
             {
                 ob = this.Leader.Battle;
@@ -1991,6 +2002,10 @@ namespace GameObjects
             ob.CalmDay = 0;
         }
         */
+        // 是否有伤害或计略效果尚未结算（在SetNotShowing或动画结束时结算）
+        public bool HasPendingEffect => TroopDamageList.Count > 0 || ArchitectureDamageList.Count > 0
+            || (CurrentStratagem != null && (StratagemApplyed || WaitForDeepChaos));
+
         public void ApplyDamageList()
         {
             foreach (TroopDamage damage in this.TroopDamageList)
@@ -2010,42 +2025,48 @@ namespace GameObjects
 
         public void ApplyEventEffectInfluences()
         {
-            foreach (Influence influence in this.EventInfluences)
+            foreach (var influence in EventInfluences)
             {
                 influence.ApplyInfluence(this, Applier.Event, 0);
             }
         }
-
+        
+        /// <summary>
+        /// 攻心
+        /// </summary>
+        /// <param name="troop"></param>
+        /// <param name="baseDecrement"></param>
         public void ApplyGongxin(Troop troop, int baseDecrement)
         {
             troop.DecreaseMorale(this.GenerateMoraleDecrement(baseDecrement));
             CheckTroopRout(this, troop);
-            if (!this.IsFriendly(troop.BelongedFaction) && GameObject.Chance(20))
+
+            if (!IsFriendly(troop.BelongedFaction) && GameObject.GetChance(20))
             {
-                Person maxControversyAbilityPerson = this.Persons.GetMaxControversyAbilityPerson();
-                Person destination = troop.Persons.GetMaxControversyAbilityPerson();
-                if (((maxControversyAbilityPerson != null) && (destination != null)) && (GameObject.Random(GameObject.Square(destination.Braveness)) < GameObject.Random(0x19)))
+                Person maxControversyAbilityPerson = Persons.MaxBy(x => x.ControversyAbility);
+                Person destination = troop.Persons.MaxBy(x => x.ControversyAbility);
+
+                if (maxControversyAbilityPerson != null && destination != null && GameObject.Random(GameObject.Square(destination.Braveness)) < GameObject.Random(0x19))
                 {
                     int chance = Person.ControversyWinningChance(maxControversyAbilityPerson, destination);
                     if ((maxControversyAbilityPerson.Character.ControversyChance + chance) >= 60)
                     {
-                        bool win = GameObject.Chance(chance);
+                        bool win = GameObject.GetChance(chance);
                         if (win)
                         {
-                            this.IncreaseCombativity(30);
+                            IncreaseCombativity(30);
                             troop.DecreaseCombativity(30);
                         }
                         else
                         {
-                            this.DecreaseCombativity(30);
+                            DecreaseCombativity(30);
                             troop.IncreaseCombativity(30);
                         }
-                        this.CurrentSourceControversyPerson = maxControversyAbilityPerson;
-                        this.CurrentDestinationControversyPerson = destination;
-                        if (this.OnPersonControversy != null)
-                        {
-                            this.OnPersonControversy(win, this, this.CurrentSourceControversyPerson, troop, this.CurrentDestinationControversyPerson);
-                        }
+
+                        CurrentSourceControversyPerson = maxControversyAbilityPerson;
+                        CurrentDestinationControversyPerson = destination;
+
+                        eventManager.Publish(new PersonControversyEvent(win, this, CurrentSourceControversyPerson, troop, CurrentDestinationControversyPerson));
                     }
                 }
             }
@@ -2060,7 +2081,7 @@ namespace GameObjects
                 {
                     this.CurrentStratagem.Apply(this);
                     this.StratagemApplyed = false;
-                    this.AreaStratagemTroops.Clear();
+                    AreaStratagemTroops.Clear();
                 }
                 else if (this.WaitForDeepChaos)
                 {
@@ -2072,11 +2093,11 @@ namespace GameObjects
 
         private void ApplyStuntInfluences()
         {
-            if ((this.CurrentStunt != null) && (this.StuntDayLeft > 0))
+            if (CurrentStunt != null && StuntDayLeft > 0)
             {
-                foreach (Influence influence in this.CurrentStunt.Influences.Influences.Values)
+                foreach (var influence in CurrentStunt.Influences.Values)
                 {
-                    influence.ApplyInfluence(this.Leader, Applier.Stunt, 0, false);
+                    influence.ApplyInfluence(Leader, Applier.Stunt, 0);
                 }
             }
         }
@@ -2162,12 +2183,12 @@ namespace GameObjects
                 }
                 if (this.BaseAttackAllOffenceArea || this.AttackAllOffenceArea)
                 {
-                    foreach (Troop troop2 in this.GetAllOffenceAreaTroops(this.Position))
+                    foreach (var troop2 in GetAllOffenceAreaTroops(Position))
                     {
-                        if (((troop2 != troop) && (troop2 != this)) && (!this.TroopNoAccidentalInjury || !this.IsFriendly(troop2.BelongedFaction)))
+                        if (troop2 != troop && troop2 != this && (!TroopNoAccidentalInjury || !IsFriendly(troop2.BelongedFaction)))
                         {
-                            damage2 = troop2.ReceiveAttackDamage(this.SendAttackDamage(troop2, false));
-                            this.StartAttackTroop(troop2, damage2, true);
+                            damage2 = troop2.ReceiveAttackDamage(SendAttackDamage(troop2, false));
+                            StartAttackTroop(troop2, damage2, true);
                         }
                     }
                 }
@@ -2186,10 +2207,8 @@ namespace GameObjects
             this.OutburstOffenceMultiple = 2;
             this.OutburstNeverBeIntoChaos = true;
             this.CurrentOutburstKind = OutburstKind.愤怒;
-            if (this.OnOutburst != null)
-            {
-                this.OnOutburst(this, this.CurrentOutburstKind);
-            }
+
+            eventManager.Publish(new OutburstEvent(this, CurrentOutburstKind));
             ExtensionInterface.call("BeAngry", new Object[] { Session.Current.Scenario, this });
         }
 
@@ -2198,10 +2217,8 @@ namespace GameObjects
             this.OutburstDefenceMultiple = 2;
             this.OutburstPreventCriticalStrike = true;
             this.CurrentOutburstKind = OutburstKind.沉静;
-            if (this.OnOutburst != null)
-            {
-                this.OnOutburst(this, this.CurrentOutburstKind);
-            }
+
+            eventManager.Publish(new OutburstEvent(this, CurrentOutburstKind));
             ExtensionInterface.call("BeQuiet", new Object[] { Session.Current.Scenario, this });
         }
 
@@ -2248,66 +2265,69 @@ namespace GameObjects
                     }
                 }
 
-                foreach (Person p in this.Persons)
+                foreach (Person p in Persons)
                 {
                     p.TempLoyaltyChange -= Math.Max(1, p.Ambition * 2 - p.PersonalLoyalty + 1);
                 }
 
-                if (this.IsTransport && this.WillArchitecture != null)
+                if (IsTransport && WillArchitecture != null)
                 {
-                    this.WillArchitecture.SuspendTroopTransfer = 0;
+                    WillArchitecture.SuspendTroopTransfer = 0;
                 }
                 bool flag = false;
                 Faction f = this.BelongedFaction;
                 Architecture starting = this.StartingArchitecture;
-                GameObjectList persons = this.persons.GetList();
+
+                var personList = persons.ToList();
+                // GameObjectList persons = this.persons.GetList();
                 this.persons.Clear();
                 this.Destroy(true, true);
-                foreach (Person p in persons)
+
+                float factor = -2f / Math.Max(1, personList.Count);
+
+                foreach (var person in personList)
                 {
-                    foreach (Person q in persons)
+                    foreach (var other in personList)
                     {
-                        if (p == q) continue;
-                        p.AdjustRelation(q, -2f / Math.Max(1, persons.Count), -6);
+                        if (person == other) continue;
+
+                        person.AdjustRelation(other, factor, -6);
                     }
                 }
-                foreach (Person person in persons)
+
+                foreach (var person in persons)
                 {
-                    Point from = this.Position;
-                    if ((starting == null) || (f != starting.BelongedFaction))
+                    Point from = Position;
+
+                    if ((starting == null || f != starting.BelongedFaction) && f.Capital != null)
                     {
-                        if (f.Capital != null)
-                        {
-                            starting = f.Capital;
-                        }
+                        starting = f.Capital;
                     }
+
                     if (starting != null)
                     {
                         person.LocationArchitecture = starting;
                         person.MoveToArchitecture(starting, from);
                     }
+
                     person.LocationTroop = null;
-                    if (this.Leader == person)
-                    {
-                        person.DecreaseReputation(50);
-                    }
-                    else
-                    {
-                        person.DecreaseReputation(30);
-                    }
+
+                    int reputation = Leader == person ? 50 : 30;
+                    person.DecreaseReputation(reputation);
                 }
 
                 if (flag)
                 {
-                    TroopList list = new TroopList();
-                    foreach (Troop troop in this.BelongedFaction.Troops)
+                    var list = new List<Troop>();
+                    foreach (var troop in BelongedFaction.Troops)
                     {
                         if (troop != this)
                         {
                             list.Add(troop);
                         }
                     }
-                    foreach (Troop troop in list)
+
+                    foreach (var troop in list)
                     {
                         troop.FactionDestroy();
                     }
@@ -2400,8 +2420,8 @@ namespace GameObjects
 
             this.SecondTierPath = null;
             this.ThirdTierPath = null;
-            this.secondTierPathDestinationIndex = 0;
-            this.thirdTierPathDestinationIndex = 0;
+            this.SecondIndex = 0;
+            this.ThirdIndex = 0;
 
             return true;
 
@@ -2509,7 +2529,7 @@ namespace GameObjects
                 {
                     this.EnableOneAdaptablility = true;
                     bool flag2 = false;
-                    if ((this.BelongedFaction != null) && !GameObject.Chance(0x21))
+                    if ((this.BelongedFaction != null) && !GameObject.GetChance(0x21))
                     {
                         flag2 = true;
                         foreach (Troop troop in this.BelongedFaction.Troops)
@@ -2564,7 +2584,7 @@ namespace GameObjects
                     cannotFindRouteRounds = 0;
                     return path;
                 }
-                if (this.Status != TroopStatus.一般)
+                if (this.Status != TroopStatus.Normal)
                 {
                     cannotFindRouteRounds = 0;
                     return path;
@@ -2597,61 +2617,62 @@ namespace GameObjects
                 {
                     cannotFindRouteRounds++;
                 }
-                if (this.OnPathNotFound != null)
-                {
-                    this.OnPathNotFound(this);
-                }
+
+                eventManager.Publish(new PathNotFoundEvent(this));
             }
             return path;
         }
 
         public void BurntBySpreadFire()
         {
-            if (this.OnGetSpreadBurnt != null)
-            {
-                this.OnGetSpreadBurnt(this);
-            }
+            eventManager.Publish(new SpreadBurntEvent(this));
         }
 
         private void CallDestroy()
         {
-            if (this.WillArchitecture.Endurance >= (this.WillArchitecture.EnduranceCeiling * 0.1))
+            if (WillArchitecture.Endurance < WillArchitecture.EnduranceCeiling * 0.1) return;
+
+            Person current;
+            var list = new List<Person>();
+
+            foreach (var node in WillArchitecture.AIAllLinkNodes.Values)
             {
-                Person current;
-                PersonList list = new PersonList();
-                foreach (LinkNode node in this.WillArchitecture.AIAllLinkNodes.Values)
+                var nodeA = node.A;
+
+                if (nodeA.BelongedFaction == BelongedFaction 
+                    && nodeA.Fund >= nodeA.DestroyArchitectureFund 
+                    && nodeA.BelongedSection != null 
+                    && nodeA.BelongedSection.AIDetail.AllowOffensiveTactics 
+                    && nodeA.RecentlyAttacked <= 0)
                 {
-                    if ((((node.A.BelongedFaction == this.BelongedFaction) && (node.A.Fund >= node.A.DestroyArchitectureFund)) && node.A.BelongedSection != null && node.A.BelongedSection.AIDetail.AllowOffensiveTactics) && (node.A.RecentlyAttacked <= 0))
+                    //using (IEnumerator enumerator2 = node.A.Persons.GetEnumerator())
+                    IEnumerator enumerator2 = nodeA.MovablePersons.GetEnumerator();
                     {
-                        //using (IEnumerator enumerator2 = node.A.Persons.GetEnumerator())
-                        IEnumerator enumerator2 = node.A.MovablePersons.GetEnumerator();
+                        while (enumerator2.MoveNext())
                         {
-                            while (enumerator2.MoveNext())
-                            {
-                                current = (Person)enumerator2.Current;
-                                list.Add(current);
-                            }
-                        }
-                        if (list.Count >= 10)
-                        {
-                            break;
+                            current = (Person)enumerator2.Current;
+                            list.Add(current);
                         }
                     }
-                }
-                if (list.Count > 0)
-                {
-                    if (list.Count > 1)
+
+                    if (list.Count >= 10)
                     {
-                        list.PropertyName = "DestroyAbility";
-                        list.IsNumber = true;
-                        list.ReSort();
-                    }
-                    current = list[GameObject.Random(list.Count / 2)] as Person;
-                    if (GameObject.Chance(GameObject.Random(current.DestroyAbility - 150)) && (GameObject.Random(current.NonFightingNumber) > GameObject.Random(current.FightingNumber)))
-                    {
-                        current.GoForDestroy(this.WillArchitecture.Position);
+                        break;
                     }
                 }
+            }
+
+            if (list.Count == 0) return;
+
+            if (list.Count > 1)
+            {
+                list.Sort((a, b) => b.DestroyAbility.CompareTo(a.DestroyAbility));
+            }
+
+            current = list[GameObject.Random(list.Count / 2)] as Person;
+            if (GameObject.GetChance(GameObject.Random(current.DestroyAbility - 150)) && (GameObject.Random(current.NonFightingNumber) > GameObject.Random(current.FightingNumber)))
+            {
+                current.GoForDestroy(WillArchitecture.Position);
             }
         }
 
@@ -2662,50 +2683,59 @@ namespace GameObjects
 
         private void CallInstigate()
         {
-            if (GameObject.Chance(100 - this.WillArchitecture.noEscapeChance * 2))
+            if (!GameObject.GetChance(100 - WillArchitecture.noEscapeChance * 2)) return;
+            if (WillArchitecture.Endurance < WillArchitecture.EnduranceCeiling * 0.2) return;
+
+            var candidates = CollectInstigateCandidates();
+            if (candidates.Count == 0) return;
+
+            candidates.Sort((a, b) => b.InstigateAbility.CompareTo(a.InstigateAbility));
+
+            // Pick randomly from the top half by instigate ability
+            var person = candidates[GameObject.Random(Math.Max(1, candidates.Count / 2))];
+
+            if (CanInstigate(person))
             {
-                if (this.WillArchitecture.Endurance >= (this.WillArchitecture.EnduranceCeiling * 0.2))
-                {
-                    Person current;
-                    PersonList list = new PersonList();
-                    foreach (LinkNode node in this.WillArchitecture.AIAllLinkNodes.Values)
-                    {
-                        if (node.A.BelongedSection != null)  //港口的军区有可能丢失，这样避免跳出
-                        {
-                            if ((((node.A.BelongedFaction == this.BelongedFaction) && (node.A.Fund >= node.A.InstigateArchitectureFund)) && node.A.BelongedSection.AIDetail.AllowOffensiveTactics) && (node.A.RecentlyAttacked <= 0))
-                            {
-                                //using (IEnumerator enumerator2 = node.A.Persons.GetEnumerator())
-                                IEnumerator enumerator2 = node.A.MovablePersons.GetEnumerator();
-                                {
-                                    while (enumerator2.MoveNext())
-                                    {
-                                        current = (Person)enumerator2.Current;
-                                        list.Add(current);
-                                    }
-                                }
-                                if (list.Count >= 10)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (list.Count > 0)
-                    {
-                        if (list.Count > 1)
-                        {
-                            list.PropertyName = "InstigateAbility";
-                            list.IsNumber = true;
-                            list.ReSort();
-                        }
-                        current = list[GameObject.Random(list.Count / 2)] as Person;
-                        if (GameObject.Chance(GameObject.Random(current.InstigateAbility - 150)) && (GameObject.Random(current.NonFightingNumber) > GameObject.Random(current.FightingNumber)))
-                        {
-                            current.GoForInstigate(this.WillArchitecture.Position);
-                        }
-                    }
-                }
+                person.GoForInstigate(WillArchitecture.Position);
             }
+        }
+
+        private List<Person> CollectInstigateCandidates()
+        {
+            const int MaxCandidates = 10;
+            var result = new List<Person>();
+
+            foreach (var link in WillArchitecture.AIAllLinkNodes.Values)
+            {
+                var arch = link.A;
+
+                // 港口的军区有可能丢失，这样避免跳出
+                if (arch.BelongedFaction == null) continue;
+                if (!IsValidInstigateSource(arch)) continue;
+
+                foreach (Person p in arch.MovablePersons)
+                {
+                    result.Add(p);
+                }
+
+                if (result.Count >= MaxCandidates) break;
+            }
+
+            return result;
+        }
+
+        private bool IsValidInstigateSource(Architecture arch)
+        {
+            return arch.BelongedFaction == BelongedFaction
+                && arch.Fund >= arch.InstigateArchitectureFund
+                && arch.BelongedSection.AIDetail.AllowOffensiveTactics
+                && arch.RecentlyAttacked <= 0;
+        }
+
+        private static bool CanInstigate(Person person)
+        {
+            return GameObject.GetChance(GameObject.Random(person.InstigateAbility - 150))
+                && GameObject.Random(person.NonFightingNumber) > GameObject.Random(person.FightingNumber);
         }
 
         private void CallRoutewayHelp()
@@ -2717,7 +2747,7 @@ namespace GameObjects
                 if (((destinationArchitecture != null) && (destinationArchitecture.BelongedFaction != this.BelongedFaction)) && this.IsBaseViewingArchitecture(destinationArchitecture))
                 {
                     Point? routewayWaterOrientation;
-                    if ((this.Army.Kind.Type == MilitaryType.水军) && destinationArchitecture.IsBesideWater)
+                    if ((this.Army.Kind.Type == MilitaryType.Navy) && destinationArchitecture.IsBesideWater)
                     {
                         routewayWaterOrientation = this.GetRoutewayWaterOrientation(this.BelongedLegion.PreferredRouteway, destinationArchitecture);
                         if (routewayWaterOrientation.HasValue)
@@ -2742,9 +2772,9 @@ namespace GameObjects
             if (this.BelongedFaction == null || this.BelongedLegion == null || this.BelongedLegion.BelongedFaction == null) return;
             if (((this.WillArchitecture.BelongedFaction != null) && !this.IsFriendlyWithoutTruce(this.WillArchitecture.BelongedFaction)) && (Session.Current.Scenario.GetDistance(this.Position, this.WillArchitecture.Position) <= 10.0))
             {
-                if (this.BelongedFaction.IsArchitectureKnown(this.WillArchitecture) || GameObject.Chance(0x21))
+                if (this.BelongedFaction.IsArchitectureKnown(this.WillArchitecture) || GameObject.GetChance(0x21))
                 {
-                    if (GameObject.Chance(15))
+                    if (GameObject.GetChance(15))
                     {
                         if (this.WillArchitecture.Kind.HasDomination)
                         {
@@ -2823,7 +2853,7 @@ namespace GameObjects
 
         public bool CancelStratagemAvail()
         {
-            return ((this.Status == TroopStatus.埋伏) || ((this.CurrentStratagem != null) && !this.StratagemApplyed));
+            return ((this.Status == TroopStatus.Ambushing) || ((this.CurrentStratagem != null) && !this.StratagemApplyed));
         }
 
         public bool CancelStuntAvail()
@@ -2833,23 +2863,18 @@ namespace GameObjects
 
         public bool CanEnter()
         {
-            if (this.IsRobber)
+            if (IsRobber || !CanMoveAndEnterAnyway()) return false;
+            
+            EnterList.Clear();
+
+            foreach (var architecture in Session.Current.Scenario.GetHighViewingArchitecturesByPosition(Position))
             {
-                return false;
-            }
-            if (!this.CanMoveAndEnterAnyway())
-            {
-                return false;
-            }
-            this.EnterList.Clear();
-            foreach (Architecture architecture in Session.Current.Scenario.GetHighViewingArchitecturesByPosition(this.Position))
-            {
-                if ((architecture.BelongedFaction == this.BelongedFaction) && architecture.GetTroopEnterableArea(this).HasPoint(this.Position))
+                if (architecture.BelongedFaction == BelongedFaction && architecture.GetTroopEnterableArea(this).HasPoint(Position))
                 {
-                    this.EnterList.Add(architecture);
+                    EnterList.Add(architecture);
                 }
             }
-            return (this.EnterList.Count > 0);
+            return (EnterList.Count > 0);
         }
 
         public bool ArrivedAtWillArchitecture()
@@ -2944,7 +2969,7 @@ namespace GameObjects
                     {
                         if ((troop2 != troop) && (troop2 != this))
                         {
-                            this.AreaStratagemTroops.Add(troop2);
+                            AreaStratagemTroops.Add(troop2);
                         }
                     }
                 }
@@ -2972,28 +2997,30 @@ namespace GameObjects
                 this.BelongedFaction = null;
                 faction.AddTroop(this);
                 faction.AddTroopKnownAreaData(this);
-                foreach (Captive captive in this.Captives.GetList())
+
+                foreach (var captive in Captives)
                 {
                     if (captive.CaptiveFaction == faction)
                     {
                         captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital, Position, true, false, oldFaction);
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
-                        Session.Current.Scenario.Captives.Remove(captive);
+                        // Session.Current.Scenario.Captives.Remove(captive);
                     }
                 }
-                faction.AddMilitary(this.Army);
-                this.RefreshWithPersonList(this.Persons.GetList());
+
+                faction.AddMilitary(Army);
+                RefreshWithPersonList(Persons);
             }
         }
         public void ChangeCombativity(int offset)
         {
             if (offset > 0)
             {
-                this.IncreaseCombativity(offset);
+                IncreaseCombativity(offset);
             }
             else if (offset < 0)
             {
-                this.DecreaseCombativity(Math.Abs(offset));
+                DecreaseCombativity(Math.Abs(offset));
             }
         }
 
@@ -3002,9 +3029,9 @@ namespace GameObjects
             if (offset > 0)
             {
                 this.IncreaseMorale(offset);
-                if (this.PreAction == TroopPreAction.无)
+                if (this.PreAction == TroopPreAction.None)
                 {
-                    this.PreAction = TroopPreAction.鼓舞;
+                    this.PreAction = TroopPreAction.Inspire;
                 }
             }
             else if (offset < 0)
@@ -3013,51 +3040,81 @@ namespace GameObjects
             }
         }
 
-        private void CheckCaptiveBeforeRout(Troop troop)
+        private void CheckCaptiveBeforeRout(Troop enemy)
         {
-            if ((((this.BelongedFaction != null) && (troop.BelongedFaction != null)) && !troop.ImmunityOfCaptive) && ((this.BelongedFaction != troop.BelongedFaction) && !troop.IsInArchitecture))
+            if (!CanCapture(enemy)) return;
+
+            var captured = new List<Person>();
+
+            float extra = (!Session.Current.Scenario.IsPlayer(BelongedFaction) && Session.Current.Scenario.IsPlayer(enemy.BelongedFaction))
+                          ? Session.Parameters.AIExtraPerson
+                          : 1;
+            int chance = (int)(captureChance * extra);
+
+            foreach (Person person in enemy.Persons)
             {
-                PersonList personlist = new PersonList();
-                foreach (Person person in troop.Persons)
-                {
-                    if (!person.ImmunityOfCaptive && !GameObject.Chance(person.ChanceOfNoCapture) &&
-                        GameObject.Random(this.CaptiveAblility) > GameObject.Random(person.CaptiveAbility + 200))
-                    {
-                        personlist.Add(person);
-                    }
-                    else if (!person.ImmunityOfCaptive && 
-                        GameObject.Chance(this.captureChance * 
-                        ((int) (!Session.Current.Scenario.IsPlayer(this.BelongedFaction) && Session.Current.Scenario.IsPlayer(troop.BelongedFaction) ? Session.Parameters.AIExtraPerson : 1))))
-                    {
-                        personlist.Add(person);
-                    }
-                }
-                if (personlist.Count > 0)
-                {
-                    foreach (Person person in personlist)
-                    {
-                        this.CatchCaptiveFromTroop(person);
+                if (person.ImmunityOfCaptive) continue;
 
-                        foreach (Person q in this.Persons)
-                        {
-                            person.AdjustRelation(q, -4f / Math.Max(1, this.persons.Count), -6);
-                        }
-
-                        ExtensionInterface.call("CapturedByTroop", new Object[] { Session.Current.Scenario, this, person });
-                    }
-                    if (this.OnGetNewCaptive != null)
-                    {
-                        this.OnGetNewCaptive(this, personlist);
-                    }
-                }
-                foreach (Person p in this.Persons)
+                if ((!GameObject.GetChance(person.ChanceOfNoCapture) && GameObject.Random(CaptiveAblility) > GameObject.Random(person.CaptiveAbility + 200))
+                    || GameObject.GetChance(chance))
                 {
-                    foreach (Person q in this.Persons)
-                    {
-                        if (p == q) continue;
-                        p.AdjustRelation(q, 2f / Math.Max(1, this.persons.Count), 3);
-                    }
+                    captured.Add(person);
                 }
+            }
+
+            // 调整俘虏与部队人物的关系
+            if (captured.Count > 0)
+            {
+                float negativeFactor = -4f / Math.Max(1, persons.Count);
+
+                foreach (var person in captured)
+                {
+                    CatchCaptiveFromTroop(person);
+
+                    AdjustRelationWithAll(person, negativeFactor, -6);
+
+                    ExtensionInterface.call("CapturedByTroop", new Object[] { Session.Current.Scenario, this, person });
+                }
+                
+                eventManager.Publish(new GetNewCaptiveEvent(this, captured));
+            }
+
+            //调整己方人物关系
+            float factor = 2f / Math.Max(1, persons.Count);
+
+            foreach (Person person in Persons)
+            {
+                AdjustRelationWithAll(person, factor, 3);
+            }
+        }
+
+        /// <summary>
+        /// 敌方部队人员是否可被俘虏
+        /// </summary>
+        /// <param name="enemy"></param>
+        /// <returns></returns>
+        private bool CanCapture(Troop enemy)
+        {
+            return BelongedFaction != null 
+                   && enemy.BelongedFaction != null 
+                   && !enemy.ImmunityOfCaptive 
+                   && BelongedFaction != enemy.BelongedFaction 
+                   && !enemy.IsInArchitecture;
+        }
+
+        /// <summary>
+        /// 调整跟部队内所有人物的关系
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="factor"></param>
+        /// <param name="adjust"></param>
+        private void AdjustRelationWithAll(Person person, float factor, int adjust)
+        {
+            foreach (Person other in Persons)
+            {
+                if (person == other) continue;
+
+                person.AdjustRelation(other, factor, adjust);
             }
         }
 
@@ -3076,56 +3133,60 @@ namespace GameObjects
             this.Army.CaptiveCount++;
         }
 
-        private void CheckCaptiveOnOccupy(Architecture a)
+        /// <summary>
+        /// 占领时检查俘虏
+        /// </summary>
+        /// <param name="a"></param>
+        private void CheckCaptiveOnOccupy(Architecture architecture)
         {
-            if ((this.BelongedFaction != null) && (a.BelongedFaction != null))
+            if (BelongedFaction == null || architecture.BelongedFaction == null) return;
+
+            var captured = new List<Person>();
+
+            float extra = (!Session.Current.Scenario.IsPlayer(BelongedFaction) && Session.Current.Scenario.IsPlayer(architecture.BelongedFaction))
+                          ? Session.Parameters.AIExtraPerson
+                          : 1;
+            int chance = (int)(captureChance * extra);
+
+            foreach (Person person in architecture.Persons)
             {
-                PersonList personlist = new PersonList();
-                foreach (Person person in a.Persons)
-                {
-                    if (!person.ImmunityOfCaptive && !GameObject.Chance(person.ChanceOfNoCapture) &&
-                        GameObject.Random(this.CaptiveAblility) > GameObject.Random(person.CaptiveAbility + 200))
-                    {
-                        personlist.Add(person);
-                    }
-                    else if (!person.ImmunityOfCaptive &&
-                        GameObject.Chance(this.captureChance * 
-                        ((int)(!Session.Current.Scenario.IsPlayer(this.BelongedFaction) && Session.Current.Scenario.IsPlayer(a.BelongedFaction) ? Session.Parameters.AIExtraPerson : 1))))
-                    {
-                        personlist.Add(person);
-                    }
-                }
-                if (personlist.Count > 0)
-                {
-                    foreach (Person person in personlist)
-                    {
-                        Captive captive = Captive.Create(person, this.BelongedFaction);
-                        if (captive != null)
-                        {
-                            captive.CaptivePerson.AdjustRelation(this.Leader, -1f, -2);
-                            this.AddCaptive(captive);
-                        }
-                        person.LocationArchitecture = null;
-                        person.LocationTroop = this;
+                if (person.ImmunityOfCaptive) continue;
 
-                        this.Leader.CaptiveCount++;
-                        this.Army.CaptiveCount++;
-
-                        ExtensionInterface.call("CapturedByTroopOccupy", new Object[] { Session.Current.Scenario, this, person });
-                    }
-                    if (this.OnGetNewCaptive != null)
-                    {
-                        this.OnGetNewCaptive(this, personlist);
-                    }
+                if ((!GameObject.GetChance(person.ChanceOfNoCapture) && GameObject.Random(CaptiveAblility) > GameObject.Random(person.CaptiveAbility + 200))
+                    || GameObject.GetChance(chance))
+                {
+                    captured.Add(person);
                 }
+            }
+
+            if (captured.Count > 0)
+            {
+                foreach (var person in captured)
+                {
+                    var captive = Captive.Create(person, BelongedFaction);
+                    if (captive != null)
+                    {
+                        captive.CaptivePerson.AdjustRelation(Leader, -1f, -2);
+                        AddCaptive(captive);
+                    }
+                    person.LocationArchitecture = null;
+                    person.LocationTroop = this;
+
+                    Leader.CaptiveCount++;
+                    Army.CaptiveCount++;
+
+                    ExtensionInterface.call("CapturedByTroopOccupy", new Object[] { Session.Current.Scenario, this, person });
+                }
+
+                eventManager.Publish(new GetNewCaptiveEvent(this, captured));
             }
         }
 
         private void CheckCurrentPosition()
         {
-            if (Session.Current.Scenario.FireTable.HasPosition(this.Position))
+            if (Session.Current.Scenario.FirePositions.Contains(Position))
             {
-                this.ReceiveFireDamage(Session.Parameters.FireDamageScale * Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(this.Position).FireDamageRate);
+                ReceiveFireDamage(Session.Parameters.FireDamageScale * Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(Position).FireDamageRate);
             }
         }
 
@@ -3144,7 +3205,7 @@ namespace GameObjects
         private bool CheckReLaunchPathFinder(MilitaryKind kind)
         {
             bool secondTierPath = false;
-            if (((((this.SecondTierPath != null) && (this.ThirdTierPath != null)) && (this.SecondTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.SecondTierPath[this.SecondTierPath.Count - 1] != GetSecondTierCoordinate(this.Destination)))) && ReLaunchSecondPathFinder(this.Position, this.GetCentrePointInThirdTierPosition(this.ThirdTierPath[this.thirdTierPathDestinationIndex])))
+            if (((((this.SecondTierPath != null) && (this.ThirdTierPath != null)) && (this.SecondTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.SecondTierPath[this.SecondTierPath.Count - 1] != GetSecondTierCoordinate(this.Destination)))) && ReLaunchSecondPathFinder(this.Position, this.GetCentrePointInThirdTierPosition(this.ThirdTierPath[this.ThirdIndex])))
             {
                 if (!secondTierPath)
                 {
@@ -3155,7 +3216,7 @@ namespace GameObjects
                     this.pathFinder.GetSecondTierPath(this.Position, this.GetSecondTierDestinationFromThirdTier(kind), kind);
                 }
             }
-            if (((((this.FirstTierPath != null) && (this.SecondTierPath != null)) && (this.FirstTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.FirstTierPath[this.FirstTierPath.Count - 1] != this.Destination))) && ReLaunchFirstPathFinder(this.Position, this.GetCentrePointInSecondTierPosition(this.SecondTierPath[this.secondTierPathDestinationIndex])))
+            if (((((this.FirstTierPath != null) && (this.SecondTierPath != null)) && (this.FirstTierPath.Count > 0)) && ((this.Movability == this.MovabilityLeft) && (this.FirstTierPath[this.FirstTierPath.Count - 1] != this.Destination))) && ReLaunchFirstPathFinder(this.Position, this.GetCentrePointInSecondTierPosition(this.SecondTierPath[this.SecondIndex])))
             {
                 if (!secondTierPath)
                 {
@@ -3168,43 +3229,34 @@ namespace GameObjects
 
         public void RefreshAfterLosePerson()
         {
-            if (!this.Destroyed)
+            if (Destroyed) return;
+
+            if (PersonCount == 0)
             {
-                if (this.PersonCount == 0)
-                {
-                    //CheckTroopRout(this);
-                }
-                else
-                {
-                    this.RefreshWithPersonList(this.Persons.GetList());
-                }
+                //CheckTroopRout(this);
+            }
+            else
+            {
+                RefreshWithPersonList(Persons);
             }
         }
 
         public void ChangeLeader()
         {
-            if (this.PersonCount == 1)
-            {
-                this.SetLeader(this.Persons[0] as Person);
-            }
-            else
-            {
-                this.SetLeader(this.Persons.GetMaxStrengthPerson());
-            }
+            Person leader = PersonCount == 1 ? Persons[0] : Persons.MaxBy(x => x.Strength);
+            SetLeader(leader);
         }
 
         public static void CheckTroopRout(Troop receiving)
         {
             if (!receiving.Destroyed && ((receiving.Quantity <= 0) || (receiving.Morale <= 0) || receiving.PersonCount == 0))
             {
-                if (receiving.OnRouted != null)
-                {
-                    receiving.OnRouted(null, receiving);
-                }
-                GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.被击破, receiving.Position, false);
+                EventManager.Instance.Publish(new RoutedEvent(null, receiving));
+
+                TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.被击破, receiving.Position, false);
                 if (animation != null)
                 {
-                    receiving.TryToPlaySound(receiving.Position, Troop.getSoundPath(receiving, animation.LinkedAnimation), false);
+                    receiving.TryToPlaySound(receiving.Position, GetSoundPath(receiving, animation.LinkedAnimation));
                 }
                 if (receiving.BelongedFaction != null)
                 {
@@ -3228,18 +3280,15 @@ namespace GameObjects
                     belongedFaction = receiving.BelongedFaction;
                     leader = belongedFaction.Leader;
                 }
-                if (sending.OnRout != null)
-                {
-                    sending.OnRout(sending, receiving);
-                }
-                if (receiving.OnRouted != null)
-                {
-                    receiving.OnRouted(sending, receiving);
-                }
+
+                EventManager.Instance.Publish(new RoutEvent(sending, receiving));
+
+                EventManager.Instance.Publish(new RoutedEvent(receiving, sending));
+
                 GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.被击破, receiving.Position, false);
                 if (animation != null)
                 {
-                    receiving.TryToPlaySound(receiving.Position, Troop.getSoundPath(receiving, animation.LinkedAnimation), false);
+                    receiving.TryToPlaySound(receiving.Position, GetSoundPath(receiving, animation.LinkedAnimation));
                 }
                 if ((sending.BelongedFaction != null) && (belongedFaction != null))
                 {
@@ -3278,14 +3327,15 @@ namespace GameObjects
                 {
                     sending.IncreaseRoutExperience(true);
                     sending.AddRoutCount();
-                    foreach (Troop t in sending.friendlyTroopsInView)
+                    foreach (var troop in sending.friendlyTroopsInView)
                     {
-                        if (t == sending) continue;
-                        foreach (Person p in t.persons)
+                        if (troop == sending) continue;
+
+                        foreach (Person p in troop.persons)
                         {
                             foreach (Person q in sending.persons)
                             {
-                                if (GameObject.Chance((p.Uncruelty * 5 + q.Glamour / 2) / 2))
+                                if (GameObject.GetChance((p.Uncruelty * 5 + q.Glamour / 2) / 2))
                                 {
                                     p.AdjustRelation(q, 1f / Math.Max(1, sending.persons.Count), 2);
                                 }
@@ -3299,7 +3349,7 @@ namespace GameObjects
                         {
                             foreach (Person q in sending.persons)
                             {
-                                if (GameObject.Chance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2) / 2))
+                                if (GameObject.GetChance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2) / 2))
                                 {
                                     p.AdjustRelation(q, -1f / Math.Max(1, sending.persons.Count), -2);
                                 }
@@ -3311,26 +3361,28 @@ namespace GameObjects
                         foreach (Person q in sending.persons)
                         {
                             if (p == q) continue;
-                            if (GameObject.Chance(p.Uncruelty * 5 + q.Glamour / 2))
+                            if (GameObject.GetChance(p.Uncruelty * 5 + q.Glamour / 2))
                             {
                                 p.AdjustRelation(q, 2f / Math.Max(1, sending.persons.Count), 3);
                             }
                         }
                     }
                 }
-                if (GameObject.Chance(sending.stealTreasureRate) && sending.BelongedFaction != null)
+
+                if (GameObject.GetChance(sending.stealTreasureRate) && sending.BelongedFaction != null)
                 {
-                    foreach (Person p in receiving.Persons.GetRandomList())
+                    foreach (var person in StaticMethods.GetRandomList(receiving.Persons))
                     {
-                        if (p.TreasureCount > 0)
+                        if (person.TreasureCount > 0)
                         {
-                            Treasure t = (Treasure)p.Treasures[GameObject.Random(p.Treasures.Count)];
-                            p.LoseTreasure(t);
-                            sending.BelongedFaction.Leader.ReceiveTreasure(t);
+                            Treasure treasure = StaticMethods.GetRandomItem(person.Treasures);
+                            person.LoseTreasure(treasure);
+                            sending.BelongedFaction.Leader.ReceiveTreasure(treasure);
                             break;
                         }
                     }
                 }
+
                 if (belongedFaction != null)
                 {
                     receiving.IncreaseRoutExperience(false);
@@ -3351,97 +3403,97 @@ namespace GameObjects
                 {
                     foreach (KeyValuePair<int, int> i in p.CommandDecrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             receiving.Leader.BaseCommand -= i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.StrengthDecrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             receiving.Leader.BaseStrength -= i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.IntelligenceDecrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             receiving.Leader.BaseIntelligence -= i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.PoliticsDecrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             receiving.Leader.BasePolitics -= i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.GlamourDecrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             receiving.Leader.BaseGlamour -= i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.ReputationDecrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             receiving.Leader.Reputation -= i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.LoseSkill)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             for (int si = 0; si < i.Value; ++si)
                             {
-                                if (receiving.Leader.Skills.Skills.Count > 0)
+                                if (receiving.Leader.Skills.Count > 0)
                                 {
-                                    receiving.Leader.Skills.Skills.Remove(GameObject.Random(receiving.Leader.Skills.Skills.Count));
+                                    receiving.Leader.Skills.Remove(GameObject.Random(receiving.Leader.Skills.Count));
                                 }
                             }
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.CommandIncrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             p.BaseCommand += i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.StrengthIncrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             p.BaseStrength += i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.IntelligenceIncrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             p.BaseIntelligence += i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.PoliticsIncrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             p.BasePolitics += i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.GlamourIncrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             p.BaseGlamour += i.Value;
                         }
                     }
                     foreach (KeyValuePair<int, int> i in p.ReputationIncrease)
                     {
-                        if (GameObject.Chance(i.Key))
+                        if (GameObject.GetChance(i.Key))
                         {
                             p.Reputation += i.Value;
                         }
@@ -3450,14 +3502,15 @@ namespace GameObjects
 
                 if (receiving.BelongedFaction != null)
                 {
-                    foreach (Troop t in receiving.friendlyTroopsInView)
+                    foreach (var troop in receiving.friendlyTroopsInView)
                     {
-                        if (t == receiving) continue;
-                        foreach (Person p in t.persons)
+                        if (troop == receiving) continue;
+
+                        foreach (Person p in troop.persons)
                         {
                             foreach (Person q in receiving.persons)
                             {
-                                if (GameObject.Chance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2) / 2))
+                                if (GameObject.GetChance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2) / 2))
                                 {
                                     p.AdjustRelation(q, -1f / Math.Max(1, sending.persons.Count), -2);
                                 }
@@ -3469,7 +3522,7 @@ namespace GameObjects
                         foreach (Person q in receiving.persons)
                         {
                             if (p == q) continue;
-                            if (GameObject.Chance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2)))
+                            if (GameObject.GetChance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2)))
                             {
                                 p.AdjustRelation(q, -2f / Math.Max(1, sending.persons.Count), -3);
                             }
@@ -3481,7 +3534,7 @@ namespace GameObjects
                         foreach (Person q in sending.persons)
                         {
                             if (p == q) continue;
-                            if (GameObject.Chance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2)))
+                            if (GameObject.GetChance(((5 - p.PersonalLoyalty) * 10 - q.Glamour / 2)))
                             {
                                 p.AdjustRelation(q, -2f / Math.Max(1, sending.persons.Count), -3);
                             }
@@ -3493,17 +3546,17 @@ namespace GameObjects
                 if (sending.Combativity < sending.Army.CombativityCeiling)
                 {
                     sending.IncreaseCombativity(10 + sending.RoutIncrementOfCombativity);
-                    if (sending.PreAction == TroopPreAction.无)
+                    if (sending.PreAction == TroopPreAction.None)
                     {
-                        sending.PreAction = TroopPreAction.鼓舞;
+                        sending.PreAction = TroopPreAction.Inspire;
                     }
                 }
                 if (sending.Morale < sending.Army.MoraleCeiling)
                 {
                     sending.IncreaseMorale(5);
-                    if (sending.PreAction == TroopPreAction.无)
+                    if (sending.PreAction == TroopPreAction.None)
                     {
-                        sending.PreAction = TroopPreAction.鼓舞;
+                        sending.PreAction = TroopPreAction.Inspire;
                     }
                 }
             }
@@ -3518,88 +3571,73 @@ namespace GameObjects
         public void ClearSecondTierPath()
         {
             this.SecondTierPath = null;
-            this.secondTierPathDestinationIndex = 0;
+            this.SecondIndex = 0;
         }
 
         public void ClearThirdTierPath()
         {
             this.ThirdTierPath = null;
-            this.thirdTierPathDestinationIndex = 0;
+            this.ThirdIndex = 0;
         }
 
         public string CombativityInInformationLevel(InformationLevel level)
         {
             switch (level)
             {
-                case InformationLevel.未知:
+                case InformationLevel.Unknown:
                     return "----";
 
-                case InformationLevel.无:
+                case InformationLevel.None:
                     return "----";
 
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     return StaticMethods.GetNumberStringByGranularity(this.Combativity, 20);
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     return StaticMethods.GetNumberStringByGranularity(this.Combativity, 10);
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     return StaticMethods.GetNumberStringByGranularity(this.Combativity, 5);
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     return this.Combativity.ToString();
             }
             return "----";
         }
 
-        public bool CombatMethodAvail()
-        {
-            return (this.Status == TroopStatus.一般 && !SelectedAttack);
-        }
+        public bool CombatMethodAvail() => Status == TroopStatus.Normal && !SelectedAttack;
 
-        public bool StrategemAvail()
-        {
-            return (this.Status == TroopStatus.一般 && !SelectedAttack);
-        }
+        public bool StrategemAvail() => Status == TroopStatus.Normal && !SelectedAttack;
 
-        public bool CanMoveAnyway()
-        {
-            return (this.Status != TroopStatus.混乱 && this.Controllable);
-        }
+        public bool CanMoveAnyway() => Status != TroopStatus.Chaos && Controllable;
 
-        public bool CanMoveAndEnterAnyway()
-        {
-            return (this.Status != TroopStatus.混乱 && this.status != TroopStatus.挑衅 && this.Controllable);
-        }
+        public bool CanMoveAndEnterAnyway() => Status != TroopStatus.Chaos && status != TroopStatus.Attract && Controllable;
 
-        public bool ControlAvail()
-        {
-            return (this.Status != TroopStatus.混乱 && this.Status != TroopStatus.挑衅 && this.status != TroopStatus.伪报 && this.Controllable);
-        }
+        public bool ControlAvail() => Status != TroopStatus.Chaos && Status != TroopStatus.Attract && status != TroopStatus.Rumour && Controllable;
 
         public bool CounterAttackAvailFromAnyPosition(Troop troop)
         {
-            return ((((!troop.Destroyed && troop.CounterOffence) && (this.BeCountered && (troop.Offence > 0))) && (!this.BaseNoCounterAttack && !this.NoCounterAttack)));
+            return !troop.Destroyed && troop.CounterOffence && BeCountered && (troop.Offence > 0) && !BaseNoCounterAttack && !NoCounterAttack;
         }
 
         public bool CounterAttackAvail(Troop troop)
         {
-            return ((((!troop.Destroyed && troop.CounterOffence) && (this.BeCountered && (troop.Offence > 0))) && (!this.BaseNoCounterAttack && !this.NoCounterAttack)) && troop.OffenceArea.HasPoint(this.Position));
+            return CounterAttackAvailFromAnyPosition(troop) && troop.OffenceArea.HasPoint(Position);
         }
 
         public bool CounterAttackAvail(Troop troop, Point position)
         {
-            return ((((!troop.Destroyed && troop.CounterOffence) && (this.BeCountered && (troop.Offence > 0))) && (!this.BaseNoCounterAttack && !this.NoCounterAttack)) && troop.OffenceArea.HasPoint(position));
+            return CounterAttackAvailFromAnyPosition(troop) && troop.OffenceArea.HasPoint(position);
         }
 
-        public static Troop Create(Architecture from, GameObjectList persons, Person leader, Military military, int food, Point position)
+        public static Troop Create(Architecture from, List<Person> persons, Person leader, Military military, int food, Point position)
         {
             Troop troop = new Troop();
             troop.destination = position;
             troop.realDestination = position;
             troop.StartingArchitecture = from;
-            troop.ID = Session.Current.Scenario.Troops.GetFreeGameObjectID();
-            foreach (Person p in persons.GetList())
+            troop.ID = Session.Current.Scenario.Troops.GetNewId();
+            foreach (var p in persons)
             {
                 troop.persons.Add(p);
                 p.LocationTroop = troop;
@@ -3622,7 +3660,7 @@ namespace GameObjects
                 else
                 {
                     from.RemoveMilitary(military.ShelledMilitary);
-                    Session.Current.Scenario.Militaries.AddMilitary(military);
+                    Session.Current.Scenario.Militaries.Add(military.ID, military);
                 }
             }
             troop.Army = military;
@@ -3663,46 +3701,41 @@ namespace GameObjects
             }
             troop.InitializePosition(position);
             Session.Current.Scenario.SetMapTileTroop(troop);
-            Session.Current.Scenario.Troops.AddTroopWithEvent(troop);
-            if (troop.OnTroopCreate != null)
-            {
-                troop.OnTroopCreate(troop);
-            }
+            Session.Current.Scenario.Troops.Add(troop.ID, troop);
+            
+            EventManager.Instance.Publish(new TroopCreateEvent(troop));
             Session.Current.Scenario.ClearPersonStatusCache();
             //troop.Persons.ApplyInfluences();
             troop.RefreshAllData();
             ExtensionInterface.call("CreateTroop", new Object[] { Session.Current.Scenario, troop });
             foreach (Person p in troop.persons)
             {
-                if (p != troop.Leader)
-                {
-                    p.belongedperson = troop.Leader;
-                }
-                else p.belongedperson = null;
+                p.BelongedPerson = p == troop.Leader ? null : troop.Leader;
             }
             return troop;
         }
 
-        public static Troop CreateSimulateTroop(GameObjectList persons, Military military, Point startPosition)
+        public static Troop CreateSimulateTroop(List<Person> persons, Military military, Point startPosition)
         {
-            Troop troop = new Troop();
-            troop.Simulating = true;
+            var troop = new Troop { Simulating = true };
+            
             if (persons != null)
             {
-                foreach (Person person in persons)
+                foreach (var person in persons)
                 {
                     person.LocationTroop = troop;
                 }
-                troop.SetLeader(persons[0] as Person);
-                troop.BackupArmyLeaderID = (military.Leader != null) ? military.Leader.ID : -1;
+                troop.SetLeader(persons[0]);
+                troop.BackupArmyLeaderID = military.Leader?.ID ?? -1;
                 troop.BackupArmyLeaderExperience = military.LeaderExperience;
                 troop.BackupArmyLeader = military.Leader;
                 troop.Army = military;
                 troop.SimulateInitializePosition(startPosition);
             }
             troop.Simulating = false;
-            troop.Candidates = persons as PersonList;
-            foreach (Person person in persons)
+            troop.Candidates = persons;
+
+            foreach (var person in persons)
             {
                 person.LocationTroop = null;
             }
@@ -3714,13 +3747,19 @@ namespace GameObjects
 
         public static Troop CreateSimulateTroop(Architecture architecture, GameObjectList persons, Person Leader, Military military, int rationdays, Point startPosition)
         {
+            var candidates = new List<Person>();
+            foreach (Person person in persons)
+            {
+                candidates.Add(person);
+            }
+
             Troop troop = new Troop();
             Session.Current.Scenario = Session.Current.Scenario;
             troop.BelongedFaction = architecture.BelongedFaction;
             troop.Simulating = true;
             troop.TechnologyIncrement = architecture.Technology / 50;
             troop.StartingArchitecture = architecture;
-            if (persons != null)
+            if (persons.Count > 0)
             {
                 foreach (Person person in persons)
                 {
@@ -3737,19 +3776,17 @@ namespace GameObjects
                 troop.Army = military;
                 troop.Food = military.FoodCostPerDay * rationdays;
             }
-            if (persons != null)
+            if (persons.Count > 0)
             {
                 troop.SimulateInitializePosition(startPosition);
             }
             troop.Simulating = false;
-            troop.Candidates = persons as GameObjectList;
-            if (persons != null)
+            troop.Candidates = candidates;
+            foreach (var person in candidates)
             {
-                foreach (Person person in persons)
-                {
-                    person.LocationTroop = null;
-                }
+                person.LocationTroop = null;
             }
+            
             if (military != null)
             {
                 military.Leader = troop.BackupArmyLeader;
@@ -3790,17 +3827,17 @@ namespace GameObjects
                     if (this.Combativity < this.Army.CombativityCeiling)
                     {
                         this.IncreaseCombativity(10);
-                        if (this.PreAction == TroopPreAction.无)
+                        if (this.PreAction == TroopPreAction.None)
                         {
-                            this.PreAction = TroopPreAction.鼓舞;
+                            this.PreAction = TroopPreAction.Inspire;
                         }
                     }
                     if (this.Morale < this.Army.MoraleCeiling)
                     {
                         this.IncreaseMorale(10);
-                        if (this.PreAction == TroopPreAction.无)
+                        if (this.PreAction == TroopPreAction.None)
                         {
-                            this.PreAction = TroopPreAction.鼓舞;
+                            this.PreAction = TroopPreAction.Inspire;
                         }
                     }
                     int increment = this.FoodMax - this.Food;
@@ -3819,43 +3856,42 @@ namespace GameObjects
                                 this.IncreaseFood((int)(routeway.StartArchitecture.Food * num3));
                                 routeway.StartArchitecture.Food = 0;
                             }
-                            if (this.PreAction == TroopPreAction.无)
+                            if (this.PreAction == TroopPreAction.None)
                             {
-                                this.PreAction = TroopPreAction.鼓舞;
+                                this.PreAction = TroopPreAction.Inspire;
                             }
                         }
                     }
                 }
             }
             ExtensionInterface.call("CutRouteway", new Object[] { Session.Current.Scenario, this });
-            if (this.OnEndCutRouteway != null)
-            {
-                this.OnEndCutRouteway(this, success);
-            }
+
+            eventManager.Publish(new CutRoutewayResultEvent(this, success));
         }
 
         public void CutRouteway()
         {
-            this.CutRoutewayDays = this.CutRoutewayDaysNeeded;
-            this.Controllable = false;
-            this.Operated = true;
-            if (this.OnStartCutRouteway != null)
-            {
-                this.OnStartCutRouteway(this, this.CutRoutewayDays);
-            }
+            CutRoutewayDays = CutRoutewayDaysNeeded;
+            Controllable = false;
+            Operated = true;
+            
+            eventManager.Publish(new CutRoutewayEvent(this, CutRoutewayDays));
         }
 
         public bool CutRoutewayAvail()
         {
-            if (Session.GlobalVariables.LiangdaoXitong == false) return false;
+            if (!Session.GlobalVariables.LiangdaoXitong) 
+                return false;
 
-            foreach (Routeway routeway in Session.Current.Scenario.GetActiveRoutewayListByPosition(this.Position))
+            if (BelongedFaction.GetKnownAreaData(Position) < Session.GlobalVariables.ScoutRoutewayInformationLevel)
+                return false;
+
+            foreach (Routeway routeway in Session.Current.Scenario.GetActiveRoutewayListByPosition(Position))
             {
-                if (!this.IsFriendly(routeway.BelongedFaction) && (this.BelongedFaction.GetKnownAreaData(this.Position) >= Session.GlobalVariables.ScoutRoutewayInformationLevel))
-                {
+                if (!IsFriendly(routeway.BelongedFaction))
                     return true;
-                }
             }
+
             return false;
         }
 
@@ -3873,13 +3909,13 @@ namespace GameObjects
             }
             else
             {
-                if (!GameObject.Chance(this.chanceTirednessStopIncrease))
+                if (!GameObject.GetChance(this.chanceTirednessStopIncrease))
                 {
                     this.Army.Tiredness += Session.GlobalVariables.TirednessIncrease;
                 }
                 foreach (Person p in this.Persons)
                 {
-                    if (!GameObject.Chance(p.chanceTirednessStopIncrease) && !GameObject.Chance(this.chanceTirednessStopIncrease) && !this.IsRobber)
+                    if (!GameObject.GetChance(p.chanceTirednessStopIncrease) && !GameObject.GetChance(this.chanceTirednessStopIncrease) && !this.IsRobber)
                     {
                         p.Tiredness += Session.GlobalVariables.TirednessIncrease;
                     }
@@ -3900,8 +3936,8 @@ namespace GameObjects
                     this.ViewingWillArchitecture = this.IsViewingWillArchitecture();
                     this.ContactingWillArchitecture = this.IsContactingWillArchitecture();
                     this.OffencingWillArchitecture = this.IsOffencingWillArchitecture();
-                    this.ContactHostileTroopCount = this.GetContactHostileTroops().Count;
-                    this.ContactFriendlyTroopCount = this.GetContactFriendlyTroops().Count;
+                    ContactHostileTroopCount = GetContactHostileTroops().Count;
+                    ContactFriendlyTroopCount = GetContactFriendlyTroops().Count;
                     this.SetFriendlyTroopsInView();
                     this.SetHostileTroopsInView();
                 }
@@ -3916,7 +3952,7 @@ namespace GameObjects
                 {
                     this.DecreaseCombativity(this.DecrementPerDayOfCombativity + this.CombativityDecrementPerDayByViewArea);
                 }
-                if (GameObject.Chance(this.TirednessIncreaseChanceByViewArea))
+                if (GameObject.GetChance(this.TirednessIncreaseChanceByViewArea))
                 {
                     this.Army.Tiredness += 1;
                     foreach (Person p in this.Persons)
@@ -3924,7 +3960,7 @@ namespace GameObjects
                         p.Tiredness += 1;
                     }
                 }
-                if (GameObject.Chance(this.TirednessDecreaseChanceByViewArea) && this.Army.Tiredness > 0)
+                if (GameObject.GetChance(this.TirednessDecreaseChanceByViewArea) && this.Army.Tiredness > 0)
                 {
                     this.Army.Tiredness -= 1;
                     foreach (Person p in this.Persons)
@@ -3972,15 +4008,15 @@ namespace GameObjects
                 {
                     if (this.Tiredness <= 20)
                     {
-                        this.IncreaseMorale(((GameObject.Chance(this.Army.Leader.Command) ? 1 : 0) + (GameObject.Chance(this.Army.Leader.Command) ? 1 : 0)) * moraleRate);
+                        this.IncreaseMorale(((GameObject.GetChance(this.Army.Leader.Command) ? 1 : 0) + (GameObject.GetChance(this.Army.Leader.Command) ? 1 : 0)) * moraleRate);
                     }
                     else if (this.Tiredness <= 40)
                     {
-                        this.IncreaseMorale((GameObject.Chance(this.Army.Leader.Command) ? 1 : 0) * moraleRate);
+                        this.IncreaseMorale((GameObject.GetChance(this.Army.Leader.Command) ? 1 : 0) * moraleRate);
                     }
                     else if (this.Tiredness > 60)
                     {
-                        this.DecreaseMorale((this.Tiredness - 30) / 30 + ((GameObject.Chance(this.Army.Leader.Command) ? 1 : 0)) * moraleRate);
+                        this.DecreaseMorale((this.Tiredness - 30) / 30 + ((GameObject.GetChance(this.Army.Leader.Command) ? 1 : 0)) * moraleRate);
                     }
                 }
 
@@ -4004,18 +4040,18 @@ namespace GameObjects
                     }
                 }
 
-                if (this.ChaosDayLeft > 0 && GameObject.Chance(this.ChaosRecoverByViewArea))
+                if (this.ChaosDayLeft > 0 && GameObject.GetChance(this.ChaosRecoverByViewArea))
                 {
                     this.SetRecoverFromChaos();
                 }
-                if (GameObject.Chance(this.ChaosByViewArea))
+                if (GameObject.GetChance(this.ChaosByViewArea))
                 {
                     this.SetChaos(1 + GameObject.Random(2));
                 }
 
-                if (Session.Current.Scenario.FireTable.HasPosition(this.Position))
+                if (Session.Current.Scenario.FirePositions.Contains(Position))
                 {
-                    this.SetOnFire(Session.Parameters.FireDamageScale * Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(this.Position).FireDamageRate);
+                    SetOnFire(Session.Parameters.FireDamageScale * Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(Position).FireDamageRate);
                 }
                 if (this.CutRoutewayDays > 0)
                 {
@@ -4031,11 +4067,8 @@ namespace GameObjects
                     }
                     else
                     {
-                        this.CutRoutewayDays = 0;
-                        if (this.OnEndCutRouteway != null)
-                        {
-                            this.OnEndCutRouteway(this, false);
-                        }
+                        CutRoutewayDays = 0;
+                        eventManager.Publish(new CutRoutewayResultEvent(this, false));
                     }
                 }
                 if (this.Food >= this.FoodCostPerDay)
@@ -4069,27 +4102,26 @@ namespace GameObjects
                         this.Food -= this.FoodCostPerDay;
                     }
                 }
+
                 if (this.BelongedFaction != null)
                 {
-                    foreach (TroopEvent event2 in Session.Current.Scenario.TroopEvents.GetList())
+                    var troopEventDict = Session.Current.Scenario.TroopEventsToApply;
+
+                    foreach (var troopEvent in Session.Current.Scenario.TroopEvents.Values)
                     {
-                        if (event2.CheckTroop(this))
+                        if (!troopEvent.CheckTroop(this)) continue;
+                        
+                        if (!troopEventDict.ContainsKey(troopEvent))
                         {
-                            TroopList list = null;
-                            if (Session.Current.Scenario.TroopEventsToApply.TryGetValue(event2, out list))
-                            {
-                                list.Add(this);
-                            }
-                            else
-                            {
-                                list = new TroopList();
-                                list.Add(this);
-                                Session.Current.Scenario.TroopEventsToApply.Add(event2, list);
-                            }
-                            event2.ApplyEventDialogs(this);
+                            troopEventDict.Add(troopEvent, new List<Troop>());
                         }
+                        
+                        troopEventDict[troopEvent].Add(this);
+
+                        troopEvent.ApplyEventDialogs(this);
                     }
                 }
+
                 if ((this.CurrentStunt != null) && (this.StuntDayLeft > 0))
                 {
                     this.StuntDayLeft--;
@@ -4103,7 +4135,7 @@ namespace GameObjects
 
                 if (Session.Current.Scenario.IsPlayer(this.BelongedFaction) && this.TargetTroop == null && this.TargetArchitecture == null
                     && this.Position.Equals(this.Destination)
-                    && this.Status == TroopStatus.一般 && this.WillArchitecture == this.StartingArchitecture
+                    && this.Status == TroopStatus.Normal && this.WillArchitecture == this.StartingArchitecture
                     && !this.HasHostileTroopInView() && !this.HasHostileArchitectureInView() && !Session.GlobalVariables.SkyEyeSimpleNotification)//暂时用简讯开关决定部队无目标后是否回城
                 {
                     this.Destination = Session.Current.Scenario.GetClosestPoint(this.StartingArchitecture.ArchitectureArea, this.Position);
@@ -4130,13 +4162,14 @@ namespace GameObjects
         {
             if (Session.GlobalVariables.LiangdaoXitong == true)
             {
-                this.RefillFoodByRouteway();
+                RefillFoodByRouteway();
             }
             else
             {
-                this.RefillFoodByStartArchitecture();
+                RefillFoodByStartArchitecture();
             }
-            this.RefillFoodByArchitecture();
+
+            RefillFoodByArchitecture();
         }
 
         public bool DaysToReachPosition(Point position, int days)
@@ -4182,68 +4215,65 @@ namespace GameObjects
 
         public void DecreaseCombativity(int decrement)
         {
-            decrement = this.Army.DecreaseCombativity(decrement);
-            if (decrement > 0)
-            {
-                this.DecrementNumberList.AddNumber(decrement, CombatNumberKind.战意, this.Position);
-                this.ShowNumber = true;
-            }
+            decrement = Army.DecreaseCombativity(decrement);
+
+            if (decrement < 0)
+                return;
+            
+            DecrementNumberList.AddNumber(decrement, CombatNumberKind.战意, Position);
+            ShowNumber = true;
         }
 
         public void DecreaseInjuryQuantity(int decrement)
         {
-            this.Army.DecreaseInjuryQuantity(decrement);
+            Army.DecreaseInjuryQuantity(decrement);
         }
 
         public void DecreaseMorale(int decrement)
         {
-            decrement = this.Army.DecreaseMorale(decrement);
-            if (decrement > 0)
-            {
-                this.RefreshOffence();
-                this.RefreshDefence();
-                this.DecrementNumberList.AddNumber(decrement, CombatNumberKind.士气, this.Position);
-                this.ShowNumber = true;
-            }
+            decrement = Army.DecreaseMorale(decrement);
+
+            if (decrement < 0)
+                return;
+
+            RefreshOffence();
+            RefreshDefence();
+            DecrementNumberList.AddNumber(decrement, CombatNumberKind.士气, Position);
+            ShowNumber = true;
         }
 
         public void DecreaseQuantity(int decrement)
         {
-            if (decrement == 0) return;
-            int quantity = 0;
-            if (this.Army.Quantity > decrement)
-            {
-                quantity = decrement;
-            }
-            else
-            {
-                quantity = this.Army.Quantity;
-            }
-            this.Army.DecreaseQuantity(quantity);
+            if (decrement == 0) 
+                return;
+
+            int quantity = Math.Min(Army.Quantity, decrement);
+            Army.DecreaseQuantity(quantity);
+
             if (quantity > 0)
             {
-                this.RefreshOffence();
-                this.RefreshDefence();
-                if (this.Food > this.FoodMax)
-                {
-                    this.Food = this.FoodMax;
-                }
+                RefreshOffence();
+                RefreshDefence();
+                Food = Math.Min(Food, FoodMax);
             }
-            this.DecrementNumberList.AddNumber(quantity, CombatNumberKind.人数, this.Position);
-            this.ShowNumber = true;
 
-            if (decrement > 0)
-            {
-                this.StartingArchitecture.AddMilitaryPopulationPack(
-                    (int)(Session.Current.Scenario.GetDistance(this.Position, this.StartingArchitecture.ArchitectureArea) / 2.0) * Session.Parameters.DayInTurn,
-                    (int)(decrement * (1 - this.InjuryChance / 100.0f) * (this.InjuryChance / 100.0f) * Math.Max(0.1f, Math.Min(1, (100 - this.Morale) / 100.0f)))
-                    );
-            }
+            DecrementNumberList.AddNumber(quantity, CombatNumberKind.人数, Position);
+            ShowNumber = true;
+
+            if (decrement < 0)
+                return;
+
+            float injury = InjuryChance / 100.0f;
+            float moraleFactor = Math.Max(0.1f, Math.Min(1, (100 - Morale) / 100.0f));
+            int days = (int)(Session.Current.Scenario.GetDistance(Position, StartingArchitecture.ArchitectureArea) / 2.0) * Session.Parameters.DayInTurn;
+            int returned = (int)(decrement * (1 - injury) * injury * moraleFactor);
+
+            StartingArchitecture.AddMilitaryPopulationPack(days, returned);
         }
 
         public void Destroy(bool removeReferences, bool removeArmy)
         {
-            this.Destroy(removeReferences, removeArmy, false);
+            Destroy(removeReferences, removeArmy, false);
         }
 
         public void Destroy(bool removeReferences, bool removeArmy, bool skipViewArea)
@@ -4303,30 +4333,30 @@ namespace GameObjects
                         {
                             this.BelongedFaction.RemoveMilitary(this.Army);
                         }
-                        Session.Current.Scenario.Militaries.Remove(this.Army);
+                        Session.Current.Scenario.Militaries.Remove(Army.ID);
                     }
                     else
                     {
-                        if (this.BelongedFaction != null)
+                        if (BelongedFaction != null)
                         {
-                            this.BelongedFaction.RemoveMilitary(this.Army.ShelledMilitary);
+                            BelongedFaction.RemoveMilitary(Army.ShelledMilitary);
                         }
-                        Session.Current.Scenario.Militaries.Remove(this.Army.ShelledMilitary);
-                        Session.Current.Scenario.Militaries.Remove(this.Army);
+                        Session.Current.Scenario.Militaries.Remove(Army.ShelledMilitary.ID);
+                        Session.Current.Scenario.Militaries.Remove(Army.ID);
                     }
                 }
                 if (this.BelongedFaction != null)
                 {
                     this.BelongedFaction.RemoveTroop(this);
                 }
-                Session.Current.Scenario.Troops.RemoveTroop(this);
+                Session.Current.Scenario.Troops.Remove(ID);
             }
         }
 
         public void DetectAmbush(Troop troop)
         {
             int chance = ((15 + (this.TroopIntelligence / 10)) + this.Leader.Calmness) - troop.Leader.Calmness;
-            if (this.ScoutLevel <= InformationLevel.中)
+            if (this.ScoutLevel <= InformationLevel.Medium)
             {
                 if (troop.OnlyBeDetectedByHighLevelInformation)
                 {
@@ -4337,7 +4367,7 @@ namespace GameObjects
             {
                 chance *= troop.OnlyBeDetectedByHighLevelInformation ? 3 : 1;
             }
-            if (GameObject.Chance(chance))
+            if (GameObject.GetChance(chance))
             {
                 this.AmbushDetected(troop);
             }
@@ -4374,11 +4404,8 @@ namespace GameObjects
 
         public void EndAmbush()
         {
-            this.Status = TroopStatus.一般;
-            if (this.OnStopAmbush != null)
-            {
-                this.OnStopAmbush(this);
-            }
+            Status = TroopStatus.Normal;
+            eventManager.Publish(new StopAmbushEvent(this));
         }
 
         public Architecture transportReturningTo;
@@ -4390,23 +4417,27 @@ namespace GameObjects
 
         public void TransportReturn()
         {
-            if (this.StartingArchitecture != null && this.StartingArchitecture.BelongedFaction == this.BelongedFaction && this.StartingArchitecture != transportReturningTo)
+            if (StartingArchitecture != null 
+                && StartingArchitecture.BelongedFaction == BelongedFaction 
+                && StartingArchitecture != transportReturningTo)
             {
-                GameObjectList persons = this.Persons.GetList();
-                Architecture returnTo = this.StartingArchitecture;
+                var personList = Persons.ToList();
+
+                Architecture returnTo = StartingArchitecture;
                 Architecture goTo = transportReturningTo;
-                Military army = this.Army;
-                this.Enter(goTo, false);
-                foreach (Person p in persons)
+                Military army = Army;
+                Enter(goTo, false);
+
+                foreach (var person in personList)
                 {
-                    p.MoveToArchitecture(returnTo);
+                    person.MoveToArchitecture(returnTo);
                 }
                 goTo.RemoveMilitary(army);
                 returnTo.AddMilitary(army);
             }
             else
             {
-                this.TransportEnter();
+                TransportEnter();
             }
         }
 
@@ -4414,10 +4445,10 @@ namespace GameObjects
         {
             if (this.EnterList.Count > 0 )
             {
-              
+
                     Architecture a = this.EnterList[GameObject.Random(this.EnterList.Count)] as Architecture;
                     this.Enter(a);
-                
+
             }
             /*else if (this.WillArchitecture != null && this.WillArchitecture.BelongedFaction == this.BelongedFaction)
             {
@@ -4438,73 +4469,79 @@ namespace GameObjects
             }
         }
 
-        public void Enter(Architecture a, bool doAsk)
+        public void Enter(Architecture arch, bool doAsk)
         {
-            if (doAsk && Session.Current.Scenario.CurrentPlayer != null && this.OnTransportArrived != null)
+            if (doAsk && Session.Current.Scenario.CurrentPlayer != null)
             {
-                this.OnTransportArrived(this, a);
+                eventManager.Publish(new TransportArrivedEvent(this, arch));
             }
-            else if (a.BelongedFaction == this.BelongedFaction)
+            else if (arch.BelongedFaction == BelongedFaction)
             {
-                PersonList list = new PersonList();
-                foreach (Person person in this.Persons)
+                var list = new List<Person>();
+
+                foreach (Person person in Persons)
                 {
-                    person.LocationArchitecture = a;
+                    person.LocationArchitecture = arch;
                     person.LocationTroop = null;
-                    if (Session.Current.Scenario.IsPlayer(this.BelongedFaction) && this.StartingArchitecture != null && this.StartingArchitecture.BelongedFaction == this.BelongedFaction &&
-                        this.StartingArchitecture.BelongedSection != a.BelongedSection && this.StartingArchitecture != transportReturningTo)
+                    if (Session.Current.Scenario.IsPlayer(BelongedFaction) 
+                        && StartingArchitecture != null 
+                        && StartingArchitecture.BelongedFaction == BelongedFaction 
+                        && StartingArchitecture.BelongedSection != arch.BelongedSection 
+                        && StartingArchitecture != transportReturningTo)
                     {
-                        person.MoveToArchitecture(this.StartingArchitecture);
+                        person.MoveToArchitecture(StartingArchitecture);
                     }
+
+                    person.ApplyInfluence();
                 }
-                this.Persons.ApplyInfluences();
-                if (this.Army.ShelledMilitary == null)
+
+                if (Army.ShelledMilitary == null)
                 {
-                    if (this.Army.Quantity > this.Army.Kind.MaxScale)
-                    {
-                        this.Army.Quantity = this.Army.Kind.MaxScale;
-                    }
-                    a.AddMilitary(this.Army);
+                    Army.Quantity = Math.Min(Army.Quantity, Army.Kind.MaxScale);
+                    arch.AddMilitary(Army);
                 }
                 else
                 {
-                    if (this.Army.Quantity > this.Army.ShelledMilitary.Kind.MaxScale)
-                    {
-                        this.Army.Quantity = this.Army.ShelledMilitary.Kind.MaxScale;
-                    }
-                    a.AddMilitary(this.Army.ShelledMilitary);
-                    Session.Current.Scenario.Militaries.Remove(this.Army);
+                    Army.Quantity = Math.Min(Army.Quantity, Army.ShelledMilitary.Kind.MaxScale);
+                    arch.AddMilitary(Army.ShelledMilitary);
+                    Session.Current.Scenario.Militaries.Remove(Army.ID);
                 }
-                a.callReturnedOfficerToWork();
-                if (this.Food > 0)
+
+                arch.callReturnedOfficerToWork();
+
+                if (Food > 0)
                 {
-                    a.IncreaseFood(this.Food);
+                    arch.IncreaseFood(Food);
                 }
+
                 if (this.zijin > 0)
                 {
-                    a.IncreaseFund(this.zijin);
+                    arch.IncreaseFund(zijin);
                 }
-                this.MoveCaptiveIntoArchitecture(a);
-                GameObjectList golPersons = this.persons.GetList();
-                PersonList persons = new PersonList();
-                foreach (Person p in golPersons)
+
+                MoveCaptiveIntoArchitecture(arch);
+
+                var persons = new List<Person>();
+                foreach (Person p in persons.ToList())
                 {
                     persons.Add(p);
                 }
-                this.Destroy(true, false);
-                foreach (Person p in persons)
+                Destroy(true, false);
+
+                foreach (var p in persons)
                 {
                     p.LocationTroop = null;
-                    p.LocationArchitecture = a;
+                    p.LocationArchitecture = arch;
                     p.WorkKind = p.OldWorkKind;
+                    p.ApplyInfluence();
                 }
-                persons.ApplyInfluences();
-                foreach (Person p in persons)
+
+                foreach (var p in persons)
                 {
                     p.RecallFollowingNvGuans();
                 }
                 Session.Current.Scenario.ClearPersonStatusCache();
-                ExtensionInterface.call("EnterArchitecture", new Object[] { Session.Current.Scenario, this, a });
+                ExtensionInterface.call("EnterArchitecture", new Object[] { Session.Current.Scenario, this, arch });
             }
         }
 
@@ -4512,18 +4549,21 @@ namespace GameObjects
 
         public void FactionDestroy()
         {
-            GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.被击破, this.Position, false);
+            TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.被击破, Position, false);
             if (animation != null)
             {
-                this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
+                TryToPlaySound(Position, getSoundPath(animation.LinkedAnimation));
             }
+
+            var architectures = Session.Current.Scenario.Architectures.Values.ToList();
+
             foreach (Person person in this.Persons)
             {
                 person.OutsideTask = OutsideTaskKind.无;
                 person.TaskDays = 0;
                 person.Status = PersonStatus.NoFaction;
 
-                person.LocationArchitecture = (Architecture)(this.StartingArchitecture == null ? Session.Current.Scenario.Architectures.GetRandomObject() : this.StartingArchitecture);
+                person.LocationArchitecture = StartingArchitecture == null ? StaticMethods.GetRandomItem(architectures) : this.StartingArchitecture;
                 person.TargetArchitecture = null;
             }
             this.Destroy(true, true);
@@ -4644,96 +4684,106 @@ namespace GameObjects
             return (int)((baseDecrement + StaticMethods.GetRandomValue(this.TroopIntelligence, 20)) * this.RateOfGongxin);
         }
 
-        private TroopList GetAllOffenceAreaTroops(Point position)
+        private List<Troop> GetAllOffenceAreaTroops(Point position)
         {
-            TroopList list = new TroopList();
-            foreach (Point point in this.GetOffenceArea(position).Area)
+            var result = new List<Troop>();
+
+            foreach (var point in GetOffenceArea(position).Area)
             {
-                if ((this.BelongedFaction == null) || this.BelongedFaction.IsPositionKnown(point))
+                if (BelongedFaction == null || BelongedFaction.IsPositionKnown(point))
                 {
-                    Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                    if (troopByPosition != null)
+                    var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                    if (troop != null)
                     {
-                        list.Add(troopByPosition);
+                        result.Add(troop);
                     }
                 }
             }
-            return list;
+
+            return result;
         }
 
-        public TroopList GetAllOtherTroopsInView()
+        public List<Troop> GetAllOtherTroopsInView()
         {
-            TroopList list = new TroopList();
-            foreach (Point point in this.ViewArea.Area)
+            var result = new List<Troop>();
+
+            foreach (var point in ViewArea.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && (troopByPosition != this))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop != null && troop != this)
                 {
-                    list.Add(troopByPosition);
+                    result.Add(troop);
                 }
             }
-            return list;
+            return result;
         }
 
-        private TroopList GetAreaAttackTroops(Point centre, int radius, bool oblique)
+        private List<Troop> GetAreaAttackTroops(Point centre, int radius, bool oblique)
         {
-            GameArea area = GameArea.GetViewArea(centre, radius, oblique, null);
-            TroopList list = new TroopList();
-            foreach (Point point in area.Area)
+            var area = GameArea.GetViewArea(centre, radius, oblique, null);
+            var result = new List<Troop>();
+
+            foreach (var point in area.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if (troopByPosition != null)
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop != null)
                 {
-                    list.Add(troopByPosition);
+                    result.Add(troop);
                 }
             }
-            return list;
+
+            return result;
         }
 
-        private TroopList GetAreaCastTroops(Point centre, int radius, bool oblique)
+        private List<Troop> GetAreaCastTroops(Point centre, int radius, bool oblique)
         {
-            GameArea area = GameArea.GetViewArea(centre, radius, oblique, null);
-            TroopList list = new TroopList();
-            foreach (Point point in area.Area)
+            var area = GameArea.GetViewArea(centre, radius, oblique, null);
+            var result = new List<Troop>();
+
+            foreach (var point in area.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && (this.CurrentStratagem.IsValid(troopByPosition) &&
-                    ((this.CurrentStratagem.Friendly && this.IsFriendly(troopByPosition.BelongedFaction)) ||
-                     (!this.CurrentStratagem.Friendly && !this.IsFriendly(troopByPosition.BelongedFaction))
-                    )))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop == null || !CurrentStratagem.IsValid(troop)) continue;
+
+                // 友方计略只作用于友军，敌方计略只作用于敌军
+                if (CurrentStratagem.Friendly == IsFriendly(troop.BelongedFaction))
                 {
-                    list.Add(troopByPosition);
+                    result.Add(troop);
                 }
             }
-            return list;
+
+            return result;
         }
 
-        public TroopList GetAreaStratagemTroops(Troop troop, bool friendly)
+        public List<Troop> GetAreaStratagemTroops(Troop troop, bool friendly = false)
         {
-            TroopList list = new TroopList();
-            foreach (Troop troop2 in this.GetAreaCastTroops(troop.Position, this.AreaStratagemRadius, false))
+            var result = new List<Troop>();
+
+            foreach (var otherTroop in GetAreaCastTroops(troop.Position, AreaStratagemRadius, false))
             {
-                if ((!friendly || this.IsFriendly(troop2.BelongedFaction)) && (friendly || ((troop2 != this) && !this.IsFriendly(troop2.BelongedFaction))))
+                if ((!friendly || IsFriendly(otherTroop.BelongedFaction)) && (friendly || (otherTroop != this && !IsFriendly(otherTroop.BelongedFaction))))
                 {
-                    list.Add(troop2);
+                    result.Add(otherTroop);
                 }
             }
-            return list;
+
+            return result;
         }
 
-        private TroopList GetAreaStratagemTroops(Point centre, int radius, bool oblique)
+        private List<Troop> GetAreaStratagemTroops(Point centre, int radius, bool oblique)
         {
-            GameArea area = GameArea.GetViewArea(centre, radius, oblique, null);
-            TroopList list = new TroopList();
-            foreach (Point point in area.Area)
+            var result = new List<Troop>();
+            var area = GameArea.GetViewArea(centre, radius, oblique, null);
+            
+            foreach (var point in area.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && (this.CurrentStratagem.IsValid(troopByPosition) && (this.CurrentStratagem.Friendly || !this.IsFriendly(troopByPosition.BelongedFaction))))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop != null && (CurrentStratagem.IsValid(troop) && (CurrentStratagem.Friendly || !IsFriendly(troop.BelongedFaction))))
                 {
-                    list.Add(troopByPosition);
+                    result.Add(troop);
                 }
             }
-            return list;
+            return result;
         }
 
         private int GetAttackArchitecutreCredit(Architecture architecture)
@@ -4757,7 +4807,7 @@ namespace GameObjects
             {
                 num = 1;
             }
-            if (((architecture.RecentlyBreaked <= 0) && (architecture.Endurance < 30)) && GameObject.Chance(50))
+            if (((architecture.RecentlyBreaked <= 0) && (architecture.Endurance < 30)) && GameObject.GetChance(50))
             {
                 num *= 5;
             }
@@ -4772,47 +4822,104 @@ namespace GameObjects
             return (num / 2);
         }
 
+        private Troop GetMinDefenceTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MinBy(x => x.Defence);
+        }
+
+        private Troop GetMaxDefenceTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MaxBy(x => x.Defence);
+        }
+
+        private Troop GetMinOffenceTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MinBy(x => x.Offence);
+        }
+
+        private Troop GetMaxOffenceTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MaxBy(x => x.Offence);
+        }
+
+        private Troop GetMinAntiCriticalAttackTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MinBy(x => x.AntiCriticalStrikeChance);
+        }
+
+        private Troop GetMaxAntiCriticalAttackTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MaxBy(x => x.AntiCriticalStrikeChance);
+        }
+
+        private Architecture GetMaxEnduranceArchitecture(List<Architecture> architectures, Architecture target)
+        {
+            if (architectures.Contains(target)) return target;
+
+            return architectures.MaxBy(x => x.Endurance);
+        }
+
+        private Architecture GetMinEnduranceArchitecture(List<Architecture> architectures, Architecture target)
+        {
+            if (architectures.Contains(target)) return target;
+
+            return architectures.MinBy(x => x.Endurance);
+        }
+
         private GameObject GetAttackOrientationObject(bool last)
         {
-            TroopList attackPossibleTroops = this.GetAttackPossibleTroops(last);
+            var attackPossibleTroops = GetAttackPossibleTroops(last);
             Troop minDefenceTroop = null;
-            ArchitectureList attackPossibleArchitectures = this.GetAttackPossibleArchitectures(last);
+            var attackPossibleArchitectures = GetAttackPossibleArchitectures(last);
             Architecture minEnduranceArchitecture = null;
             bool flag = true;
+
             switch (this.AttackDefaultKind)
             {
-                case TroopAttackDefaultKind.防最弱:
-                    minDefenceTroop = attackPossibleTroops.GetMinDefenceTroop(this.TargetTroop);
+                case TroopAttackDefaultKind.WeakestDefense:
+                    minDefenceTroop = GetMinDefenceTroop(attackPossibleTroops, TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.防最强:
-                    minDefenceTroop = attackPossibleTroops.GetMaxDefenceTroop(this.TargetTroop);
+                case TroopAttackDefaultKind.StrongestDefense:
+                    minDefenceTroop = GetMaxDefenceTroop(attackPossibleTroops, TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.攻最弱:
-                    minDefenceTroop = attackPossibleTroops.GetMinOffenceTroop(this.TargetTroop);
+                case TroopAttackDefaultKind.WeakestAttack:
+                    minDefenceTroop = GetMinOffenceTroop(attackPossibleTroops, TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.攻最强:
-                    minDefenceTroop = attackPossibleTroops.GetMaxOffenceTroop(this.TargetTroop);
+                case TroopAttackDefaultKind.StrongestAttack:
+                    minDefenceTroop = GetMaxOffenceTroop(attackPossibleTroops, TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.耐最低:
+                case TroopAttackDefaultKind.LowestEndurance:
                     flag = false;
-                    minEnduranceArchitecture = attackPossibleArchitectures.GetMinEnduranceArchitecture(this.TargetArchitecture);
+                    minEnduranceArchitecture = GetMinEnduranceArchitecture(attackPossibleArchitectures, TargetArchitecture);
                     break;
 
-                case TroopAttackDefaultKind.耐最高:
+                case TroopAttackDefaultKind.HighestEndurance:
                     flag = false;
-                    minEnduranceArchitecture = attackPossibleArchitectures.GetMaxEnduranceArchitecture(this.TargetArchitecture);
+                    minEnduranceArchitecture = GetMaxEnduranceArchitecture(attackPossibleArchitectures, TargetArchitecture);
                     break;
 
-                case TroopAttackDefaultKind.抗暴最低:
-                    minDefenceTroop = attackPossibleTroops.GetMinAntiCriticalAttackTroop(this.TargetTroop);
+                case TroopAttackDefaultKind.LowestCritResistance:
+                    minDefenceTroop = GetMinAntiCriticalAttackTroop(attackPossibleTroops, TargetTroop);
                     break;
 
-                case TroopAttackDefaultKind.抗暴最高:
-                    minDefenceTroop = attackPossibleTroops.GetMaxAntiCriticalAttackTroop(this.TargetTroop);
+                case TroopAttackDefaultKind.HighestCritResistance:
+                    minDefenceTroop = GetMaxAntiCriticalAttackTroop(attackPossibleTroops, TargetTroop);
                     break;
             }
             if (flag)
@@ -4824,7 +4931,7 @@ namespace GameObjects
                     minDefenceTroop.OrientationTroop = this;
                     return minDefenceTroop;
                 }
-                minEnduranceArchitecture = attackPossibleArchitectures.GetMinEnduranceArchitecture(this.TargetArchitecture);
+                minEnduranceArchitecture = GetMinEnduranceArchitecture(attackPossibleArchitectures, TargetArchitecture);
                 if (minEnduranceArchitecture != null)
                 {
                     this.OrientationTroop = null;
@@ -4842,7 +4949,7 @@ namespace GameObjects
                     this.OrientationPosition = Session.Current.Scenario.GetClosestPoint(minEnduranceArchitecture.ArchitectureArea, this.Position);
                     return minEnduranceArchitecture;
                 }
-                minDefenceTroop = attackPossibleTroops.GetMinDefenceTroop(this.TargetTroop);
+                minDefenceTroop = GetMinDefenceTroop(attackPossibleTroops, TargetTroop);
                 if (minDefenceTroop != null)
                 {
                     this.OrientationTroop = minDefenceTroop;
@@ -4854,49 +4961,49 @@ namespace GameObjects
             return null;
         }
 
-        private ArchitectureList GetAttackPossibleArchitectures(bool last)
+        private List<Architecture> GetAttackPossibleArchitectures(bool last)
         {
-            ArchitectureList list = new ArchitectureList();
-            foreach (Point point in this.OffenceArea.Area)
+            var result = new List<Architecture>();
+
+            foreach (var point in OffenceArea.Area)
             {
-                Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(point);
-                if (architectureByPosition != null)
+                var architecture = Session.Current.Scenario.GetArchitectureByPosition(point);
+                if (architecture != null)
                 {
-                    if ((architectureByPosition.Endurance == 0) || this.IsFriendly(architectureByPosition.BelongedFaction))
+                    if (architecture.Endurance == 0 || IsFriendly(architecture.BelongedFaction)) continue;
+
+                    if (IfAttackArchitecture(architecture, last))
+                    {
+                        result.Add(architecture);
+                    }
+                }
+            }
+            return result;
+        }
+
+        private List<Troop> GetAttackPossibleTroops(bool last)
+        {
+            var result = new List<Troop>();
+
+            foreach (var point in OffenceArea.Area)
+            {
+                if ((BelongedFaction == null && ViewArea.HasPoint(point)) || (BelongedFaction != null && BelongedFaction.IsPositionKnown(point)))
+                {
+                    var troop = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
+                    if (troop == null || troop == this) continue;
+                    
+                    if (AttackedTroopList.HasGameObject(troop) || IsFriendly(troop.BelongedFaction) || troop.Status == TroopStatus.Ambushing || !(AirOffence || !troop.IsInArchitecture))
                     {
                         continue;
                     }
-                    if (this.IfAttackArchitecture(architectureByPosition, last))
-                    {
-                        list.Add(architectureByPosition);
-                    }
-                }
-            }
-            return list;
-        }
 
-        private TroopList GetAttackPossibleTroops(bool last)
-        {
-            TroopList list = new TroopList();
-            foreach (Point point in this.OffenceArea.Area)
-            {
-                if (((this.BelongedFaction == null) && this.ViewArea.HasPoint(point)) || ((this.BelongedFaction != null) && this.BelongedFaction.IsPositionKnown(point)))
-                {
-                    Troop troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
-                    if ((troopByPositionNoCheck != null) && (troopByPositionNoCheck != this))
+                    if (IfAttackTroop(troop, last))
                     {
-                        if (((this.AttackedTroopList.HasGameObject(troopByPositionNoCheck) || this.IsFriendly(troopByPositionNoCheck.BelongedFaction)) || (troopByPositionNoCheck.Status == TroopStatus.埋伏)) || !(this.AirOffence || !troopByPositionNoCheck.IsInArchitecture))
-                        {
-                            continue;
-                        }
-                        if (this.IfAttackTroop(troopByPositionNoCheck, last))
-                        {
-                            list.Add(troopByPositionNoCheck);
-                        }
+                        result.Add(troop);
                     }
                 }
             }
-            return list;
+            return result;
         }
 
         private int GetAttackTroopCredit(Troop troop, Point position)
@@ -4970,33 +5077,29 @@ namespace GameObjects
             }
             if (this.BaseAttackAllOffenceArea || this.AttackAllOffenceArea)
             {
-                foreach (Troop troop2 in this.GetAllOffenceAreaTroops(position))
+                foreach (var troop2 in GetAllOffenceAreaTroops(position))
                 {
-                    if ((troop2 != troop) && (troop2 != this))
+                    if (troop2 != troop && troop2 != this)
                     {
-                        if (this.TroopNoAccidentalInjury)
+                        if (IsFriendly(troop2.BelongedFaction))
                         {
-                            if (this.IsFriendly(troop2.BelongedFaction))
-                            {
-                                continue;
-                            }
-                        }
-                        else if (this.IsFriendly(troop2.BelongedFaction))
-                        {
-                            pureAttackCredit -= (int)(this.GetPureAttackCredit(troop2) * 1.5f);
+                            if (TroopNoAccidentalInjury) continue;
+
+                            pureAttackCredit -= (int)(GetPureAttackCredit(troop2) * 1.5f);
                             continue;
                         }
-                        pureAttackCredit += this.GetPureAttackCredit(troop2);
+
+                        pureAttackCredit += GetPureAttackCredit(troop2);
                     }
                 }
             }
             if (this.BaseAttackEveryAround || this.AttackEveryAround)
             {
-                foreach (Troop troop2 in this.GetAllOffenceAreaTroops(position))
+                foreach (var troop2 in GetAllOffenceAreaTroops(position))
                 {
-                    if (((troop2 != troop) && (troop2 != this)) && !this.IsFriendly(troop2.BelongedFaction))
+                    if (troop2 != troop && troop2 != this && !IsFriendly(troop2.BelongedFaction))
                     {
-                        pureAttackCredit += this.GetPureAttackCredit(troop2);
+                        pureAttackCredit += GetPureAttackCredit(troop2);
                     }
                 }
             }
@@ -5037,77 +5140,94 @@ namespace GameObjects
             return (num / 8);
         }
 
+        private Troop GetMinIntelligenceTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MinBy(x => x.TroopIntelligence);
+        }
+
+        private Troop GetMaxIntelligenceTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MaxBy(x => x.TroopIntelligence);
+        }
+
+        private Troop GetMinMoraleTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MinBy(x => x.Morale);
+        }
+
+        private Troop GetMaxMoraleTroop(List<Troop> troops, Troop target)
+        {
+            if (troops.Contains(target)) return target;
+
+            return troops.MaxBy(x => x.Morale);
+        }
+
         private Troop GetCastOrientationTroop(bool last)
         {
-            TroopList castPossibleTroops = this.GetCastPossibleTroops(last);
-            if (castPossibleTroops.Count == 0)
-            {
-                return null;
-            }
+            var castPossibleTroops = GetCastPossibleTroops(last);
+            if (castPossibleTroops.Count == 0) return null;
+
             Troop minIntelligenceTroop = null;
-            switch (this.CastDefaultKind)
+            switch (CastDefaultKind)
             {
-                case TroopCastDefaultKind.智最弱:
-                    minIntelligenceTroop = castPossibleTroops.GetMinIntelligenceTroop(this.TargetTroop);
+                case TroopCastDefaultKind.IntelligenceWeakest:
+                    minIntelligenceTroop = GetMinIntelligenceTroop(castPossibleTroops, TargetTroop);
                     break;
 
-                case TroopCastDefaultKind.智最强:
-                    minIntelligenceTroop = castPossibleTroops.GetMaxIntelligenceTroop(this.TargetTroop);
+                case TroopCastDefaultKind.IntelligenceStrongest:
+                    minIntelligenceTroop = GetMaxIntelligenceTroop(castPossibleTroops, TargetTroop);
                     break;
 
-                case TroopCastDefaultKind.士最低:
-                    minIntelligenceTroop = castPossibleTroops.GetMinMoraleTroop(this.TargetTroop);
+                case TroopCastDefaultKind.MoraleLowest:
+                    minIntelligenceTroop = GetMinMoraleTroop(castPossibleTroops, TargetTroop);
                     break;
 
-                case TroopCastDefaultKind.士最高:
-                    minIntelligenceTroop = castPossibleTroops.GetMaxMoraleTroop(this.TargetTroop);
+                case TroopCastDefaultKind.MoraleHighest:
+                    minIntelligenceTroop = GetMaxMoraleTroop(castPossibleTroops, TargetTroop);
                     break;
             }
+
             if (minIntelligenceTroop != null)
             {
-                this.OrientationTroop = minIntelligenceTroop;
+                OrientationTroop = minIntelligenceTroop;
                 minIntelligenceTroop.OrientationTroop = this;
             }
             return minIntelligenceTroop;
         }
 
-        private TroopList GetCastPossibleTroops(bool last)
+        private List<Troop> GetCastPossibleTroops(bool last)
         {
-            TroopList list = new TroopList();
-            foreach (Point point in this.StratagemArea.Area)
+            var result = new List<Troop>();
+
+            foreach (var point in StratagemArea.Area)
             {
-                if (((this.BelongedFaction == null) && this.ViewArea.HasPoint(point)) || ((this.BelongedFaction != null) && this.BelongedFaction.IsPositionKnown(point)))
+                if ((BelongedFaction == null && ViewArea.HasPoint(point)) || (BelongedFaction != null && BelongedFaction.IsPositionKnown(point)))
                 {
-                    Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                    if (((troopByPosition == null) || (troopByPosition.Action != TroopAction.Stop)) || (troopByPosition.Status == TroopStatus.埋伏))
+                    var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                    if (troop == null || troop.Action != TroopAction.Stop || troop.Status == TroopStatus.Ambushing) continue;
+
+                    bool isFriendlyFaction = IsFriendly(troop.BelongedFaction);
+                    bool isValid = CurrentStratagem.IsValid(troop);
+
+                    bool skip = CurrentStratagem.Friendly
+                                ? !isFriendlyFaction || !isValid
+                                : isFriendlyFaction || !isValid;
+
+                    if (skip) continue;
+
+                    if (IfCastTroop(troop, last))
                     {
-                        continue;
-                    }
-                    if (this.CurrentStratagem.Friendly)
-                    {
-                        if (!this.IsFriendly(troopByPosition.BelongedFaction) || !this.CurrentStratagem.IsValid(troopByPosition))
-                        {
-                            continue;
-                        }
-                        if (this.IfCastTroop(troopByPosition, last))
-                        {
-                            list.Add(troopByPosition);
-                        }
-                    }
-                    else
-                    {
-                        if (this.IsFriendly(troopByPosition.BelongedFaction) || !this.CurrentStratagem.IsValid(troopByPosition))
-                        {
-                            continue;
-                        }
-                        if (this.IfCastTroop(troopByPosition, last))
-                        {
-                            list.Add(troopByPosition);
-                        }
+                        result.Add(troop);
                     }
                 }
             }
-            return list;
+            return result;
         }
 
         protected Point GetCentrePointInSecondTierPosition(Point position)
@@ -5158,12 +5278,11 @@ namespace GameObjects
 
         public string GetCombatMethodDisplayName(int id)
         {
-            CombatMethod combatMethod = this.CombatMethods.GetCombatMethod(id);
-            if (combatMethod != null)
+            if (CombatMethods.TryGetValue(id, out var combatMethod))
             {
-                int num = combatMethod.Combativity - this.DecrementOfCombatMethodCombativityConsuming;
-                return (combatMethod.Name + "(" + num.ToString() + ")");
+                return $"{combatMethod.Name}({combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming})";
             }
+
             return "----";
         }
 
@@ -5172,38 +5291,40 @@ namespace GameObjects
             return GameArea.GetArea(position, 1, false);
         }
 
-        public TroopList GetContactFriendlyTroops()
+        public List<Troop> GetContactFriendlyTroops()
         {
-            TroopList list = new TroopList();
-            foreach (Point point in GameArea.GetArea(this.Position, 1, true).Area)
+            var result = new List<Troop>();
+
+            foreach (var point in GameArea.GetArea(Position, 1, true).Area)
             {
-                if ((point != this.Position) && this.BelongedFaction.IsPositionKnown(point))
+                if (point != Position && BelongedFaction.IsPositionKnown(point))
                 {
-                    Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                    if ((troopByPosition != null) && this.IsFriendly(troopByPosition.BelongedFaction))
+                    var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                    if (troop != null && IsFriendly(troop.BelongedFaction))
                     {
-                        list.Add(troopByPosition);
+                        result.Add(troop);
                     }
                 }
             }
-            return list;
+            return result;
         }
 
-        public TroopList GetContactHostileTroops()
+        public List<Troop> GetContactHostileTroops()
         {
-            TroopList list = new TroopList();
-            foreach (Point point in GameArea.GetArea(this.Position, 1, true).Area)
+            var result = new List<Troop>();
+
+            foreach (var point in GameArea.GetArea(Position, 1, true).Area)
             {
-                if ((point != this.Position) && this.BelongedFaction.IsPositionKnown(point))
+                if (point != Position && BelongedFaction.IsPositionKnown(point))
                 {
-                    Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                    if (!((troopByPosition == null) || this.IsFriendly(troopByPosition.BelongedFaction)))
+                    var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                    if (troop != null && !IsFriendly(troop.BelongedFaction))
                     {
-                        list.Add(troopByPosition);
+                        result.Add(troop);
                     }
                 }
             }
-            return list;
+            return result;
         }
 
         public int GetCostByPosition(Point position, bool oblique, int DirectionCost, MilitaryKind kind)
@@ -5291,7 +5412,7 @@ namespace GameObjects
                         {
                             flag = true;
                             attackArchitecutreCredit = this.GetAttackArchitecutreCredit(architectureByPositionNoCheck);
-                            if ((this.ViewingHostileTroopCount > 0) || GameObject.Chance(33))
+                            if ((this.ViewingHostileTroopCount > 0) || GameObject.GetChance(33))
                             {
                                 attackArchitecutreCredit += num2;
                             }
@@ -5359,7 +5480,7 @@ namespace GameObjects
                         else if ((this.BelongedFaction == null) || this.BelongedFaction.IsPositionKnown(point2))
                         {
                             troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point2);
-                            if (((troopByPositionNoCheck != null) && !this.IsFriendly(troopByPositionNoCheck.BelongedFaction)) && (troopByPositionNoCheck.Status != TroopStatus.埋伏))
+                            if (((troopByPositionNoCheck != null) && !this.IsFriendly(troopByPositionNoCheck.BelongedFaction)) && (troopByPositionNoCheck.Status != TroopStatus.Ambushing))
                             {
                                 flag = true;
                                 attackArchitecutreCredit = this.GetAttackTroopCredit(troopByPositionNoCheck, position) - this.GetCounterStrikeDiscredit(troopByPositionNoCheck, position);
@@ -5537,7 +5658,7 @@ namespace GameObjects
                 result *= 1 + (4 - ms) * (4 - ms) * 0.1;
             }
 
-            
+
 
             return result;
         }
@@ -5646,7 +5767,7 @@ namespace GameObjects
             Rectangle rectangle = this.TileAnimation.GetCurrentDisplayRectangle(ref this.currentTileAnimationIndex, ref this.currentTileStayIndex, width, 0, out flag, false);
             if (flag)
             {
-                this.PreAction = TroopPreAction.无;
+                this.PreAction = TroopPreAction.None;
                 if (this.Action == TroopAction.Attack)
                 {
                     this.AttackStarted = true;
@@ -5688,69 +5809,66 @@ namespace GameObjects
                 else
                 {
                     int chance = this.CurrentStratagem.Chance + num;
-                    flag = GameObject.Chance(chance);
+                    flag = GameObject.GetChance(chance);
                 }
             }
             else
             {
-                flag = GameObject.Chance(this.TroopIntelligence + this.StratagemChanceIncrement);
+                flag = GameObject.GetChance(this.TroopIntelligence + this.StratagemChanceIncrement);
             }
             if (!this.CurrentStratagem.Friendly)
             {
                 if (flag)
                 {
-                    if (this.OrientationTroop == troop)
+                    if (OrientationTroop == troop)
                     {
-                        this.WaitForDeepChaos = !troop.NeverBeIntoChaos && 
-                            (GameObject.Chance(this.ChaosAfterStratagemSuccessChance) || GameObject.Chance((this.TroopIntelligence - troop.TroopIntelligence) / 2));
-                        this.WaitForDeepChaosFrameCount = 100;
+                        WaitForDeepChaos = !troop.NeverBeIntoChaos &&
+                            (GameObject.GetChance(ChaosAfterStratagemSuccessChance) || GameObject.GetChance((TroopIntelligence - troop.TroopIntelligence) / 2));
+                        WaitForDeepChaosFrameCount = 100;
                     }
-                    if (this.OnStratagemSuccess != null)
-                    {
-                        this.OnStratagemSuccess(this, troop, this.CurrentStratagem, true);
-                    }
+                 
+                    eventManager.Publish(new StratagemSuccessedEvent(this, troop, CurrentStratagem, true));
 
-                    this.Persons.GetMaxIntelligencePerson().StratagemSuccessCount++;
-                    troop.Persons.GetMaxIntelligencePerson().StratagemBeSuccessCount++;
-                    this.Army.StratagemSuccessCount++;
+                    Persons.MaxBy(x => x.Intelligence).StratagemSuccessCount++;
+                    troop.Persons.MaxBy(x => x.Intelligence).StratagemBeSuccessCount++;
+                    Army.StratagemSuccessCount++;
                     troop.Army.StratagemBeSuccessCount++;
 
                 }
                 else
                 {
-                    GameObjects.Animations.TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.抵挡, troop.Position, false);
+                    TileAnimation animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.抵挡, troop.Position, false);
                     if (animation != null)
                     {
-                        troop.TryToPlaySound(troop.Position, this.getSoundPath(animation.LinkedAnimation), false);
+                        troop.TryToPlaySound(troop.Position, getSoundPath(animation.LinkedAnimation));
                     }
-                    if (this.OnResistStratagem != null)
-                    {
-                        this.OnResistStratagem(this, troop, this.CurrentStratagem, true);
-                    }
+                  
+                    eventManager.Publish(new ResistStratagemEvent(this, troop, CurrentStratagem, true));
 
-                    this.Persons.GetMaxIntelligencePerson().StratagemFailCount++;
+                    Persons.MaxBy(x => x.Intelligence).StratagemFailCount++;
+
                     if (troop.PersonCount > 0)
                     {
-                        troop.Persons.GetMaxIntelligencePerson().StratagemBeFailCount++;
+                        troop.Persons.MaxBy(x => x.Intelligence).StratagemBeFailCount++;
                     }
-                    this.Army.StratagemFailCount++;
+                    Army.StratagemFailCount++;
                     troop.Army.StratagemBeFailCount++;
                 }
             }
             else if (flag)
             {
-                if (((troop != null) && (this.OnStratagemSuccess != null)) && (this != troop))
+                if (troop != null && this != troop)
                 {
-                    this.OnStratagemSuccess(this, troop, this.CurrentStratagem, false);
+                    eventManager.Publish(new StratagemSuccessedEvent(this, troop, CurrentStratagem, false));
                 }
-                this.Persons.GetMaxIntelligencePerson().StratagemSuccessCount++;
-                this.Army.StratagemSuccessCount++;
+                Persons.MaxBy(x => x.Intelligence).StratagemSuccessCount++;
+                Army.StratagemSuccessCount++;
             }
-            else if ((troop != null) && (this.OnResistStratagem != null))
+            else if (troop != null)
             {
-                this.OnResistStratagem(this, troop, this.CurrentStratagem, false);
-                this.Persons.GetMaxIntelligencePerson().StratagemFailCount++;
-                this.Army.StratagemFailCount++;
+                eventManager.Publish(new ResistStratagemEvent(this, troop, CurrentStratagem, false));
+                Persons.MaxBy(x => x.Intelligence).StratagemFailCount++;
+                Army.StratagemFailCount++;
             }
             int increment = (2 + (flag ? 1 : 0)) + (this.WaitForDeepChaos ? 2 : 0);
             this.IncreaseStratagemExperience(increment, true);
@@ -5875,14 +5993,14 @@ namespace GameObjects
             {
                 return 0;
             }
-            if (((this.ViewingWillArchitecture && (this.WillArchitecture != null)) && ((this.WillArchitecture.BelongedFaction == this.BelongedFaction) && (this.WillArchitecture.RecentlyAttacked <= 0))) && GameObject.Chance(0x21))
+            if (((this.ViewingWillArchitecture && (this.WillArchitecture != null)) && ((this.WillArchitecture.BelongedFaction == this.BelongedFaction) && (this.WillArchitecture.RecentlyAttacked <= 0))) && GameObject.GetChance(0x21))
             {
                 return 0;
             }
             int num = 0;
             if (this.RationDaysLeft <= 1)
             {
-                foreach (Architecture architecture in Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(position, this.BelongedFaction))
+                foreach (var architecture in Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(position, BelongedFaction))
                 {
                     if (architecture.Food >= this.FoodCostPerDay)
                     {
@@ -5894,11 +6012,11 @@ namespace GameObjects
                     return 10000;
                 }
             }
-            if ((this.RationDaysLeft <= 3) && ((this.RationDaysLeft != 3) || !GameObject.Chance(50)))
+            if ((this.RationDaysLeft <= 3) && ((this.RationDaysLeft != 3) || !GameObject.GetChance(50)))
             {
                 flag = false;
 
-                foreach (Architecture architecture in Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(position, this.BelongedFaction))
+                foreach (var architecture in Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(position, BelongedFaction))
                 {
                     if (architecture.Food >= this.FoodCostPerDay)
                     {
@@ -5912,7 +6030,7 @@ namespace GameObjects
             else
             {
                 flag = false;
-                foreach (Architecture architecture in Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(position, this.BelongedFaction))
+                foreach (var architecture in Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(position, BelongedFaction))
                 {
                     if (architecture.Food >= this.FoodCostPerDay)
                     {
@@ -5988,50 +6106,57 @@ namespace GameObjects
             return num;
         }
 
-        public TroopList GetFriendlyTroopsInView()
+        public List<Troop> GetFriendlyTroopsInView()
         {
-            TroopList list = new TroopList();
-            foreach (Point point in this.ViewArea.Area)
+            var result = new List<Troop>();
+
+            foreach (var point in ViewArea.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if (((troopByPosition != null) && (troopByPosition != this)) && this.IsFriendly(troopByPosition.BelongedFaction))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop != null && troop != this && IsFriendly(troop.BelongedFaction))
                 {
-                    list.Add(troopByPosition);
+                    result.Add(troop);
                 }
             }
-            return list;
+            return result;
         }
 
-        public GameArea GetHighestFightingForceArea(GameArea sourceArea)
+        /// <summary>
+        /// 获取最高战力的位置
+        /// </summary>
+        /// <param name="points"></param>
+        /// <returns></returns>
+        public List<Point> GetHighestFightingForceArea(List<Point> points)
         {
-            if (sourceArea == null || sourceArea.Count == 0)
+            var result = new List<Point>();
+
+            if (points.Count == 0) return result; 
+            
+            int num = int.MinValue;
+            foreach (var point in points)
             {
-                return null;
-            }
-            int num = -2147483648;
-            GameArea area = new GameArea();
-            foreach (Point point in sourceArea.Area)
-            {
-                GameObjectList originalPersons = this.Persons.GetList();
-                Troop troop = CreateSimulateTroop(this.Candidates, this.Army, point);
+                var troop = CreateSimulateTroop(Candidates, Army, point);
                 int fightingForce = troop.FightingForce;
                 troop.Destroy(true, false);
+
                 if (fightingForce > num)
                 {
                     num = fightingForce;
-                    area.Area.Clear();
-                    area.AddPoint(point);
+                    result.Clear();
+                    result.Add(point);
                 }
                 else if (fightingForce == num)
                 {
-                    area.AddPoint(point);
+                    result.Add(point);
                 }
-                foreach (Person p in originalPersons)
+
+                foreach (var person in Persons)
                 {
-                    p.LocationTroop = this;
+                    person.LocationTroop = this;
                 }
             }
-            return area;
+
+            return result;
         }
 
         private int GetHostileRoutewayCredit(Point position)
@@ -6041,7 +6166,7 @@ namespace GameObjects
                 return 0;
             }
             int num = 0;
-            if ((this.BelongedFaction.GetKnownAreaData(position) >= Session.GlobalVariables.ScoutRoutewayInformationLevel) && this.BelongedLegion != null && (this.BelongedLegion.HasCuttingRoutewayTroop || GameObject.Chance(10)))
+            if ((this.BelongedFaction.GetKnownAreaData(position) >= Session.GlobalVariables.ScoutRoutewayInformationLevel) && this.BelongedLegion != null && (this.BelongedLegion.HasCuttingRoutewayTroop || GameObject.GetChance(10)))
             {
                 foreach (Routeway routeway in Session.Current.Scenario.GetActiveRoutewayListByPosition(position))
                 {
@@ -6054,18 +6179,24 @@ namespace GameObjects
             return num;
         }
 
-        public TroopList GetHostileTroopsInView()
+        /// <summary>
+        /// 获取视野内的敌方部队
+        /// </summary>
+        /// <returns></returns>
+        public List<Troop> GetHostileTroopsInView()
         {
-            TroopList list = new TroopList();
-            foreach (Point point in this.ViewArea.Area)
+            var result = new List<Troop>();
+
+            foreach (var point in ViewArea.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if (!((troopByPosition == null) || this.IsFriendly(troopByPosition.BelongedFaction)))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (troop != null && !IsFriendly(troop.BelongedFaction))
                 {
-                    list.Add(troopByPosition);
+                    result.Add(troop);
                 }
             }
-            return list;
+
+            return result;
         }
 
         private int GetLegionCredit(Point position)
@@ -6076,7 +6207,7 @@ namespace GameObjects
                 {
                     return 0;
                 }
-                if (Session.Current.Scenario.IsTroopViewingPosition(this.BelongedLegion.CoreTroop, position) && (this.BelongedLegion.WillArchitecture.IsViewing(position) || GameObject.Chance(10)))
+                if (Session.Current.Scenario.IsTroopViewingPosition(this.BelongedLegion.CoreTroop, position) && (this.BelongedLegion.WillArchitecture.IsViewing(position) || GameObject.GetChance(10)))
                 {
                     return 10;
                 }
@@ -6133,7 +6264,7 @@ namespace GameObjects
             {
                 if (this != this.BelongedLegion.CoreTroop)
                 {
-                    if ((((this.Army.Kind.Type == MilitaryType.水军) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.水军) && (terrainKindByPosition != TerrainKind.水域))) && ((((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.Position == p)) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.Chance((20 + this.Leader.Calmness) - this.Leader.Braveness)))
+                    if ((((this.Army.Kind.Type == MilitaryType.Navy) && (terrainKindByPosition == TerrainKind.Water)) || ((this.Army.Kind.Type != MilitaryType.Navy) && (terrainKindByPosition != TerrainKind.Water))) && ((((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.Position == p)) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.GetChance((20 + this.Leader.Calmness) - this.Leader.Braveness)))
                     {
                         pack.Credit += 10000;
                         return pack;
@@ -6143,7 +6274,7 @@ namespace GameObjects
                         pack.Credit += 1 + ((int)((this.DistanceToWillArchitecture - distance) * 100.0));
                     }
                 }
-                else if (((this.Position == p) && (((this.Army.Kind.Type == MilitaryType.水军) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.水军) && (terrainKindByPosition != TerrainKind.水域)))) && (((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.Chance((50 + this.Leader.Calmness) - this.Leader.Braveness)))
+                else if (((this.Position == p) && (((this.Army.Kind.Type == MilitaryType.Navy) && (terrainKindByPosition == TerrainKind.Water)) || ((this.Army.Kind.Type != MilitaryType.Navy) && (terrainKindByPosition != TerrainKind.Water)))) && (((supplyRoutePointsByPositionAndFaction.Count > 0) && (this.BelongedLegion.GetWillClosestTroop() == this)) && GameObject.GetChance((50 + this.Leader.Calmness) - this.Leader.Braveness)))
                 {
                     pack.Credit += 10000;
                     return pack;
@@ -6159,7 +6290,7 @@ namespace GameObjects
                 {
                     return pack;
                 }
-                if ((GameObject.Random(this.RationDaysLeft) == 0) && (((this.Army.Kind.Type == MilitaryType.水军) && (terrainKindByPosition == TerrainKind.水域)) || ((this.Army.Kind.Type != MilitaryType.水军) && (terrainKindByPosition != TerrainKind.水域))))
+                if ((GameObject.Random(this.RationDaysLeft) == 0) && (((this.Army.Kind.Type == MilitaryType.Navy) && (terrainKindByPosition == TerrainKind.Water)) || ((this.Army.Kind.Type != MilitaryType.Navy) && (terrainKindByPosition != TerrainKind.Water))))
                 {
                     foreach (RoutePoint point in supplyRoutePointsByPositionAndFaction)
                     {
@@ -6289,23 +6420,23 @@ namespace GameObjects
             }
             switch (troop.Army.Kind.Type)
             {
-                case MilitaryType.步兵:
+                case MilitaryType.Infantry:
                     num = (int)(num * this.OffenceRateOnSubdueBubing);
                     break;
 
-                case MilitaryType.弩兵:
+                case MilitaryType.Crossbow:
                     num = (int)(num * this.OffenceRateOnSubdueNubing);
                     break;
 
-                case MilitaryType.骑兵:
+                case MilitaryType.Cavalry:
                     num = (int)((num * this.OffenceRateOnSubdueQibing) * ((this.RateOfQibingDamage > this.BaseRateOfQibingDamage) ? this.RateOfQibingDamage : this.BaseRateOfQibingDamage));
                     break;
 
-                case MilitaryType.水军:
+                case MilitaryType.Navy:
                     num = (int)(num * this.OffenceRateOnSubdueShuijun);
                     break;
 
-                case MilitaryType.器械:
+                case MilitaryType.SiegeEquipment:
                     num = (int)(num * this.OffenceRateOnSubdueQixie);
                     break;
             }
@@ -6397,13 +6528,13 @@ namespace GameObjects
 
         protected Point GetSecondTierDestination()
         {
-            if ((this.secondTierPathDestinationIndex + GameObjectConsts.LaunchTierFinderDistance) < this.SecondTierPath.Count)
+            if ((this.SecondIndex + GameObjectConsts.LaunchTierFinderDistance) < this.SecondTierPath.Count)
             {
-                this.secondTierPathDestinationIndex += GameObjectConsts.LaunchTierFinderDistance;
-                return this.SecondTierPath[this.secondTierPathDestinationIndex];
+                this.SecondIndex += GameObjectConsts.LaunchTierFinderDistance;
+                return this.SecondTierPath[this.SecondIndex];
             }
-            this.secondTierPathDestinationIndex = this.SecondTierPath.Count - 1;
-            return this.SecondTierPath[this.secondTierPathDestinationIndex];
+            this.SecondIndex = this.SecondTierPath.Count - 1;
+            return this.SecondTierPath[this.SecondIndex];
         }
 
         public Point GetSecondTierDestinationFromThirdTier(MilitaryKind kind)
@@ -6415,13 +6546,24 @@ namespace GameObjects
             return this.GetCentrePointInThirdTierPosition(this.GetThirdTierDestination());
         }
 
+        private bool HasInfluenceKind(IEnumerable<Influence> influences, int kindId)
+        {
+            foreach (var influence in influences)
+            {
+                if (influence.KindId == kindId) return true;
+            }
+
+            return false;
+        }
+
         private CreditPack GetSelfStratagemCredit(Stratagem stratagem)
         {
+            var influenceKindId = 398;
             int creditWithPosition = 0;
             Point? position = null;
             if (stratagem.IsValid(this))
             {
-                if (!stratagem.Influences.HasInfluenceKind(398) || Session.Current.Scenario.Troops.Count < GameObject.Random(30) + 20)
+                if (!HasInfluenceKind(stratagem.Influences, influenceKindId) || Session.Current.Scenario.Troops.Count < GameObject.Random(30) + 20)
                 {
                     creditWithPosition = stratagem.GetCreditWithPosition(this, out position);
                 }
@@ -6463,7 +6605,7 @@ namespace GameObjects
             GameArea area = new GameArea();
             foreach (Point point in this.StratagemArea.Area)
             {
-                if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.步兵))
+                if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
                 {
                     area.AddPoint(point);
                 }
@@ -6515,12 +6657,12 @@ namespace GameObjects
 
         public string GetStratagemDisplayName(int id)
         {
-            Stratagem stratagem = this.Stratagems.GetStratagem(id);
-            if (stratagem != null)
+            if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
             {
-                int num = stratagem.Combativity - this.DecrementOfStratagemCombativityConsuming;
-                return (stratagem.Name + "(" + num.ToString() + ")");
+                int num = stratagem.Combativity - DecrementOfStratagemCombativityConsuming;
+                return $"{stratagem.Name}({num})";
             }
+
             return "----";
         }
 
@@ -6577,11 +6719,11 @@ namespace GameObjects
 
         public string GetStuntDisplayName(int id)
         {
-            Stunt stunt = this.Stunts.GetStunt(id);
-            if (stunt != null)
+            if (Stunts.TryGetValue(id, out var stunt))
             {
-                return (stunt.Name + "(" + stunt.Combativity.ToString() + ")");
+                return $"{stunt.Name}({stunt.Combativity})";
             }
+
             return "----";
         }
 
@@ -6596,37 +6738,37 @@ namespace GameObjects
             return rectangle;
         }
 
-        public TroopList GetSurroundAttackingTroop(Troop troop)
+        public List<Troop> GetSurroundAttackingTroop(Troop troop)
         {
-            TroopList list = new TroopList();
-            foreach (Point point in GameArea.GetArea(troop.Position, 1, true).Area)
+            var result = new List<Troop>();
+
+            foreach (var point in GameArea.GetArea(troop.Position, 1, true).Area)
             {
-                if (point == troop.Position)
+                if (point == troop.Position) continue;
+
+                var otherTroop = Session.Current.Scenario.GetTroopByPosition(point);
+                if (otherTroop != null && (otherTroop == this || (IsFriendlyWithoutTruce(otherTroop.BelongedFaction) && otherTroop.SurroundAvail() && otherTroop.CanAttack(troop))))
                 {
-                    continue;
-                }
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && ((troopByPosition == this) || ((this.IsFriendlyWithoutTruce(troopByPosition.BelongedFaction) && troopByPosition.SurroundAvail()) && troopByPosition.CanAttack(troop))))
-                {
-                    list.Add(troopByPosition);
+                    result.Add(otherTroop);
                 }
             }
-            return list;
+            return result;
         }
 
         public int GetSurroundingCredit(Troop troop)
         {
-            return ((this.GetSurroundAttackingTroop(troop).Count - 3) + 1);
+            return GetSurroundAttackingTroop(troop).Count - 3 + 1;
         }
 
         public GameArea GetTargetArea(bool friendly, bool architectureTarget)
         {
-            GameArea area = new GameArea();
-            foreach (Troop troop in Session.Current.Scenario.Troops)
+            var area = new GameArea();
+
+            foreach (var troop in Session.Current.Scenario.Troops.Values)
             {
-                if (((this.BelongedFaction == null) && this.ViewArea.HasPoint(troop.Position)) || (((this.BelongedFaction != null) && this.BelongedFaction.IsPositionKnown(troop.Position)) && (this.IsFriendly(troop.BelongedFaction) == friendly)))
+                if ((BelongedFaction == null && ViewArea.HasPoint(troop.Position)) || ((BelongedFaction != null && BelongedFaction.IsPositionKnown(troop.Position)) && IsFriendly(troop.BelongedFaction) == friendly))
                 {
-                    if (troop.Status != TroopStatus.埋伏)
+                    if (troop.Status != TroopStatus.Ambushing)
                     {
                         area.AddPoint(troop.Position);
                     }
@@ -6634,11 +6776,11 @@ namespace GameObjects
             }
             if (architectureTarget)
             {
-                foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+                foreach (var architecture in Session.Current.Scenario.Architectures.Values)
                 {
-                    if (this.IsFriendly(architecture.BelongedFaction) == friendly)
+                    if (IsFriendly(architecture.BelongedFaction) == friendly)
                     {
-                        foreach (Point point in architecture.ArchitectureArea.Area)
+                        foreach (var point in architecture.ArchitectureArea.Area)
                         {
                             area.AddPoint(point);
                         }
@@ -6652,12 +6794,11 @@ namespace GameObjects
         {
             GameArea area = new GameArea();
 
-
-            foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+            foreach (var architecture in Session.Current.Scenario.Architectures.Values)
             {
-                if (this.IsFriendly(architecture.BelongedFaction) == friendly)
+                if (IsFriendly(architecture.BelongedFaction) == friendly)
                 {
-                    foreach (Point point in architecture.ArchitectureArea.Area)
+                    foreach (var point in architecture.ArchitectureArea.Area)
                     {
                         area.AddPoint(point);
                     }
@@ -6667,51 +6808,31 @@ namespace GameObjects
             return area;
         }
 
-
         public int GetTerrainAdaptability(TerrainKind terrain)
         {
-            switch (terrain)
+            const int DefaultAdaptability = 3500;
+
+            return terrain switch
             {
-                case TerrainKind.无:
-                    return 0xdac;
-
-                case TerrainKind.平原:
-                    return this.PlainAdaptability;
-
-                case TerrainKind.草原:
-                    return this.GrasslandAdaptability;
-
-                case TerrainKind.森林:
-                    return this.ForrestAdaptability;
-
-                case TerrainKind.湿地:
-                    return this.MarshAdaptability;
-
-                case TerrainKind.山地:
-                    return this.MountainAdaptability;
-
-                case TerrainKind.水域:
-                    return this.WaterAdaptability;
-
-                case TerrainKind.峻岭:
-                    return this.RidgeAdaptability;
-
-                case TerrainKind.荒地:
-                    return this.WastelandAdaptability;
-
-                case TerrainKind.沙漠:
-                    return this.DesertAdaptability;
-
-                case TerrainKind.栈道:
-                    return this.CliffAdaptability;
-            }
-            return 0xdac;
+                TerrainKind.None => DefaultAdaptability,
+                TerrainKind.Plain => PlainAdaptability,
+                TerrainKind.Grassland => GrasslandAdaptability,
+                TerrainKind.Forrest => ForrestAdaptability,
+                TerrainKind.Marsh => MarshAdaptability,
+                TerrainKind.Mountain => MountainAdaptability,
+                TerrainKind.Water => WaterAdaptability,
+                TerrainKind.Ridge => RidgeAdaptability,
+                TerrainKind.Wasteland => WaterAdaptability,
+                TerrainKind.Desert => DesertAdaptability,
+                TerrainKind.Cliff => CliffAdaptability,
+                _ => DefaultAdaptability,
+            };
         }
 
         private int GetTerrainCredit(Point position)
         {
             int waterDecredit = 0;
-            if (this.Army.RealMilitaryKind.Type != MilitaryType.水军 && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.水域)
+            if (this.Army.RealMilitaryKind.Type != MilitaryType.Navy && Session.Current.Scenario.GetTerrainKindByPosition(position) == TerrainKind.Water)
             {
                 waterDecredit = -300;
             }
@@ -6721,7 +6842,7 @@ namespace GameObjects
                 if (positionIndexInCurrentPath > 0)
                 {
                     float terranRateByPosition = this.GetTerranRateByPosition(position);
-                    if (!(!this.ViewingWillArchitecture || GameObject.Chance(10)))
+                    if (!(!this.ViewingWillArchitecture || GameObject.GetChance(10)))
                     {
                         return (int)((terranRateByPosition - this.CurrentRate + 1) * 10f + waterDecredit);
                     }
@@ -6733,39 +6854,20 @@ namespace GameObjects
 
         private float GetTerranRateByPosition(Point position)
         {
-            switch (Session.Current.Scenario.GetTerrainKindByPosition(position))
+            return Session.Current.Scenario.GetTerrainKindByPosition(position) switch
             {
-                case TerrainKind.平原:
-                    return this.PlainRate;
-
-                case TerrainKind.草原:
-                    return this.GrasslandRate;
-
-                case TerrainKind.森林:
-                    return this.ForrestRate;
-
-                case TerrainKind.湿地:
-                    return this.MarshRate;
-
-                case TerrainKind.山地:
-                    return this.MountainRate;
-
-                case TerrainKind.水域:
-                    return this.WaterRate;
-
-                case TerrainKind.峻岭:
-                    return this.RidgeRate;
-
-                case TerrainKind.荒地:
-                    return this.WastelandRate;
-
-                case TerrainKind.沙漠:
-                    return this.DesertRate;
-
-                case TerrainKind.栈道:
-                    return this.CliffRate;
-            }
-            return 1f;
+                TerrainKind.Plain => PlainRate,
+                TerrainKind.Grassland => GrasslandRate,
+                TerrainKind.Forrest => ForrestRate,
+                TerrainKind.Marsh => MarshRate,
+                TerrainKind.Mountain => MountainRate,
+                TerrainKind.Water => WaterRate,
+                TerrainKind.Ridge => RidgeRate,
+                TerrainKind.Wasteland => WastelandRate,
+                TerrainKind.Desert => DesertRate,
+                TerrainKind.Cliff => CliffRate,
+                _ => 1f,
+            };
         }
 
         public static Point GetThirdTierCoordinate(Point position)
@@ -6775,38 +6877,38 @@ namespace GameObjects
 
         protected Point GetThirdTierDestination()
         {
-            if ((this.thirdTierPathDestinationIndex + GameObjectConsts.LaunchTierFinderDistance) < this.ThirdTierPath.Count)
+            if ((this.ThirdIndex + GameObjectConsts.LaunchTierFinderDistance) < this.ThirdTierPath.Count)
             {
-                this.thirdTierPathDestinationIndex += GameObjectConsts.LaunchTierFinderDistance;
-                return this.ThirdTierPath[this.thirdTierPathDestinationIndex];
+                this.ThirdIndex += GameObjectConsts.LaunchTierFinderDistance;
+                return this.ThirdTierPath[this.ThirdIndex];
             }
-            this.thirdTierPathDestinationIndex = this.ThirdTierPath.Count - 1;
-            return this.ThirdTierPath[this.thirdTierPathDestinationIndex];
+            this.ThirdIndex = this.ThirdTierPath.Count - 1;
+            return this.ThirdTierPath[this.ThirdIndex];
         }
 
-        public TreasureList GetTreasureList()
+        public List<Treasure> GetTreasureList()
         {
-            TreasureList list = new TreasureList();
-            foreach (Person person in this.Persons)
+            var result = new List<Treasure>();
+
+            foreach (Person person in Persons)
             {
-                if (person.TreasureCount > 0)
-                {
-                    person.AddTreasureToList(list);
-                }
+                result.AddRange(person.Treasures);
             }
-            return list;
+            
+            return result;
         }
 
-        private TroopList GetTroopsBetween(Troop troop)
+        private List<Troop> GetTroopsBetween(Troop troop)
         {
-            return this.GetTroopsBetween(this.Position, troop.Position);
+            return GetTroopsBetween(Position, troop.Position);
         }
 
-        private TroopList GetTroopsBetween(Point from, Point to)
+        private List<Troop> GetTroopsBetween(Point from, Point to)
         {
-            TroopList list = new TroopList();
+            var result = new List<Troop>();
             int num = to.X - from.X;
             int num2 = to.Y - from.Y;
+
             if ((Math.Abs(num) > 1) || (Math.Abs(num2) > 1))
             {
                 int num3;
@@ -6820,10 +6922,10 @@ namespace GameObjects
                             troopByPosition = Session.Current.Scenario.GetTroopByPosition(new Point(from.X, from.Y + num3));
                             if (troopByPosition != null)
                             {
-                                list.Add(troopByPosition);
+                                result.Add(troopByPosition);
                             }
                         }
-                        return list;
+                        return result;
                     }
                     num3 = -1;
                     while (num3 > num2)
@@ -6831,11 +6933,11 @@ namespace GameObjects
                         troopByPosition = Session.Current.Scenario.GetTroopByPosition(new Point(from.X, from.Y + num3));
                         if (troopByPosition != null)
                         {
-                            list.Add(troopByPosition);
+                            result.Add(troopByPosition);
                         }
                         num3--;
                     }
-                    return list;
+                    return result;
                 }
                 if (num > 0)
                 {
@@ -6844,49 +6946,52 @@ namespace GameObjects
                         troopByPosition = Session.Current.Scenario.GetTroopByPosition(new Point(from.X + num3, from.Y + ((int)Math.Round((double)((num3 * num2) / ((double)num))))));
                         if (troopByPosition != null)
                         {
-                            list.Add(troopByPosition);
+                            result.Add(troopByPosition);
                         }
                     }
-                    return list;
+                    return result;
                 }
                 for (num3 = -1; num3 > num; num3--)
                 {
                     troopByPosition = Session.Current.Scenario.GetTroopByPosition(new Point(from.X + num3, from.Y + ((int)Math.Round((double)((num3 * num2) / ((double)num))))));
                     if (troopByPosition != null)
                     {
-                        list.Add(troopByPosition);
+                        result.Add(troopByPosition);
                     }
                 }
             }
-            return list;
+            return result;
         }
 
         private PlatformTexture GetTroopTexture()
         {
-            if (this.IsTransport && Session.Current.Scenario.GetTerrainKindByPosition(this.Position) == TerrainKind.水域)
+            // 运兵船种类Id
+            var transportKindId = 28;
+            var scenario = Session.Current.Scenario;
+            var militaryKinds = scenario.GameCommonData.AllMilitaryKinds;
+
+            if (IsTransport && scenario.GetTerrainKindByPosition(Position) == TerrainKind.Water && militaryKinds.TryGetValue(transportKindId, out var militaryKind))
             {
                 switch (this.Action)
                 {
                     case TroopAction.Stop:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28 ).Textures.MoveTexture;
+                        return militaryKind.Textures.MoveTexture;
 
                     case TroopAction.Move:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.MoveTexture;
+                        return militaryKind.Textures.MoveTexture;
 
                     case TroopAction.Attack:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.AttackTexture;
+                        return militaryKind.Textures.AttackTexture;
 
                     case TroopAction.BeAttacked:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.BeAttackedTexture;
+                        return militaryKind.Textures.BeAttackedTexture;
 
                     case TroopAction.Cast:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.CastTexture;
+                        return militaryKind.Textures.CastTexture;
 
                     case TroopAction.BeCasted:
-                        return Session.Current.Scenario.GameCommonData.AllMilitaryKinds.GetMilitaryKind(28).Textures.BeCastedTexture;
+                        return militaryKind.Textures.BeCastedTexture;
                 }
-
-
             }
             else
             {
@@ -6996,11 +7101,11 @@ namespace GameObjects
                 }
                 else if (this.CanEnter())
                 {
-                    if ((this.WillArchitecture.BelongedFaction == this.BelongedFaction) && this.EnterList.HasGameObject(this.WillArchitecture))
+                    if (WillArchitecture.BelongedFaction == BelongedFaction && EnterList.Contains(WillArchitecture))
                     {
-                        if (!this.WillArchitecture.HasHostileTroopsInView())
+                        if (!WillArchitecture.HasHostileTroopsInView())
                         {
-                            this.Enter();
+                            Enter();
                         }
                         else if (this.WillArchitecture.Endurance > 30)
                         {
@@ -7012,7 +7117,7 @@ namespace GameObjects
                             {
                                 this.Enter();
                             }
-                            else if ((this.CurrentStunt == null) && GameObject.Chance(10))
+                            else if ((this.CurrentStunt == null) && GameObject.GetChance(10))
                             {
                                 this.Enter();
                             }
@@ -7063,35 +7168,33 @@ namespace GameObjects
 
                 if (damage.DestinationArchitecture.Endurance == 0)
                 {
-                    if (this.OnBreakWall != null)
-                    {
-                        this.OnBreakWall(damage.SourceTroop, damage.DestinationArchitecture);
-                    }
-                    GameObjects.Animations.TileAnimation animation = null;
+                    eventManager.Publish(new BreakWallEvent(damage.SourceTroop, damage.DestinationArchitecture));
+
+                    TileAnimation animation = null;
                     foreach (Point point in damage.DestinationArchitecture.ArchitectureArea.Area)
                     {
                         animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.被击破, point, false);
                     }
                     if (animation != null)
                     {
-                        this.TryToPlaySound(this.Position, this.getSoundPath(animation.LinkedAnimation), false);
+                        TryToPlaySound(Position, getSoundPath(animation.LinkedAnimation));
                     }
                     if (damage.DestinationArchitecture.RecentlyBreaked <= 0)
                     {
                         if (damage.SourceTroop.Combativity < damage.SourceTroop.Army.CombativityCeiling)
                         {
                             damage.SourceTroop.IncreaseCombativity(10);
-                            if (damage.SourceTroop.PreAction == TroopPreAction.无)
+                            if (damage.SourceTroop.PreAction == TroopPreAction.None)
                             {
-                                damage.SourceTroop.PreAction = TroopPreAction.鼓舞;
+                                damage.SourceTroop.PreAction = TroopPreAction.Inspire;
                             }
                         }
                         if (damage.SourceTroop.Morale < damage.SourceTroop.Army.MoraleCeiling)
                         {
                             damage.SourceTroop.IncreaseMorale(damage.SourceTroop.Leader.Command / 20);
-                            if (damage.SourceTroop.PreAction == TroopPreAction.无)
+                            if (damage.SourceTroop.PreAction == TroopPreAction.None)
                             {
-                                damage.SourceTroop.PreAction = TroopPreAction.鼓舞;
+                                damage.SourceTroop.PreAction = TroopPreAction.Inspire;
                             }
                         }
                         foreach (Point p in damage.DestinationArchitecture.ViewArea.Area)
@@ -7132,8 +7235,8 @@ namespace GameObjects
             GameObjects.Animations.TileAnimation animation;
             if (damage.Surround)
             {
-                damage.DestinationTroop.Effect = TroopEffect.无;
-                foreach (Troop troop in damage.SurroudingList)
+                damage.DestinationTroop.Effect = TroopEffect.None;
+                foreach (var troop in damage.SurroudingList)
                 {
                     troop.Surrounding = false;
                 }
@@ -7152,24 +7255,20 @@ namespace GameObjects
                 animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.抵挡, damage.DestinationTroop.Position, false);
                 if (animation != null)
                 {
-                    damage.DestinationTroop.TryToPlaySound(damage.DestinationTroop.Position, this.getSoundPath(animation.LinkedAnimation), false);
+                    damage.DestinationTroop.TryToPlaySound(damage.DestinationTroop.Position, getSoundPath(animation.LinkedAnimation));
                 }
-                if (this.OnAntiAttack != null)
-                {
-                    this.OnAntiAttack(damage.SourceTroop, damage.DestinationTroop);
-                }
+
+                eventManager.Publish(new AntiAttackEvent(damage.SourceTroop, damage.DestinationTroop));
             }
             else if (damage.AntiArrowAttack)
             {
                 animation = Session.Current.Scenario.GeneratorOfTileAnimation.AddTileAnimation(TileAnimationKind.抵挡, damage.DestinationTroop.Position, false);
                 if (animation != null)
                 {
-                    damage.DestinationTroop.TryToPlaySound(damage.DestinationTroop.Position, this.getSoundPath(animation.LinkedAnimation), false);
+                    damage.DestinationTroop.TryToPlaySound(damage.DestinationTroop.Position, getSoundPath(animation.LinkedAnimation));
                 }
-                if (this.OnAntiArrowAttack != null)
-                {
-                    this.OnAntiArrowAttack(damage.SourceTroop, damage.DestinationTroop);
-                }
+                
+                eventManager.Publish(new AntiArrowAttackEvent(damage.SourceTroop, damage.DestinationTroop));
             }
             else
             {
@@ -7178,11 +7277,10 @@ namespace GameObjects
                     /*
                     this.CurrentSourceChallengePerson = damage.ChallengeSourcePerson;
                     this.CurrentDestinationChallengePerson = damage.ChallengeDestinationPerson;
-                    if (this.OnPersonChallenge != null)
-                    {
-                        this.OnPersonChallenge(damage.ChallengeResult, damage.SourceTroop, this.CurrentSourceChallengePerson, damage.DestinationTroop, this.CurrentDestinationChallengePerson);
-                    }
+                    
+                    eventManager.Publish(new PersonChallengeEvent(damage.ChallengeResult, damage.SourceTroop, CurrentSourceChallengePerson, damage.DestinationTroop, CurrentDestinationChallengePerson));
                     */
+                    
                     Challenge challeng = new Challenge();
                     challeng.HandleChallengeResult(damage, damage.ChallengeResult, damage.SourceTroop, damage.ChallengeSourcePerson, damage.DestinationTroop, damage.ChallengeDestinationPerson);
                 }
@@ -7210,7 +7308,7 @@ namespace GameObjects
                 }
 
 
-                if (damage.OnFire && Session.Current.Scenario.IsFireVaild(damage.DestinationTroop.Position, false, MilitaryType.步兵))
+                if (damage.OnFire && Session.Current.Scenario.IsFireVaild(damage.DestinationTroop.Position, false, MilitaryType.Infantry))
                 {
                     Session.Current.Scenario.SetPositionOnFire(damage.DestinationTroop.Position);
                 }
@@ -7296,14 +7394,12 @@ namespace GameObjects
                             {
                                 damage.DestinationTroop.OperationDone = true;
                                 damage.DestinationTroop.MovabilityLeft = -1;
-                                if (this.OnReceiveWaylay != null)
-                                {
-                                    this.OnReceiveWaylay(damage.SourceTroop, damage.DestinationTroop);
-                                }
+
+                                eventManager.Publish(new ReceiveWaylayEvent(damage.SourceTroop, damage.DestinationTroop));
                             }
-                            if (damage.Critical && (!damage.Waylay && (this.OnReceiveCriticalStrike != null)))
+                            if (damage.Critical && !damage.Waylay)
                             {
-                                this.OnReceiveCriticalStrike(damage.SourceTroop, damage.DestinationTroop);
+                                eventManager.Publish(new ReceiveCriticalStrikeEvent(damage.SourceTroop, damage.DestinationTroop));
                             }
                             if (damage.Chaos)
                             {
@@ -7324,14 +7420,15 @@ namespace GameObjects
 
         public bool HasCombatMethod(int id)
         {
-            if (!this.ProhibitAllAction && !this.ProhibitCombatMethod)
+            if (ProhibitAllAction || ProhibitCombatMethod) return false;
+
+            if (CombatMethods.TryGetValue(id, out var combatMethod))
             {
-                CombatMethod combatMethod = this.CombatMethods.GetCombatMethod(id);
-                if (combatMethod != null)
-                {
-                    return (combatMethod.IsCastable(this) && (combatMethod.Combativity <= (this.Combativity + this.DecrementOfCombatMethodCombativityConsuming)));
-                }
+                var result = combatMethod.IsCastable(this) && combatMethod.Combativity <= (Combativity + DecrementOfCombatMethodCombativityConsuming);
+
+                return result;
             }
+
             return false;
         }
 
@@ -7363,42 +7460,31 @@ namespace GameObjects
 
         public bool HasStratagem(int id)
         {
-            if (this.Status != TroopStatus.埋伏)
+            if (Status != TroopStatus.Ambushing)
             {
-                if (this.ProhibitAllAction || this.ProhibitStratagem)
+                if (ProhibitAllAction || ProhibitStratagem) return false;
+
+                if (Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem))
                 {
-                    return false;
-                }
-                Stratagem stratagem = this.Stratagems.GetStratagem(id);
-                if (stratagem != null)
-                {
-                    if (stratagem.RequireInfluenceToUse)
-                    {
-                        if (!this.AllowedStrategems.Contains(id))
-                        {
-                            return false;
-                        }
-                    }
-                    return (stratagem.Combativity <= (this.Combativity + this.DecrementOfStratagemCombativityConsuming) && stratagem.IsCastable(this));
+                    if (stratagem.RequireInfluenceToUse && !AllowedStrategems.Contains(id)) return false;
+
+                    return stratagem.Combativity <= (Combativity + DecrementOfStratagemCombativityConsuming) && stratagem.IsCastable(this);
                 }
             }
+
             return false;
         }
 
         public bool HasStunt(int id)
         {
-            if ((this.CurrentStunt == null) || (this.StuntDayLeft <= 0))
+            if ((CurrentStunt == null || StuntDayLeft <= 0)
+                && Stunts.TryGetValue(id, out var stunt)
+                && stunt.Combativity <= Combativity
+                && stunt.IsCastable(this))
             {
-                Stunt stunt = this.Stunts.GetStunt(id);
-                if (stunt != null)
-                {
-                    if (!((stunt.Combativity <= this.Combativity) && stunt.IsCastable(this)))
-                    {
-                        return false;
-                    }
-                    return true;
-                }
+                return true;
             }
+
             return false;
         }
 
@@ -7418,37 +7504,37 @@ namespace GameObjects
         {
             switch (this.AttackTargetKind)
             {
-                case TroopAttackTargetKind.遇敌:
+                case TroopAttackTargetKind.EncounterEnemy:
                     return true;
 
-                case TroopAttackTargetKind.无反:
+                case TroopAttackTargetKind.NoCounterattack:
                     return (architecture.BelongedFaction == null);
 
-                case TroopAttackTargetKind.目标:
+                case TroopAttackTargetKind.Target:
                     return (architecture == this.TargetArchitecture);
 
-                case TroopAttackTargetKind.攻弱:
+                case TroopAttackTargetKind.AttackWeak:
                     return true;
 
-                case TroopAttackTargetKind.防弱:
+                case TroopAttackTargetKind.DefenseWeak:
                     return true;
 
-                case TroopAttackTargetKind.攻防皆弱:
+                case TroopAttackTargetKind.AttackAndDefenseWeak:
                     return true;
 
-                case TroopAttackTargetKind.无反默认:
+                case TroopAttackTargetKind.NoCounterattackDefault:
                     return (last || (architecture.BelongedFaction == null));
 
-                case TroopAttackTargetKind.目标默认:
+                case TroopAttackTargetKind.TargetDefault:
                     return (last || (architecture == this.TargetArchitecture));
 
-                case TroopAttackTargetKind.攻弱默认:
+                case TroopAttackTargetKind.AttackWeakDefault:
                     return true;
 
-                case TroopAttackTargetKind.防弱默认:
+                case TroopAttackTargetKind.DefenseWeakDefault:
                     return true;
 
-                case TroopAttackTargetKind.攻防皆弱默认:
+                case TroopAttackTargetKind.AttackAndDefenseWeakDefault:
                     return true;
             }
             return false;
@@ -7458,37 +7544,37 @@ namespace GameObjects
         {
             switch (this.AttackTargetKind)
             {
-                case TroopAttackTargetKind.遇敌:
+                case TroopAttackTargetKind.EncounterEnemy:
                     return true;
 
-                case TroopAttackTargetKind.无反:
+                case TroopAttackTargetKind.NoCounterattack:
                     return !this.CounterAttackAvail(troop);
 
-                case TroopAttackTargetKind.目标:
+                case TroopAttackTargetKind.Target:
                     return (troop == this.TargetTroop);
 
-                case TroopAttackTargetKind.攻弱:
+                case TroopAttackTargetKind.AttackWeak:
                     return (troop.Offence < this.Offence);
 
-                case TroopAttackTargetKind.防弱:
+                case TroopAttackTargetKind.DefenseWeak:
                     return (troop.Defence < this.Defence);
 
-                case TroopAttackTargetKind.攻防皆弱:
+                case TroopAttackTargetKind.AttackAndDefenseWeak:
                     return ((troop.Offence < this.Offence) && (troop.Defence < this.Defence));
 
-                case TroopAttackTargetKind.无反默认:
+                case TroopAttackTargetKind.NoCounterattackDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || !this.CounterAttackAvail(troop));
 
-                case TroopAttackTargetKind.目标默认:
+                case TroopAttackTargetKind.TargetDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || (troop == this.TargetTroop));
 
-                case TroopAttackTargetKind.攻弱默认:
+                case TroopAttackTargetKind.AttackWeakDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || (troop.Offence < this.Offence));
 
-                case TroopAttackTargetKind.防弱默认:
+                case TroopAttackTargetKind.DefenseWeakDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || (troop.Defence < this.Defence));
 
-                case TroopAttackTargetKind.攻防皆弱默认:
+                case TroopAttackTargetKind.AttackAndDefenseWeakDefault:
                     return ((last || this.BaseAttackEveryAround || this.AttackEveryAround) || ((troop.Offence < this.Offence) && (troop.Defence < this.Defence)));
             }
             return false;
@@ -7498,19 +7584,19 @@ namespace GameObjects
         {
             switch (this.CastTargetKind)
             {
-                case TroopCastTargetKind.可能:
+                case TroopCastTargetKind.Possible:
                     return true;
 
-                case TroopCastTargetKind.特定:
+                case TroopCastTargetKind.Specific:
                     return (troop == this.TargetTroop);
 
-                case TroopCastTargetKind.智低:
+                case TroopCastTargetKind.IntelligenceLow:
                     return (troop.TroopIntelligence < this.TroopIntelligence);
 
-                case TroopCastTargetKind.特定默认:
+                case TroopCastTargetKind.SpecificDefault:
                     return (last || (troop == this.TargetTroop));
 
-                case TroopCastTargetKind.智低默认:
+                case TroopCastTargetKind.IntelligenceLowDefault:
                     return (last || (troop.TroopIntelligence < this.TroopIntelligence));
             }
             return false;
@@ -7569,23 +7655,23 @@ namespace GameObjects
         public int IncreaseFood(int increment)
         {
             if (increment <= 0)
-            {
                 return 0;
-            }
-            int num = this.FoodMax - this.Food;
+
+            int num = FoodMax - Food;
             if (increment > num)
             {
                 increment = num;
             }
-            this.Food += increment;
-            this.IncrementNumberList.AddNumber(increment, CombatNumberKind.粮草, this.Position);
-            this.ShowNumber = true;
+
+            Food += increment;
+            IncrementNumberList.AddNumber(increment, CombatNumberKind.粮草, Position);
+            ShowNumber = true;
             return increment;
         }
 
         public void IncreaseInjuryQuantity(int increment)
         {
-            this.Army.IncreaseInjuryQuantity(increment);
+            Army.IncreaseInjuryQuantity(increment);
         }
 
         public void IncreaseMorale(int increment)
@@ -7602,168 +7688,84 @@ namespace GameObjects
 
         private void IncreasePersonAttackExperience(int increment, bool attack)
         {
-            switch (this.Army.Kind.Type)
+            Action<Person, int> addArmyExp = null;
+            int armyBase = increment;
+
+            switch (Army.Kind.Type)
             {
-                case MilitaryType.步兵:
-                    foreach (Person person in this.Persons)
-                    {
-                        if (person == this.Leader)
-                        {
-                            person.AddBubingExperience(increment * 2);
-                        }
-                        else
-                        {
-                            person.AddBubingExperience(increment);
-                        }
-                    }
-                    break;
-
-                case MilitaryType.弩兵:
-                    foreach (Person person in this.Persons)
-                    {
-                        if (person == this.Leader)
-                        {
-                            person.AddNubingExperience(increment * 2);
-                        }
-                        else
-                        {
-                            person.AddNubingExperience(increment);
-                        }
-                    }
-                    break;
-
-                case MilitaryType.骑兵:
-                    foreach (Person person in this.Persons)
-                    {
-                        if (person == this.Leader)
-                        {
-                            person.AddQibingExperience(increment * 2);
-                        }
-                        else
-                        {
-                            person.AddQibingExperience(increment);
-                        }
-                    }
-                    break;
-
-                case MilitaryType.水军:
-                    foreach (Person person in this.Persons)
-                    {
-                        if (person == this.Leader)
-                        {
-                            person.AddShuijunExperience(increment * 2);
-                        }
-                        else
-                        {
-                            person.AddShuijunExperience(increment);
-                        }
-                    }
-                    break;
-
-                case MilitaryType.器械:
-                    foreach (Person person in this.Persons)
-                    {
-                        if (person == this.Leader)
-                        {
-                            person.AddQixieExperience(increment * 6);
-                        }
-                        else
-                        {
-                            person.AddQixieExperience(increment * 3);
-                        }
-                    }
+                case MilitaryType.Infantry: addArmyExp = (p, n) => p.AddBubingExperience(n); break;
+                case MilitaryType.Crossbow: addArmyExp = (p, n) => p.AddNubingExperience(n); break;
+                case MilitaryType.Cavalry: addArmyExp = (p, n) => p.AddQibingExperience(n); break;
+                case MilitaryType.Navy: addArmyExp = (p, n) => p.AddShuijunExperience(n); break;
+                case MilitaryType.SiegeEquipment: 
+                    addArmyExp = (p, n) => p.AddQixieExperience(n);
+                    armyBase = increment * 3;
                     break;
             }
-            if (attack)
+
+            foreach (var person in Persons)
             {
-                foreach (Person person in this.Persons)
-                {
-                    if (person == this.Leader)
-                    {
-                        person.AddStrengthExperience(increment * 2);
-                    }
-                    else
-                    {
-                        person.AddStrengthExperience(increment);
-                    }
-                }
-            }
-            else
-            {
-                foreach (Person person in this.Persons)
-                {
-                    if (person == this.Leader)
-                    {
-                        person.AddCommandExperience(increment * 2);
-                    }
-                    else
-                    {
-                        person.AddCommandExperience(increment);
-                    }
-                }
+                int mul = person == Leader ? 2 : 1;
+
+                addArmyExp?.Invoke(person, armyBase * mul);
+
+                if (attack)
+                    person.AddStrengthExperience(increment * mul);
+                else
+                    person.AddCommandExperience(increment * mul);
             }
         }
 
         private void IncreasePersonAttackReputation(int increment)
         {
-            foreach (Person person in this.Persons)
+            int leaderAmount = increment * 4;
+            int memberAmount = increment * 2;
+
+            foreach (var person in Persons)
             {
-                if (person == this.Leader)
-                {
-                    person.IncreaseReputation((increment * 2) * 2);
-                    person.IncreaseOfficerMerit(increment * 4);
-                }
-                else
-                {
-                    person.IncreaseReputation(increment * 2);
-                    person.IncreaseOfficerMerit(increment * 2);
-                }
+                int amount = person == Leader ? leaderAmount : memberAmount;
+                
+                person.IncreaseReputation(amount);
+                person.IncreaseOfficerMerit(amount);
             }
         }
 
         private void IncreasePersonStratagemExperience(int increment)
         {
-            Person maxIntelligencePerson = this.Persons.GetMaxIntelligencePerson();
-            foreach (Person person2 in this.Persons)
+            Person best = Persons.MaxBy(x => x.Intelligence);
+
+            foreach (var person in Persons)
             {
-                if (person2 == maxIntelligencePerson)
-                {
-                    person2.AddIntelligenceExperience(increment * 2);
-                    person2.AddStratagemExperience(increment * 12);
-                    person2.IncreaseReputation(increment * 4);
-                    person2.IncreaseOfficerMerit(increment * 4);
-                }
-                else
-                {
-                    person2.AddIntelligenceExperience(increment);
-                    person2.AddStratagemExperience(increment * 6);
-                    person2.IncreaseReputation(increment * 2);
-                    person2.IncreaseOfficerMerit(increment * 2);
-                }
+                int bonus = person == best ? 2 : 1;
+                int amount = increment * bonus;
+
+                person.AddIntelligenceExperience(amount);
+                person.AddStratagemExperience(amount * 6);
+                person.IncreaseReputation(amount * 2);
+                person.IncreaseOfficerMerit(amount * 2);
             }
         }
 
         public int IncreaseQuantity(int increment)
         {
-            if (increment == 0) return 0;
-            int num = 0;
-            if ((this.Army.Quantity + increment) > this.Army.Kind.MaxScale)
+            if (increment == 0) 
+                return 0;
+
+            int remaining = Army.Kind.MaxScale - Army.Quantity;
+            int actual = Math.Min(increment, remaining);
+
+            Army.IncreaseQuantity(actual);
+
+            if (actual > 0)
             {
-                num = this.Army.Kind.MaxScale - this.Army.Quantity;
+                RefreshOffence();
+                RefreshDefence();
             }
-            else
-            {
-                num = increment;
-            }
-            this.Army.IncreaseQuantity(num);
-            if (num > 0)
-            {
-                this.RefreshOffence();
-                this.RefreshDefence();
-            }
-            this.IncrementNumberList.AddNumber(num, CombatNumberKind.人数, this.Position);
-            this.ShowNumber = true;
-            return num;
+
+            IncrementNumberList.AddNumber(actual, CombatNumberKind.人数, Position);
+            ShowNumber = true;
+
+            return actual;
         }
 
         private void IncreaseRoutExperience(bool rout)
@@ -7779,18 +7781,13 @@ namespace GameObjects
                     }
                     this.BelongedFaction.IncreaseReputation(50);
                     this.BelongedFaction.IncreaseTechniquePoint((int)(0x3e8 * this.MultipleOfCombatTechniquePoint));
-                    foreach (Person person in this.Persons)
+
+                    foreach (var person in Persons)
                     {
-                        if (person == this.Leader)
-                        {
-                            person.IncreaseReputation(80);
-                            person.IncreaseOfficerMerit(80);
-                        }
-                        else
-                        {
-                            person.IncreaseReputation(40);
-                            person.IncreaseOfficerMerit(40);
-                        }
+                        var amount = person == Leader ? 80 : 40;
+
+                        person.IncreaseReputation(amount);
+                        person.IncreaseOfficerMerit(amount);
                     }
                 }
                 this.RefreshOffence();
@@ -7798,18 +7795,12 @@ namespace GameObjects
             }
             else if (this.BelongedFaction != null)
             {
-                foreach (Person person in this.Persons)
+                foreach (var person in Persons)
                 {
-                    if (person == this.Leader)
-                    {
-                        person.IncreaseReputation(20);
-                        person.IncreaseOfficerMerit(20);
-                    }
-                    else
-                    {
-                        person.IncreaseReputation(10);
-                        person.IncreaseOfficerMerit(10);
-                    }
+                    var amount = person == Leader ? 20 : 10;
+
+                    person.IncreaseReputation(amount);
+                    person.IncreaseOfficerMerit(amount);
                 }
             }
         }
@@ -7860,36 +7851,38 @@ namespace GameObjects
 
         private void InitializeContactArea()
         {
-            foreach (Point point in this.ContactArea.Area)
+            var scenario = Session.Current.Scenario;
+
+            foreach (Point point in ContactArea.Area)
             {
-                Session.Current.Scenario.AddPositionContactingTroop(this, point);
+                scenario.AddPositionContactingTroop(this, point);
             }
         }
 
         public void PurifyFactionInfluences()
         {
-            if (this.BelongedFaction != null)
+            if (BelongedFaction == null) 
+                return;
+
+            foreach (var technique in BelongedFaction.AvailableTechniques.Values)
             {
-                foreach (Technique t in this.BelongedFaction.AvailableTechniques.Techniques.Values)
+                foreach (var influence in technique.Influences)
                 {
-                    foreach (Influences.Influence i in t.Influences.Influences.Values)
-                    {
-                        i.PurifyInfluence(this, Applier.Technique, t.ID);
-                    }
+                    influence.PurifyInfluence(this, Applier.Technique, technique.ID);
                 }
             }
         }
 
         public void ApplyFactionInfluences()
         {
-            if (this.BelongedFaction != null)
+            if (BelongedFaction == null) 
+                return;
+
+            foreach (var technique in BelongedFaction.AvailableTechniques.Values)
             {
-                foreach (Technique t in this.BelongedFaction.AvailableTechniques.Techniques.Values)
+                foreach (var influence in technique.Influences)
                 {
-                    foreach (Influences.Influence i in t.Influences.Influences.Values)
-                    {
-                        i.ApplyInfluence(this, Applier.Technique, t.ID);
-                    }
+                    influence.ApplyInfluence(this, Applier.Technique, technique.ID);
                 }
             }
         }
@@ -7899,7 +7892,7 @@ namespace GameObjects
             if (this.Army != null)
             {
                 this.Army.ApplyFollowedLeader(this);
-                foreach (Influence influence in this.Army.Kind.Influences.Influences.Values)
+                foreach (var influence in this.Army.Kind.Influences)
                 {
                     influence.ApplyInfluence(this, Applier.MilitaryKind, 0);
                 }
@@ -7940,7 +7933,12 @@ namespace GameObjects
             if (this.AutoCombatMethodID != -1)
             {
                 this.CurrentStratagem = null;
-                this.CurrentCombatMethod = Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(this.AutoCombatMethodID);
+
+                if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(AutoCombatMethodID, out var combatMethod))
+                {
+                    CurrentCombatMethod = combatMethod;
+                }
+
                 //this.CurrentCombatMethod.Apply(this);
                 //this.RefreshAllData();
             }
@@ -7966,19 +7964,24 @@ namespace GameObjects
 
         private void InitializeOffenceArea()
         {
-            foreach (Point point in this.OffenceArea.Area)
+            var scenario = Session.Current.Scenario;
+
+            foreach (var point in OffenceArea.Area)
             {
-                Session.Current.Scenario.AddPositionOffencingTroop(this, point);
+                scenario.AddPositionOffencingTroop(this, point);
             }
         }
 
         public void InitializePosition(Point p)
         {
-            this.Persons.ApplyInfluences();
+            foreach (var person in Persons)
+            {
+                person.ApplyInfluence();
+            }
 
-            this.PreviousPosition = this.position = p;
+            PreviousPosition = position = p;
 
-            this.Initialize();
+            Initialize();
         }
 
         private void InitializeStratagemArea()
@@ -8007,16 +8010,18 @@ namespace GameObjects
 
         public void Investigate(int days)
         {
-            Information information = new Information();
-            information.ID = Session.Current.Scenario.Informations.GetFreeGameObjectID();
-            information.Level = this.InvestigateLevel;
-            information.Radius = this.InvestigateRadius;
-            information.Position = this.SelfCastPosition;
-            information.Oblique = false;
-            //information.DaysLeft = days;
-            information.DaysLeft = days * Session.Parameters.DayInTurn;
-            Session.Current.Scenario.Informations.AddInformation(information);
-            this.BelongedFaction.AddInformation(information);
+            var information = new Information
+            {
+                ID = Session.Current.Scenario.Informations.GetNewId(),
+                Level = InvestigateLevel,
+                Radius = InvestigateRadius,
+                Position = SelfCastPosition,
+                Oblique = false,
+                DaysLeft = days * Session.Parameters.DayInTurn,
+            };
+            
+            Session.Current.Scenario.Informations.Add(information.ID, information);
+            BelongedFaction.AddInformation(information);
             information.Apply();
         }
 
@@ -8069,9 +8074,9 @@ namespace GameObjects
 
         public bool IsInHostileArchitectureHighView()
         {
-            foreach (Architecture architecture in Session.Current.Scenario.GetHighViewingArchitecturesByPosition(this.Position))
+            foreach (var architecture in Session.Current.Scenario.GetHighViewingArchitecturesByPosition(Position))
             {
-                if (!this.IsFriendly(architecture.BelongedFaction))
+                if (!IsFriendly(architecture.BelongedFaction))
                 {
                     return true;
                 }
@@ -8154,20 +8159,18 @@ namespace GameObjects
                 }
                 this.BelongedFaction.IncreaseTechniquePoint(food / 200);
                 this.BelongedFaction.IncreaseReputation(food / 0x2710);
-                Session.Current.Scenario.NoFoodDictionary.AddPosition(new NoFoodPosition(this.Position, terrainDetailByPositionNoCheck.RandomRegainDays));
-                foreach (Architecture architecture in Session.Current.Scenario.GetViewingArchitecturesByPosition(this.Position))
+                Session.Current.Scenario.NoFoodPositions.Add(Position, terrainDetailByPositionNoCheck.RandomRegainDays);
+                foreach (var architecture in Session.Current.Scenario.GetViewingArchitecturesByPosition(Position))
                 {
-                    if (this.BelongedFaction != architecture.BelongedFaction)
+                    if (BelongedFaction != architecture.BelongedFaction)
                     {
                         architecture.SetRecentlyAttacked();
                     }
                     architecture.DecreaseAgriculture(food / 0x1388);
                 }
                 this.Controllable = false;
-                if (this.OnLevyFieldFood != null)
-                {
-                    this.OnLevyFieldFood(this, food);
-                }
+                
+                eventManager.Publish(new LevyGrainEvent(this, food));
                 ExtensionInterface.call("LevyFood", new Object[] { Session.Current.Scenario, this });
             }
         }
@@ -8178,63 +8181,6 @@ namespace GameObjects
             //return ((((this.Food < this.FoodMax) && !Session.Current.Scenario.NoFoodDictionary.HasPosition(this.Position)) && (Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(this.Position).FoodDeposit > 0)) && (Session.Current.Scenario.GetArchitectureByPositionNoCheck(this.Position) == null));
             return false;
 
-        }
-
-        public List<string> LoadCombatMethodFromString(CombatMethodTable combats, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.CombatMethods = new CombatMethodTable();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    CombatMethod combat = null;
-                    combats.CombatMethods.TryGetValue(int.Parse(str), out combat);
-                    if (combat != null)
-                    {
-                        this.CombatMethods.AddCombatMethod(combat);
-                    }
-                    else
-                    {
-                        errorMsg.Add("战法ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("戰法列表應為半型空格分隔的俘虜ID");
-            }
-            return errorMsg;
-        }
-
-        public List<string> LoadCaptivesFromString(CaptiveList captives, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.Captives.Clear();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    Captive gameObject = captives.GetGameObject(int.Parse(str)) as Captive;
-                    if (gameObject != null)
-                    {
-                        this.AddCaptive(gameObject);
-                    }
-                    else
-                    {
-                        errorMsg.Add("俘虜ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("俘虜列表應為半型空格分隔的俘虜ID");
-            }
-            return errorMsg;
         }
 
         public void LoadPathInformation(int positionX, int positionY, int destinationX, int destinationY, int realDestinationX, int realDestinationY, string firstTierPathData, string secondTierPathData, string thirdTierPathData, int firstIndex, int secondIndex, int thirdIndex)
@@ -8310,22 +8256,22 @@ namespace GameObjects
         {
             switch (level)
             {
-                case InformationLevel.未知:
+                case InformationLevel.Unknown:
                     return "----";
 
-                case InformationLevel.无:
+                case InformationLevel.None:
                     return "----";
 
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     return StaticMethods.GetNumberStringByGranularity(this.Morale, 20);
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     return StaticMethods.GetNumberStringByGranularity(this.Morale, 10);
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     return StaticMethods.GetNumberStringByGranularity(this.Morale, 5);
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     return this.Morale.ToString();
             }
             return "----";
@@ -8340,23 +8286,23 @@ namespace GameObjects
             {
                 flag = this.TryToStepForward();
             }
-            else if (this.Position != this.RealDestination && !(this.TargetArchitecture != null && this.CanAttack(this.TargetArchitecture) 
+            else if (this.Position != this.RealDestination && !(this.TargetArchitecture != null && this.CanAttack(this.TargetArchitecture)
                 && this.TargetArchitecture.ArchitectureArea.HasPoint(this.RealDestination)))
             {
                flag = this.TryToStepForward();
                 // this.Destination = this.RealDestination;
             }
             else
-            { 
+            {
                 if(this.TargetArchitecture != null && this.TargetArchitecture.Endurance <= 0)
-                { 
-                    flag = this.TryToStepForward(); 
+                {
+                    flag = this.TryToStepForward();
                 }
                 else
                 {
                     this.MovabilityLeft = -1;
                     this.chongshemubiaoshujuqingling();
-                }              
+                }
             }
 
             /*if (!flag && this.MovabilityLeft < 0)
@@ -8365,7 +8311,7 @@ namespace GameObjects
             }*/
 
             if (this.mingling == "Enter" &&
-                this.TargetArchitecture != null && this.TargetArchitecture.BelongedFaction == this.BelongedFaction && 
+                this.TargetArchitecture != null && this.TargetArchitecture.BelongedFaction == this.BelongedFaction &&
                 this.TargetArchitecture.GetTroopEnterableArea(this).Area.Contains(this.Position))
             {
                 this.Enter(this.TargetArchitecture);
@@ -8397,12 +8343,12 @@ namespace GameObjects
 
         public bool MoveAvail()
         {
-            return (this.Status == TroopStatus.一般 && !SelectedMove && !SelectedAttack);
+            return (this.Status == TroopStatus.Normal && !SelectedMove && !SelectedAttack);
         }
 
         private void MoveCaptiveIntoArchitecture(Architecture des)
         {
-            foreach (Captive captive in this.Captives.GetList())
+            foreach (var captive in Captives)
             {
                 captive.CaptivePerson.LocationArchitecture = des;
                 captive.CaptivePerson.LocationTroop = null;
@@ -8475,7 +8421,7 @@ namespace GameObjects
                     continue;
                 }
                 Troop troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
-                if (((troopByPositionNoCheck != null) && !troopByPositionNoCheck.IsFriendly(this.BelongedFaction)) && (troopByPositionNoCheck.Status == TroopStatus.埋伏))
+                if (((troopByPositionNoCheck != null) && !troopByPositionNoCheck.IsFriendly(this.BelongedFaction)) && (troopByPositionNoCheck.Status == TroopStatus.Ambushing))
                 {
                     this.DetectAmbush(troopByPositionNoCheck);
                 }
@@ -8567,7 +8513,7 @@ namespace GameObjects
                                 {
                                     Point toPlace = new Point(point.X + j, point.Y + k);
                                     if (Session.Current.Scenario.PositionOutOfRange(toPlace)) continue;
-                                    if (this.Army.GetTerrainAdaptability((TerrainKind)Session.Current.Scenario.ScenarioMap.MapData[toPlace.X, toPlace.Y])
+                                    if (this.Army.Kind.GetTerrainAdaptability((TerrainKind)Session.Current.Scenario.ScenarioMap.MapData[toPlace.X, toPlace.Y])
                                         > this.Army.Kind.Movability) continue;
                                     if (!Session.Current.Scenario.PositionIsTroop(toPlace) && !Session.Current.Scenario.PositionIsArchitecture(toPlace))
                                     {
@@ -8588,36 +8534,38 @@ namespace GameObjects
                         //CheckTroopRout(troopByPositionNoCheck);
                     }
                 }
-                if (this.BelongedFaction != null)
+                if (BelongedFaction != null)
                 {
-                    List<Information> toRemove = new List<Information>();
-                    foreach (Architecture a in this.BelongedFaction.Architectures)
+                    var points = currentArchitecture.ArchitectureArea.Area;
+                    var toRemove = new List<Information>();
+
+                    foreach (Architecture arch in BelongedFaction.Architectures)
                     {
-                        foreach (Information i in a.Informations)
+                        foreach (var information in arch.Informations)
                         {
-                            foreach (Point p in currentArchitecture.ArchitectureArea.Area)
+                            foreach (var point in points)
                             {
-                                if (i.Area.Area.Contains(p))
+                                if (information.Area.Area.Contains(point))
                                 {
-                                    toRemove.Add(i);
+                                    toRemove.Add(information);
                                     break;
                                 }
                             }
                         }
                     }
-                    while (toRemove.Count > 0)
+
+                    foreach (var information in toRemove)
                     {
-                        toRemove[0].Purify();
-                        if (toRemove[0].BelongedArchitecture != null)
+                        information.Purify();
+                        if (information.BelongedArchitecture != null)
                         {
-                            toRemove[0].BelongedArchitecture.RemoveInformation(toRemove[0]);
+                            information.BelongedArchitecture.RemoveInformation(information);
                         }
-                        else if (toRemove[0].BelongedFaction != null)
+                        else if (information.BelongedFaction != null)
                         {
-                            toRemove[0].BelongedFaction.RemoveInformation(toRemove[0]);
+                            information.BelongedFaction.RemoveInformation(information);
                         }
-                        Session.Current.Scenario.Informations.Remove(toRemove[0]);
-                        toRemove.Remove(toRemove[0]);
+                        Session.Current.Scenario.Informations.Remove(information.ID);
                     }
                 }
 
@@ -8634,21 +8582,20 @@ namespace GameObjects
                     }
                 }
 
-                GameObjectList princesses = currentArchitecture.Feiziliebiao.GetList();
-                foreach (Person p in princesses)
+                foreach (var person in currentArchitecture.GetConcubines())
                 {
                     if (currentArchitecture.BelongedFaction != null)
                     {
-                        p.AdjustRelation(currentArchitecture.BelongedFaction.Leader, -4f, -5);
+                        person.AdjustRelation(currentArchitecture.BelongedFaction.Leader, -4f, -5);
                     }
-                    if (!currentArchitecture.PrincessChangeLeader(true, this.BelongedFaction, p))
+                    if (!currentArchitecture.PrincessChangeLeader(true, BelongedFaction, person))
                     {
-                        Captive captive = Captive.Create(p, this.BelongedFaction);
+                        Captive captive = Captive.Create(person, this.BelongedFaction);
                         if (captive != null)
                         {
                             captive.CaptivePerson.LocationTroop = this;
                             captive.CaptivePerson.LocationArchitecture = null;
-                            this.AddCaptive(captive);
+                            AddCaptive(captive);
                         }
                     }
                 }
@@ -8669,7 +8616,7 @@ namespace GameObjects
                     {
                         Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedFaction.ID, currentArchitecture.BelongedFaction.ID, (-20 * currentArchitecture.AreaCount) * (currentArchitecture.IsImportant ? 2 : 1));
                         Session.Current.Scenario.ReflectDiplomaticRelations(this.BelongedFaction.ID, currentArchitecture.BelongedFaction.ID, -20);
-                        foreach (Architecture architecture2 in currentArchitecture.GetAILinks())
+                        foreach (var architecture2 in currentArchitecture.AIWaterLinks.ToList())
                         {
                             if (!(((architecture2.BelongedFaction == null) || (architecture2.BelongedFaction == currentArchitecture.BelongedFaction)) || this.IsFriendly(architecture2.BelongedFaction)))
                             {
@@ -8681,7 +8628,7 @@ namespace GameObjects
                     else
                     {
                         flag = true;
-                        foreach (Architecture architecture2 in currentArchitecture.GetAILinks())
+                        foreach (var architecture2 in currentArchitecture.AIWaterLinks.ToList())
                         {
                             if (!((architecture2.BelongedFaction == null) || this.IsFriendly(architecture2.BelongedFaction)))
                             {
@@ -8701,7 +8648,7 @@ namespace GameObjects
                     currentArchitecture.ResetFaction(this.BelongedFaction);
                     if (
                             currentArchitecture.huangdisuozai &&
-                           (this.BelongedFaction.IsAlien || this.BelongedFaction.guanjue >= Session.Current.Scenario.GameCommonData.suoyouguanjuezhonglei.Count - 1)
+                           (this.BelongedFaction.IsAlien || this.BelongedFaction.guanjue >= Session.Current.Scenario.GameCommonData.AllOfficialTitleKinds.Count - 1)
                         )  //已称帝的势力或异族占了献帝所在城池
                     {
                         Session.Current.Scenario.BecomeNoEmperor();
@@ -8822,11 +8769,8 @@ namespace GameObjects
                     currentArchitecture.CheckIsFrontLine();
 
                     //this.Controllable = false;
-                    if (this.OnOccupyArchitecture != null)
-                    {
-                        this.OnOccupyArchitecture(this, currentArchitecture);
-                    }
-
+                   
+                    eventManager.Publish(new OccupyArchitectureEvent(this, currentArchitecture));
                 }
                 ExtensionInterface.call("Occupy", new Object[] { Session.Current.Scenario, this, currentArchitecture });
             }
@@ -8834,57 +8778,89 @@ namespace GameObjects
 
         public void PlayCriticalAttackSound()
         {
-            if (this.AttackStarted)
-            {
-                this.AttackStarted = false;
-                this.TryToPlaySound(this.Position, this.Army.Kind.Sounds.CriticalAttackSoundPath, false);
-            }
+            if (!AttackStarted)
+                return;
+            
+            AttackStarted = false;
+            TryToPlaySound(Position, Army.Kind.Sounds.CriticalAttackSoundPath);
         }
 
-        private void PlaySound()
-        {
-            Platform.Current.PlayEffect(this.SoundFileLocation);
-        }
-
-        private void PlaySound(string soundFileLocation, bool looping)
+        private void PlaySound(string soundFileLocation)
         {
             if (Setting.Current.GlobalVariables.PlayBattleSound)  // && File.Exists(soundFileLocation))
             {
-                this.SoundFileLocation = soundFileLocation;
-                this.PlaySound();
+                SoundFileLocation = soundFileLocation;
+                Platform.Current.PlayEffect(this.SoundFileLocation);
             }
         }
 
         public bool MorphAvail()
         {
-            return this.ControlAvail() && this.Army.Kind.MorphTo != null;
+            return ControlAvail() && Army.Kind.MorphTo != null;
         }
 
-        private void preResetArmyKindData() 
+        private void preResetArmyKindData()
         {
-            foreach (Influence i in this.Army.Kind.Influences.Influences.Values)
+            foreach (var influence in Army.Kind.Influences)
             {
-                i.PurifyInfluence(this, Applier.MilitaryKind, 0);
+                influence.PurifyInfluence(this, Applier.MilitaryKind, 0);
             }
-            this.Persons.PurifyInfluences();
+
+            PurifyPersonInfluences();
+
             this.FinalizeContactArea();
             this.FinalizeOffenceArea();
             this.FinalizeStratagemArea();
             this.FinalizeViewArea();
         }
 
+        public void PurifyPersonInfluences()
+        {
+            foreach (var person in Persons)
+            {
+                if (!Session.Current.Scenario.Preparing)
+                {
+                    foreach (var title in person.Titles)
+                    {
+                        Influence.PurifyInfluenceList(title.Influences.Values,  person, Applier.Title, title.ID);
+                    }
+
+                    foreach (var skill in person.Skills.Values)
+                    {
+                        Influence.PurifyInfluenceList(skill.Influences.Values,  person, Applier.Skill, skill.ID);
+                    }
+
+                    foreach (var stunt in person.Stunts.Values)
+                    {
+                        Influence.PurifyInfluenceList(stunt.Influences.Values,  person, Applier.Stunt, stunt.ID);
+                    }
+
+                    person.PurifyAllTreasures();
+                }
+            }
+        }
+
         private void postResetArmyKindData()
         {
-            foreach (Influence i in this.Army.Kind.Influences.Influences.Values)
+            foreach (var i in this.Army.Kind.Influences)
             {
                 i.ApplyInfluence(this, Applier.MilitaryKind, 0);
             }
-            this.Persons.ApplyInfluences();
+            ApplyPersonInfluences();
+
             this.RefreshAllData();
             this.InitializeContactArea();
             this.InitializeOffenceArea();
             this.InitializeStratagemArea();
             this.InitializeViewArea();
+        }
+
+        private void ApplyPersonInfluences()
+        {
+            foreach (var person in Persons)
+            {
+                person.ApplyInfluence();
+            }
         }
 
         public void Morph()
@@ -8896,13 +8872,13 @@ namespace GameObjects
                 preResetArmyKindData();
                 this.Operated = true;
                 this.Army.Kind = target;
-                postResetArmyKindData();   
+                postResetArmyKindData();
             }
         }
 
         private void PostActionAI()
         {
-            if (((((!this.HasSupply || !GameObject.Chance(0x21)) && this.ControlAvail()) && ((this.RationDaysLeft == 0) || ((this.RationDaysLeft == 1) && GameObject.Chance(20)))) && this.LevyFoodAvail()) && (GameObject.Chance(50) || !this.HasHostileTroopInView()))
+            if (((((!this.HasSupply || !GameObject.GetChance(0x21)) && this.ControlAvail()) && ((this.RationDaysLeft == 0) || ((this.RationDaysLeft == 1) && GameObject.GetChance(20)))) && this.LevyFoodAvail()) && (GameObject.GetChance(50) || !this.HasHostileTroopInView()))
             {
                 TerrainDetail terrainDetailByPositionNoCheck = Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(this.Position);
                 if ((terrainDetailByPositionNoCheck != null) && (terrainDetailByPositionNoCheck.GetFood(Session.Current.Scenario.Date.Season) >= (((this.RationDaysLeft + 1.5) * this.FoodCostPerDay) - this.Food)))
@@ -8910,14 +8886,14 @@ namespace GameObjects
                     this.LevyFood();
                 }
             }
-            if (this.ControlAvail() && ((this.Stunts.Count > 0) && (this.CurrentStunt == null)))
+            if (ControlAvail() && Stunts.Count > 0 && (CurrentStunt == null))
             {
-                foreach (Stunt stunt in this.Stunts.GetStuntList().GetRandomList())
+                foreach (var stunt in StaticMethods.GetRandomList(Stunts.Values.ToList()))
                 {
-                    if (this.HasStunt(stunt.ID) && stunt.IsAIable(this))
+                    if (HasStunt(stunt.ID) && stunt.IsAIable(this))
                     {
-                        this.CurrentStunt = stunt;
-                        this.ApplyCurrentStunt();
+                        CurrentStunt = stunt;
+                        ApplyCurrentStunt();
                         break;
                     }
                 }
@@ -8930,7 +8906,7 @@ namespace GameObjects
             {
                 this.Occupy();
             }
-            if ((this.ControlAvail() && (this.Status == TroopStatus.埋伏)) && ((!this.HasHostileTroopInView() && (GameObject.Random(this.RationDaysLeft) == 0)) || (this.Morale < 0x4b)))
+            if ((this.ControlAvail() && (this.Status == TroopStatus.Ambushing)) && ((!this.HasHostileTroopInView() && (GameObject.Random(this.RationDaysLeft) == 0)) || (this.Morale < 0x4b)))
             {
                 this.EndAmbush();
             }
@@ -8957,8 +8933,8 @@ namespace GameObjects
             this.ViewingWillArchitecture = this.IsViewingWillArchitecture();
             this.ContactingWillArchitecture = this.IsContactingWillArchitecture();
             this.OffencingWillArchitecture = this.IsOffencingWillArchitecture();
-            this.ContactHostileTroopCount = this.GetContactHostileTroops().Count;
-            this.ContactFriendlyTroopCount = this.GetContactFriendlyTroops().Count;
+            ContactHostileTroopCount = GetContactHostileTroops().Count;
+            ContactFriendlyTroopCount = GetContactFriendlyTroops().Count;
             this.SetFriendlyTroopsInView();
             this.SetHostileTroopsInView();
             /*if (this.DistanceToWillArchitecture < -1)
@@ -8996,7 +8972,7 @@ namespace GameObjects
             int chance = this.TroopIntelligence + this.StratagemChanceIncrement;
             foreach (Point point in this.StratagemArea.Area)
             {
-                if ((((this.BelongedFaction == null) && this.ViewArea.HasPoint(point)) || ((this.BelongedFaction != null) && this.BelongedFaction.IsPositionKnown(point))) && GameObject.Chance(chance))
+                if ((((this.BelongedFaction == null) && this.ViewArea.HasPoint(point)) || ((this.BelongedFaction != null) && this.BelongedFaction.IsPositionKnown(point))) && GameObject.GetChance(chance))
                 {
                     Session.Current.Scenario.ClearPositionFire(point);
                 }
@@ -9010,22 +8986,22 @@ namespace GameObjects
         {
             switch (level)
             {
-                case InformationLevel.未知:
+                case InformationLevel.Unknown:
                     return "----";
 
-                case InformationLevel.无:
+                case InformationLevel.None:
                     return "----";
 
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     return StaticMethods.GetNumberStringByGranularity(this.Quantity, 0x1388);
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     return StaticMethods.GetNumberStringByGranularity(this.Quantity, 0x3e8);
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     return StaticMethods.GetNumberStringByGranularity(this.Quantity, 100);
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     return this.Quantity.ToString();
             }
             return "----";
@@ -9042,27 +9018,27 @@ namespace GameObjects
             {
                 switch (receivedDamage.SourceTroop.Army.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         damage = (int)(damage * this.DefenceRateOnSubdueBubing);
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         damage = (int)(damage * this.DefenceRateOnSubdueNubing);
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         damage = (int)(damage * this.DefenceRateOnSubdueQibing);
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         damage = (int)(damage * this.DefenceRateOnSubdueShuijun);
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         damage = (int)(damage * this.DefenceRateOnSubdueQixie);
                         break;
 
-                    case MilitaryType.其他:
+                    case MilitaryType.Other:
                         break;
                 }
             }
@@ -9140,36 +9116,24 @@ namespace GameObjects
 
         private void RefillFoodByArchitecture()
         {
-            if ((this.BelongedFaction != null) && !this.Destroyed && !this.IsTransport)
+            if (BelongedFaction == null || Destroyed || IsTransport) return;
+
+            int increment = FoodMax - Food;
+
+            if (increment <= 0) return;
+
+            var supplyArchitecturesByPositionAndFaction = Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(Position, BelongedFaction);
+            if (supplyArchitecturesByPositionAndFaction.Count > 0)
             {
-                int increment = this.FoodMax - this.Food;
-                if (increment > 0)
+                supplyArchitecturesByPositionAndFaction.Sort((a, b) => b.Food.CompareTo(a.Food));
+                var architecture = supplyArchitecturesByPositionAndFaction[0];
+
+                if (architecture.Food > 0 && (architecture.Food + Food >= FoodCostPerDay))
                 {
-                    ArchitectureList supplyArchitecturesByPositionAndFaction = Session.Current.Scenario.GetSupplyArchitecturesByPositionAndFaction(this.Position, this.BelongedFaction);
-                    if (supplyArchitecturesByPositionAndFaction.Count > 0)
-                    {
-                        if (supplyArchitecturesByPositionAndFaction.Count > 1)
-                        {
-                            supplyArchitecturesByPositionAndFaction.PropertyName = "Food";
-                            supplyArchitecturesByPositionAndFaction.IsNumber = true;
-                            supplyArchitecturesByPositionAndFaction.ReSort();
-                        }
-                        Architecture architecture = supplyArchitecturesByPositionAndFaction[0] as Architecture;
-                        if ((architecture.Food > 0) && ((architecture.Food + this.Food) >= this.FoodCostPerDay))
-                        {
-                            if (architecture.Food >= increment)
-                            {
-                                this.IncreaseFood(increment);
-                                architecture.DecreaseFood(increment);
-                            }
-                            else
-                            {
-                                int num2 = (((architecture.Food + this.Food) / this.FoodCostPerDay) * this.FoodCostPerDay) - this.Food;
-                                this.IncreaseFood(num2);
-                                architecture.DecreaseFood(num2);
-                            }
-                        }
-                    }
+                    int num = architecture.Food >= increment ? increment : (architecture.Food + Food) / FoodCostPerDay * FoodCostPerDay - Food;
+
+                    IncreaseFood(num);
+                    architecture.DecreaseFood(num);
                 }
             }
         }
@@ -9238,23 +9202,23 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfBubing;
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfNubing;
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfQibing;
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfShuijun;
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.antiCriticalStrikeChance += this.BelongedFaction.AntiCriticalStrikeChanceIncrementWhileCombatMethodOfQixie;
                             break;
                     }
@@ -9315,23 +9279,23 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfBubing;
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfNubing;
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfQibing;
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfShuijun;
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.criticalStrikeChance += this.BelongedFaction.CriticalStrikeChanceIncrementWhileCombatMethodOfQixie;
                             break;
                     }
@@ -9380,7 +9344,7 @@ namespace GameObjects
                     this.defence = (int)(this.defence * this.MultipleOfDefenceOnArchitecture);
                 }
             }
-            if (!((this.Status != TroopStatus.混乱) || this.DefenceNoChangeOnChaos))
+            if (!((this.Status != TroopStatus.Chaos) || this.DefenceNoChangeOnChaos))
             {
                 this.defence = (int)(this.defence * 0.8f);
             }
@@ -9390,7 +9354,7 @@ namespace GameObjects
             {
                 this.defence = (int)(this.defence * (1 + (Math.Log10(Math.Max(1,this.Leader.Reputation) / 100) * IncrementDefenceRate))); //名声加防御改用Log函数
             }
-            
+
             if (this.OutburstDefenceMultiple > 1)
             {
                 this.defence *= this.OutburstDefenceMultiple;
@@ -9401,30 +9365,30 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfBubing));
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfNubing));
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfQibing));
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfShuijun));
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateWhileCombatMethodOfQixie));
                             break;
                     }
                 }
                 switch (this.Army.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfBubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9432,7 +9396,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfNubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9440,7 +9404,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfQibing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9448,7 +9412,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfShuijun));
                         if (this.StartingArchitecture != null)
                         {
@@ -9456,7 +9420,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         this.defence = (int)(this.defence * (1f + this.BelongedFaction.DefenceRateOfQixie));
                         if (this.StartingArchitecture != null)
                         {
@@ -9491,8 +9455,8 @@ namespace GameObjects
             {
                 this.defence = 1;
             }
-           
-                
+
+
         }
 
         public void RefreshOffence()
@@ -9517,7 +9481,7 @@ namespace GameObjects
                     this.offence -= (int)(this.offence * 0.2);
                 }
             }
-            if (this.Status == TroopStatus.混乱)
+            if (this.Status == TroopStatus.Chaos)
             {
                 this.offence = (int)(this.offence * 0.5f);
             }
@@ -9528,7 +9492,7 @@ namespace GameObjects
             {
                 this.offence = (int)(this.offence * (1 + (Math.Log10(Math.Max (1,this.Leader.Reputation) / 100) * IncrementOffenceRate)));  //名声加攻击改用Log函数
             }
-            
+
             if (this.OutburstOffenceMultiple > 1)
             {
                 this.offence *= this.OutburstOffenceMultiple;
@@ -9539,30 +9503,30 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfBubing));
                             break;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfNubing));
                             break;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfQibing));
                             break;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfShuijun));
                             break;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateWhileCombatMethodOfQixie));
                             break;
                     }
                 }
                 switch (this.Army.Kind.Type)
                 {
-                    case MilitaryType.步兵:
+                    case MilitaryType.Infantry:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfBubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9570,7 +9534,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.弩兵:
+                    case MilitaryType.Crossbow:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfNubing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9578,7 +9542,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.骑兵:
+                    case MilitaryType.Cavalry:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfQibing));
                         if (this.StartingArchitecture != null)
                         {
@@ -9586,7 +9550,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.水军:
+                    case MilitaryType.Navy:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfShuijun));
                         if (this.StartingArchitecture != null)
                         {
@@ -9594,7 +9558,7 @@ namespace GameObjects
                         }
                         break;
 
-                    case MilitaryType.器械:
+                    case MilitaryType.SiegeEquipment:
                         this.offence = (int)(this.offence * (1f + this.BelongedFaction.OffenceRateOfQixie));
                         if (this.StartingArchitecture != null)
                         {
@@ -9630,8 +9594,8 @@ namespace GameObjects
             {
                 this.offence = 1;
             }
-           
-            
+
+
         }
 
         private void RefreshStratagemChanceIncrement()
@@ -9661,20 +9625,20 @@ namespace GameObjects
 
         public void RefreshTroopCommand()
         {
-            this.troopCommand = this.Leader.Command;
-            if (this.PersonCount > 1)
+            troopCommand = Leader.Command;
+            if (PersonCount > 1)
             {
-                Person maxCommandPerson = this.Persons.GetMaxCommandPerson();
-                if (maxCommandPerson != this.Leader)
+                Person maxCommandPerson = Persons.MaxBy(x => x.Command);
+                if (maxCommandPerson != Leader)
                 {
-                    if (maxCommandPerson.Brothers.GameObjects.Contains(this.Leader))
+                    if (maxCommandPerson.Brothers.Contains(Leader))
                     {
-                        this.troopCommand = maxCommandPerson.Command;
+                        troopCommand = maxCommandPerson.Command;
                     }
-                    else if (maxCommandPerson.Closes(this.Leader))
+                    else if (maxCommandPerson.Closes(Leader))
                     {
-                        int num = maxCommandPerson.Command - this.Leader.Command;
-                        this.troopCommand += (int)(num * 0.5f);
+                        int num = maxCommandPerson.Command - Leader.Command;
+                        troopCommand += (int)(num * 0.5f);
                     }
                 }
             }
@@ -9682,34 +9646,34 @@ namespace GameObjects
 
         public void RefreshTroopIntelligence()
         {
-            this.troopIntelligence = this.Leader.Intelligence;
-            if (this.PersonCount > 1)
+            troopIntelligence = Leader.Intelligence;
+            if (PersonCount > 1)
             {
-                Person maxIntelligencePerson = this.Persons.GetMaxIntelligencePerson();
-                if (maxIntelligencePerson != this.Leader)
+                Person maxIntelligencePerson = Persons.MaxBy(x => x.Intelligence);
+                if (maxIntelligencePerson != Leader)
                 {
-                    int num = maxIntelligencePerson.Intelligence - this.Leader.Intelligence;
-                    this.troopIntelligence += (int)(num * this.Leader.Character.IntelligenceRate);
+                    int num = maxIntelligencePerson.Intelligence - Leader.Intelligence;
+                    troopIntelligence += (int)(num * Leader.Character.IntelligenceRate);
                 }
             }
         }
 
         public void RefreshTroopStrength()
         {
-            this.troopStrength = this.Leader.Strength;
-            if (this.PersonCount > 1)
+            troopStrength = Leader.Strength;
+            if (PersonCount > 1)
             {
-                Person maxStrengthPerson = this.Persons.GetMaxStrengthPerson();
-                if (maxStrengthPerson != this.Leader)
+                Person maxStrengthPerson = Persons.MaxBy(x => x.Strength);
+                if (maxStrengthPerson != Leader)
                 {
-                    if (maxStrengthPerson.Brothers.GameObjects.Contains(this.Leader))
+                    if (maxStrengthPerson.Brothers.Contains(Leader))
                     {
-                        this.troopStrength = maxStrengthPerson.Strength;
+                        troopStrength = maxStrengthPerson.Strength;
                     }
-                    else if (maxStrengthPerson.Closes(this.Leader))
+                    else if (maxStrengthPerson.Closes(Leader))
                     {
-                        int num = maxStrengthPerson.Strength - this.Leader.Strength;
-                        this.troopStrength += (int)(num * 0.5f);
+                        int num = maxStrengthPerson.Strength - Leader.Strength;
+                        troopStrength += (int)(num * 0.5f);
                     }
                 }
             }
@@ -9721,14 +9685,14 @@ namespace GameObjects
             this.InitializeViewArea();
         }
 
-        public void RefreshWithPersonList(GameObjectList personList)
+        public void RefreshWithPersonList(List<Person> personList)
         {
             Point position = this.Position;
             Point destination = this.Destination;
             Point realDestination = this.RealDestination;
             Architecture startingArchitecture = this.StartingArchitecture;
             int iD = base.ID;
-            Person leader = this.Leader;
+            Person leader = Leader;
             Stunt currentStunt = this.CurrentStunt;
             int stuntDayLeft = this.StuntDayLeft;
             this.Destroy(false, false);
@@ -9738,28 +9702,27 @@ namespace GameObjects
             this.position = position;
             this.StartingArchitecture = startingArchitecture;
             base.ID = iD;
-            this.Persons.Clear();
-            if (!personList.HasGameObject(leader) && personList.Count > 0)
+
+            Persons.Clear();
+            if (!personList.Contains(leader) && personList.Count > 0)
             {
-                if (personList.Count > 1)
-                {
-                    personList.PropertyName = "FightingForce";
-                    personList.IsNumber = true;
-                    personList.ReSort();
-                }
-                this.Leader = personList[0] as Person;
+                personList.Sort((a, b) => b.FightingForce.CompareTo(a.FightingForce));
+                Leader = personList[0];
             }
-            foreach (Person person2 in personList)
+
+            foreach (var person in personList)
             {
-                this.persons.Add(person2);
-                person2.LocationTroop = this;
+                persons.Add(person);
+                person.LocationTroop = this;
             }
-            if ((currentStunt != null) && (stuntDayLeft > 0))
+
+            if (currentStunt != null && stuntDayLeft > 0)
             {
-                this.CurrentStunt = currentStunt;
-                this.StuntDayLeft = stuntDayLeft;
+                CurrentStunt = currentStunt;
+                StuntDayLeft = stuntDayLeft;
             }
-            this.Initialize();
+
+            Initialize();
         }
 
         public static bool ReLaunchFirstPathFinder(Point start, Point end)
@@ -9772,27 +9735,37 @@ namespace GameObjects
             return (GetDistance(start, end) < ((GameObjectConsts.ThirdTierSquareSize * GameObjectConsts.LaunchTierFinderDistance) / 2));
         }
 
+        /// <summary>
+        /// 被击溃时释放俘虏
+        /// </summary>
         private void ReleaseCaptiveBeforeBeRouted()
         {
-            if (this.HasCaptive())
+            if (!HasCaptive()) return;
+
+            var result = new List<Person>();
+            foreach (var captive in Captives)
             {
-                PersonList personlist = new PersonList();
-                foreach (Captive captive in this.Captives.GetList())
+                if (captive.CaptivePerson != null 
+                    && captive.CaptiveFaction != null 
+                    && captive.CaptiveFaction.Capital != null)
                 {
-                    if (captive.CaptivePerson != null && captive.CaptiveFaction != null && captive.CaptiveFaction.Capital != null)
-                    {
-                        personlist.Add(captive.CaptivePerson);
-                        captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
-                        captive.CaptivePerson.LocationArchitecture = captive.CaptiveFaction.Capital;
-                        captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital);
-                        
-                    }
-                    ExtensionInterface.call("TroopReleaseCaptive", new Object[] { Session.Current.Scenario, this, captive });
+                    // 目标建筑为俘虏所属势力的首都
+                    var targetArchitecture = captive.CaptiveFaction.Capital;
+                    var captivePerson = captive.CaptivePerson;
+                    
+                    captivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
+                    captivePerson.LocationArchitecture = targetArchitecture;
+                    captivePerson.MoveToArchitecture(targetArchitecture);
+
+                    result.Add(captivePerson);
                 }
-                if ((personlist.Count > 0) && (this.OnReleaseCaptive != null))
-                {
-                    this.OnReleaseCaptive(this, personlist);
-                }
+
+                ExtensionInterface.call("TroopReleaseCaptive", new Object[] { Session.Current.Scenario, this, captive });
+            }
+
+            if (result.Count > 0)
+            {
+                eventManager.Publish(new ReleaseTroopCaptiveEvent(this, result));
             }
         }
 
@@ -9987,77 +9960,25 @@ namespace GameObjects
 
         private void ResetTerrainData()
         {
-            switch (Session.Current.Scenario.GetTerrainKindByPosition(this.Position))
+            (terrainRate, CriticalChanceIncrementOfTerrain) = Session.Current.Scenario.GetTerrainKindByPosition(Position) switch
             {
-                case TerrainKind.平原:
-                    this.terrainRate = this.PlainRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfPlain;
-                    break;
+                TerrainKind.Plain => (PlainRate, CriticalChanceIncrementOfPlain),
+                TerrainKind.Grassland => (GrasslandRate, CriticalChanceIncrementOfGrassland),
+                TerrainKind.Forrest => (ForrestRate, CriticalChanceIncrementOfForrest),
+                TerrainKind.Marsh => (MarshRate, CriticalChanceIncrementOfMarsh),
+                TerrainKind.Mountain => (MountainRate, CriticalChanceIncrementOfMountain),
+                TerrainKind.Water => (WaterRate + RateIncrementOfTerrainRateOnWater + RateIncrementOfRateOnWater, CriticalChanceIncrementOfWater),
+                TerrainKind.Ridge => (RidgeRate, CriticalChanceIncrementOfRidge),
+                TerrainKind.Wasteland => (WastelandRate, CriticalChanceIncrementOfWasteland),
+                TerrainKind.Desert => (DesertRate, CriticalChanceIncrementOfDesert),
+                TerrainKind.Cliff => (CliffRate, CriticalChanceIncrementOfCliff),
+                _ => (terrainRate, CriticalChanceIncrementOfTerrain)
+            };
 
-                case TerrainKind.草原:
-                    this.terrainRate = this.GrasslandRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfGrassland;
-                    break;
-
-                case TerrainKind.森林:
-                    this.terrainRate = this.ForrestRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfForrest;
-                    break;
-
-                case TerrainKind.湿地:
-                    this.terrainRate = this.MarshRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfMarsh;
-                    break;
-
-                case TerrainKind.山地:
-                    this.terrainRate = this.MountainRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfMountain;
-                    break;
-
-                case TerrainKind.水域:
-                    this.terrainRate = this.WaterRate + this.RateIncrementOfTerrainRateOnWater;
-                    this.terrainRate += this.RateIncrementOfRateOnWater;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfWater;
-                    break;
-
-                case TerrainKind.峻岭:
-                    this.terrainRate = this.RidgeRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfRidge;
-                    break;
-
-                case TerrainKind.荒地:
-                    this.terrainRate = this.WastelandRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfWasteland;
-                    break;
-
-                case TerrainKind.沙漠:
-                    this.terrainRate = this.DesertRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfDesert;
-                    break;
-
-                case TerrainKind.栈道:
-                    this.terrainRate = this.CliffRate;
-                    this.CriticalChanceIncrementOfTerrain = this.CriticalChanceIncrementOfCliff;
-                    break;
-            }
-            if ((this.BelongedFaction != null) && (this.terrainRate < 1f))
+            if (BelongedFaction != null && terrainRate < 1f)
             {
-                this.terrainRate += this.BelongedFaction.RateIncrementOfTerrainRate;
-                if (this.terrainRate > 1f)
-                {
-                    this.terrainRate = 1f;
-                }
+                terrainRate = Math.Min(terrainRate + BelongedFaction.RateIncrementOfTerrainRate, 1f);
             }
-        }
-
-        public string SavePersonsToString()
-        {
-            string str = "";
-            foreach (Person person in this.Persons)
-            {
-                str = str + person.ID.ToString() + " ";
-            }
-            return str;
         }
 
         public void SeasonEvent()
@@ -10070,7 +9991,7 @@ namespace GameObjects
             ArchitectureDamage damage = new ArchitectureDamage();
             damage.SourceTroop = this;
             damage.DestinationArchitecture = architecture;
-            damage.Critical = GameObject.Chance(this.CriticalStrikeChance - (architecture.ChanceDecrementOfCriticalStrike));
+            damage.Critical = GameObject.GetChance(this.CriticalStrikeChance - (architecture.ChanceDecrementOfCriticalStrike));
             damage.Position = this.OrientationPosition;
 
                 //int num = (int) (((((this.Offence * 10) * Session.Parameters.ArchitectureDamageRate) * this.ArchitectureDamageRate) * this.StuntArchitectureDamageRate) / ((float) architecture.Domination));
@@ -10081,16 +10002,14 @@ namespace GameObjects
                 }
                 if (damage.Critical)
                 {
-                    this.PreAction = TroopPreAction.暴击;
+                    this.PreAction = TroopPreAction.CriticalHit;
                     num = (int)((num * 1.5f) * this.RateOfCriticalArchitectureDamage);
                     if (architecture.Kind.HasDomination)
                     {
                         damage.DominationDown = this.DominationDecrementOfCriticalStrike;
                     }
-                    if (this.OnCriticalStrike != null)
-                    {
-                        this.OnCriticalStrike(this, null);
-                    }
+                    
+                    eventManager.Publish(new CriticalStrikeEvent(this, null));
                 }
 
                 if (architecture.IsCapital)
@@ -10133,19 +10052,19 @@ namespace GameObjects
             damage.SourceTroop = this;
             damage.DestinationTroop = troop;
             damage.Counter = counter;
-            damage.AntiAttack = GameObject.Chance(troop.ChanceOfBlockAttack);
-            damage.AntiArrowAttack = this.ArrowOffence && (troop.IsAntiArrowAttack || GameObject.Chance(troop.ChanceOfBlockArrowAttack));
+            damage.AntiAttack = GameObject.GetChance(troop.ChanceOfBlockAttack);
+            damage.AntiArrowAttack = this.ArrowOffence && (troop.IsAntiArrowAttack || GameObject.GetChance(troop.ChanceOfBlockArrowAttack));
             damage.AntiCounterAttack = !counter && this.IsAntiCounterAttack;
-            damage.Critical = (!counter && !troop.OutburstPreventCriticalStrike) && (GameObject.Chance(this.ChanceOfMustCriticalStrike) || GameObject.Chance(this.CriticalStrikeChance - troop.AntiCriticalStrikeChance));
-            damage.OnFire = GameObject.Chance((this.ChanceOfOnFire > this.BaseChanceOfOnFire) ? this.ChanceOfOnFire : this.BaseChanceOfOnFire);
-            damage.Chaos = GameObject.Chance(this.ChanceOfChaosAttack);
-            if (this.Status == TroopStatus.埋伏)
+            damage.Critical = (!counter && !troop.OutburstPreventCriticalStrike) && (GameObject.GetChance(this.ChanceOfMustCriticalStrike) || GameObject.GetChance(this.CriticalStrikeChance - troop.AntiCriticalStrikeChance));
+            damage.OnFire = GameObject.GetChance((this.ChanceOfOnFire > this.BaseChanceOfOnFire) ? this.ChanceOfOnFire : this.BaseChanceOfOnFire);
+            damage.Chaos = GameObject.GetChance(this.ChanceOfChaosAttack);
+            if (this.Status == TroopStatus.Ambushing)
             {
-                this.Status = TroopStatus.一般;
+                this.Status = TroopStatus.Normal;
                 damage.Waylay = true;
                 if (!damage.Critical)
                 {
-                    this.PreAction = TroopPreAction.伏击;
+                    this.PreAction = TroopPreAction.Ambush;
                 }
             }
             if (troop.Defence <= 0)
@@ -10176,7 +10095,7 @@ namespace GameObjects
                     defence = this.DefenceConsidered;
                 }
             }
-            else if (GameObject.Chance(this.ChanceOfFixDefenceAttack) && (defence > 100))
+            else if (GameObject.GetChance(this.ChanceOfFixDefenceAttack) && (defence > 100))
             {
                 defence = 100;
             }
@@ -10188,15 +10107,15 @@ namespace GameObjects
                 damage.SourceOffence = (int) (damage.SourceOffence * (1 + this.InCityOffenseRate));
             }
 
-            if ((!troop.StuntAvoidSurround && !counter) && (this.StuntMustSurround || !GameObject.Chance(troop.AvoidSurroundedChance)))
+            if ((!troop.StuntAvoidSurround && !counter) && (this.StuntMustSurround || !GameObject.GetChance(troop.AvoidSurroundedChance)))
             {
-                TroopList surroundAttackingTroop = this.GetSurroundAttackingTroop(troop);
+                var surroundAttackingTroop = GetSurroundAttackingTroop(troop);
                 if (surroundAttackingTroop.Count >= 3)
                 {
                     int num3 = 0;
                     damage.Surround = true;
                     damage.DestinationMoraleChange -= Session.GlobalVariables.SurroundFactor * ((surroundAttackingTroop.Count - 3) + 1);
-                    troop.Effect = TroopEffect.被包围;
+                    troop.Effect = TroopEffect.Surrounded;
                     foreach (Troop troop2 in surroundAttackingTroop)
                     {
                         if (troop2 != this)
@@ -10207,30 +10126,30 @@ namespace GameObjects
                             num3 += StaticMethods.GetRandomValue(troop2.ChaosAfterSurroundAttackChance, Session.GlobalVariables.SurroundFactor * 2 / 5);
                         }
                     }
-                    damage.Chaos = GameObject.Chance(this.ChaosAfterSurroundAttackChance + num3);
+                    damage.Chaos = GameObject.GetChance(this.ChaosAfterSurroundAttackChance + num3);
                 }
             }
             //int num4 = (int) (((damage.SourceOffence * 500) * Session.Parameters.TroopDamageRate) / ((float) defence));
             int num4 = (int)(Math.Pow(damage.SourceOffence / (float)defence, 0.62) * 1.16 * 500 * Session.Parameters.TroopDamageRate);
             switch (troop.Army.Kind.Type)
             {
-                case MilitaryType.步兵:
+                case MilitaryType.Infantry:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueBubing);
                     break;
 
-                case MilitaryType.弩兵:
+                case MilitaryType.Crossbow:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueNubing);
                     break;
 
-                case MilitaryType.骑兵:
+                case MilitaryType.Cavalry:
                     num4 = (int)((num4 * this.OffenceRateOnSubdueQibing) * ((this.RateOfQibingDamage > this.BaseRateOfQibingDamage) ? this.RateOfQibingDamage : this.BaseRateOfQibingDamage));
                     break;
 
-                case MilitaryType.水军:
+                case MilitaryType.Navy:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueShuijun);
                     break;
 
-                case MilitaryType.器械:
+                case MilitaryType.SiegeEquipment:
                     num4 = (int)(num4 * this.OffenceRateOnSubdueQixie);
                     break;
             }
@@ -10257,9 +10176,9 @@ namespace GameObjects
             //challenge.ChallgenEvent(this, troop, damage);  //单挑事件
             if (damage.Critical) //控制单挑发生相关
             {
-                this.PreAction = TroopPreAction.暴击;
+                this.PreAction = TroopPreAction.CriticalHit;
                 num4 = (int)((num4 * 1.5f) * troop.RateOfCriticalDamageReceived);
-                if (!(damage.Chaos || !GameObject.Chance(this.ChaosAfterCriticalStrikeChance)))
+                if (!(damage.Chaos || !GameObject.GetChance(this.ChaosAfterCriticalStrikeChance)))
                 {
                     damage.Chaos = true;
                 }
@@ -10288,7 +10207,7 @@ namespace GameObjects
                 }
                 else if (!this.Army.Kind.AirOffence)
                 {
-                    damage.Chaos = this.InevitableChaosOnWaylay || GameObject.Chance(30);
+                    damage.Chaos = this.InevitableChaosOnWaylay || GameObject.GetChance(30);
                 }
             }
             if (damage.Counter)
@@ -10314,15 +10233,15 @@ namespace GameObjects
                     damage.DestinationMoraleChange -= this.MoraleDecrementOnPrestige;
                 }
             }
-            if (GameObject.Chance(this.ChanceOfTrippleDamage))
+            if (GameObject.GetChance(this.ChanceOfTrippleDamage))
             {
                 num4 *= 3;
             }
-            else if (GameObject.Chance(this.ChanceOfDoubleDamage))
+            else if (GameObject.GetChance(this.ChanceOfDoubleDamage))
             {
                 num4 *= 2;
             }
-            if (GameObject.Chance(troop.ChanceOfHalfDamage))
+            if (GameObject.GetChance(troop.ChanceOfHalfDamage))
             {
                 num4 /= 2;
             }
@@ -10361,24 +10280,11 @@ namespace GameObjects
             return damage;
         }
 
-        public new string Name
-        {
-            get
-            {
-                if (this.Leader != null)
-                {
-                    return this.Leader.Name + "队";
-                }
-                else
-                {
-                    return "某部队";
-                }
-            }
-        }
+        public new string Name => Leader != null ? $"{Leader.Name}队" : "某部队";
 
         public void SetAmbush()
         {
-            this.Status = TroopStatus.埋伏;
+            this.Status = TroopStatus.Ambushing;
             this.OperationDone = true;
             this.MovabilityLeft = -1;
             this.IncreaseStratagemExperience(2, true);
@@ -10394,8 +10300,8 @@ namespace GameObjects
         {
             if (!this.Destroyed && (!this.NeverBeIntoChaos && !this.OutburstNeverBeIntoChaos))
             {
-                bool deepChaos = this.Status == TroopStatus.混乱;
-                this.Status = TroopStatus.混乱;
+                bool deepChaos = this.Status == TroopStatus.Chaos;
+                this.Status = TroopStatus.Chaos;
                 if (this.ChaosLastOneDay)
                 {
                     days = 1;
@@ -10407,10 +10313,8 @@ namespace GameObjects
                 this.RefreshDefence();
                 this.CutRoutewayDays = 0;
                 ExtensionInterface.call("GoIntoChaos", new Object[] { Session.Current.Scenario, this });
-                if (this.OnChaos != null)
-                {
-                    this.OnChaos(this, deepChaos);
-                }
+
+                eventManager.Publish(new ChaosEvent(this, deepChaos));
             }
         }
 
@@ -10418,16 +10322,14 @@ namespace GameObjects
         {
             if (!this.Destroyed)
             {
-                this.Status = TroopStatus.伪报;
+                this.Status = TroopStatus.Rumour;
                 this.ChaosDayLeft += days;
                 this.OperationDone = true;
                 this.MovabilityLeft = -1;
                 this.CutRoutewayDays = 0;
                 ExtensionInterface.call("GoIntoRumour", new Object[] { Session.Current.Scenario, this });
-                if (this.OnRumour != null)
-                {
-                    this.OnRumour(this);
-                }
+                
+                eventManager.Publish(new RumourEvent(this));
             }
         }
 
@@ -10435,59 +10337,41 @@ namespace GameObjects
         {
             if (!this.Destroyed)
             {
-                this.Status = TroopStatus.挑衅;
+                this.Status = TroopStatus.Attract;
                 this.ChaosDayLeft += days;
                 this.OperationDone = true;
                 this.MovabilityLeft = -1;
                 this.CutRoutewayDays = 0;
                 this.ForceTroopTargetId = caster.ID;
                 ExtensionInterface.call("GoIntoAttract", new Object[] { Session.Current.Scenario, this, caster });
-                if (this.OnAttract != null)
-                {
-                    this.OnAttract(this, caster);
-                }
+
+                eventManager.Publish(new AttractEvent(this, caster));
             }
         }
 
-        public void SetCurrentCombatMethod(CombatMethod cm)
+        public void SetCurrentCombatMethod(CombatMethod combatMethod)
         {
-            this.currentCombatMethod = cm;
-            if (cm != null)
+            currentCombatMethod = combatMethod;
+            CurrentCombatMethodID = combatMethod?.ID ?? -1;
+            if (combatMethod != null)
             {
-                this.currentCombatMethodID = cm.ID;
-                if (cm.AttackDefault != null)
-                {
-                    this.AttackDefaultKind = (TroopAttackDefaultKind)cm.AttackDefault.ID;
-                }
-                if (cm.AttackTarget != null)
-                {
-                    this.AttackTargetKind = (TroopAttackTargetKind)cm.AttackTarget.ID;
-                }
-            }
-            else
-            {
-                this.currentCombatMethodID = -1;
+                AttackDefaultKind = (TroopAttackDefaultKind)combatMethod.AttackDefaultString;
+                AttackTargetKind = (TroopAttackTargetKind)combatMethod.AttackTargetString;
             }
         }
 
-        public void SetCurrentStratagem(Stratagem s)
+        public void SetCurrentStratagem(Stratagem stratagem)
         {
-            this.currentStratagem = s;
-            if (s != null)
+            currentStratagem = stratagem;
+            if (stratagem != null)
             {
-                if (s.CastDefault != null)
-                {
-                    this.CastDefaultKind = (TroopCastDefaultKind)s.CastDefault.ID;
-                }
-                if (s.CastTarget != null)
-                {
-                    this.CastTargetKind = (TroopCastTargetKind)s.CastTarget.ID;
-                }
-                this.currentStratagemID = s.ID;
+                CurrentStratagemID = stratagem.ID;
+                CastDefaultKind = (TroopCastDefaultKind)stratagem.CastDefaultString;
+                CastTargetKind = (TroopCastTargetKind)stratagem.CastTargetString;
             }
             else
             {
-                this.currentStratagemID = -1;
+                CurrentStratagemID = -1;
             }
         }
 
@@ -10499,15 +10383,15 @@ namespace GameObjects
                     switch (offsetY)
                     {
                         case -1:
-                            this.Direction = TroopDirection.西北;
+                            this.Direction = TroopDirection.Northwest;
                             break;
 
                         case 0:
-                            this.Direction = TroopDirection.正西;
+                            this.Direction = TroopDirection.West;
                             break;
 
                         case 1:
-                            this.Direction = TroopDirection.西南;
+                            this.Direction = TroopDirection.Southwest;
                             break;
                     }
                     break;
@@ -10516,15 +10400,15 @@ namespace GameObjects
                     switch (offsetY)
                     {
                         case -1:
-                            this.Direction = TroopDirection.正北;
+                            this.Direction = TroopDirection.North;
                             break;
 
                         case 0:
-                            this.Direction = TroopDirection.正东;
+                            this.Direction = TroopDirection.East;
                             break;
 
                         case 1:
-                            this.Direction = TroopDirection.正南;
+                            this.Direction = TroopDirection.South;
                             break;
                     }
                     break;
@@ -10533,15 +10417,15 @@ namespace GameObjects
                     switch (offsetY)
                     {
                         case -1:
-                            this.Direction = TroopDirection.东北;
+                            this.Direction = TroopDirection.Northeast;
                             break;
 
                         case 0:
-                            this.Direction = TroopDirection.正东;
+                            this.Direction = TroopDirection.East;
                             break;
 
                         case 1:
-                            this.Direction = TroopDirection.东南;
+                            this.Direction = TroopDirection.Southeast;
                             break;
                     }
                     break;
@@ -10550,160 +10434,103 @@ namespace GameObjects
 
         public bool SetFireAvail(int id)
         {
-            if (this.Status != TroopStatus.埋伏)
+            if (Status == TroopStatus.Ambushing) return false;
+
+            if (ProhibitAllAction || ProhibitStratagem) return false;
+
+            if (!Session.Current.Scenario.GameCommonData.AllStratagems.TryGetValue(id, out var stratagem)) return false;
+
+            if (stratagem.Combativity > Combativity + DecrementOfStratagemCombativityConsuming) return false;
+
+            foreach (var point in StratagemArea.Area)
             {
-                if (this.ProhibitAllAction || this.ProhibitStratagem)
+                if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.Infantry))
                 {
-                    return false;
-                }
-                Stratagem stratagem = this.Stratagems.GetStratagem(id);
-                if (stratagem != null)
-                {
-                    if (stratagem.Combativity <= (this.Combativity + this.DecrementOfStratagemCombativityConsuming))
-                    {
-                        foreach (Point point in this.StratagemArea.Area)
-                        {
-                            if (Session.Current.Scenario.IsPositionEmpty(point) && Session.Current.Scenario.IsFireVaild(point, false, MilitaryType.步兵))
-                            {
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                    return false;
+                    return true;
                 }
             }
+
             return false;
         }
 
         public void SetFriendlyTroopsInView()
         {
-            this.ViewingPlainFriendlyTroopCount = 0;
-            this.ViewingGrasslandFriendlyTroopCount = 0;
-            this.ViewingForestFriendlyTroopCount = 0;
-            this.ViewingMarshFriendlyTroopCount = 0;
-            this.ViewingMountainFriendlyTroopCount = 0;
-            this.ViewingWaterFriendlyTroopCount = 0;
-            this.ViewingRidgeFriendlyTroopCount = 0;
-            this.ViewingWastelandFriendlyTroopCount = 0;
-            this.ViewingDesertFriendlyTroopCount = 0;
-            this.ViewingCliffFriendlyTroopCount = 0;
-            this.ViewingFriendlyTroopCount = 0;
-            foreach (Point point in this.ViewArea.Area)
+            ViewingPlainFriendlyTroopCount = 0;
+            ViewingGrasslandFriendlyTroopCount = 0;
+            ViewingForestFriendlyTroopCount = 0;
+            ViewingMarshFriendlyTroopCount = 0;
+            ViewingMountainFriendlyTroopCount = 0;
+            ViewingWaterFriendlyTroopCount = 0;
+            ViewingRidgeFriendlyTroopCount = 0;
+            ViewingWastelandFriendlyTroopCount = 0;
+            ViewingDesertFriendlyTroopCount = 0;
+            ViewingCliffFriendlyTroopCount = 0;
+            ViewingFriendlyTroopCount = 0;
+
+            var scenario = Session.Current.Scenario;
+
+            foreach (var point in ViewArea.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && this.IsFriendly(troopByPosition.BelongedFaction))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+
+                if (troop == null || !IsFriendly(troop.BelongedFaction)) continue;
+                
+                friendlyTroopsInView.Add(troop);
+                ViewingFriendlyTroopCount++;
+
+                switch (scenario.GetTerrainKindByPositionNoCheck(point))
                 {
-                    friendlyTroopsInView.Add(troopByPosition);
-                    switch (Session.Current.Scenario.GetTerrainKindByPositionNoCheck(point))
-                    {
-                        case TerrainKind.平原:
-                            this.ViewingPlainFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.草原:
-                            this.ViewingGrasslandFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.森林:
-                            this.ViewingForestFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.湿地:
-                            this.ViewingMarshFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.山地:
-                            this.ViewingMountainFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.水域:
-                            this.ViewingWaterFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.峻岭:
-                            this.ViewingRidgeFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.荒地:
-                            this.ViewingWastelandFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.沙漠:
-                            this.ViewingDesertFriendlyTroopCount++;
-                            break;
-
-                        case TerrainKind.栈道:
-                            this.ViewingCliffFriendlyTroopCount++;
-                            break;
-                    }
-                    this.ViewingFriendlyTroopCount++;
+                    case TerrainKind.Plain: ViewingPlainFriendlyTroopCount++; break;
+                    case TerrainKind.Grassland: ViewingGrasslandFriendlyTroopCount++; break;
+                    case TerrainKind.Forrest: ViewingForestFriendlyTroopCount++; break;
+                    case TerrainKind.Marsh: ViewingMarshFriendlyTroopCount++; break;
+                    case TerrainKind.Mountain: ViewingMountainFriendlyTroopCount++; break;
+                    case TerrainKind.Water: ViewingWaterFriendlyTroopCount++; break;
+                    case TerrainKind.Ridge: ViewingRidgeFriendlyTroopCount++; break;
+                    case TerrainKind.Wasteland: ViewingWastelandFriendlyTroopCount++; break;
+                    case TerrainKind.Desert: ViewingDesertFriendlyTroopCount++; break;
+                    case TerrainKind.Cliff: ViewingCliffFriendlyTroopCount++; break;
                 }
             }
         }
 
         public void SetHostileTroopsInView()
         {
-            this.ViewingPlainHostileTroopCount = 0;
-            this.ViewingGrasslandHostileTroopCount = 0;
-            this.ViewingForestHostileTroopCount = 0;
-            this.ViewingMarshHostileTroopCount = 0;
-            this.ViewingMountainHostileTroopCount = 0;
-            this.ViewingWaterHostileTroopCount = 0;
-            this.ViewingRidgeHostileTroopCount = 0;
-            this.ViewingWastelandHostileTroopCount = 0;
-            this.ViewingDesertHostileTroopCount = 0;
-            this.ViewingCliffHostileTroopCount = 0;
-            this.ViewingHostileTroopCount = 0;
-            foreach (Point point in this.ViewArea.Area)
+            ViewingPlainHostileTroopCount = 0;
+            ViewingGrasslandHostileTroopCount = 0;
+            ViewingForestHostileTroopCount = 0;
+            ViewingMarshHostileTroopCount = 0;
+            ViewingMountainHostileTroopCount = 0;
+            ViewingWaterHostileTroopCount = 0;
+            ViewingRidgeHostileTroopCount = 0;
+            ViewingWastelandHostileTroopCount = 0;
+            ViewingDesertHostileTroopCount = 0;
+            ViewingCliffHostileTroopCount = 0;
+            ViewingHostileTroopCount = 0;
+
+            var scenario = Session.Current.Scenario;
+
+            foreach (var point in ViewArea.Area)
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && !this.IsFriendly(troopByPosition.BelongedFaction))
+                var troop = Session.Current.Scenario.GetTroopByPosition(point);
+
+                if (troop == null || IsFriendly(troop.BelongedFaction)) continue;
+                
+                hostileTroopsInView.Add(troop);
+                ViewingHostileTroopCount++;
+
+                switch (scenario.GetTerrainKindByPositionNoCheck(point))
                 {
-                    hostileTroopsInView.Add(troopByPosition);
-                    switch (Session.Current.Scenario.GetTerrainKindByPositionNoCheck(point))
-                    {
-                        case TerrainKind.平原:
-                            this.ViewingPlainHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.草原:
-                            this.ViewingGrasslandHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.森林:
-                            this.ViewingForestHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.湿地:
-                            this.ViewingMarshHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.山地:
-                            this.ViewingMountainHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.水域:
-                            this.ViewingWaterHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.峻岭:
-                            this.ViewingRidgeHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.荒地:
-                            this.ViewingWastelandHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.沙漠:
-                            this.ViewingDesertHostileTroopCount++;
-                            break;
-
-                        case TerrainKind.栈道:
-                            this.ViewingCliffHostileTroopCount++;
-                            break;
-                    }
-                    this.ViewingHostileTroopCount++;
+                    case TerrainKind.Plain: ViewingPlainHostileTroopCount++; break;
+                    case TerrainKind.Grassland: ViewingGrasslandHostileTroopCount++; break;
+                    case TerrainKind.Forrest: ViewingForestHostileTroopCount++; break;
+                    case TerrainKind.Marsh: ViewingMarshHostileTroopCount++; break;
+                    case TerrainKind.Mountain: ViewingMountainHostileTroopCount++; break;
+                    case TerrainKind.Water: ViewingWaterHostileTroopCount++; break;
+                    case TerrainKind.Ridge: ViewingRidgeHostileTroopCount++; break;
+                    case TerrainKind.Wasteland: ViewingWastelandHostileTroopCount++; break;
+                    case TerrainKind.Desert: ViewingDesertHostileTroopCount++; break;
+                    case TerrainKind.Cliff: ViewingCliffHostileTroopCount++; break;
                 }
             }
         }
@@ -10718,7 +10545,7 @@ namespace GameObjects
             this.Action = TroopAction.Stop;
             this.WaitForDeepChaosFrameCount = 0;
             this.ShowNumber = false;
-            this.PreAction = TroopPreAction.无;
+            this.PreAction = TroopPreAction.None;
             this.ApplyDamageList();
             this.ApplyStratagemEffect();
         }
@@ -10726,7 +10553,7 @@ namespace GameObjects
         public void SetOnFire(float scale)
         {
             this.ReceiveFireDamage(scale);
-            if (Session.Current.Scenario.IsFireVaild(this.Position, false, MilitaryType.步兵))
+            if (Session.Current.Scenario.IsFireVaild(this.Position, false, MilitaryType.Infantry))
             {
                 Session.Current.Scenario.SetPositionOnFire(this.Position);
             }
@@ -10734,7 +10561,7 @@ namespace GameObjects
 
         private void SetOutburst()
         {
-            if (((this.RecentlyFighting > 0) && (this.Leader != null)) && (this.Status != TroopStatus.混乱))
+            if (((this.RecentlyFighting > 0) && (this.Leader != null)) && (this.Status != TroopStatus.Chaos))
             {
                 bool doBrave = this.Leader.Braveness >= 3 && GameObject.Square(this.Leader.Braveness) >= GameObject.Random(1000);
                 bool doCalm = this.Leader.Calmness >= 3 && GameObject.Square(this.Leader.Calmness) >= GameObject.Random(1000);
@@ -10764,21 +10591,19 @@ namespace GameObjects
         {
             if (!this.Destroyed)
             {
-                this.chaosDayLeft = 0;
-                this.Status = TroopStatus.一般;
-                this.PreAction = TroopPreAction.恢复;
+                ChaosDayLeft = 0;
+                this.Status = TroopStatus.Normal;
+                this.PreAction = TroopPreAction.Recover;
                 this.RefreshOffence();
                 this.RefreshDefence();
-                if (this.OnRecoverFromChaos != null)
-                {
-                    this.OnRecoverFromChaos(this);
-                }
+
+                eventManager.Publish(new RecoverFromChaosEvent(this));
             }
         }
 
         public void SetSimpleChaos(int days)
         {
-            this.Status = TroopStatus.混乱;
+            this.Status = TroopStatus.Chaos;
             this.ChaosDayLeft += days;
             this.OperationDone = true;
             this.MovabilityLeft = -1;
@@ -10792,23 +10617,23 @@ namespace GameObjects
             this.status = ts;
             switch (ts)
             {
-                case TroopStatus.一般:
+                case TroopStatus.Normal:
                     this.CurrentTileAnimationKind = TileAnimationKind.无;
                     break;
 
-                case TroopStatus.混乱:
+                case TroopStatus.Chaos:
                     this.CurrentTileAnimationKind = TileAnimationKind.混乱;
                     break;
 
-                case TroopStatus.埋伏:
+                case TroopStatus.Ambushing:
                     this.CurrentTileAnimationKind = TileAnimationKind.埋伏;
                     break;
 
-                case TroopStatus.挑衅:
+                case TroopStatus.Attract:
                     this.CurrentTileAnimationKind = TileAnimationKind.挑衅;
                     break;
 
-                case TroopStatus.伪报:
+                case TroopStatus.Rumour:
                     this.CurrentTileAnimationKind = TileAnimationKind.伪报;
                     break;
             }
@@ -10834,8 +10659,8 @@ namespace GameObjects
 
         public void SimpleRecoverFromChaos()
         {
-            this.chaosDayLeft = 0;
-            this.Status = TroopStatus.一般;
+            ChaosDayLeft = 0;
+            this.Status = TroopStatus.Normal;
             this.RefreshOffence();
             this.RefreshDefence();
         }
@@ -10844,7 +10669,8 @@ namespace GameObjects
         {
             this.PreviousPosition = this.position = startPosition;
             this.RefreshTroopAbility();
-            this.Persons.ApplyInfluences();
+            
+            ApplyPersonInfluences();
             this.InitializeInfluences();
             this.ResetTerrainData();
             this.RefreshAllData();
@@ -10861,14 +10687,14 @@ namespace GameObjects
             {
                 this.ResetDirectionArchitecture();
                 this.Action = TroopAction.Attack;
-                if (this.PreAction == TroopPreAction.无)
+                if (this.PreAction == TroopPreAction.None)
                 {
-                    this.TryToPlaySound(this.Position, this.Army.Kind.Sounds.NormalAttackSoundPath, false);
+                    TryToPlaySound(Position, Army.Kind.Sounds.NormalAttackSoundPath);
                 }
             }
 
             this.AttackStarted = false;
-            this.operationDone = true;
+            OperationDone = true;
             if (architecture == this.TargetArchitecture)
             {
                 this.MovabilityLeft = -1;
@@ -10880,77 +10706,60 @@ namespace GameObjects
         {
             if (Session.Current.Scenario.IsKnownToAnyPlayer(this) || Session.Current.Scenario.IsKnownToAnyPlayer(troop))
             {
-                if (this.CombatMethodApplied)
+                if (CombatMethodApplied)
                 {
-                    if (this.OnCombatMethodAttack != null)
+                    if (CurrentCombatMethodID == 0)   // 如果是大盾
                     {
-                        if (this.CurrentCombatMethodID == 0)   // 如果是大盾
-                        {
-                            this.AddSelfzhanfaAnimation();
-                        }
-                        else
-                        {
-                            this.AddzhanfaAnimation(troop, true);
-                        }
-                        //this.OnCombatMethodAttack(this, troop, this.CurrentCombatMethod);
+                        AddSelfzhanfaAnimation();
                     }
+                    else
+                    {
+                        AddzhanfaAnimation(troop, true);
+                    }
+                    //eventManager.Publish(new CombatMethodAttackEvent(this, troop, CurrentCombatMethod));
                 }
-
-
 
                 if (!area)
                 {
                     if (!damage.Counter)
                     {
-                        bool meiyouyouPersonTextMessage = Session.Current.Scenario.GameCommonData.AllTextMessages.GetTextMessage(this.Leader.ID, TextMessageKind.Critical).Count > 0;
+                        var personMessages = CommonData.GetPersonMessage(Leader.ID, TextMessageKind.Critical);
 
                         //if ((this.CombatMethodApplied && !damage.Surround) && (!damage.Critical || (this.Leader.PersonTextMessage.CriticalStrike.Count == 0)))
-                        if ((this.CombatMethodApplied && !damage.Surround) && (!damage.Critical || meiyouyouPersonTextMessage))
+                        if ((this.CombatMethodApplied && !damage.Surround) && (!damage.Critical || personMessages.Count > 0))
                         {
-                            if (this.OnCombatMethodAttack != null)
+                            /*if (this.CurrentCombatMethodID == 0)   // 如果是大盾
                             {
-                                /*if (this.CurrentCombatMethodID == 0)   // 如果是大盾
-                                {
-                                    this.AddSelfzhanfaAnimation();
-                                }
-                                else
-                                {
-                                    this.AddzhanfaAnimation(troop, true);
-                                }*/
-                                this.OnCombatMethodAttack(this, troop, this.CurrentCombatMethod);
+                                this.AddSelfzhanfaAnimation();
                             }
+                            else
+                            {
+                                this.AddzhanfaAnimation(troop, true);
+                            }*/
+                            eventManager.Publish(new CombatMethodAttackEvent(this, troop, CurrentCombatMethod));
                         }
                         else if (damage.Waylay)                      //这些if判断成立的话仅仅只添加了部队说话
                         {
-                            if (this.OnWaylay != null)
-                            {
-                                this.OnWaylay(this, troop);
-                            }
+                            eventManager.Publish(new WaylayEvent(this, troop));
                         }
                         else if (damage.Critical)
                         {
-                            if (this.OnCriticalStrike != null)
-                            {
-                                this.OnCriticalStrike(this, troop);
-                            }
+                            eventManager.Publish(new CriticalStrikeEvent(this, troop));
                         }
                         else if (damage.Surround)
                         {
-                            if (this.OnSurround != null)
-                            {
-                                this.OnSurround(this, troop);
-                            }
+                            eventManager.Publish(new SurroundEvent(this, troop));
                         }
-                        else if (this.OnNormalAttack != null)
+                        else
                         {
-                            this.OnNormalAttack(this, troop);
+                            eventManager.Publish(new NormalAttackEvent(this, troop));
                         }
                     }
                     this.ResetDirectionTroop(troop);
                     this.Action = TroopAction.Attack;
-                    if (this.PreAction == TroopPreAction.无 && !this.CombatMethodApplied)
+                    if (this.PreAction == TroopPreAction.None && !this.CombatMethodApplied)
                     {
-                        this.TryToPlaySound(this.Position, this.Army.Kind.Sounds.NormalAttackSoundPath, false);
+                        TryToPlaySound(Position, Army.Kind.Sounds.NormalAttackSoundPath);
                     }
 
                     this.AttackStarted = false;
@@ -10958,7 +10767,7 @@ namespace GameObjects
                 troop.Action = TroopAction.BeAttacked;
             }
 
-            this.operationDone = true;
+            OperationDone = true;
             if (troop == this.TargetTroop)
             {
                 this.MovabilityLeft = -1;
@@ -10973,7 +10782,7 @@ namespace GameObjects
 
         private void StartCastSelf()
         {
-            this.operationDone = true;
+            OperationDone = true;
             this.StratagemApplyed = true;
 
             if (Session.Current.Scenario.IsKnownToAnyPlayer(this))
@@ -10984,10 +10793,8 @@ namespace GameObjects
                 }
                 this.Action = TroopAction.Cast;
                 this.AddSelfCastAnimation();
-                if (this.OnCastStratagem != null)
-                {
-                    this.OnCastStratagem(this, this, this.CurrentStratagem);
-                }
+                
+                eventManager.Publish(new CastStratagemEvent(this, this, CurrentStratagem));
             }
 
             if (this == this.TargetTroop)
@@ -11004,7 +10811,7 @@ namespace GameObjects
         {
             if (troop != null)
             {
-                this.operationDone = true;
+                OperationDone = true;
                 this.StratagemApplyed = true;
 
                 if (Session.Current.Scenario.IsKnownToAnyPlayer(this) || Session.Current.Scenario.IsKnownToAnyPlayer(troop))
@@ -11020,21 +10827,19 @@ namespace GameObjects
                         this.RecentlyFighting = 3;
                         troop.RecentlyFighting = 3;
                         troop.Action = TroopAction.BeCasted;
-                        foreach (Troop troop2 in this.AreaStratagemTroops)
+                        foreach (var troop2 in AreaStratagemTroops)
                         {
                             troop2.RecentlyFighting = 3;
                             troop2.Action = TroopAction.BeCasted;
                         }
                     }
                     this.AddCastAnimation(troop, true);
-                    foreach (Troop troop2 in this.AreaStratagemTroops)
+                    foreach (var troop2 in AreaStratagemTroops)
                     {
                         this.AddCastAnimation(troop2, false);
                     }
-                    if (this.OnCastStratagem != null)
-                    {
-                        this.OnCastStratagem(this, troop, this.CurrentStratagem);
-                    }
+                    
+                    eventManager.Publish(new CastStratagemEvent(this, troop, CurrentStratagem));
                 }
                 /*
                 if (this.BelongedFaction.IsFriendly(troop.BelongedFaction))
@@ -11055,30 +10860,26 @@ namespace GameObjects
             this.Operated = false;
         }
 
-        public bool SurroundAvail()
-        {
-            return ((this.Status == TroopStatus.一般) && this.Controllable);
-        }
+        public bool SurroundAvail() => Status == TroopStatus.Normal && Controllable;
 
         public bool TargetAvail()
         {
             return !SelectedAttack;
-            //return ((((this.AttackTargetKind == TroopAttackTargetKind.目标) || (this.AttackTargetKind == TroopAttackTargetKind.目标默认)) || (this.CastTargetKind == TroopCastTargetKind.特定)) || (this.CastTargetKind == TroopCastTargetKind.特定默认));
+            //return ((((this.AttackTargetKind == TroopAttackTargetKind.Target) || (this.AttackTargetKind == TroopAttackTargetKind.TargetDefault)) || (this.CastTargetKind == TroopCastTargetKind.特定)) || (this.CastTargetKind == TroopCastTargetKind.SpecificDefault));
         }
 
         public bool ToDoCombatAction()
         {
-            if (this.OperationDone)
-            {
+            if (OperationDone)
                 return false;
-            }
+
             bool flag = false;
-            switch (this.Will)
+            switch (Will)
             {
                 case TroopWill.行军:
                     if (this.CurrentStratagem == null)
                     {
-                        flag = this.GetAttackOrientationObject(this.QueueEnded) != null;
+                        flag = this.GetAttackOrientationObject(QueueEnded) != null;
                         break;
                     }
                     if (this.CurrentStratagem.Self)
@@ -11087,39 +10888,34 @@ namespace GameObjects
                     }
                     else
                     {
-                        flag = this.GetCastOrientationTroop(this.QueueEnded) != null;
+                        flag = this.GetCastOrientationTroop(QueueEnded) != null;
                     }
                     break;
             }
-            if (!(this.OperationDone || (this.MovabilityLeft > 0)))
+            if (!(OperationDone || (MovabilityLeft > 0)))
             {
-                this.QueueEnded = true;
+                QueueEnded = true;
             }
             return flag;
         }
 
-        public override string ToString()
+        public override string ToString() => $"{DisplayName} {FactionString}";
+
+        public void TryToPlaySound(Point position, string soundFileLocation)
         {
-            return (this.DisplayName + "  " + this.FactionString);
+            if (!Setting.Current.GlobalVariables.DrawTroopAnimation)
+                return;
+
+            if (!Session.MainGame.mainGameScreen.TileInScreen(position))
+                return;
+
+            var player = Session.Current.Scenario.CurrentPlayer;
+            if (player != null && !Session.GlobalVariables.SkyEye && !player.IsPositionKnown(position))
+                return;
+
+            PlaySound(soundFileLocation);
         }
 
-        public void TryToPlaySound(Point position, string soundFileLocation, bool looping)
-        {
-            if (Setting.Current.GlobalVariables.DrawTroopAnimation)
-            {
-                if (Session.Current.Scenario.CurrentPlayer != null)
-                {
-                    if ((Session.GlobalVariables.SkyEye || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(position)) && Session.MainGame.mainGameScreen.TileInScreen(position))
-                    {
-                        this.PlaySound(soundFileLocation, looping);
-                    }
-                }
-                else if (Session.MainGame.mainGameScreen.TileInScreen(position))
-                {
-                    this.PlaySound(soundFileLocation, looping);
-                }
-            }
-        }
         /*
                 public bool TryToStepForward()
                 {
@@ -11144,12 +10940,12 @@ namespace GameObjects
                                 this.MovabilityLeft = -1;
                                 return path;
                             }
-                            int firstTierPathIndex = this.firstTierPathIndex;
+                            int FirstIndex = this.FirstIndex;
                             int movabilityLeft = this.MovabilityLeft;
-                            while ((firstTierPathIndex + 1) < this.FirstTierPath.Count)
+                            while ((FirstIndex + 1) < this.FirstTierPath.Count)
                             {
-                                Point currentPosition = this.FirstTierPath[firstTierPathIndex];
-                                Point nextPosition = this.FirstTierPath[firstTierPathIndex + 1];
+                                Point currentPosition = this.FirstTierPath[FirstIndex];
+                                Point nextPosition = this.FirstTierPath[FirstIndex + 1];
                                 int num3 = this.NextPositionCost(currentPosition, nextPosition);
                                 if (num3 <= movabilityLeft)
                                 {
@@ -11165,7 +10961,7 @@ namespace GameObjects
                                         return path;
                                     }
                                     movabilityLeft -= num3;
-                                    firstTierPathIndex++;
+                                    FirstIndex++;
                                 }
                                 else
                                 {
@@ -11173,7 +10969,7 @@ namespace GameObjects
                                     return path;
                                 }
                             }
-                            if (firstTierPathIndex == (this.FirstTierPath.Count - 1))
+                            if (FirstIndex == (this.FirstTierPath.Count - 1))
                             {
                                 this.MovabilityLeft = -1;
                                 return path;
@@ -11186,12 +10982,12 @@ namespace GameObjects
                         if (this.MovabilityLeft >= num4)
                         {
                             this.MovabilityLeft -= num4;
-                            this.firstTierPathIndex++;
-                            this.Position = this.FirstTierPath[this.firstTierPathIndex];
+                            this.FirstIndex++;
+                            this.Position = this.FirstTierPath[this.FirstIndex];
                             this.Moved = true;
                             if (this.FirstTierPath != null)
                             {
-                                if (this.firstTierPathIndex == (this.FirstTierPath.Count - 1))
+                                if (this.FirstIndex == (this.FirstTierPath.Count - 1))
                                 {
                                     this.HasPath = false;
                                     this.MovabilityLeft = -1;
@@ -11210,7 +11006,7 @@ namespace GameObjects
                 }
 
          */
-         
+
 
         public bool TryToStepForward()
         {
@@ -11247,7 +11043,7 @@ namespace GameObjects
                         this.chongshemubiaoweizhi();
                         return path;
                     }
-                    int firstTierPathIndex = this.FirstIndex;
+                    int FirstIndex = this.FirstIndex;
                     int movabilityLeft = this.MovabilityLeft;
 
 
@@ -11263,10 +11059,10 @@ namespace GameObjects
                         }
                     }
 
-                    while ((firstTierPathIndex + 1) < this.FirstTierPath.Count)
+                    while ((FirstIndex + 1) < this.FirstTierPath.Count)
                     {
-                        Point currentPosition = this.FirstTierPath[firstTierPathIndex];
-                        Point nextPosition = this.FirstTierPath[firstTierPathIndex + 1];
+                        Point currentPosition = this.FirstTierPath[FirstIndex];
+                        Point nextPosition = this.FirstTierPath[FirstIndex + 1];
                         int num3 = this.NextPositionCost(currentPosition, nextPosition, kind);
                         if (num3 <= movabilityLeft)
                         {
@@ -11301,7 +11097,7 @@ namespace GameObjects
                             }
 
                             movabilityLeft -= num3;
-                            firstTierPathIndex++;
+                            FirstIndex++;
                         }
                         else    //前面友军队伍很长，没有移动力穿越
                         {
@@ -11310,7 +11106,7 @@ namespace GameObjects
                             return path;
                         }
                     }
-                    if (firstTierPathIndex == (this.FirstTierPath.Count - 1))   //被友军或障碍挡住
+                    if (FirstIndex == (this.FirstTierPath.Count - 1))   //被友军或障碍挡住
                     {
                         //this.MovabilityLeft = -1;
 
@@ -11362,18 +11158,18 @@ namespace GameObjects
                 int y = this.RealDestination.Y - this.Position.Y;
                 if (x >= 0 && y > 0)
                 {
-                    if (GameObject.Chance((int) ((double) x / y * 100.0)) )
+                    if (GameObject.GetChance((int) ((double) x / y * 100.0)) )
                     {
                         this.Position = new Point(this.Position.X + 1, this.Position.Y);
-                    } 
-                    else 
+                    }
+                    else
                     {
                         this.Position = new Point(this.Position.X, this.Position.Y + 1);
                     }
                 }
                 else if (x >= 0 && y < 0)
                 {
-                    if (GameObject.Chance((int)((double)x / Math.Abs(y) * 100.0)))
+                    if (GameObject.GetChance((int)((double)x / Math.Abs(y) * 100.0)))
                     {
                         this.Position = new Point(this.Position.X + 1, this.Position.Y);
                     }
@@ -11384,7 +11180,7 @@ namespace GameObjects
                 }
                 else if (x < 0 && y >= 0)
                 {
-                    if (GameObject.Chance((int)((double)y / Math.Abs(x) * 100.0)))
+                    if (GameObject.GetChance((int)((double)y / Math.Abs(x) * 100.0)))
                     {
                         this.Position = new Point(this.Position.X, this.Position.Y + 1);
                     }
@@ -11395,7 +11191,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    if (GameObject.Chance((int)((double)Math.Abs(y) / Math.Abs(x) * 100.0)))
+                    if (GameObject.GetChance((int)((double)Math.Abs(y) / Math.Abs(x) * 100.0)))
                     {
                         this.Position = new Point(this.Position.X, this.Position.Y - 1);
                     }
@@ -11570,7 +11366,7 @@ namespace GameObjects
                     !this.HasHostileTroopInView() && !this.HasHostileArchitectureInView())
                 {
                     this.Morph();
-                } 
+                }
             }
         }
 
@@ -11660,13 +11456,7 @@ namespace GameObjects
         {
         }
 
-        public string AccidentalInjuryString
-        {
-            get
-            {
-                return (this.TroopNoAccidentalInjury ? "×" : "○");
-            }
-        }
+        public string AccidentalInjuryString => StaticMethods.ToMark(TroopNoAccidentalInjury);
 
         public TroopAction Action
         {
@@ -11707,37 +11497,13 @@ namespace GameObjects
             }
         }
 
-        public bool AirOffence
-        {
-            get
-            {
-                return this.Army.Kind.AirOffence;
-            }
-        }
+        public bool AirOffence => Army.Kind.AirOffence;
 
-        public int AntiCriticalStrikeChance
-        {
-            get
-            {
-                return (int)(this.antiCriticalStrikeChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int AntiCriticalStrikeChance => (int)(antiCriticalStrikeChance - (1 - TirednessFactor) * 100);
 
-        public int AntiStratagemChanceIncrement
-        {
-            get
-            {
-                return (int)(this.antiStratagemChanceIncrement - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int AntiStratagemChanceIncrement => (int)(antiStratagemChanceIncrement - (1 - TirednessFactor) * 100);
 
-        public float ArchitectureCounterDamageRate
-        {
-            get
-            {
-                return this.Army.Kind.ArchitectureCounterDamageRate;
-            }
-        }
+        public float ArchitectureCounterDamageRate => Army.Kind.ArchitectureCounterDamageRate;
 
         public float ArchitectureDamageRate
         {
@@ -11752,12 +11518,12 @@ namespace GameObjects
         {
             get
             {
-                if (this.army == null && Session.Current.Scenario != null && Session.Current.Scenario.Militaries != null)
+                if (army == null && Session.Current.Scenario != null && Session.Current.Scenario.Militaries != null)
                 {
-                    this.army = Session.Current.Scenario.Militaries.GetGameObject(this.militaryID) as Military;
-                    if (this.army != null)
+                    army = Session.Current.Scenario.Militaries.GetValueOrDefault(MilitaryID);
+                    if (army != null)
                     {
-                        this.militaryID = this.army.ID;
+                        MilitaryID = this.army.ID;
                         this.army.BelongedTroop = this;
                         if (this.Simulating)
                         {
@@ -11776,7 +11542,7 @@ namespace GameObjects
                 this.army = value;
                 if (this.army != null)
                 {
-                    this.militaryID = this.army.ID;
+                    MilitaryID = this.army.ID;
                     this.army.BelongedTroop = this;
                     if (this.Simulating)
                     {
@@ -11794,205 +11560,63 @@ namespace GameObjects
             }
         }
 
-        public bool ArrowOffence
-        {
-            get
-            {
-                return this.Army.Kind.ArrowOffence;
-            }
-        }
+        public bool ArrowOffence => Army.Kind.ArrowOffence;
 
-        public string ArrowOffenceString
-        {
-            get
-            {
-                return (this.ArrowOffence ? "○" : "×");
-            }
-        }
+        public string ArrowOffenceString => StaticMethods.ToMark(ArrowOffence);
 
         [DataMember]
-        public TroopAttackDefaultKind AttackDefaultKind
-        {
-            get
-            {
-                return this.attackDefaultKind;
-            }
-            set
-            {
-                this.attackDefaultKind = value;
-            }
-        }
+        public TroopAttackDefaultKind AttackDefaultKind { get; set; }
 
         [DataMember]
-        public TroopAttackTargetKind AttackTargetKind
-        {
-            get
-            {
-                return this.attackTargetKind;
-            }
-            set
-            {
-                this.attackTargetKind = value;
-            }
-        }
+        public TroopAttackTargetKind AttackTargetKind { get; set; }
 
         [DataMember]
-        public bool Auto
-        {
-            get
-            {
-                return this.auto;
-            }
-            set
-            {
-                this.auto = value;
-            }
-        }
+        public bool Auto { get; set; }
 
-        public int AvoidSurroundedChance
-        {
-            get
-            {
-                return (int)(this.avoidSurroundedChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int AvoidSurroundedChance => (int)(avoidSurroundedChance - (1 - TirednessFactor) * 100);
 
         public GameArea BaseViewArea
         {
             get
             {
-                if (this.baseViewArea == null)
-                {
-                    this.baseViewArea = GameArea.GetViewArea(this.Position, this.ViewRadius, this.ObliqueView, null);
-                }
-                return this.baseViewArea;
+                baseViewArea ??= GameArea.GetViewArea(Position, ViewRadius, ObliqueView, null);
+              
+                return baseViewArea;
             }
             set
             {
-                this.baseViewArea = value;
+                baseViewArea = value;
             }
         }
 
-        public bool BeCountered
-        {
-            get
-            {
-                return this.Army.Kind.BeCountered;
-            }
-        }
+        public bool BeCountered => Army.Kind.BeCountered;
 
-        public string BeCounteredString
-        {
-            get
-            {
-                return this.Army.Kind.BeCounteredString;
-            }
-        }
+        public string BeCounteredString => Army.Kind.BeCounteredString;
 
-        public bool CanMove
-        {
-            get
-            {
-                return (this.position != this.destination);
-            }
-        }
+        public bool CanMove => position != destination;
 
-        public int CaptiveAblility
-        {
-            get
-            {
-                if (this.AirOffence)
-                {
-                    return (this.Offence / 4);
-                }
-                return this.Offence;
-            }
-        }
+        public int CaptiveAblility => AirOffence ? Offence / 4 : Offence;
 
-        public int CaptiveCount
-        {
-            get
-            {
-                return this.Captives.Count;
-            }
-        }
-        [DataMember]
-        public TroopCastDefaultKind CastDefaultKind
-        {
-            get
-            {
-                return this.castDefaultKind;
-            }
-            set
-            {
-                this.castDefaultKind = value;
-            }
-        }
-        [DataMember]
-        public TroopCastTargetKind CastTargetKind
-        {
-            get
-            {
-                return this.castTargetKind;
-            }
-            set
-            {
-                this.castTargetKind = value;
-            }
-        }
-
-        public int ChaosAfterCriticalStrikeChance
-        {
-            get
-            {
-                return (int)(this.chaosAfterCriticalStrikeChance - (100 - this.TirednessFactor * 100));
-            }
-        }
-
-        public int ChaosAfterStratagemSuccessChance
-        {
-            get
-            {
-                return (int)(this.chaosAfterStratagemSuccessChance - (100 - this.TirednessFactor * 100));
-            }
-        }
-
-        public int ChaosAfterSurroundAttackChance
-        {
-            get
-            {
-                return (int)(this.chaosAfterSurroundAttackChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int CaptiveCount => Captives.Count;
 
         [DataMember]
-        public int ChaosDayLeft
-        {
-            get
-            {
-                return this.chaosDayLeft;
-            }
-            set
-            {
-                this.chaosDayLeft = value;
-            }
-        }
+        public TroopCastDefaultKind CastDefaultKind { get; set; }
 
-        public int CliffAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.CliffAdaptability - this.DecrementOfCliffAdaptability);
-            }
-        }
+        [DataMember]
+        public TroopCastTargetKind CastTargetKind { get; set; }
 
-        public float CliffRate
-        {
-            get
-            {
-                return this.Army.Kind.CliffRate;
-            }
-        }
+        public int ChaosAfterCriticalStrikeChance => (int)(chaosAfterCriticalStrikeChance - (1 - TirednessFactor) * 100);
+
+        public int ChaosAfterStratagemSuccessChance => (int)(chaosAfterStratagemSuccessChance - (1 - TirednessFactor) * 100);
+
+        public int ChaosAfterSurroundAttackChance => (int)(chaosAfterSurroundAttackChance - (1 - TirednessFactor) * 100);
+
+        [DataMember]
+        public int ChaosDayLeft { get; set; }
+
+        public int CliffAdaptability => Army.RealMilitaryKind.CliffAdaptability - DecrementOfCliffAdaptability;
+
+        public float CliffRate => Army.Kind.CliffRate;
 
         public int Combativity
         {
@@ -12011,46 +11635,22 @@ namespace GameObjects
         {
             get
             {
-                if (this.contactArea == null)
-                {
-                    this.contactArea = GameArea.GetArea(this.Position, 1, false);
-                }
-                return this.contactArea;
+                contactArea ??= GameArea.GetArea(Position, 1, false);
+
+                return contactArea;
             }
             set
             {
-                this.contactArea = value;
+                contactArea = value;
             }
         }
 
-        public bool ContactOffence
-        {
-            get
-            {
-                return this.Army.Kind.ContactOffence;
-            }
-        }
+        public bool ContactOffence => Army.Kind.ContactOffence;
 
-        public string ContactOffenceString
-        {
-            get
-            {
-                return this.Army.Kind.ContactOffenceString;
-            }
-        }
+        public string ContactOffenceString => Army.Kind.ContactOffenceString;
 
         [DataMember]
-        public bool Controllable
-        {
-            get
-            {
-                return this.controllable;
-            }
-            set
-            {
-                this.controllable = value;
-            }
-        }
+        public bool Controllable { get; set; } = true;
 
         public TroopControlState ControlState
         {
@@ -12080,213 +11680,83 @@ namespace GameObjects
             }
         }
 
-        public bool CounterOffence
-        {
-            get
-            {
-                return this.Army.Kind.CounterOffence;
-            }
-        }
+        public bool CounterOffence => Army.Kind.CounterOffence;
 
-        public string CounterOffenceString
-        {
-            get
-            {
-                return this.Army.Kind.CounterOffenceString;
-            }
-        }
+        public string CounterOffenceString => Army.Kind.CounterOffenceString;
 
-        public int CriticalStrikeChance
-        {
-            get
-            {
-                return (int)(this.criticalStrikeChance - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int CriticalStrikeChance => (int)(criticalStrikeChance - (1 - TirednessFactor) * 100);
 
-        public Animation CurrentAnimation
-        {
-            get
-            {
-                return Session.Current.Scenario.GameCommonData.AllTroopAnimations.GetAnimation((int)this.Action);
-            }
-        }
+        public Animation CurrentAnimation => Session.Current.Scenario.GameCommonData.AllTroopAnimations.GetValueOrDefault((int)Action);
 
-        public Architecture CurrentArchitecture
-        {
-            get
-            {
-                return Session.Current.Scenario.GetArchitectureByPositionNoCheck(this.Position);
-            }
-        }
+        public Architecture CurrentArchitecture => Session.Current.Scenario.GetArchitectureByPositionNoCheck(Position);
 
-        public string CurrentCombatAction
-        {
-            get
-            {
-                if (this.CurrentCombatMethod != null)
-                {
-                    return this.CurrentCombatMethod.Name;
-                }
-                if (this.CurrentStratagem != null)
-                {
-                    return this.CurrentStratagem.Name;
-                }
-                return "----";
-            }
-        }
+        public string CurrentCombatAction => CurrentCombatMethod?.Name ?? CurrentStratagem?.Name ?? "----";
 
         public CombatMethod CurrentCombatMethod
         {
             get
             {
-                if ((this.currentCombatMethod == null) && (this.currentCombatMethodID >= 0))
-                {
-                    this.currentCombatMethod = this.CombatMethods.GetCombatMethod(this.currentCombatMethodID);
-                }
-                return this.currentCombatMethod;
+                currentCombatMethod ??= CombatMethods.GetValueOrDefault(CurrentCombatMethodID);
+
+                return currentCombatMethod;
             }
             set
             {
-                this.currentCombatMethod = value;
-                if (this.currentCombatMethod != null)
+                currentCombatMethod = value;
+                CurrentCombatMethodID = value?.ID ?? -1;
+
+                if (currentCombatMethod != null)
                 {
-                    this.currentCombatMethodID = value.ID;
-                    if (this.OnSetCombatMethod != null)
-                    {
-                        this.OnSetCombatMethod(this, this.currentCombatMethod);
-                    }
-                }
-                else
-                {
-                    this.currentCombatMethodID = -1;
+                    eventManager.Publish(new SetCombatMethodEvent(this, currentCombatMethod));
                 }
             }
         }
 
         [DataMember]
-        public int CurrentCombatMethodID
-        {
-            get
-            {
-                return this.currentCombatMethodID;
-            }
-            set
-            {
-                this.currentCombatMethodID = value;
-            }
-        }
+        public int CurrentCombatMethodID { get; set; } = -1;
+
         [DataMember]
-        public int AutoCombatMethodID
-        {
-            get
-            {
-                return this.autoCombatMethodID;
-            }
-            set
-            {
-                this.autoCombatMethodID = value;
-            }
-        }
+        public int AutoCombatMethodID { get; set; } = -1;
+
         public string CurrentDestinationChallengePersonName;
 
+        public string CurrentDestinationControversyPersonName => CurrentDestinationControversyPerson.Name;
 
-        public string CurrentDestinationControversyPersonName
-        {
-            get
-            {
-                return this.CurrentDestinationControversyPerson.Name;
-            }
-        }
+        public float CurrentRate => terrainRate;
 
-        public float CurrentRate
-        {
-            get
-            {
-                return this.terrainRate;
-            }
-        }
-
-        public string CurrentRateString
-        {
-            get
-            {
-                return Math.Round((double)this.CurrentRate, 1).ToString();
-            }
-        }
+        public string CurrentRateString => Math.Round((double)CurrentRate, 1).ToString();
 
         public string CurrentSourceChallengePersonName;
 
-
-        public string CurrentSourceControversyPersonName
-        {
-            get
-            {
-                return this.CurrentSourceControversyPerson.Name;
-            }
-        }
+        public string CurrentSourceControversyPersonName => CurrentSourceControversyPerson.Name;
 
         public Stratagem CurrentStratagem
         {
             get
             {
-                if ((this.currentStratagem == null) && (this.currentStratagemID >= 0))
-                {
-                    this.currentStratagem = Session.Current.Scenario.GameCommonData.AllStratagems.GetStratagem(this.currentStratagemID);
-                }
-                return this.currentStratagem;
+                currentStratagem ??= Session.Current.Scenario.GameCommonData.AllStratagems.GetValueOrDefault(CurrentStratagemID);
+
+                return currentStratagem;
             }
             set
             {
-                this.currentStratagem = value;
-                if (this.currentStratagem != null)
+                currentStratagem = value;
+                CurrentStratagemID = value?.ID ?? -1;
+
+                if (currentStratagem != null)
                 {
-                    this.currentStratagemID = value.ID;
-                    if (this.OnSetStratagem != null)
-                    {
-                        this.OnSetStratagem(this, this.currentStratagem);
-                    }
-                }
-                else
-                {
-                    this.currentStratagemID = -1;
+                    eventManager.Publish(new SetStratagemEvent(this, currentStratagem));
                 }
             }
         }
 
         [DataMember]
-        public int CurrentStratagemID
-        {
-            get
-            {
-                return this.currentStratagemID;
-            }
-            set
-            {
-                this.currentStratagemID = value;
-            }
-        }
+        public int CurrentStratagemID { get; set; } = -1;
 
-        public string CurrentStuntString
-        {
-            get
-            {
-                return ((this.CurrentStunt != null) ? this.CurrentStunt.Name : "----");
-            }
-        }
+        public string CurrentStuntString => CurrentStunt?.Name ?? "----";
 
         [DataMember]
-        public int CutRoutewayDays
-        {
-            get
-            {
-                return this.cutRoutewayDays;
-            }
-            set
-            {
-                this.cutRoutewayDays = value;
-            }
-        }
+        public int CutRoutewayDays { get; set; }
 
         public int CutRoutewayDaysNeeded
         {
@@ -12318,7 +11788,7 @@ namespace GameObjects
                 float leaderRate = 1;
                 if (BuffAvail())
                 {
-                    
+
                     mayorRate = (1 + this.Leader.Command * 0.007f * mayorFactor + this.Leader.Calmness * 0.03f * mayorFactor);
                 }
                 if (this.BelongedFaction != null && this.BelongedFaction.Leader != null && this.BelongedFaction.Leader.Status != PersonStatus.Captive)
@@ -12330,21 +11800,9 @@ namespace GameObjects
             }
         }
 
-        public int DesertAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.DesertAdaptability - this.DecrementOfDesertAdaptability);
-            }
-        }
+        public int DesertAdaptability => Army.RealMilitaryKind.DesertAdaptability - DecrementOfDesertAdaptability;
 
-        public float DesertRate
-        {
-            get
-            {
-                return this.Army.Kind.DesertRate;
-            }
-        }
+        public float DesertRate => Army.Kind.DesertRate;
 
         [DataMember]
         public Point Destination
@@ -12361,52 +11819,26 @@ namespace GameObjects
                 this.ClearSecondTierPath();
                 this.ClearThirdTierPath();
                 this.HasPath = false;
-                if ((this.position == this.destination) && (this.OnEndPath != null))
+                if (position == destination)
                 {
-                    this.OnEndPath(this);
+                    eventManager.Publish(new EndPathEvent(this));
                 }
             }
         }
 
-        public string DestinationString
-        {
-            get
-            {
-                return Session.Current.Scenario.PositionString(this.destination);
-            }
-        }
+        public string DestinationString => Session.Current.Scenario.PositionString(destination);
 
         [DataMember]
-        public TroopDirection Direction
-        {
-            get
-            {
-                return this.direction;
-            }
-            set
-            {
-                this.direction = value;
-            }
-        }
+        public TroopDirection Direction { get; set; } = TroopDirection.East;
 
-        public string DisplayName
-        {
-            get
-            {
-                if (this.Leader != null)
-                {
-                    return (this.Leader.Name + "队");
-                }
-                return "----";
-            }
-        }
+        public string DisplayName => Leader != null ? $"{Leader.Name}队" : "----";
 
         //[DataMember]
         public bool DrawAnimation
         {
             get
             {
-                return ( Setting.Current.GlobalVariables.DrawTroopAnimation);
+                return Setting.Current.GlobalVariables.DrawTroopAnimation;
             }
             set
             {
@@ -12418,10 +11850,11 @@ namespace GameObjects
         {
             get
             {
-                if (this.Effect == TroopEffect.被包围)
+                if (Effect == TroopEffect.Surrounded)
                 {
-                    return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(15);
+                    return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetValueOrDefault(15);
                 }
+
                 return null;
             }
         }
@@ -12438,34 +11871,24 @@ namespace GameObjects
             }
         }
 
-        public string FactionString
-        {
-            get
-            {
-                if (this.BelongedFaction != null)
-                {
-                    return this.BelongedFaction.Name;
-                }
-                return "----";
-            }
-        }
+        public string FactionString => BelongedFaction?.Name ?? "----";
 
         public int FightingForce
         {
             get
             {
-                return Math.Max(1, (this.Offence + this.Defence) * 
-                    (1 
-                        + (this.CurrentArchitecture != null && this.CurrentArchitecture.Endurance > 0 ? 10 : 0) 
-                        + this.TroopIntelligence / 2 + this.Quantity / 500 + this.Combativity / 4 + this.Leader.TitleFightingMerit 
-                        + this.CombatMethods.Count * 5 + this.Stunts.Count * 20 
-                        + this.CriticalStrikeChance + this.AntiCriticalStrikeChance + this.ChaosAfterCriticalStrikeChance 
-                        + this.AvoidSurroundedChance / 2 + this.ChaosAfterSurroundAttackChance 
-                        + this.StratagemChanceIncrement + this.AntiStratagemChanceIncrement + this.ChaosAfterStratagemSuccessChance 
-                        + this.ChanceIncrementOfCriticalStrikeInViewArea * 4 + this.ChanceDecrementOfCriticalStrikeInViewArea * 4 
+                return Math.Max(1, (this.Offence + this.Defence) *
+                    (1
+                        + (this.CurrentArchitecture != null && this.CurrentArchitecture.Endurance > 0 ? 10 : 0)
+                        + this.TroopIntelligence / 2 + this.Quantity / 500 + this.Combativity / 4 + this.Leader.TitleFightingMerit
+                        + this.CombatMethods.Count * 5 + Stunts.Count * 20
+                        + this.CriticalStrikeChance + this.AntiCriticalStrikeChance + this.ChaosAfterCriticalStrikeChance
+                        + this.AvoidSurroundedChance / 2 + this.ChaosAfterSurroundAttackChance
+                        + this.StratagemChanceIncrement + this.AntiStratagemChanceIncrement + this.ChaosAfterStratagemSuccessChance
+                        + this.ChanceIncrementOfCriticalStrikeInViewArea * 4 + this.ChanceDecrementOfCriticalStrikeInViewArea * 4
                         + this.CombativityIncrementPerDayInViewArea * 4 + this.CombativityDecrementPerDayInViewArea * 4
                         + this.ChanceIncrementOfStratagemInViewArea * 4 + this.ChanceDecrementOfStratagemInViewArea * 4
-                        + (int)(this.OffenceRateIncrementInViewArea * 100f) + (int)(this.OffenceRateDecrementInViewArea * 100f) 
+                        + (int)(this.OffenceRateIncrementInViewArea * 100f) + (int)(this.OffenceRateDecrementInViewArea * 100f)
                         + (int)(this.DefenceRateIncrementInViewArea * 100f) + (int)(this.DefenceRateDecrementInViewArea * 100f)
                         + this.chanceTirednessStopIncrease / 10
                         + (int)(this.reduceInjuredOnAttack * 20f)
@@ -12489,17 +11912,7 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int FirstIndex
-        {
-            get
-            {
-                return this.firstTierPathIndex;
-            }
-            set
-            {
-                this.firstTierPathIndex = value;
-            }
-        }
+        public int FirstIndex { get; set; }
 
         public Point FirstTierDestination
         {
@@ -12514,104 +11927,42 @@ namespace GameObjects
         }
 
         [DataMember]
-        public int Food
-        {
-            get
-            {
-                return this.food;
-            }
-            set
-            {
-                this.food = value;
-            }
-        }
+        public int Food { get; set; }
 
         [DataMember]
-        public int zijin
-        {
-            get
-            {
-                return this.zijinzhi;
-            }
-            set
-            {
-                this.zijinzhi = value;
-            }
-        }
+        public int zijin { get; set; }
 
-        public int FoodCostPerDay
-        {
-            get
-            {
-                return this.Army == null ? 0 : this.Army.FoodCostPerDay;
-            }
-        }
+        public int FoodCostPerDay => Army?.FoodCostPerDay ?? 0;
 
-        public int FoodMax
-        {
-            get
-            {
-                return (this.FoodCostPerDay * this.RationDays);
-            }
-        }
+        public int FoodMax => FoodCostPerDay * RationDays;
 
-        public int ForrestAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.ForrestAdaptability - this.DecrementOfForrestAdaptability);
-            }
-        }
+        public int ForrestAdaptability => Army.RealMilitaryKind.ForrestAdaptability - DecrementOfForrestAdaptability;
 
-        public float ForrestRate
-        {
-            get
-            {
-                return this.Army.Kind.ForrestRate;
-            }
-        }
+        public float ForrestRate => Army.Kind.ForrestRate;
 
-        public int Fund
-        {
-            get
-            {
-                return this.fund;
-            }
-            set
-            {
-                this.fund = value;
-            }
-        }
+        public int Fund { get; set; }
 
-        public int GrasslandAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.GrasslandAdaptability - this.DecrementOfGrasslandAdaptability);
-            }
-        }
+        public int GrasslandAdaptability => Army.RealMilitaryKind.GrasslandAdaptability - DecrementOfGrasslandAdaptability;
 
-        public float GrasslandRate
-        {
-            get
-            {
-                return this.Army.Kind.GrasslandRate;
-            }
-        }
+        public float GrasslandRate => Army.Kind.GrasslandRate;
 
-        public String CombatTitleString
+        public string CombatTitleString
         {
             get
             {
-                if (this.Leader == null) return "----";
-                foreach (Title t in this.Leader.Titles)
+                string defaultStr = "----";
+
+                if (Leader == null) return defaultStr;
+
+                foreach (var title in Leader.Titles)
                 {
-                    if (t.Kind.Combat)
+                    if (title.Kind.Combat)
                     {
-                        return t.Name;
+                        return title.Name;
                     }
                 }
-                return "----";
+
+                return defaultStr;
             }
         }
 
@@ -12619,10 +11970,12 @@ namespace GameObjects
         {
             get
             {
-                if (this.Leader == null) return false;
-                foreach (Title t in this.Leader.Titles)
+                if (Leader == null) 
+                    return false;
+
+                foreach (var title in Leader.Titles)
                 {
-                    if (t.Kind.Combat)
+                    if (title.Kind.Combat)
                     {
                         return true;
                     }
@@ -12648,13 +12001,7 @@ namespace GameObjects
             }
         }
 
-        public int InjuryChance
-        {
-            get
-            {
-                return (this.Army.InjuryChance + this.IncrementOfInjuryRate);
-            }
-        }
+        public int InjuryChance => Army.InjuryChance + IncrementOfInjuryRate;
 
         public int InjuryQuantity
         {
@@ -12669,25 +12016,9 @@ namespace GameObjects
             }
         }
 
-        public InformationLevel InvestigateLevel
-        {
-            get
-            {
-                if (this.HighLevelInformationOnInvestigate)
-                {
-                    return InformationLevel.高;
-                }
-                return InformationLevel.中;
-            }
-        }
+        public InformationLevel InvestigateLevel => HighLevelInformationOnInvestigate ? InformationLevel.High : InformationLevel.Medium;
 
-        public int InvestigateRadius
-        {
-            get
-            {
-                return (2 + this.IncrementOfInvestigateRadius);
-            }
-        }
+        public int InvestigateRadius => 2 + IncrementOfInvestigateRadius;
 
         private bool IsAntiArrowAttack
         {
@@ -12697,20 +12028,20 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
-                            return GameObject.Chance(this.BelongedFaction.AntiArrowChanceIncrementOfBubing);
+                        case MilitaryType.Infantry:
+                            return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfBubing);
 
-                        case MilitaryType.弩兵:
-                            return GameObject.Chance(this.BelongedFaction.AntiArrowChanceIncrementOfNubing);
+                        case MilitaryType.Crossbow:
+                            return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfNubing);
 
-                        case MilitaryType.骑兵:
-                            return GameObject.Chance(this.BelongedFaction.AntiArrowChanceIncrementOfQibing);
+                        case MilitaryType.Cavalry:
+                            return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfQibing);
 
-                        case MilitaryType.水军:
-                            return GameObject.Chance(this.BelongedFaction.AntiArrowChanceIncrementOfShuijun);
+                        case MilitaryType.Navy:
+                            return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfShuijun);
 
-                        case MilitaryType.器械:
-                            return GameObject.Chance(this.BelongedFaction.AntiArrowChanceIncrementOfQixie);
+                        case MilitaryType.SiegeEquipment:
+                            return GameObject.GetChance(this.BelongedFaction.AntiArrowChanceIncrementOfQixie);
                     }
                 }
                 return false;
@@ -12729,20 +12060,20 @@ namespace GameObjects
                     }
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
-                            return GameObject.Chance(this.BelongedFaction.NoCounterChanceIncrementOfBubing);
+                        case MilitaryType.Infantry:
+                            return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfBubing);
 
-                        case MilitaryType.弩兵:
-                            return GameObject.Chance(this.BelongedFaction.NoCounterChanceIncrementOfNubing);
+                        case MilitaryType.Crossbow:
+                            return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfNubing);
 
-                        case MilitaryType.骑兵:
-                            return GameObject.Chance(this.BelongedFaction.NoCounterChanceIncrementOfQibing);
+                        case MilitaryType.Cavalry:
+                            return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfQibing);
 
-                        case MilitaryType.水军:
-                            return GameObject.Chance(this.BelongedFaction.NoCounterChanceIncrementOfShuijun);
+                        case MilitaryType.Navy:
+                            return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfShuijun);
 
-                        case MilitaryType.器械:
-                            return GameObject.Chance(this.BelongedFaction.NoCounterChanceIncrementOfQixie);
+                        case MilitaryType.SiegeEquipment:
+                            return GameObject.GetChance(this.BelongedFaction.NoCounterChanceIncrementOfQixie);
                     }
                 }
                 return false;
@@ -12753,112 +12084,69 @@ namespace GameObjects
         {
             get
             {
-                Architecture architectureByPositionNoCheck = Session.Current.Scenario.GetArchitectureByPositionNoCheck(this.Position);
-                return (((architectureByPositionNoCheck != null) && (architectureByPositionNoCheck.Endurance > 0)) && architectureByPositionNoCheck.IsFriendlyWithoutTruce(this.BelongedFaction));
+                var architecture = Session.Current.Scenario.GetArchitectureByPositionNoCheck(Position);
+
+                return architecture != null && architecture.Endurance > 0 && architecture.IsFriendlyWithoutTruce(BelongedFaction);
             }
         }
 
-        public bool IsRobber
-        {
-            get
-            {
-                return (this.BelongedFaction == null);
-            }
-        }
+        public bool IsRobber => BelongedFaction == null;
 
         public bool IsSurrounded
         {
             get
             {
-                FactionList list = new FactionList();
-                foreach (Point point in GameArea.GetArea(this.Position, 1, true).Area)
+                var factions = new List<Faction>();
+
+                foreach (var point in GameArea.GetArea(Position, 1, true).Area)
                 {
-                    if (point == this.Position)
-                    {
-                        continue;
-                    }
-                    Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                    if (troopByPosition != null)
-                    {
-                        if (list.HasGameObject(troopByPosition.BelongedFaction))
-                        {
-                            continue;
-                        }
-                        list.Add(troopByPosition.BelongedFaction);
-                        if (troopByPosition.GetSurroundAttackingTroop(this).Count >= 3)
-                        {
-                            return true;
-                        }
-                    }
+                    if (point == Position) continue;
+
+                    var troop = Session.Current.Scenario.GetTroopByPosition(point);
+
+                    if (troop == null) continue;
+
+                    if (factions.Contains(troop.BelongedFaction)) continue;
+
+                    factions.Add(troop.BelongedFaction);
+
+                    if (troop.GetSurroundAttackingTroop(this).Count >= 3) return true;
                 }
+
                 return false;
             }
         }
 
-        public string KindString
-        {
-            get
-            {
-                return this.Army.Kind.Name;
-            }
-        }
+        public string KindString => Army.Kind.Name;
+
         //以下添加
         public int TheMilitaryType
         {
             get
             {
-                if(this.Army.Kind.Type==MilitaryType.步兵){return 0;}
-                else if(this.Army.Kind.Type==MilitaryType.弩兵){return 1;}
-                else if(this.Army.Kind.Type==MilitaryType.骑兵){return 2;}
-                else if(this.Army.Kind.Type==MilitaryType.水军){return 3;}
-                else if(this.Army.Kind.Type==MilitaryType.器械){return 4;}
+                if(this.Army.Kind.Type==MilitaryType.Infantry){return 0;}
+                else if(this.Army.Kind.Type==MilitaryType.Crossbow){return 1;}
+                else if(this.Army.Kind.Type==MilitaryType.Cavalry){return 2;}
+                else if(this.Army.Kind.Type==MilitaryType.Navy){return 3;}
+                else if(this.Army.Kind.Type==MilitaryType.SiegeEquipment){return 4;}
                 else{return 5;}
             }
         }
 
         //
-        public int MarshAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.MarshAdaptability - this.DecrementOfMarshAdaptability);
-            }
-        }
+        public int MarshAdaptability => Army.RealMilitaryKind.MarshAdaptability - DecrementOfMarshAdaptability;
 
-        public float MarshRate
-        {
-            get
-            {
-                return this.Army.Kind.MarshRate;
-            }
-        }
+        public float MarshRate => Army.Kind.MarshRate;
 
         [DataMember]
-        public int MilitaryID
-        {
-            get
-            {
-                return this.militaryID;
-            }
-            set
-            {
-                this.militaryID = value;
-            }
-        }
+        public int MilitaryID { get; set; }
 
         [DataMember]
         public int Morale
         {
             get
             {
-                if (this.Army != null)
-                {
-                    return this.Army.Morale;
-                }
-                else
-                {
-                    return 0;
-                }
+                return Army?.Morale ?? 0;
             }
             set
             {
@@ -12869,42 +12157,14 @@ namespace GameObjects
             }
         }
 
-        public int MountainAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.MountainAdaptability - this.DecrementOfMountainAdaptability);
-            }
-        }
+        public int MountainAdaptability => Army.RealMilitaryKind.MountainAdaptability - DecrementOfMountainAdaptability;
 
-        public float MountainRate
-        {
-            get
-            {
-                return this.Army.Kind.MountainRate;
-            }
-        }
+        public float MountainRate => Army.Kind.MountainRate;
 
-        public int Movability
-        {
-            get
-            {
-                return (this.RealMovability * 5);
-            }
-        }
+        public int Movability => RealMovability * 5;
 
         [DataMember]
-        public bool Moved
-        {
-            get
-            {
-                return this.moved;
-            }
-            set
-            {
-                this.moved = value;
-            }
-        }
+        public bool Moved { get; set; }
 
         public Point NextPosition
         {
@@ -12919,65 +12179,20 @@ namespace GameObjects
             }
         }
 
-        public bool NextPositionHasTroop
-        {
-            get
-            {
-                if (Session.Current.Scenario.GetTroopByPositionNoCheck(this.NextPosition) == null)
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
+        public bool NextPositionHasTroop => Session.Current.Scenario.GetTroopByPositionNoCheck(NextPosition) != null;
+        
 
-        public bool ObliqueOffence
-        {
-            get
-            {
-                return (this.Army.Kind.ObliqueOffence || this.YesOrNoOfObliqueOffence);
-            }
-        }
+        public bool ObliqueOffence => Army.Kind.ObliqueOffence || YesOrNoOfObliqueOffence;
 
-        public string ObliqueOffenceString
-        {
-            get
-            {
-                return (this.ObliqueOffence ? "○" : "×");
-            }
-        }
+        public string ObliqueOffenceString => StaticMethods.ToMark(ObliqueOffence);
 
-        public bool ObliqueStratagem
-        {
-            get
-            {
-                return (this.Army.Kind.ObliqueStratagem || this.YesOrNoOfObliqueStratagem);
-            }
-        }
+        public bool ObliqueStratagem => Army.Kind.ObliqueStratagem || YesOrNoOfObliqueStratagem;
 
-        public string ObliqueStratagemString
-        {
-            get
-            {
-                return (this.ObliqueStratagem ? "○" : "×");
-            }
-        }
+        public string ObliqueStratagemString => StaticMethods.ToMark(ObliqueStratagem);
 
-        public bool ObliqueView
-        {
-            get
-            {
-                return (this.Army.Kind.ObliqueView || this.YesOrNoOfObliqueView);
-            }
-        }
+        public bool ObliqueView => Army.Kind.ObliqueView || YesOrNoOfObliqueView;
 
-        public string ObliqueViewString
-        {
-            get
-            {
-                return (this.ObliqueView ? "○" : "×");
-            }
-        }
+        public string ObliqueViewString => StaticMethods.ToMark(ObliqueView);
 
         public int Tiredness
         {
@@ -12989,7 +12204,7 @@ namespace GameObjects
             set
             {
                 this.tiredness = value;
-                
+
             }
         }
 
@@ -12997,8 +12212,10 @@ namespace GameObjects
         {
             get
             {
-                if (this.Army == null) return 1;
-                return Math.Max(0.2, Math.Min(1, ((210 - this.Army.Tiredness) / 180.0)));
+                if (Army == null) 
+                    return 1;
+                    
+                return Math.Max(0.2, Math.Min(1, (210 - Army.Tiredness) / 180.0));
             }
         }
 
@@ -13045,7 +12262,7 @@ namespace GameObjects
                     leaderRate = (1 + (this.BelongedFaction.Leader.Strength * 0.007f * mayorFactor + this.BelongedFaction.Leader.Braveness * 0.03f * mayorFactor) * 0.2f);
                 }
                 return (int)(this.offence * this.TirednessFactor * mayorRate * leaderRate);
-               
+
             }
         }
 
@@ -13084,19 +12301,19 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfBubing;
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfNubing;
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfQibing;
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfShuijun;
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             return !this.BelongedFaction.AllowAttackAfterMoveOfQixie;
                     }
                 }
@@ -13104,13 +12321,7 @@ namespace GameObjects
             }
         }
 
-        public string OffenceOnlyBeforeMoveString
-        {
-            get
-            {
-                return (this.OffenceOnlyBeforeMove ? "○" : "×");
-            }
-        }
+        public string OffenceOnlyBeforeMoveString => StaticMethods.ToMark(OffenceOnlyBeforeMove);
 
         public int OffenceRadius
         {
@@ -13120,19 +12331,19 @@ namespace GameObjects
                 {
                     switch (this.Army.Kind.Type)
                     {
-                        case MilitaryType.步兵:
+                        case MilitaryType.Infantry:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfBubing + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.弩兵:
+                        case MilitaryType.Crossbow:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfNubing + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.骑兵:
+                        case MilitaryType.Cavalry:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfQibing + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.水军:
+                        case MilitaryType.Navy:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfShuijun + this.AttackRangeIncreaseByInfluence);
 
-                        case MilitaryType.器械:
+                        case MilitaryType.SiegeEquipment:
                             return (this.Army.Kind.OffenceRadius + this.BelongedFaction.OffenceRadiusIncrementOfQixie + this.AttackRangeIncreaseByInfluence);
                     }
                 }
@@ -13140,54 +12351,16 @@ namespace GameObjects
             }
         }
 
-        public bool Operated
-        {
-            get
-            {
-                return this.operated;
-            }
-            set
-            {
-                this.operated = value;
-            }
-        }
+        public bool Operated { get; set; }
 
         [DataMember]
-        public bool OperationDone
-        {
-            get
-            {
-                return this.operationDone;
-            }
-            set
-            {
-                this.operationDone = value;
-            }
-        }
+        public bool OperationDone { get; set; }
 
-        public int PersonCount
-        {
-            get
-            {
-                return this.Persons.Count;
-            }
-        }
+        public int PersonCount => Persons.Count;
 
-        public int PlainAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.PlainAdaptability - this.DecrementOfPlainAdaptability);
-            }
-        }
+        public int PlainAdaptability => Army.RealMilitaryKind.PlainAdaptability - DecrementOfPlainAdaptability;
 
-        public float PlainRate
-        {
-            get
-            {
-                return this.Army.Kind.PlainRate;
-            }
-        }
+        public float PlainRate => Army.Kind.PlainRate;
 
         [DataMember]
         public Point Position
@@ -13236,9 +12409,9 @@ namespace GameObjects
                                 {
                                     this.Action = TroopAction.Move;
                                 }
-                                if ((this.position == this.destination) && (this.OnEndPath != null))
+                                if (position == destination)
                                 {
-                                    this.OnEndPath(this);
+                                    eventManager.Publish(new EndPathEvent(this));
                                 }
                             }
 
@@ -13249,7 +12422,7 @@ namespace GameObjects
                             {
                                 if (runAnimation)
                                 {
-                                    this.TryToPlaySound(this.Position, this.Army.Kind.Sounds.MovingSoundPath, false);
+                                    TryToPlaySound(Position, Army.Kind.Sounds.MovingSoundPath);
                                 }
                                 this.CheckCurrentPosition();
                                 if (this.Destroyed)
@@ -13295,30 +12468,36 @@ namespace GameObjects
                 this.currentTileStayIndex = 0;
                 switch (value)
                 {
-                    case TroopPreAction.暴击:
+                    case TroopPreAction.CriticalHit:
                         this.CurrentTileAnimationKind = TileAnimationKind.暴击;
                         break;
 
-                    case TroopPreAction.伏击:
+                    case TroopPreAction.Ambush:
                         this.CurrentTileAnimationKind = TileAnimationKind.伏击;
                         break;
 
-                    case TroopPreAction.恢复:
+                    case TroopPreAction.Recover:
                         this.CurrentTileAnimationKind = TileAnimationKind.恢复;
                         break;
 
-                    case TroopPreAction.致乱:
+                    case TroopPreAction.CauseChaos:
                         this.CurrentTileAnimationKind = TileAnimationKind.致乱;
                         break;
 
-                    case TroopPreAction.鼓舞:
+                    case TroopPreAction.Inspire:
                         this.CurrentTileAnimationKind = TileAnimationKind.鼓舞;
                         break;
                 }
-                if (this.preAction != TroopPreAction.无 && Session.Current.Scenario != null)
+                if (this.preAction != TroopPreAction.None && Session.Current.Scenario != null)
                 {
-                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position)))
-                        this.TryToPlaySound(this.Position, this.getSoundPath(Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation((int)this.CurrentTileAnimationKind)), false);
+                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(Position)
+                        && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(Position)))
+                    {
+                        if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
+                        {
+                            TryToPlaySound(Position, getSoundPath(animation));
+                        }
+                    }
                 }
             }
         }
@@ -13327,7 +12506,7 @@ namespace GameObjects
         {
             get
             {
-                return Math.Max(1, (((1 + this.Offence) + this.Defence) * (((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleFightingMerit) + (this.CombatMethods.Count * 5)) + (this.Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance)));
+                return Math.Max(1, (((1 + this.Offence) + this.Defence) * (((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleFightingMerit) + (this.CombatMethods.Count * 5)) + (Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance)));
             }
         }
         [DataMember]
@@ -13350,30 +12529,19 @@ namespace GameObjects
         {
             get
             {
-                if (this.Army == null) return 0;
-                return ((this.Army.KindID == 28 ? this.Army.RealMilitaryKind.RationDays : this.Army.RationDays) + this.IncrementOfRationDays);
+                if (Army == null) 
+                    return 0;
+
+                int baseDays = Army.KindID == 28 ? Army.RealMilitaryKind.RationDays : Army.RationDays;
+                    
+                return baseDays + IncrementOfRationDays;
             }
         }
 
-        public int RationDaysLeft
-        {
-            get
-            {
-                if (this.FoodCostPerDay == 0)
-                {
-                    return this.RationDays;
-                }
-                return (this.Food / this.FoodCostPerDay);
-            }
-        }
+        public int RationDaysLeft => FoodCostPerDay == 0 ? RationDays : (Food / FoodCostPerDay);
 
-        public string RationDaysString
-        {
-            get
-            {
-                return (this.RationDaysLeft + "/" + this.RationDays);
-            }
-        }
+        public string RationDaysString => $"{RationDaysLeft}/{RationDays}";
+        
         [DataMember]
         public Point RealDestination
         {
@@ -13388,14 +12556,7 @@ namespace GameObjects
             }
         }
 
-        public string RealDestinationString
-        {
-            get
-            {
-
-                return Session.Current.Scenario.PositionString(this.realDestination);
-            }
-        }
+        public string RealDestinationString => Session.Current.Scenario.PositionString(realDestination);
 
         public int RealMovability
         {
@@ -13406,21 +12567,9 @@ namespace GameObjects
             }
         }
 
-        public int RidgeAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.RidgeAdaptability - this.DecrementOfRidgeAdaptability);
-            }
-        }
+        public int RidgeAdaptability => Army.RealMilitaryKind.RidgeAdaptability - DecrementOfRidgeAdaptability;
 
-        public float RidgeRate
-        {
-            get
-            {
-                return this.Army.Kind.RidgeRate;
-            }
-        }
+        public float RidgeRate => Army.Kind.RidgeRate;
 
         public InformationLevel ScoutLevel
         {
@@ -13428,63 +12577,38 @@ namespace GameObjects
             {
                 if (this.BelongedFaction != null)
                 {
-                    if (this.BelongedFaction.LevelOfView < InformationLevel.高)
+                    if (this.BelongedFaction.LevelOfView < InformationLevel.High)
                     {
-                        return InformationLevel.中;
+                        return InformationLevel.Medium;
                     }
                     return this.BelongedFaction.LevelOfView;
                 }
                 if (this.HighLevelInformationOnScout)
                 {
-                    return InformationLevel.高;
+                    return InformationLevel.High;
                 }
-                return InformationLevel.中;
+                return InformationLevel.Medium;
             }
         }
         [DataMember]
-        public int SecondIndex
-        {
-            get
-            {
-                return this.secondTierPathDestinationIndex;
-            }
-            set
-            {
-                this.secondTierPathDestinationIndex = value;
-            }
-        }
+        public int SecondIndex { get; set; }
 
-        private int[,] SecondTierMapCost
-        {
-            get
-            {
-                return this.BelongedFaction.SecondTierMapCost;
-            }
-        }
+        private int[,] SecondTierMapCost => BelongedFaction.SecondTierMapCost;
 
         public string SectionString
         {
             get
             {
-                if ((this.StartingArchitecture != null) && (this.StartingArchitecture.BelongedFaction == this.BelongedFaction))
+                if (StartingArchitecture != null && StartingArchitecture.BelongedFaction == BelongedFaction)
                 {
-                    return this.StartingArchitecture.SectionString;
+                    return StartingArchitecture.SectionString;
                 }
                 return "----";
             }
         }
+
         [DataMember]
-        public Point SelfCastPosition
-        {
-            get
-            {
-                return this.selfCastPosition;
-            }
-            set
-            {
-                this.selfCastPosition = value;
-            }
-        }
+        public Point SelfCastPosition { get; set; }
 
         public bool ShowNumber
         {
@@ -13513,7 +12637,7 @@ namespace GameObjects
         {
             get
             {
-                return (((1 + this.Offence) + this.Defence) * ((((((((((((((((((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.TroopIntelligence / 2)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleMerit)) + (this.CombatMethods.Count * 5)) + (this.Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance) + this.StratagemChanceIncrement) + this.AntiStratagemChanceIncrement) + this.ChaosAfterStratagemSuccessChance) + (this.ChanceIncrementOfCriticalStrikeInViewArea * 4)) + (this.ChanceDecrementOfCriticalStrikeInViewArea * 4)) + (this.CombativityIncrementPerDayInViewArea * 4)) + (this.CombativityDecrementPerDayInViewArea * 4)) + (this.ChanceIncrementOfStratagemInViewArea * 4)) + (this.ChanceDecrementOfStratagemInViewArea * 4)) + ((int)(this.OffenceRateIncrementInViewArea * 100f))) + ((int)(this.OffenceRateDecrementInViewArea * 100f))) + ((int)(this.DefenceRateIncrementInViewArea * 100f))) + ((int)(this.DefenceRateDecrementInViewArea * 100f))
+                return (((1 + this.Offence) + this.Defence) * ((((((((((((((((((((((((((1 + (((this.CurrentArchitecture != null) && (this.CurrentArchitecture.Endurance > 0)) ? 10 : 0)) + (this.TroopIntelligence / 2)) + (this.Quantity / 500)) + (this.Combativity / 4)) + this.Leader.TitleMerit)) + (this.CombatMethods.Count * 5)) + (Stunts.Count * 20)) + this.CriticalStrikeChance) + this.AntiCriticalStrikeChance) + this.ChaosAfterCriticalStrikeChance) + (this.AvoidSurroundedChance / 2)) + this.ChaosAfterSurroundAttackChance) + this.StratagemChanceIncrement) + this.AntiStratagemChanceIncrement) + this.ChaosAfterStratagemSuccessChance) + (this.ChanceIncrementOfCriticalStrikeInViewArea * 4)) + (this.ChanceDecrementOfCriticalStrikeInViewArea * 4)) + (this.CombativityIncrementPerDayInViewArea * 4)) + (this.CombativityDecrementPerDayInViewArea * 4)) + (this.ChanceIncrementOfStratagemInViewArea * 4)) + (this.ChanceDecrementOfStratagemInViewArea * 4)) + ((int)(this.OffenceRateIncrementInViewArea * 100f))) + ((int)(this.OffenceRateDecrementInViewArea * 100f))) + ((int)(this.DefenceRateIncrementInViewArea * 100f))) + ((int)(this.DefenceRateDecrementInViewArea * 100f))
                         + this.chanceTirednessStopIncrease / 10
                         + (int)(this.reduceInjuredOnAttack * 20f)
                         + (int)(this.reduceInjuredOnCritical * 10f)
@@ -13539,10 +12663,12 @@ namespace GameObjects
         {
             get
             {
-                if (this.Army == null) return 0;
-                return (int)(((this.CurrentRate * this.Army.Kind.Speed) * this.Army.Morale) / ((float)this.Army.MoraleCeiling)) + this.SpeedByViewArea + this.IncrementOfSpeed;
+                if (Army == null) return 0;
+
+                return (int)(CurrentRate * Army.Kind.Speed * Army.Morale / ((float)Army.MoraleCeiling)) + SpeedByViewArea + IncrementOfSpeed;
             }
         }
+
         [DataMember]
         public TroopStatus Status
         {
@@ -13555,30 +12681,35 @@ namespace GameObjects
                 this.status = value;
                 switch (value)
                 {
-                    case TroopStatus.一般:
+                    case TroopStatus.Normal:
                         this.CurrentTileAnimationKind = TileAnimationKind.无;
                         break;
 
-                    case TroopStatus.混乱:
+                    case TroopStatus.Chaos:
                         this.CurrentTileAnimationKind = TileAnimationKind.混乱;
                         break;
 
-                    case TroopStatus.埋伏:
+                    case TroopStatus.Ambushing:
                         this.CurrentTileAnimationKind = TileAnimationKind.埋伏;
                         break;
 
-                    case TroopStatus.伪报:
+                    case TroopStatus.Rumour:
                         this.CurrentTileAnimationKind = TileAnimationKind.伪报;
                         break;
 
-                    case TroopStatus.挑衅:
+                    case TroopStatus.Attract:
                         this.CurrentTileAnimationKind = TileAnimationKind.挑衅;
                         break;
                 }
                 if (this.CurrentTileAnimationKind != TileAnimationKind.无 && Session.Current.Scenario != null)
                 {
                     if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position)))
-                        this.TryToPlaySound(this.Position, this.getSoundPath(Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation((int)this.CurrentTileAnimationKind)), false);
+                    {
+                        if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
+                        {
+                            TryToPlaySound(Position, getSoundPath(animation));
+                        }
+                    }
                 }
             }
         }
@@ -13587,36 +12718,24 @@ namespace GameObjects
         {
             get
             {
-                switch (this.Status)
+                var dict = new Dictionary<TroopStatus, int>()
                 {
-                    case TroopStatus.混乱:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(7);
+                    { TroopStatus.Chaos, 7 },
+                    { TroopStatus.Ambushing, 4 },
+                    { TroopStatus.Rumour, 27 },
+                    { TroopStatus.Attract, 28 },
+                };
 
-                    case TroopStatus.埋伏:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(4);
-
-                    case TroopStatus.伪报:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(27);
-
-                    case TroopStatus.挑衅:
-                        return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(28);
-
+                if (dict.TryGetValue(Status, out var animationId) && Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue(animationId, out var animation))
+                {
+                    return animation;
                 }
+
                 return null;
             }
         }
         [DataMember]
-        public bool StepNotFinished
-        {
-            get
-            {
-                return this.stepNotFinished;
-            }
-            set
-            {
-                this.stepNotFinished = value;
-            }
-        }
+        public bool StepNotFinished { get; set; } = true;
 
         public GameArea StratagemArea
         {
@@ -13634,51 +12753,20 @@ namespace GameObjects
             }
         }
 
-        public int StratagemChanceIncrement
-        {
-            get
-            {
-                return (int)(this.stratagemChanceIncrement - (100 - this.TirednessFactor * 100));
-            }
-        }
+        public int StratagemChanceIncrement => (int)(stratagemChanceIncrement - (1 - TirednessFactor) * 100);
 
-        public int StratagemRadius
-        {
-            get
-            {
-                return (this.Army.Kind.StratagemRadius + this.IncrementOfStratagemRadius);
-            }
-        }
+        public int StratagemRadius => Army.Kind.StratagemRadius + IncrementOfStratagemRadius;
 
-        public StratagemTable Stratagems
-        {
-            get
-            {
-                return Session.Current.Scenario.GameCommonData.AllStratagems;
-            }
-        }
         [DataMember]
-        public int StuntDayLeft
-        {
-            get
-            {
-                return this.stuntDayLeft;
-            }
-            set
-            {
-                this.stuntDayLeft = value;
-            }
-        }
+        public int StuntDayLeft { get; set; }
 
         public Animation StuntTileAnimation
         {
             get
             {
-                if (this.CurrentStunt != null)
-                {
-                    return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation(this.CurrentStunt.Animation);
-                }
-                return null;
+                return CurrentStunt == null 
+                    ? null
+                    : Session.Current.Scenario.GameCommonData.AllTileAnimations.GetValueOrDefault(CurrentStunt.Animation);
             }
         }
 
@@ -13686,13 +12774,13 @@ namespace GameObjects
         {
             get
             {
-                if (this.Status == TroopStatus.伪报 && this.StartingArchitecture != null)
+                if (this.Status == TroopStatus.Rumour && this.StartingArchitecture != null)
                 {
                     return this.StartingArchitecture;
                 }
                 if (this.targetArchitecture == null)
                 {
-                    this.targetArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.targetArchitectureID) as Architecture;
+                    this.targetArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(targetArchitectureID);
                 }
                 return this.targetArchitecture;
             }
@@ -13701,68 +12789,42 @@ namespace GameObjects
                 if (this.targetArchitecture == null && value == null) return;
                 this.targetArchitecture = value;
                 this.HasPath = false;
-                if (value != null)
-                {
-                    this.targetArchitectureID = value.ID;
-                }
-                else
-                {
-                    this.targetArchitectureID = -1;
-                }
+                targetArchitectureID = value?.ID ?? -1;
             }
         }
+
         [DataMember]
         public int TargetArchitectureID
         {
             get
             {
-                return this.targetArchitectureID;
+                return targetArchitectureID;
             }
             set
             {
-                this.targetArchitectureID = value;
+                targetArchitectureID = value;
             }
         }
 
-        public string TargetArchitectureString
-        {
-            get
-            {
-                if (this.targetArchitectureID < 0)
-                {
-                    return "----";
-                }
-                return this.TargetArchitecture.Name;
-            }
-        }
+        public string TargetArchitectureString => TargetArchitecture?.Name ?? "----";
 
-        public string TargetString
-        {
-            get
-            {
-                if (this.TargetTroop != null)
-                {
-                    return this.TargetTroop.DisplayName;
-                }
-                return this.TargetArchitectureString;
-            }
-        }
+        public string TargetString => TargetTroop?.DisplayName ?? TargetArchitectureString;
 
         public Troop TargetTroop
         {
             get
             {
-                if (this.Status == TroopStatus.挑衅)
+                if (this.Status == TroopStatus.Attract)
                 {
                     return this.ForceTroopTarget;
                 }
-                else if (this.status == TroopStatus.伪报)
+                else if (this.status == TroopStatus.Rumour)
                 {
                     return null;
                 }
                 if (this.targetTroop == null)
                 {
-                    this.targetTroop = Session.Current.Scenario.Troops.GetGameObject(this.targetTroopID) as Troop;
+                    this.targetTroop = Session.Current.Scenario.Troops.GetValueOrDefault(targetTroopID);
                 }
                 else if (this.targetTroop.Destroyed)
                 {
@@ -13797,16 +12859,10 @@ namespace GameObjects
                 if (this.targetTroop == null && value == null) return;
                 this.targetTroop = value;
                 this.HasPath = false;
-                if (value != null)
-                {
-                    this.targetTroopID = value.ID;
-                }
-                else
-                {
-                    this.targetTroopID = -1;
-                }
+                targetTroopID = value?.ID ?? -1;
             }
         }
+
         [DataMember]
         public int TargetTroopID
         {
@@ -13820,133 +12876,37 @@ namespace GameObjects
             }
         }
 
-        public string TargetTroopString
-        {
-            get
-            {
-                return ((this.TargetTroop != null) ? this.TargetTroop.DisplayName : "----");
-            }
-        }
+        public string TargetTroopString => TargetTroop?.DisplayName ?? "----";
+
         [DataMember]
-        public int TechnologyIncrement
-        {
-            get
-            {
-                return this.technologyIncrement;
-            }
-            set
-            {
-                this.technologyIncrement = value;
-            }
-        }
+        public int TechnologyIncrement { get; set; }
+
         [DataMember]
-        public int ThirdIndex
-        {
-            get
-            {
-                return this.thirdTierPathDestinationIndex;
-            }
-            set
-            {
-                this.thirdTierPathDestinationIndex = value;
-            }
-        }
+        public int ThirdIndex { get; set; }
 
-        private int[,] ThirdTierMapCost
-        {
-            get
-            {
-                return this.BelongedFaction.ThirdTierMapCost;
-            }
-        }
+        private int[,] ThirdTierMapCost => BelongedFaction.ThirdTierMapCost;
 
-        public Animation TileAnimation
-        {
-            get
-            {
-                return Session.Current.Scenario.GameCommonData.AllTileAnimations.GetAnimation((int)this.CurrentTileAnimationKind);
-            }
-        }
+        public Animation TileAnimation => Session.Current.Scenario.GameCommonData.AllTileAnimations.GetValueOrDefault((int)CurrentTileAnimationKind);
 
-        public int TotalQuantity
-        {
-            get
-            {
-                return this.Army.TotalQuantity;
-            }
-        }
+        public int TotalQuantity => Army.TotalQuantity;
 
-        public int TroopCommand
-        {
-            get
-            {
-                return this.troopCommand;
-            }
-        }
+        public int TroopCommand => troopCommand;
 
-        public int TroopIntelligence
-        {
-            get
-            {
-                return this.troopIntelligence;
-            }
-        }
+        public int TroopIntelligence => troopIntelligence;
 
-        public bool TroopNoAccidentalInjury
-        {
-            get
-            {
-                return (this.BaseNoAccidentalInjury || this.NoAccidentalInjury);
-            }
-        }
+        public bool TroopNoAccidentalInjury => BaseNoAccidentalInjury || NoAccidentalInjury;
 
-        public int TroopStrength
-        {
-            get
-            {
-                return this.troopStrength;
-            }
-        }
+        public int TroopStrength => troopStrength;
 
-        public PlatformTexture TroopTexture
-        {
-            get
-            {
-                return this.GetTroopTexture();
-            }
-        }
+        public PlatformTexture TroopTexture => GetTroopTexture();
 
-        public List<Point> UnfinishedFirstTierPath
-        {
-            get
-            {
-                return this.FirstTierPath.GetRange(this.FirstIndex + 1, (this.FirstTierPath.Count - this.FirstIndex) - 1);
-            }
-        }
+        public List<Point> UnfinishedFirstTierPath => FirstTierPath.GetRange(FirstIndex + 1, FirstTierPath.Count - FirstIndex - 1);
 
-        public List<Point> UnfinishedSecondTierPath
-        {
-            get
-            {
-                return this.SecondTierPath.GetRange(this.secondTierPathDestinationIndex, this.SecondTierPath.Count - this.secondTierPathDestinationIndex);
-            }
-        }
+        public List<Point> UnfinishedSecondTierPath => SecondTierPath.GetRange(SecondIndex, SecondTierPath.Count - SecondIndex);
 
-        public List<Point> UnfinishedThirdTierPath
-        {
-            get
-            {
-                return this.ThirdTierPath.GetRange(this.thirdTierPathDestinationIndex, this.ThirdTierPath.Count - this.thirdTierPathDestinationIndex);
-            }
-        }
+        public List<Point> UnfinishedThirdTierPath => ThirdTierPath.GetRange(ThirdIndex, ThirdTierPath.Count - ThirdIndex);
 
-        public int RecruitLimit
-        {
-            get
-            {
-                return this.Army.Kind.RecruitLimit;
-            }
-        }
+        public int RecruitLimit => Army.Kind.RecruitLimit;
 
         public GameArea ViewArea
         {
@@ -13968,14 +12928,17 @@ namespace GameObjects
         {
             get
             {
-                if (this.BelongedFaction != null)
+                int radius = Army.Kind.ViewRadius + ViewRangeIncreaseByInfluence;
+
+                if (BelongedFaction != null)
                 {
-                    return (this.Army.Kind.ViewRadius + this.BelongedFaction.IncrementOfViewRadius
-                        + this.BelongedFaction.ViewAreaOfMillitaryType[(int)this.Army.Kind.Type] + this.ViewRangeIncreaseByInfluence);
+                    radius += BelongedFaction.IncrementOfViewRadius + BelongedFaction.ViewAreaOfMillitaryType[(int)Army.Kind.Type];
                 }
-                return this.Army.Kind.ViewRadius + this.ViewRangeIncreaseByInfluence;
+
+                return radius;
             }
         }
+
         [DataMember]
         public int WaitForDeepChaosFrameCount
         {
@@ -13988,48 +12951,22 @@ namespace GameObjects
                 this.waitForDeepChaosFrameCount = value;
                 if (((value == 0) && this.WaitForDeepChaos) && ((this.OrientationTroop != null) && !this.OrientationTroop.Destroyed))
                 {
-                    if (this.OnCastDeepChaos != null)
-                    {
-                        this.OnCastDeepChaos(this, this.OrientationTroop);
-                    }
-                    this.PreAction = TroopPreAction.致乱;
+                    eventManager.Publish(new CastDeepChaosEvent(this, OrientationTroop));
+
+                    this.PreAction = TroopPreAction.CauseChaos;
                     this.Action = TroopAction.Cast;
                     this.OrientationTroop.Action = TroopAction.BeCasted;
                 }
             }
         }
 
-        public int WastelandAdaptability
-        {
-            get
-            {
-                return (this.Army.RealMilitaryKind.WastelandAdaptability - this.DecrementOfWastelandAdaptability);
-            }
-        }
+        public int WastelandAdaptability => Army.RealMilitaryKind.WastelandAdaptability - DecrementOfWastelandAdaptability;
 
-        public float WastelandRate
-        {
-            get
-            {
-                return this.Army.Kind.WastelandRate;
-            }
-        }
+        public float WastelandRate => Army.Kind.WastelandRate;
 
-        public int WaterAdaptability
-        {
-            get
-            {
-                return (this.Army.Kind.WaterAdaptability - this.DecrementOfWaterAdaptability);
-            }
-        }
+        public int WaterAdaptability => Army.Kind.WaterAdaptability - DecrementOfWaterAdaptability;
 
-        public float WaterRate
-        {
-            get
-            {
-                return this.Army.Kind.WaterRate;
-            }
-        }
+        public float WaterRate => Army.Kind.WaterRate;
 
         public int Weighing
         {
@@ -14037,14 +12974,14 @@ namespace GameObjects
             {
                 int num = 1;
                 int num2 = 1;
-                if (this.ChanceIncrementOfCriticalStrikeInViewArea > 0 || this.ChanceDecrementOfCriticalStrikeInViewArea > 0 || 
-                    this.CombativityIncrementPerDayInViewArea > 0 || this.CombativityDecrementPerDayInViewArea > 0 || 
-                    this.ChanceIncrementOfStratagemInViewArea > 0 || this.ChanceDecrementOfStratagemInViewArea > 0 || 
-                    this.OffenceRateIncrementInViewArea > 0f || this.OffenceRateDecrementInViewArea > 0f || 
+                if (this.ChanceIncrementOfCriticalStrikeInViewArea > 0 || this.ChanceDecrementOfCriticalStrikeInViewArea > 0 ||
+                    this.CombativityIncrementPerDayInViewArea > 0 || this.CombativityDecrementPerDayInViewArea > 0 ||
+                    this.ChanceIncrementOfStratagemInViewArea > 0 || this.ChanceDecrementOfStratagemInViewArea > 0 ||
+                    this.OffenceRateIncrementInViewArea > 0f || this.OffenceRateDecrementInViewArea > 0f ||
                     this.DefenceRateIncrementInViewArea > 0f || this.DefenceRateDecrementInViewArea > 0f ||
                     this.MoraleIncreaseInViewArea > 0 || this.MoraleDecreaseInViewArea > 0 ||
                     this.TirednessDecreaseChanceInViewArea > 0 || this.TirednessIncreaseChanceInViewArea > 0 ||
-                    this.InjuryRecoverInViewArea > 0 || this.InjuryLostInViewArea > 0 || 
+                    this.InjuryRecoverInViewArea > 0 || this.InjuryLostInViewArea > 0 ||
                     this.TroopRecoverInViewArea > 0 || this.TroopLostInViewArea > 0 ||
                     this.ChaosInViewArea > 0 || this.ChaosRecoverInViewArea > 0)
                 {
@@ -14066,17 +13003,7 @@ namespace GameObjects
             }
         }
 
-        public TroopWill Will
-        {
-            get
-            {
-                return this.will;
-            }
-            set
-            {
-                this.will = value;
-            }
-        }
+        public TroopWill Will { get; set; } = TroopWill.行军;
 
         public Architecture RealWillArchitecture
         {
@@ -14084,7 +13011,7 @@ namespace GameObjects
             {
                 if (this.willArchitecture == null)
                 {
-                    this.willArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.willArchitectureID) as Architecture;
+                    this.willArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(willArchitectureID);
                     if (this.willArchitecture == null)
                     {
                         this.WillArchitecture = this.StartingArchitecture;
@@ -14098,43 +13025,38 @@ namespace GameObjects
         {
             get
             {
-                if (this.Status == TroopStatus.伪报 && this.StartingArchitecture != null)
+                if (Status == TroopStatus.Rumour && StartingArchitecture != null)
                 {
-                    return this.StartingArchitecture;
+                    return StartingArchitecture;
                 }
-                if (this.willArchitecture == null)
+
+                if (willArchitecture == null)
                 {
-                    this.willArchitecture = Session.Current.Scenario.Architectures.GetGameObject(this.willArchitectureID) as Architecture;
-                    if (this.willArchitecture == null)
+                    willArchitecture = Session.Current.Scenario.Architectures.GetValueOrDefault(willArchitectureID);
+                    if (willArchitecture == null)
                     {
-                        this.WillArchitecture = this.StartingArchitecture;
+                        WillArchitecture = StartingArchitecture;
                     }
                 }
-                return this.willArchitecture;
+                return willArchitecture;
             }
             set
             {
-                this.willArchitecture = value;
-                if (value != null)
-                {
-                    this.willArchitectureID = value.ID;
-                }
-                else
-                {
-                    this.willArchitectureID = -1;
-                }
+                willArchitecture = value;
+                willArchitectureID = value?.ID ?? -1;
             }
         }
+
         [DataMember]
         public int WillArchitectureID
         {
             get
             {
-                return this.willArchitectureID;
+                return willArchitectureID;
             }
             set
             {
-                this.willArchitectureID = value;
+                willArchitectureID = value;
             }
         }
 
@@ -14150,44 +13072,24 @@ namespace GameObjects
             }
         }
 
-        public string StartArchitectureString
-        {
-            get
-            {
-                if (this.StartingArchitecture == null)
-                {
-                    return "----";
-                }
-                return this.StartingArchitecture.Name;
-            }
-        }
+        public string StartArchitectureString => StartingArchitecture?.Name ?? "----";
 
-        public string WillString
-        {
-            get
-            {
-                if (this.WillTroop != null)
-                {
-                    return this.WillTroop.DisplayName;
-                }
-                return this.WillArchitectureString;
-            }
-        }
+        public string WillString => WillTroop?.DisplayName ?? WillArchitectureString;
 
         public Troop RealWillTroop
         {
             get
             {
-                if (this.willTroop == null)
+                if (willTroop == null)
                 {
-                    this.willTroop = Session.Current.Scenario.Troops.GetGameObject(this.willTroopID) as Troop;
+                    willTroop = Session.Current.Scenario.Troops.GetValueOrDefault(willTroopID);
                 }
-                else if (this.willTroop.Destroyed)
+                else if (willTroop.Destroyed)
                 {
-                    this.willTroopID = -1;
-                    this.willTroop = null;
+                    willTroopID = -1;
+                    willTroop = null;
                 }
-                return this.willTroop;
+                return willTroop;
             }
         }
 
@@ -14195,87 +13097,51 @@ namespace GameObjects
         {
             get
             {
-                if (this.Status == TroopStatus.挑衅)
+                if (Status == TroopStatus.Attract)
                 {
-                    return this.ForceTroopTarget;
+                    return ForceTroopTarget;
                 }
-                else if (this.Status == TroopStatus.伪报)
+                else if (Status == TroopStatus.Rumour)
                 {
                     return null;
                 }
-                if (this.willTroop == null)
+
+                if (willTroop == null)
                 {
-                    this.willTroop = Session.Current.Scenario.Troops.GetGameObject(this.willTroopID) as Troop;
+                    willTroop = Session.Current.Scenario.Troops.GetValueOrDefault(willTroopID);
                 }
-                else if (this.willTroop.Destroyed)
+                else if (willTroop.Destroyed)
                 {
-                    this.willTroopID = -1;
-                    this.willTroop = null;
+                    willTroopID = -1;
+                    willTroop = null;
                 }
-                return this.willTroop;
+                return willTroop;
             }
             set
             {
-                this.willTroop = value;
-                if (value != null)
-                {
-                    this.willTroopID = value.ID;
-                }
-                else
-                {
-                    this.willTroopID = -1;
-                }
+                willTroop = value;
+                willTroopID = value?.ID ?? -1;
             }
         }
+
         [DataMember]
         public int WillTroopID
         {
             get
             {
-                return this.willTroopID;
+                return willTroopID;
             }
             set
             {
-                this.willTroopID = value;
+                willTroopID = value;
             }
         }
 
-        public string WillTroopString
-        {
-            get
-            {
-                return ((this.WillTroop != null) ? this.WillTroop.DisplayName : "----");
-            }
-        }
+        public string WillTroopString => WillTroop?.DisplayName ?? "----";
+        
 
         [DataMember]
-        public String mingling
-        {
-            get;
-            set;
-        }
-
-        public delegate void Ambush(Troop troop);
-
-        public delegate void AntiArrowAttack(Troop sending, Troop receiving);
-
-        public delegate void AntiAttack(Troop sending, Troop receiving);
-
-        public delegate void ApplyStunt(Troop troop, Stunt stunt);
-
-        public delegate void BreakWall(Troop troop, Architecture architecture);
-
-        public delegate void CastDeepChaos(Troop sending, Troop receiving);
-
-        public delegate void CastStratagem(Troop sending, Troop receiving, Stratagem stratagem);
-
-        public delegate void Chaos(Troop troop, bool deepChaos);
-
-        public delegate void Rumour(Troop troop);
-
-        public delegate void Attract(Troop troop, Troop caster);
-
-        public delegate void CombatMethodAttack(Troop sending, Troop receiving, CombatMethod combatMethod);
+        public string mingling { get; set; }
 
         private class CreditPack
         {
@@ -14295,86 +13161,18 @@ namespace GameObjects
             }
         }
 
-        public delegate void CriticalStrike(Troop sending, Troop receiving);
-
-        public delegate void DiscoverAmbush(Troop sending, Troop receiving);
-
-        public delegate void EndCutRouteway(Troop troop, bool success);
-
-        public delegate void EndPath(Troop troop);
-
-        public delegate void EnterFactionArea(Troop troop, Faction factionEntered);
-
-        public delegate void GetNewCaptive(Troop troop, PersonList personlist);
-
-        public delegate void GetSpreadBurnt(Troop troop);
-
-        public delegate void LeaveFactionArea(Troop troop, Faction factionLeft);
-
-        public delegate void LevyFieldFood(Troop troop, int food);
-
-        public delegate void NormalAttack(Troop sending, Troop receiving);
-
-        public delegate void OccupyArchitecture(Troop troop, Architecture architecture);
-
-        public delegate void Outburst(Troop troop, OutburstKind kind);
-
-        public delegate void PathNotFound(Troop troop);
-
-        public delegate void PersonChallenge(int win, Troop sourceTroop, Person source, Troop destinationTroop, Person destination);
-
-        public delegate void PersonControversy(bool win, Troop sourceTroop, Person source, Troop destinationTroop, Person destination);
-
-        public delegate void ReceiveCriticalStrike(Troop sending, Troop receiving);
-
-        public delegate void ReceiveWaylay(Troop sending, Troop receiving);
-
-        public delegate void RecoverFromChaos(Troop troop);
-
-        public delegate void ReleaseCaptive(Troop troop, PersonList personlist);
-
-        public delegate void ResistStratagem(Troop sending, Troop receiving, Stratagem stratagem, bool isHarmful);
-
-        public delegate void Rout(Troop sending, Troop receiving);
-
-        public delegate void Routed(Troop sending, Troop receiving);
-
-        public delegate void SetCombatMethod(Troop troop, CombatMethod combatMethod);
-
-        public delegate void SetStratagem(Troop troop, Stratagem stratagem);
-
-        public delegate void StartCutRouteway(Troop troop, int days);
-
-        public delegate void StartPath(Troop troop);
-
-        public delegate void StopAmbush(Troop troop);
-
-        public delegate void StratagemSuccess(Troop sending, Troop receiving, Stratagem stratagem, bool isHarmful);
-
-        public delegate void Surround(Troop sending, Troop receiving);
-
-        public delegate void TroopCreate(Troop troop);
-
-        public delegate void TroopFound(Troop troop, Troop troopFound);
-
-        public delegate void TroopLost(Troop troop, Troop troopLost);
-
-        public delegate void Waylay(Troop sending, Troop receiving);
-
-        public delegate void TransportArrived(Troop troop, Architecture destination);
-
         public float InfluenceKindValue(int id)
         {
             float result = 0;
-            foreach (Influence i in Session.Current.Scenario.GameCommonData.AllInfluences.Influences.Values)
+            foreach (var i in Session.Current.Scenario.GameCommonData.AllInfluences.Values)
             {
                 if (i.Kind.ID == id)
                 {
-                    foreach (ApplyingTroop j in i.appliedTroop)
+                    foreach (ApplyTroop j in i.ApplyTroops)
                     {
                         if (j.troop == this)
                         {
-                            result += i.Value;
+                            result += i.GetFloatParam();
                         }
                     }
                 }
@@ -14385,6 +13183,25 @@ namespace GameObjects
 
         public bool SelectedMove = false;
         public bool SelectedAttack = false;
+
+        /// <summary>
+        /// 添加特技
+        /// </summary>
+        /// <param name="stunt"></param>
+        /// <returns></returns>
+        public bool AddStunt(Stunt stunt)
+        {
+            return Stunts.TryAdd(stunt.ID, stunt);
+        }
+
+        /// <summary>
+        /// 移除特技
+        /// </summary>
+        /// <param name="stunt"></param>
+        /// <returns></returns>
+        public bool RemoveStunt(Stunt stunt)
+        {
+            return Stunts.Remove(stunt.ID);
+        }
     }
 }
-

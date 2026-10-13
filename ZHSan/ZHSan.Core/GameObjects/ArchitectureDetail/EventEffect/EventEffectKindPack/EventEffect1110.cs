@@ -1,32 +1,17 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect1110 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1110 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int increment;
+        var quantity = eventEffect.GetIntParam();
 
-        public override void ApplyEffectKind(Architecture a, Event e)
+        foreach (Military military in arch.Militaries)
         {
-            foreach (Military i in a.Militaries)
-            {
-                i.IncreaseMorale(increment);
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            military.IncreaseMorale(quantity);
         }
     }
 }
-

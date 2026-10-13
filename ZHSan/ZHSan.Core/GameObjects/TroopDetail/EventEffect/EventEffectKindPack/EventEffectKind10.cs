@@ -1,33 +1,15 @@
-﻿using GameObjects;
-using GameObjects.TroopDetail.EventEffect;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.TroopDetail.EventEffect.EventEffectKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.TroopDetail.EventEffect.EventEffectKindPack
+[DataContract]
+public class EventEffectKind10 : EventEffectKind
 {
-
-    [DataContract]public class EventEffectKind10 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person)
     {
-        private int increment;
-
-        public override void ApplyEffectKind(Person person)
+        if (person.LocationTroop != null)
         {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.IncreaseMorale(this.increment);
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.LocationTroop.IncreaseMorale(eventEffect.GetIntParam());
         }
     }
 }
-

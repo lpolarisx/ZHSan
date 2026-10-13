@@ -1,40 +1,26 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6110 : InfluenceKind
 {
+    private int increment;
 
-    [DataContract]public class InfluenceKind6110 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment;
+        arch.captureChance += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture a)
-        {
-            a.captureChance += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.captureChance -= influence.GetIntParam();
+    }
 
-        public override void PurifyInfluenceKind(Architecture a)
-        {
-            a.captureChance -= this.increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.increment * 10 / (double)a.BelongedFaction.PersonCount * (a.FrontLine ? 1 : 0.2);
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var frontLine = arch.FrontLine ? 1 : 0.2;
+        
+        return influence.GetIntParam() * 10 / (double)arch.BelongedFaction.PersonCount * frontLine;
     }
 }
-

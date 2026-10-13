@@ -1,94 +1,67 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind1200 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind1200 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
     {
-        private float rate = 1f;
-        private int type = 0;
-
-        public override void ApplyInfluenceKind(Architecture architecture)
+        var type = influence.GetIntParam();
+        var rate = influence.GetFloatParam2();
+        
+        switch (type)
         {
-            switch (this.type)
-            {
-                case 0:
-                    architecture.RateIncrementOfNewBubingTroopOffence += this.rate;
-                    break;
-
-                case 1:
-                    architecture.RateIncrementOfNewNubingTroopOffence += this.rate;
-                    break;
-
-                case 2:
-                    architecture.RateIncrementOfNewQibingTroopOffence += this.rate;
-                    break;
-
-                case 3:
-                    architecture.RateIncrementOfNewShuijunTroopOffence += this.rate;
-                    break;
-
-                case 4:
-                    architecture.RateIncrementOfNewQixieTroopOffence += this.rate;
-                    break;
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            switch (this.type)
-            {
-                case 0:
-                    architecture.RateIncrementOfNewBubingTroopOffence -= this.rate;
-                    break;
-
-                case 1:
-                    architecture.RateIncrementOfNewNubingTroopOffence -= this.rate;
-                    break;
-
-                case 2:
-                    architecture.RateIncrementOfNewQibingTroopOffence -= this.rate;
-                    break;
-
-                case 3:
-                    architecture.RateIncrementOfNewShuijunTroopOffence -= this.rate;
-                    break;
-
-                case 4:
-                    architecture.RateIncrementOfNewQixieTroopOffence -= this.rate;
-                    break;
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.rate * 4 * (a.FrontLine ? 1 : 0.001) * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1);
+            case 0:
+                architecture.RateIncrementOfNewBubingTroopOffence += rate;
+                break;
+            case 1:
+                architecture.RateIncrementOfNewNubingTroopOffence += rate;
+                break;
+            case 2:
+                architecture.RateIncrementOfNewQibingTroopOffence += rate;
+                break;
+            case 3:
+                architecture.RateIncrementOfNewShuijunTroopOffence += rate;
+                break;
+            case 4:
+                architecture.RateIncrementOfNewQixieTroopOffence += rate;
+                break;
         }
     }
-}
 
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var type = influence.GetIntParam();
+        var rate = influence.GetFloatParam2();
+
+        switch (type)
+        {
+            case 0:
+                architecture.RateIncrementOfNewBubingTroopOffence -= rate;
+                break;
+            case 1:
+                architecture.RateIncrementOfNewNubingTroopOffence -= rate;
+                break;
+            case 2:
+                architecture.RateIncrementOfNewQibingTroopOffence -= rate;
+                break;
+            case 3:
+                architecture.RateIncrementOfNewShuijunTroopOffence -= rate;
+                break;
+            case 4:
+                architecture.RateIncrementOfNewQixieTroopOffence -= rate;
+                break;
+        }
+    }
+
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var frontLineFirst = arch.FrontLine ? 1 : 0.001;
+        var frontLineSecond = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1;
+
+        return influence.GetFloatParam2() * 4 * frontLineFirst * frontLineSecond * hostileLine * criticalHostile;
+    }
+}

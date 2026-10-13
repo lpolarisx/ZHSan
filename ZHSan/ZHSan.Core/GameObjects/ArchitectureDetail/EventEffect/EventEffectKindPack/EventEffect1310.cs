@@ -1,34 +1,19 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect1310 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1310 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int id;
+        var remainingDays = arch.zainan.shengyutianshu;
 
-        public override void ApplyEffectKind(Architecture a, Event e)
+        remainingDays += eventEffect.GetIntParam();
+        if (remainingDays <= 0)
         {
-            a.zainan.shengyutianshu += id;
-            if (a.zainan.shengyutianshu <= 0)
-            {
-                a.youzainan = false;
-                a.tingzhizhenzai();
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            arch.youzainan = false;
+            arch.tingzhizhenzai();
         }
     }
 }
-

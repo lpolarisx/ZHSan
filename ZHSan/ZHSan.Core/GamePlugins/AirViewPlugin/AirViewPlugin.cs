@@ -18,6 +18,7 @@ using WorldOfTheThreeKingdoms;
 using Platforms;
 using PersonPortraitPlugin;
 using GameManager;
+using GameEnums;
 
 //using Microsoft.Xna.Framework.Content;
 //using Microsoft.Xna.Framework.GamerServices;

@@ -1,32 +1,28 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind21 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind21 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int multiple = 1;
+        var multiple = influence.GetIntParam() - 1;
 
-        public override void ApplyInfluenceKind(Person person)
+        if (multiple > 0)
         {
-            person.MultipleOfCommerceReputation += this.multiple - 1;
-        }
-
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.MultipleOfCommerceReputation -= this.multiple - 1;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            if (int.TryParse(parameter, out this.multiple))
-            {
-
-            }
+            person.MultipleOfCommerceReputation += multiple;
         }
     }
-}
 
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        var multiple = influence.GetIntParam() - 1;
+
+        if (multiple > 0)
+        {
+            person.MultipleOfCommerceReputation -= multiple;
+        }
+        
+    }
+}

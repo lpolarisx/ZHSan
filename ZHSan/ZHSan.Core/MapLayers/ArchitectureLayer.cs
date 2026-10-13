@@ -28,7 +28,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         public void Draw(Point viewportSize, GameTime gameTime)
         {
-            foreach (Architecture architecture in Session.Current.Scenario.Architectures)
+            foreach (var architecture in Session.Current.Scenario.Architectures.Values)
             {
                 if (Session.MainGame.mainGameScreen.ShowArchitectureConnectedLine && Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(architecture.zhongxindian))
                 {
@@ -103,7 +103,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                                 //Session.MainGame.mainGameScreen.qizidezi.Position = this.mainMapLayer.huoquqizijuxing (architecture.jianzhuqizi.qizipoint);
                                 //Session.MainGame.mainGameScreen.qizidezi.Draw(0.7999f, Session.MainGame.mainGameScreen.qizidezi.Position);
 
-                                var scale = Convert.ToSingle(des.Width) / 30f;
+                                // 字号是按地图格宽100时的旗子大小定的，随旗子一起缩放
+                                var scale = des.Width / 100f;
 
                                 var text = architecture.BelongedFaction.ToString().Substring(0, 1);
                                 var pos = Session.MainGame.mainGameScreen.mainMapLayer.huoquqizijuxing(architecture.jianzhuqizi.qizipoint);
@@ -111,7 +112,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
                                 //"方正北魏楷书繁体", 30f
                                 //depth:  0.7999f
-                                CacheManager.DrawString(Session.Current.Font, architecture.BelongedFaction.ToString().Substring(0, 1), new Vector2(pos.X, pos.Y), color, 0f, Vector2.Zero, 0.5f * scale, SpriteEffects.None, 0.7999f);
+                                CacheManager.DrawString(Session.Current.Font, architecture.BelongedFaction.ToString().Substring(0, 1), new Vector2(pos.X, pos.Y), color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0.7999f);
 
                                 if (architecture.huangdisuozai)
                                 {
@@ -154,30 +155,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         private void drawArchitectureConnectedLine(Architecture architecture)
         {
             int linkType;
-            foreach (Architecture connectedArchitecture in architecture.AILandLinks)
+            foreach (var connectedArchitecture in architecture.AILandLinks)
             {
-                if (connectedArchitecture.AILandLinks.GameObjects.Contains(architecture))
-                {
-                    linkType = 0;
-                }
-                else
-                {
-                    linkType = 2;
-                }
-                this.drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
+                linkType = connectedArchitecture.AILandLinks.Contains(architecture) ? 0 : 2;
+                drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
 
             }
-            foreach (Architecture connectedArchitecture in architecture.AIWaterLinks)
+            foreach (var connectedArchitecture in architecture.AIWaterLinks)
             {
-                if (connectedArchitecture.AIWaterLinks.GameObjects.Contains(architecture))
-                {
-                    linkType = 1;
-                }
-                else
-                {
-                    linkType = 2;
-                }
-                this.drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
+                linkType = connectedArchitecture.AIWaterLinks.Contains(architecture) ? 1 : 2;
+                drawConnectedLineArchitectureToArchitecture(architecture, connectedArchitecture, linkType);
             }
         }
 

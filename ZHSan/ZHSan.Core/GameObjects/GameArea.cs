@@ -1,9 +1,7 @@
 ﻿using GameObjects.MapDetail;
-using GameObjects.ArchitectureDetail;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.Serialization;
 using GameManager;
 
@@ -16,61 +14,62 @@ namespace GameObjects
     {
         [DataMember]
         public List<Point> Area = new List<Point>();
+
         [DataMember]
         public Point Centre;
+
         private Point? topleft = null;
 
         public GameArea() { }
 
         public GameArea(GameArea old)
         {
-            this.Area = new List<Point>(old.Area);
-            this.Centre = new Point(old.Centre.X, old.Centre.Y);
-            if (!old.topleft.HasValue)
-            {
-                this.topleft = null;
-            } else {
-                this.topleft = new Point(old.topleft.Value.X, old.topleft.Value.Y);
-            }
+            Area = new List<Point>(old.Area);
+
+            Centre = new Point(old.Centre.X, old.Centre.Y);
+
+            var oldTopLeft = old.topleft;
+
+            topleft = oldTopLeft.HasValue ? new Point(oldTopLeft.Value.X, oldTopLeft.Value.Y) : null;
         }
 
         public void AddPoint(Point point)
         {
-            this.Area.Add(point);
-            this.topleft = null;
+            Area.Add(point);
+            topleft = null;
         }
 
         private static void CheckPoint(GameArea Area, List<Point> BlackAngles, Point point, Faction faction)
         {
-            TerrainDetail terrainDetailByPosition = Session.Current.Scenario.GetTerrainDetailByPosition(point);
-            if (terrainDetailByPosition != null)
+            var terrain = Session.Current.Scenario.GetTerrainDetailByPosition(point);
+
+            if (terrain == null) return;
+
+            if (terrain.ViewThrough)
             {
-                if (terrainDetailByPosition.ViewThrough)
+                if (faction != null)
                 {
-                    if (faction != null)
+                    var architecture = Session.Current.Scenario.GetArchitectureByPosition(point);
+                    if (architecture != null && architecture.Endurance > 0 && !faction.IsFriendlyWithoutTruce(architecture.BelongedFaction))
                     {
-                        Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(point);
-                        if (!(architectureByPosition == null || architectureByPosition.Endurance <= 0 || faction.IsFriendlyWithoutTruce(architectureByPosition.BelongedFaction)))
-                        {
-                            BlackAngles.Add(point);
-                            return;
-                        }
-                    }
-                    if (!IsInBlackAngle(Area.Centre, BlackAngles, point))
-                    {
-                        Area.AddPoint(point);
+                        BlackAngles.Add(point);
+                        return;
                     }
                 }
-                else
+                if (!IsInBlackAngle(Area.Centre, BlackAngles, point))
                 {
-                    BlackAngles.Add(point);
+                    Area.AddPoint(point);
                 }
+            }
+            else
+            {
+                BlackAngles.Add(point);
             }
         }
 
         public void CombineArea(GameArea AreaToCombine, Dictionary<Point, object> ClosedList)
         {
-            foreach (Point point in AreaToCombine.Area)
+            foreach (var point in AreaToCombine.Area)
             {
                 if (!ClosedList.ContainsKey(point))
                 {
@@ -79,9 +78,11 @@ namespace GameObjects
             }
         }
 
-        public bool Contact(Point p, bool oblique)
+        public bool Contact(Point point, bool oblique)
         {
-            return this.GetContactArea(oblique).HasPoint(p);
+            var area = GetContactArea(oblique);
+
+            return area.HasPoint(point);
         }
 
         public override bool Equals(object obj)
@@ -113,7 +114,7 @@ namespace GameObjects
         {
             int num = point.X - centre.X;
             int num2 = point.Y - centre.Y;
-            return Math.Asin(((double) num2) / Math.Sqrt((double) ((num * num) + (num2 * num2))));
+            return Math.Asin(num2 / Math.Sqrt((num * num) + (num2 * num2)));
         }
 
         public static GameArea GetArea(Point Centre, int Radius, bool Oblique)
@@ -196,7 +197,7 @@ namespace GameObjects
             return area2;
         }
 
-        public GameArea GetContactArea(bool oblique)
+        public GameArea GetContactArea(bool oblique = false)
         {
             return GetContactArea(oblique, false, false);
         }
@@ -280,9 +281,9 @@ namespace GameObjects
 
         public int GetPointIndex(Point point)
         {
-            for (int i = 0; i < this.Area.Count; i++)
+            for (int i = 0; i < Area.Count; i++)
             {
-                if (this.Area[i] == point)
+                if (Area[i] == point)
                 {
                     return i;
                 }
@@ -355,7 +356,7 @@ namespace GameObjects
 
         public bool HasPoint(Point point)
         {
-            foreach (Point point2 in this.Area)
+            foreach (Point point2 in Area)
             {
                 if (point2 == point)
                 {
@@ -405,7 +406,7 @@ namespace GameObjects
         {
             foreach (Point point in area.Area)
             {
-                this.Area.Remove(point);
+                Area.Remove(point);
             }
         }
 
@@ -413,7 +414,7 @@ namespace GameObjects
         {
             foreach (Point point in points)
             {
-                this.Area.Remove(point);
+                Area.Remove(point);
             }
         }
 
@@ -445,23 +446,18 @@ namespace GameObjects
             }
         }
 
-        public int Count
-        {
-            get
-            {
-                return this.Area.Count;
-            }
-        }
+        public int Count => Area.Count;
+        
 
         public Point this[int index]
         {
             get
             {
-                return this.Area[index];
+                return Area[index];
             }
             set
             {
-                this.Area[index] = value;
+                Area[index] = value;
             }
         }
 
@@ -469,15 +465,13 @@ namespace GameObjects
         {
             get
             {
-                if (!this.topleft.HasValue)
+                if (!topleft.HasValue)
                 {
-                    this.ResetTopLeft();
+                    ResetTopLeft();
                 }
-                return this.topleft.Value;
+
+                return topleft.Value;
             }
         }
-
-
     }
 }
-

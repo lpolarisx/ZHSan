@@ -1,28 +1,23 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind4030 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind4030 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        public override void ApplyInfluenceKind(Person person)
+        if (person.LocationTroop != null)
         {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.StuntCanAttackAfterRout = true;
-            }
+            person.LocationTroop.StuntCanAttackAfterRout = true;
         }
+    }
 
-        public override void PurifyInfluenceKind(Person person)
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        if (person.LocationTroop != null)
         {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.StuntCanAttackAfterRout = false;
-            }
+            person.LocationTroop.StuntCanAttackAfterRout = false;
         }
     }
 }
-

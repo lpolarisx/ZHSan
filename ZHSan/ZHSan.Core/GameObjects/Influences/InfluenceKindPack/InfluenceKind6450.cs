@@ -1,65 +1,43 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6450 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6450 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment;
-        private int disasterId;
+        var disasterId = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void ApplyInfluenceKind(Architecture a)
+        foreach (LinkNode i in arch.AIAllLinkNodes.Values)
         {
-            foreach (LinkNode i in a.AIAllLinkNodes.Values)
-            {
-                if (i.A.disasterChanceIncrease.ContainsKey(disasterId))
-                {
-                    i.A.disasterChanceIncrease[disasterId] += this.increment;
-                }
-                else
-                {
-                    i.A.disasterChanceIncrease[disasterId] = this.increment;
-                }
-            }
-        }
+            var dict = i.A.disasterChanceIncrease;
 
-        public override void PurifyInfluenceKind(Architecture a)
-        {
-            foreach (LinkNode i in a.AIAllLinkNodes.Values)
+            if (dict.ContainsKey(disasterId))
             {
-                i.A.disasterChanceIncrease[disasterId] -= this.increment;
+                dict[disasterId] += increment;
             }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
+            else
             {
-                this.disasterId = int.Parse(parameter);
+                dict[disasterId] = increment;
             }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.increment * 1000;
         }
     }
-}
 
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        var disasterId = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
+
+        foreach (LinkNode i in arch.AIAllLinkNodes.Values)
+        {
+            i.A.disasterChanceIncrease[disasterId] -= increment;
+        }
+    }
+
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetIntParam2() * 1000;
+    }
+}

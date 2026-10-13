@@ -373,7 +373,7 @@ namespace TransportDialogPlugin
                 //case TransportKind.Resource:
                 case TransportKind.Fund:
                 case TransportKind.Food:
-                    this.TabListPlugin.InitialValues(this.SourceArchitecture.BelongedFaction.ArchitecturesExcluding(this.SourceArchitecture), null, 0, this.TitleText.Text);
+                    this.TabListPlugin.InitialValues(SourceArchitecture.BelongedFaction.ArchitecturesExcluding(SourceArchitecture), null, 0, this.TitleText.Text);
                     break;
 
                 case TransportKind.EmperorFood:

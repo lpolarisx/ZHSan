@@ -1,4 +1,5 @@
-﻿using GameGlobal;
+﻿using GameEnums;
+using GameGlobal;
 using System;
 using System.Runtime.InteropServices;
 
@@ -19,40 +20,40 @@ namespace GameObjects
             {
                 if (this.fullCount > 0)
                 {
-                    return InformationLevel.全;
+                    return InformationLevel.Full;
                 }
                 if (this.highCount > 0)
                 {
-                    return InformationLevel.高;
+                    return InformationLevel.High;
                 }
                 if (this.middleCount > 0)
                 {
-                    return InformationLevel.中;
+                    return InformationLevel.Medium;
                 }
                 if (this.lowCount > 0)
                 {
-                    return InformationLevel.低;
+                    return InformationLevel.Low;
                 }
-                return InformationLevel.无;
+                return InformationLevel.None;
             }
         }
         public void AddInformationLevel(InformationLevel level)
         {
             switch (level)
             {
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     this.lowCount++;
                     break;
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     this.middleCount++;
                     break;
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     this.highCount++;
                     break;
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     this.fullCount++;
                     break;
             }
@@ -62,19 +63,19 @@ namespace GameObjects
         {
             switch (level)
             {
-                case InformationLevel.低:
+                case InformationLevel.Low:
                     this.lowCount--;
                     break;
 
-                case InformationLevel.中:
+                case InformationLevel.Medium:
                     this.middleCount--;
                     break;
 
-                case InformationLevel.高:
+                case InformationLevel.High:
                     this.highCount--;
                     break;
 
-                case InformationLevel.全:
+                case InformationLevel.Full:
                     this.fullCount--;
                     break;
             }

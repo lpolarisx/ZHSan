@@ -1,4 +1,5 @@
-﻿using GameFreeText;
+﻿using GameEnums;
+using GameFreeText;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -24,7 +25,7 @@ namespace RoutewayEditorPlugin
         internal PlatformTexture CommentBackgroundTexture;
         internal int CommentClientWidth;
         private bool commentDrawing;
-        private ArchitectureList CurrentPositionArchitectures;
+        private List<Architecture> CurrentPositionArchitectures = new();
         internal PlatformTexture CutButtonDisabledTexture;
         internal PlatformTexture CutButtonDownTexture;
         internal Rectangle CutButtonPosition;
@@ -88,17 +89,11 @@ namespace RoutewayEditorPlugin
             {
                 return true;
             }
-            ArchitectureList routewayArchitecturesByPosition = Session.Current.Scenario.GetRoutewayArchitecturesByPosition(this.EditingRouteway, this.EditingRouteway.LastPoint.Position);
+            var routewayArchitecturesByPosition = Session.Current.Scenario.GetRoutewayArchitecturesByPosition(EditingRouteway, EditingRouteway.LastPoint.Position);
             if (routewayArchitecturesByPosition.Count > 0)
             {
-                if (routewayArchitecturesByPosition.Count > 1)
-                {
-                    routewayArchitecturesByPosition.PropertyName = "Food";
-                    routewayArchitecturesByPosition.IsNumber = true;
-                    routewayArchitecturesByPosition.SmallToBig = true;
-                    routewayArchitecturesByPosition.ReSort();
-                }
-                Architecture architecture = routewayArchitecturesByPosition[0] as Architecture;
+                routewayArchitecturesByPosition.Sort((a, b) => a.Food.CompareTo(b.Food));
+                var architecture = routewayArchitecturesByPosition[0];
                 if (architecture != this.EditingRouteway.EndArchitecture)
                 {
                     this.EditingRouteway.EndArchitecture = architecture;
@@ -231,7 +226,7 @@ namespace RoutewayEditorPlugin
                         if (Session.MainGame.mainGameScreen.TileInScreen(currentExtendArea[i]))
                         {
                             Rectangle destination = Session.MainGame.mainGameScreen.GetDestination(currentExtendArea[i]);
-                            if (Session.Current.Scenario.GetRoutewayArchitecturesByPosition(this.EditingRouteway, currentExtendArea[i]).Count > 0)
+                            if (Session.Current.Scenario.GetRoutewayArchitecturesByPosition(EditingRouteway, currentExtendArea[i]).Count > 0)
                             {
                                 sourceRectangle = null;
                                 CacheManager.Draw(this.ExtendPointEndTexture, destination, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.8498001f);
@@ -263,16 +258,12 @@ namespace RoutewayEditorPlugin
         private void ExtendRouteway(Point p)
         {
             this.EditingRouteway.Extend(p);
-            if (this.CurrentPositionArchitectures != null && this.CurrentPositionArchitectures.Count > 0)
+
+            var architectures = CurrentPositionArchitectures;
+            if (architectures.Count > 0)
             {
-                if (this.CurrentPositionArchitectures.Count > 1)
-                {
-                    this.CurrentPositionArchitectures.PropertyName = "Food";
-                    this.CurrentPositionArchitectures.IsNumber = true;
-                    this.CurrentPositionArchitectures.SmallToBig = true;
-                    this.CurrentPositionArchitectures.ReSort();
-                }
-                this.EditingRouteway.EndArchitecture = this.CurrentPositionArchitectures[0] as Architecture;
+                architectures.Sort((a, b) => a.Food.CompareTo(b.Food));
+                EditingRouteway.EndArchitecture = architectures[0];
             }
             else if (!((this.EditingRouteway.EndArchitecture == null) || this.EditingRouteway.HasPointInArchitectureRoutewayStartArea(this.EditingRouteway.EndArchitecture)))
             {
@@ -629,19 +620,15 @@ namespace RoutewayEditorPlugin
                 {
                     if (this.EditingRouteway.CurrentExtendArea.HasPoint(positionByPoint))
                     {
-                        this.CurrentPositionArchitectures = Session.Current.Scenario.GetRoutewayArchitecturesByPosition(this.EditingRouteway, positionByPoint);
+                        var architectures = Session.Current.Scenario.GetRoutewayArchitecturesByPosition(EditingRouteway, positionByPoint);
+                        CurrentPositionArchitectures = architectures;
                         if (this.extending)
                         {
                             this.ExtendRouteway(positionByPoint);
                         }
-                        else if (this.CurrentPositionArchitectures.Count > 0)
+                        else if (architectures.Count > 0)
                         {
-                            if (this.CurrentPositionArchitectures.Count > 1)
-                            {
-                                this.CurrentPositionArchitectures.PropertyName = "Food";
-                                this.CurrentPositionArchitectures.IsNumber = true;
-                                this.CurrentPositionArchitectures.ReSort();
-                            }
+                            architectures.Sort((a, b) => b.Food.CompareTo(a.Food));
                             this.commentDrawing = true;
                             this.Comment.Clear();
                             this.Comment.AddText("连接到", this.Comment.TitleColor);

@@ -1,41 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind121 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind121 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        int i;
+        arch.InfluenceIncrementOfLoyalty += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture person)
-        {
-            if (person != null) 
-            {
-                person.InfluenceIncrementOfLoyalty += i;
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture person)
-        {
-            if (person != null)
-            {
-                person.InfluenceIncrementOfLoyalty -= i;
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.i = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.InfluenceIncrementOfLoyalty -= influence.GetIntParam();
     }
 }
-

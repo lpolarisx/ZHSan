@@ -1,32 +1,15 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind1425 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1425 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        int number = 0;
+        var arch = Session.Current.Scenario.GetArchitectureByPositionNoCheck(troop.Position);
 
-        public override bool CheckConditionKind(Troop troop)
-        {
-            Architecture architectureByPositionNoCheck = Session.Current.Scenario.GetArchitectureByPositionNoCheck(troop.Position);
-            return architectureByPositionNoCheck != null && architectureByPositionNoCheck.ID != number;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return arch != null && arch.ID != condition.GetIntParam();
     }
 }
-

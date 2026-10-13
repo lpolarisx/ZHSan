@@ -1,67 +1,46 @@
 ﻿using GameGlobal;
-using GameManager;
-using GameObjects.ArchitectureDetail;
-using GameObjects.FactionDetail;
 using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
-using Platforms;
 using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
-using WorldOfTheThreeKingdoms;
 
 namespace GameObjects
 {
     [DataContract]
-    [KnownType(typeof(AttackDefaultKind))]
     [KnownType(typeof(AttackTargetKind))]
     [KnownType(typeof(CastDefaultKind))]
     [KnownType(typeof(CastTargetKind))]
     [KnownType(typeof(Captive))]
     [KnownType(typeof(CharacterKind))]
-    [KnownType(typeof(IdealTendencyKind))]
-    [KnownType(typeof(InformationKind))]
-    [KnownType(typeof(PersonGeneratorType))]
-    [KnownType(typeof(TrainPolicy))]
     [KnownType(typeof(Event))]
     [KnownType(typeof(Person))]
     [KnownType(typeof(Architecture))]
-    [KnownType(typeof(Facility))]
-    [KnownType(typeof(Information))]
     [KnownType(typeof(Legion))]
     [KnownType(typeof(Military))]
-    [KnownType(typeof(Region))]
     [KnownType(typeof(Routeway))]
-    [KnownType(typeof(Section))]
-    [KnownType(typeof(State))]
     [KnownType(typeof(Treasure))]
     [KnownType(typeof(TroopEvent))]
     [KnownType(typeof(Troop))]
     [KnownType(typeof(Faction))]
     [KnownType(typeof(YearTableEntry))]
-    [KnownType(typeof(TreasureCreationSetting))]
     
     public class GameObject
     {
-        private int id;
-        private string name;
-
         public float Scale;
 
-        private bool selected;
-        private string textDestinationString;
-        private string textResultString;
-
-        public static bool Chance(int chance)
+        public static bool GetChance(int chance)
         {
-            if (chance <= 0)
-            {
-                return false;
-            }
-            return ((chance >= 100) || (Random(100) < chance));
+            if (chance <= 0) return false;
+
+            if (chance >= 100) return true;
+
+            if (StaticMethods.Random(100) < chance) return true;
+
+            return false;
         }
 
-        public static bool Chance(int chance, int root)
+        public static bool GetChance(int chance, int root)
         {
             if (chance <= 0)
             {
@@ -111,66 +90,18 @@ namespace GameObjects
         {
             return this.Name;
         }
+
         [DataMember]
-        public int ID
-        {
-            get
-            {
-                return this.id;
-            }
-            set
-            {
-                this.id = value;
-            }
-        }
+        public int ID { get; set; }
+
         [DataMember]
-        public string Name
-        {
-            get
-            {
-                return this.name;
-            }
-            set
-            {
-                this.name = value;
-            }
-        }
+        public string Name { get; set; }
 
-        public bool Selected
-        {
-            get
-            {
-                return this.selected;
-            }
-            set
-            {
-                this.selected = value;
-            }
-        }
+        public bool Selected { get; set; }
 
-        public string TextDestinationString
-        {
-            get
-            {
-                return this.textDestinationString;
-            }
-            set
-            {
-                this.textDestinationString = value;
-            }
-        }
+        public string TextDestinationString { get; set; }
 
-        public string TextResultString
-        {
-            get
-            {
-                return this.textResultString;
-            }
-            set
-            {
-                this.textResultString = value;
-            }
-        }
+        public string TextResultString { get; set; }
 
         public static T WeightedRandom<T>(Dictionary<T, float> weights)
         {
@@ -212,13 +143,12 @@ namespace GameObjects
         public override bool Equals(object obj)
         {
             if (!(obj is GameObject)) return false;
-            return this.id == ((GameObject)obj).id;
+            return ID == ((GameObject)obj).ID;
         }
 
         public override int GetHashCode()
         {
-            return id;
+            return ID;
         }
     }
 }
-

@@ -1,176 +1,155 @@
-﻿using GameManager;
+﻿using GameDatas;
+using GameManager;
 using GameObjects.Influences;
-using Microsoft.Xna.Framework.Graphics;
-using Platforms;
-using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
-using WorldOfTheThreeKingdoms;
 
+namespace GameObjects;
 
-
-namespace GameObjects
+/// <summary>
+/// 宝物
+/// </summary>
+[DataContract]
+public class Treasure : GameObject
 {
-    [DataContract]
-    public class Treasure : GameObject
+    /// <summary>
+    /// 图像
+    /// </summary>
+    [DataMember]
+    public int Pic { get; set; }
+
+    /// <summary>
+    /// 价值
+    /// </summary>
+    [DataMember]
+    public int Worth { get; set; }
+
+    /// <summary>
+    /// 已出现
+    /// </summary>
+    [DataMember]
+    public bool Available { get; set; }
+
+    /// <summary>
+    /// 隐藏于建筑
+    /// </summary>
+    [DataMember]
+    public int HidePlaceIDString { get; set; }
+
+    /// <summary>
+    /// 宝物种类：此值相同的话，这些宝物不叠加
+    /// </summary>
+    [DataMember]
+    public int TreasureGroup { get; set; }
+
+    /// <summary>
+    /// 出现年
+    /// </summary>
+    [DataMember]
+    public int AppearYear { get; set; }
+
+    /// <summary>
+    /// 属于人物
+    /// </summary>
+    [DataMember]
+    public int BelongedPersonIDString { get; set; }
+
+    /// <summary>
+    /// 影响列表
+    /// </summary>
+    [DataMember]
+    public string InfluencesString { get; set; }
+
+    /// <summary>
+    /// 介绍
+    /// </summary>
+    [DataMember]
+    public string Description { get; set; }
+
+    /// <summary>
+    /// 耐久
+    /// </summary>
+    [DataMember]
+    public int Durability { get; set; }
+
+    public Treasure() {}
+
+    public Treasure(TreasureConfig config)
     {
-        private int appearYear;
-        private bool available;
+        ID = config.Id;
+        Name = config.Name;
+        Pic = config.Pic;
+        Worth = config.Worth;
+        Available = config.Available;
+        HidePlaceIDString = config.HidePlaceIDString;
+        TreasureGroup = config.TreasureGroup;
+        AppearYear = config.AppearYear;
+        BelongedPersonIDString = config.BelongedPersonIDString;
+        InfluencesString = config.InfluencesString;
+        Description = config.Description;
+        Durability = config.Durability;
+    }
 
-        [DataMember]
-        public int BelongedPersonIDString { get; set; }
-
-        public Person BelongedPerson;
-        private string description;
-
-        [DataMember]
-        public int HidePlaceIDString { get; set; }
-
-        public Architecture HidePlace;
-
-        [DataMember]
-        public string InfluencesString { get; set; }
-        
-        [DataMember] 
-        public int Durability { get; set; }
-
-        public InfluenceTable Influences = new InfluenceTable();
-        private int pic;
-        private PlatformTexture picture;
-        private int worth;
-
-        public void Init()
+    public TreasureConfig ToConfig()
+    {
+        return new TreasureConfig
         {
-            Influences = new InfluenceTable();
-        }
+            Id = ID,
+            Name = Name,
+            Pic = Pic,
+            Worth = Worth,
+            Available = Available,
+            HidePlaceIDString = HidePlaceIDString,
+            TreasureGroup = TreasureGroup,
+            AppearYear = AppearYear,
+            BelongedPersonIDString = BelongedPersonIDString,
+            InfluencesString = InfluencesString,
+            Description = Description,
+            Durability = Durability,
+        };
+    }
 
-        [DataMember]
-        public int TreasureGroup
-        {
-            get;
-            set;
-        }
+    public Person BelongedPerson;
 
-        [DataMember]
-        public int AppearYear
-        {
-            get
-            {
-                return this.appearYear;
-            }
-            set
-            {
-                this.appearYear = value;
-            }
-        }
+    public Architecture HidePlace;
 
-        [DataMember]
-        public bool Available
-        {
-            get
-            {
-                return this.available;
-            }
-            set
-            {
-                this.available = value;
-            }
-        }
+    public Dictionary<int, Influence> Influences { get; set; } = new();
 
-        public string BelongedPersonString
-        {
-            get
-            {
-                return ((this.BelongedPerson != null) ? this.BelongedPerson.Name : "----");
-            }
-        }
+    public string BelongedPersonString => BelongedPerson?.Name ?? "----";
 
-        [DataMember]
-        public string Description
-        {
-            get
-            {
-                return this.description;
-            }
-            set
-            {
-                this.description = value;
-            }
-        }
+    public string HidePlaceString => HidePlace?.Name ?? "----";
 
-        public string HidePlaceString
-        {
-            get
-            {
-                return ((this.HidePlace != null) ? this.HidePlace.Name : "----");
-            }
-        }
+    public string InfluenceString => string.Join("•", Influences.Values.Select(x => x.Description));
 
-        public string InfluenceString
+    private PlatformTexture picture;
+
+    public PlatformTexture Picture
+    {
+        get
         {
-            get
+            if (picture == null)
             {
-                string str = "";
-                foreach (Influence influence in this.Influences.Influences.Values)
+                try
                 {
-                    str = str + "•" + influence.Description;
+                    picture = CacheManager.GetTempTexture("Content/Textures/Resources/Treasure/" + Pic.ToString() + ".jpg");
                 }
-                return str;
-            }
-        }
-
-        [DataMember]
-        public int Pic
-        {
-            get
-            {
-                return this.pic;
-            }
-            set
-            {
-                this.pic = value;
-            }
-        }
-
-        //public void disposeTexture()
-        //{
-        //    if (this.picture != null)
-        //    {
-        //        this.picture.Dispose();
-        //        this.picture = null;
-        //    }
-        //}
-
-        public PlatformTexture Picture
-        {
-            get
-            {
-                if (this.picture == null)
+                catch
                 {
-                    try
-                    {
-                        this.picture = CacheManager.GetTempTexture("Content/Textures/Resources/Treasure/" + this.Pic.ToString() + ".jpg");
-                    }
-                    catch
-                    {
-                        this.picture = null;
-                    }
+                    picture = null;
                 }
-                return this.picture;
             }
-        }
 
-        [DataMember]
-        public int Worth
-        {
-            get
-            {
-                return this.worth;
-            }
-            set
-            {
-                this.worth = value;
-            }
+            return picture;
         }
     }
-}
 
+    //public void disposeTexture()
+    //{
+    //    if (this.picture != null)
+    //    {
+    //        this.picture.Dispose();
+    //        this.picture = null;
+    //    }
+    //}
+}

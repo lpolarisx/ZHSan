@@ -1,41 +1,25 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3260 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3260 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private double rate = 0.0;
+        arch.RateIncrementOfPopulationDevelop += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateIncrementOfPopulationDevelop += this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.RateIncrementOfPopulationDevelop -= influence.GetFloatParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = double.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        if (!arch.Kind.HasPopulation) return -1;
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateIncrementOfPopulationDevelop -= this.rate;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            if (!a.Kind.HasPopulation) return -1;
-            return (1 - Math.Pow((double) a.Population / a.PopulationCeiling, 0.5)) * (0.001 / a.PopulationDevelopingRate) * (this.rate * 10000.0);
-        }
+        return (1 - Math.Pow((double)arch.Population / arch.PopulationCeiling, 0.5)) * (0.001 / arch.PopulationDevelopingRate) * (influence.GetFloatParam() * 10000);
     }
 }
-

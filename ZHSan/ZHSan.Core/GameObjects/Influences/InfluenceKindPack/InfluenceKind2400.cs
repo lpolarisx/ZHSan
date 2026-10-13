@@ -1,52 +1,34 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2400 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2400 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int increment;
+        faction.IncrementOfRoutewayWorkforce += influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.IncrementOfRoutewayWorkforce += this.increment;
-            if (Session.Current.Scenario.NewInfluence)
-            {
-                faction.ClosedRouteways.Clear();
-                foreach (Routeway routeway in faction.Routeways)
-                {
-                    routeway.RemoveAfterClose = true;
-                }
-            }
-        }
+        CloseRouteways(faction);
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.IncrementOfRoutewayWorkforce -= influence.GetIntParam();
+        
+        CloseRouteways(faction);
+    }
 
-        public override void PurifyInfluenceKind(Faction faction)
+    private void CloseRouteways(Faction faction)
+    {
+        if (Session.Current.Scenario.NewInfluence)
         {
-            faction.IncrementOfRoutewayWorkforce -= this.increment;
-            if (Session.Current.Scenario.NewInfluence)
+            faction.ClosedRouteways.Clear();
+            foreach (var routeway in faction.Routeways)
             {
-                faction.ClosedRouteways.Clear();
-                foreach (Routeway routeway in faction.Routeways)
-                {
-                    routeway.RemoveAfterClose = true;
-                }
+                routeway.RemoveAfterClose = true;
             }
         }
     }
 }
-

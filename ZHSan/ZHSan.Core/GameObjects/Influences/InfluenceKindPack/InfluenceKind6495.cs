@@ -1,40 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6495 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6495 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float rate;
+        arch.TroopTransportFoodRate += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture p)
-        {
-            p.TroopTransportFoodRate += rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.TroopTransportFoodRate -= influence.GetFloatParam();
+    }
 
-        public override void PurifyInfluenceKind(Architecture p)
-        {
-            p.TroopTransportFoodRate -= rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.rate * 160;
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetFloatParam() * 160;
     }
 }
-

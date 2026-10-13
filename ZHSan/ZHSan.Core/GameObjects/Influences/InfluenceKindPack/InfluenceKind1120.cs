@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind1120 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind1120 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
     {
-        private int kind = -1;
+        architecture.AddMilitaryKind(influence.GetIntParam());
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.PrivateMilitaryKinds.AddMilitaryKind(this.kind);
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.PrivateMilitaryKinds.RemoveMilitaryKind(this.kind);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.kind = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        architecture.RemoveMilitaryKind(influence.GetIntParam());
     }
 }
-

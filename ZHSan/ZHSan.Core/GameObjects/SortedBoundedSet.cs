@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-
-
 
 namespace GameObjects
 {
@@ -81,7 +78,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    removed = default(T);
+                    removed = default;
                 }
             }
             else

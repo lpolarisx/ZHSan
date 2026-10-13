@@ -1,57 +1,39 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
-using System.Runtime.InteropServices;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind393 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind393 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int id = 0;
+        troop.SetAmbush();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.SetAmbush();
-        }
+    public override int GetCreditWithPosition(Troop source, out Point? position)
+    {
+        position = new Point(0, 0);
 
-        public override int GetCreditWithPosition(Troop source, out Point? position)
+        int num = 0;
+        if (!source.IsInHostileTroopView() && !source.IsInHostileArchitectureHighView())
         {
-            //position = 0;
-            position = new Point(0, 0);
-            int num = 0;
-            if (!source.IsInHostileTroopView() && !source.IsInHostileArchitectureHighView())
+            num += 50 * source.HostileTroopInViewFightingForce / source.PureFightingForce;
+            if (source.OnlyBeDetectedByHighLevelInformation)
             {
-                num += (50 * source.HostileTroopInViewFightingForce) / source.PureFightingForce;
-                if (source.OnlyBeDetectedByHighLevelInformation)
-                {
-                    num *= 3;
-                }
-                if (num > 0)
-                {
-                    position = new Point?(source.Position);
-                }
+                num *= 3;
             }
-            return num;
-        }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
+            if (num > 0)
             {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
+                position = new Point?(source.Position);
             }
         }
+        return num;
+    }
 
-        public override bool IsVaild(Troop troop)
-        {
-            return troop.AmbushAvail(this.id);
-        }
+    public override bool IsVaild(Influence influence, Troop troop)
+    {
+        return troop.AmbushAvail(influence.GetIntParam());
     }
 }
-

@@ -568,10 +568,10 @@
   <FuhuoBG FileName="FuhuoBG.png" X="250" Y="340" Width="40" Height="40"></FuhuoBG>
   <PersonBG FileName="PersonBG.png" X="260" Y="320" Width="20" Height="20"></PersonBG>
   <PortraitLTexturePosition X="-200" Y="0" Width="240" Height="240" ></PortraitLTexturePosition>
-  <Item37></Item37>
-  <Item38></Item38>
-  <Item39></Item39>
   <Item40></Item40>
+  <Item41></Item41>
+  <Item42></Item42>
+  <Item43></Item43>
   <Title1kind1Client X="300" Y="167" Width="96" Height="26"></Title1kind1Client>
   <Title2kind200Client X="410" Y="167" Width="96" Height="26"></Title2kind200Client>
   <Title3kind10Client X="520" Y="167" Width="96" Height="26"></Title3kind10Client>
@@ -584,14 +584,18 @@
   <Title10kind5Client X="300" Y="260" Width="96" Height="26"></Title10kind5Client>
   <Title11kind600Client X="410" Y="260" Width="96" Height="26"></Title11kind600Client>
   <Title12kind700Client X="520" Y="260" Width="96" Height="26"></Title12kind700Client>
-  <Item53></Item53>
-  <Item54></Item54>
-  <Item55></Item55>
   <Item56></Item56>
   <Item57></Item57>
   <Item58></Item58>
   <Item59></Item59>
   <Item60></Item60>
+  <StatusEffect X="290" Y="312" Width="100" Height="25" 
+        FontName="Microsoft YaHei UI"
+        FontSize="18"
+        FontStyle="Bold"
+        FontColor="4293322470"
+        Align="Left">
+  </StatusEffect>
   <Stunt0 X="300" Y="298" Width="40" Height="26"></Stunt0>
   <Stunt1 X="355" Y="298" Width="40" Height="26"></Stunt1>
   <Stunt2 X="410" Y="298" Width="40" Height="26"></Stunt2>

@@ -12,6 +12,7 @@
     using Platforms;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     internal class PersonDetail
     {
@@ -48,6 +49,8 @@
 
         internal Rectangle TreasureTextClient;
         internal FreeRichText TreasureText = new FreeRichText();
+
+        internal FreeText statusEffectText;
 
         internal Rectangle MoreMessageBGClient;
         internal Point MoreMessageBGSize;
@@ -144,6 +147,8 @@
                 this.SurNameText.Draw(0.1999f);
                 this.GivenNameText.Draw(0.1999f);
                 this.CalledNameText.Draw(0.1999f);
+                statusEffectText.Draw(0.1999f);
+
                 foreach (LabelText text in this.LabelTexts)
                 {
                     text.Label.Draw(0.1999f);
@@ -359,10 +364,12 @@
                 if (num2 > -1)
                 {
                     int num3 = num2;
-                    if (this.ShowingPerson.BelongedFaction != null && this.ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID).Count > num3)
+                    var treasures = ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID);
+
+                    if (this.ShowingPerson.BelongedFaction != null && treasures.Count > num3)
                     {
-                        Treasure treasure = this.ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID)[num3] as Treasure;
-                        foreach (Treasure t in this.ShowingPerson.TreasureListforGroup(CurrentTreasureGID))
+                        var treasure = treasures[num3];
+                        foreach (var t in ShowingPerson.TreasureListforGroup(CurrentTreasureGID))
                         {
                             this.ShowingPerson.LoseTreasure(t);
                             this.ShowingPerson.BelongedFaction.Leader.ReceiveTreasure(t);
@@ -372,7 +379,7 @@
                         this.TreasureText.Clear();
                         //this.TreasureText.AddText("可赏赐宝物列表", Color.Khaki);
                         //this.TreasureText.AddNewLine();
-                        foreach (Treasure t in this.ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID))
+                        foreach (var t in treasures)
                         {                            
                                 this.TreasureText.AddText(t.Name, Color.Khaki);
                                 this.TreasureText.AddText(t.InfluenceString, Color.SkyBlue);
@@ -408,7 +415,7 @@
                                     this.InfluenceText.AddNewLine();
                                     this.InfluenceText.AddText(treasure.Description, Color.Turquoise);
                                     this.InfluenceText.AddNewLine();
-                                    foreach (Influence influence in treasure.Influences.Influences.Values)
+                                    foreach (var influence in treasure.Influences.Values)
                                     {
                                         if ((((influence.Kind.ID == 280) || (influence.Kind.ID == 0x119)) || ((influence.Kind.ID == 0x11d) || (influence.Kind.ID == 290))) || (influence.Kind.ID == 300))
                                         {
@@ -470,7 +477,7 @@
                                 }
                                 this.InfluenceText.AddText(title.DetailedName, titleColor);
                                 this.InfluenceText.AddNewLine();
-                                foreach (Influence influence in title.Influences.Influences.Values)
+                                foreach (var influence in title.Influences.Values)
                                 {
                                     //阿柒:根据影响种类设定不同颜色
                                     if (influence.Kind.ID == 280 || influence.Kind.ID == 281 || influence.Kind.ID == 285 || influence.Kind.ID == 290 || influence.Kind.ID == 300)
@@ -492,7 +499,7 @@
                                 }
                                 this.ConditionText.AddText("修习条件", this.ConditionText.TitleColor);
                                 this.ConditionText.AddNewLine();
-                                foreach (Condition condition in title.Conditions.Conditions.Values)
+                                foreach (Condition condition in title.Conditions)
                                 {
                                     if (condition.CheckCondition(this.ShowingPerson))
                                     {
@@ -504,7 +511,7 @@
                                     }
                                     this.ConditionText.AddNewLine();
                                 }
-                                foreach (Condition condition in title.ArchitectureConditions.Conditions.Values)
+                                foreach (Condition condition in title.ArchitectureConditions)
                                 {
                                     if (this.ShowingPerson.LocationArchitecture != null && condition.CheckCondition(this.ShowingPerson.LocationArchitecture))
                                     {
@@ -516,7 +523,7 @@
                                     }
                                     this.ConditionText.AddNewLine();
                                 }
-                                foreach (Condition condition in title.FactionConditions.Conditions.Values)
+                                foreach (Condition condition in title.FactionConditions)
                                 {
                                     if (this.ShowingPerson.BelongedFaction != null && condition.CheckCondition(this.ShowingPerson.BelongedFaction))
                                     {
@@ -617,7 +624,7 @@
                     int num3 = num2;
                     if (this.ShowingPerson.Stunts.Count > num3)
                     {
-                        Stunt stunt = this.ShowingPerson.Stunts.GetStuntList()[num3] as Stunt;
+                        var stunt = ShowingPerson.Stunts.Values.ToList()[num3];
                         if (stunt != null)
                         {
                             if (this.current != stunt)
@@ -631,7 +638,7 @@
                                 this.InfluenceText.AddText((stunt.Period * Session.Parameters.DayInTurn).ToString(), this.InfluenceText.SubTitleColor3);
                                 this.InfluenceText.AddText("天", this.InfluenceText.SubTitleColor2);
                                 this.InfluenceText.AddNewLine();
-                                foreach (Influence influence in stunt.Influences.Influences.Values)
+                                foreach (var influence in stunt.Influences.Values)
                                 {
                                     this.InfluenceText.AddText(influence.Description);
                                     this.InfluenceText.AddNewLine();
@@ -642,7 +649,7 @@
                                 this.ConditionText.AddNewLine();
                                 if ((this.ShowingPerson.LocationTroop != null) && (this.ShowingPerson == this.ShowingPerson.LocationTroop.Leader))
                                 {
-                                    foreach (Condition condition in stunt.CastConditions.Conditions.Values)
+                                    foreach (Condition condition in stunt.CastConditions)
                                     {
                                         if (condition.CheckCondition(this.ShowingPerson.LocationTroop))
                                         {
@@ -657,7 +664,7 @@
                                 }
                                 else
                                 {
-                                    foreach (Condition condition in stunt.CastConditions.Conditions.Values)
+                                    foreach (Condition condition in stunt.CastConditions)
                                     {
                                         this.ConditionText.AddText(condition.Name);
                                         this.ConditionText.AddNewLine();
@@ -666,7 +673,7 @@
                                 this.ConditionText.AddNewLine();
                                 this.ConditionText.AddText("修习条件", this.ConditionText.SubTitleColor);
                                 this.ConditionText.AddNewLine();
-                                foreach (Condition condition in stunt.LearnConditions.Conditions.Values)
+                                foreach (Condition condition in stunt.LearnConditions)
                                 {
                                     if (condition.CheckCondition(this.ShowingPerson))
                                     {
@@ -701,7 +708,7 @@
                                 this.InfluenceText.AddText("技能", this.InfluenceText.TitleColor);
                                 this.InfluenceText.AddText(this.LinkedSkills[i].Name, this.InfluenceText.SubTitleColor);
                                 this.InfluenceText.AddNewLine();
-                                foreach (Influence influence in this.LinkedSkills[i].Influences.Influences.Values)
+                                foreach (Influence influence in this.LinkedSkills[i].Influences.Values)
                                 {
                                     //阿柒:根据影响种类设定不同颜色
                                     if (influence.Kind.ID == 280 || influence.Kind.ID == 281 || influence.Kind.ID == 285 || influence.Kind.ID == 290 || influence.Kind.ID == 300)
@@ -718,7 +725,7 @@
                                 this.ConditionText.Clear();
                                 this.ConditionText.AddText("修习条件", this.ConditionText.TitleColor);
                                 this.ConditionText.AddNewLine();
-                                foreach (Condition condition in this.LinkedSkills[i].Conditions.Conditions.Values)
+                                foreach (Condition condition in this.LinkedSkills[i].Conditions)
                                 {
                                     if (condition.CheckCondition(this.ShowingPerson))
                                     {
@@ -797,7 +804,7 @@
         internal void SetPerson(Person person)
         {
             this.AllSkillTexts.SimpleClear();
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
                 Rectangle position = new Rectangle(this.SkillDisplayOffset.X + (skill.DisplayCol * this.SkillBlockSize.X), this.SkillDisplayOffset.Y + (skill.DisplayRow * this.SkillBlockSize.Y), this.SkillBlockSize.X, this.SkillBlockSize.Y);
                 this.AllSkillTexts.AddText(skill.Name, position);
@@ -809,6 +816,8 @@
             this.SurNameText.Text = person.SurName;
             this.GivenNameText.Text = person.GivenName;
             this.CalledNameText.Text = person.CalledName;
+            statusEffectText.Text = string.Join(" ", person.GetStatusEffects());
+
             foreach (LabelText text in this.LabelTexts)
             {
                 text.Text.Text = StaticMethods.GetPropertyValue(person, text.PropertyName).ToString();
@@ -895,10 +904,10 @@
              */
             this.PersonSkillTexts.SimpleClear();
             this.LearnableSkillTexts.SimpleClear();
-            foreach (Skill skill in Session.Current.Scenario.GameCommonData.AllSkills.Skills.Values)
+            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
             {
                 Rectangle position = new Rectangle(this.SkillDisplayOffset.X + (skill.DisplayCol * this.SkillBlockSize.X), this.SkillDisplayOffset.Y + (skill.DisplayRow * this.SkillBlockSize.Y), this.SkillBlockSize.X, this.SkillBlockSize.Y);
-                if (person.Skills.GetSkill(skill.ID) != null)
+                if (person.HasSkill(skill.ID))
                 {
                     this.PersonSkillTexts.AddText(skill.Name, position);
                 }
@@ -915,7 +924,7 @@
             //this.StuntText.AddNewLine();
             //this.StuntText.AddText(person.Stunts.Count.ToString() + "种", Color.Lime);
             //this.StuntText.AddNewLine();
-            foreach (Stunt stunt in person.Stunts.Stunts.Values)
+            foreach (var stunt in person.Stunts.Values)
             {
                 this.StuntText.AddText(stunt.Name, Color.Khaki);
                 this.StuntText.AddText(" 战意消耗" + stunt.Combativity.ToString(), Color.SkyBlue);
@@ -1100,6 +1109,8 @@
             this.SurNameText.DisplayOffset = this.DisplayOffset;
             this.GivenNameText.DisplayOffset = this.DisplayOffset;
             this.CalledNameText.DisplayOffset = this.DisplayOffset;
+            statusEffectText.DisplayOffset = DisplayOffset;
+
             foreach (LabelText text in this.LabelTexts)
             {
                 text.Label.DisplayOffset = this.DisplayOffset;

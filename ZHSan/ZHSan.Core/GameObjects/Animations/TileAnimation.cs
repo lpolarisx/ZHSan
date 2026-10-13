@@ -1,4 +1,5 @@
-﻿using GameManager;
+﻿using GameEnums;
+using GameManager;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;

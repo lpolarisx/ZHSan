@@ -1,39 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind573 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind573 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int increment;
+        troop.IncrementOfStratagemRadius += influence.GetIntParam();
+    }
 
-
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            if (troop.IncrementOfStratagemRadius < this.increment)
-            {
-                troop.IncrementOfStratagemRadius = this.increment;
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.IncrementOfStratagemRadius = 0;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.IncrementOfStratagemRadius -= influence.GetIntParam();
     }
 }
-

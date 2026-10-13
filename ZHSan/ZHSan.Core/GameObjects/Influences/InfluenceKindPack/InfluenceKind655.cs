@@ -1,60 +1,47 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind655 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind655 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int decrement;
+        troop.ChanceDecrementOfCriticalStrikeInViewArea += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.ChanceDecrementOfCriticalStrikeInViewArea += this.decrement;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.ChanceDecrementOfCriticalStrikeInViewArea -= influence.GetIntParam();
+    }
 
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.ChanceDecrementOfCriticalStrikeInViewArea -= this.decrement;
-        }
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var decrement = influence.GetIntParam();
 
-        public override void InitializeParameter(string parameter)
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            try
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && architecture.IsFriendly(troopByPosition.BelongedFaction))
             {
-                this.decrement = int.Parse(parameter);
-            }
-            catch
-            {
+                troopByPosition.ChanceDecrementOfCriticalStrike += decrement;
             }
         }
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
-            {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && architecture.IsFriendly(troopByPosition.BelongedFaction))
-                {
-                    troopByPosition.ChanceDecrementOfCriticalStrike += this.decrement;
-                }
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var decrement = influence.GetIntParam();
 
-        public override void PurifyInfluenceKind(Architecture architecture)
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && architecture.IsFriendly(troopByPosition.BelongedFaction))
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && architecture.IsFriendly(troopByPosition.BelongedFaction))
-                {
-                    troopByPosition.ChanceDecrementOfCriticalStrike -= this.decrement;
-                }
+                troopByPosition.ChanceDecrementOfCriticalStrike -= decrement;
             }
         }
     }
 }
-

@@ -10,6 +10,7 @@ using PluginInterface;
 using Microsoft.Xna.Framework.Graphics;
 using GameObjects.Animations;
 using GameManager;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 {
@@ -23,9 +24,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 bool hold = false;
                 
             //Label_097B:
-                foreach (Troop troop in Session.Current.Scenario.Troops.GetList())
+                foreach (var troop in Session.Current.Scenario.Troops.Values)
                 {
-                    
                     if (troop.Destroyed)
                     {
                         continue;
@@ -46,7 +46,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                         {
                             white = Color.Green;
                         }
-                        if (!(((Session.GlobalVariables.SkyEye || (Session.Current.Scenario.CurrentPlayer == null)) || (troop.Status != TroopStatus.埋伏)) || troop.IsFriendly(Session.Current.Scenario.CurrentPlayer)))
+                        if (!(Session.GlobalVariables.SkyEye || Session.Current.Scenario.CurrentPlayer == null || troop.Status != TroopStatus.Ambushing || troop.IsFriendly(Session.Current.Scenario.CurrentPlayer)))
                         {
                             troop.SetNotShowing();
                             continue;
@@ -56,7 +56,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                             troop.TileAnimation.FrameCount = 1;
                         }
 
-                        if ((troop.Action == TroopAction.Stop) && troop.ShowNumber)
+                        if (troop.Action == TroopAction.Stop && troop.ShowNumber)
                         {
                             if (!troop.IncrementNumberList.IsEmpty)
                             {
@@ -66,7 +66,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                             {
                                 troop.DecrementNumberList.Draw(Session.Current.Scenario.GameCommonData.NumberGenerator, new GetDisplayRectangle(Session.MainGame.mainGameScreen.mainMapLayer.GetDestination), Session.MainGame.mainGameScreen.mainMapLayer.TileWidth, gameTime);
                             }
-                            if (troop.PreAction != TroopPreAction.无)
+                            if (troop.PreAction != TroopPreAction.None)
                             {
                                 CacheManager.Draw(troop.TileAnimation.Texture, Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, new Rectangle?(troop.GetCurrentPreTroopActionRectangle(troop.TileAnimation.Texture.Width / troop.TileAnimation.FrameCount)), Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.6998f);
                             }
@@ -76,7 +76,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                                 troop.ShowNumber = false;
                             }
                         }
-                        else if ((troop.Action == TroopAction.Stop) && (troop.PreAction != TroopPreAction.无))
+                        else if ((troop.Action == TroopAction.Stop) && (troop.PreAction != TroopPreAction.None))
                         {
                             CacheManager.Draw(troop.TileAnimation.Texture, Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, new Rectangle?(troop.GetCurrentPreTroopActionRectangle(troop.TileAnimation.Texture.Width / troop.TileAnimation.FrameCount)), Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.6998f);
                             this.DrawStoppedTroop( viewportSize, troop);
@@ -95,7 +95,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                             Rectangle? nullable;
                             if ((troop.Action == TroopAction.Attack) || (troop.Action == TroopAction.Cast))
                             {
-                                if (troop.PreAction != TroopPreAction.无)
+                                if (troop.PreAction != TroopPreAction.None)
                                 {
                                     CacheManager.Draw(troop.TileAnimation.Texture, Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, new Rectangle?(troop.GetCurrentPreTroopActionRectangle(troop.TileAnimation.Texture.Width / troop.TileAnimation.FrameCount)), Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.6998f);
                                     hold = true;
@@ -113,9 +113,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                             {
                                 if (troop.OrientationTroop != null)
                                 {
-                                    hold = troop.OrientationTroop.PreAction != TroopPreAction.无;
+                                    hold = troop.OrientationTroop.PreAction != TroopPreAction.None;
                                 }
-                                if (troop.Effect != TroopEffect.无)
+                                if (troop.Effect != TroopEffect.None)
                                 {
                                     CacheManager.Draw(troop.EffectTileAnimation.Texture, Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, new Rectangle?(troop.GetEffectTroopTileAnimationRectangle(troop.EffectTileAnimation.Texture.Width / troop.EffectTileAnimation.FrameCount)), Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.6998f);
                                 }
@@ -155,16 +155,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             }
             else
             {
-                foreach (Troop troop in Session.Current.Scenario.Troops.GetList())
+                foreach (var troop in Session.Current.Scenario.Troops.Values)
                 {
-                    if ((troop != null) && !troop.Destroyed)
+                    if (troop != null && !troop.Destroyed)
                     {
                         troop.SetNotShowing();
                         if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(troop.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(troop.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(troop.Position)))
                         {
-                            this.DrawStoppedTroop( viewportSize, troop);
+                            DrawStoppedTroop( viewportSize, troop);
                             Session.MainGame.mainGameScreen.Plugins.TroopTitlePlugin.DrawTroop( troop, playerControlling);
-                            this.DrawTroopTarget( troop, viewportSize, gameTime);
+                            DrawTroopTarget( troop, viewportSize, gameTime);
                         }
                     }
                 }
@@ -175,7 +175,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         {
             Rectangle? nullable;
             Color white = Color.White;
-            if ((Session.MainGame.mainGameScreen.DrawingSelector && (troop.Status == TroopStatus.一般)) && 
+            if ((Session.MainGame.mainGameScreen.DrawingSelector && (troop.Status == TroopStatus.Normal)) && 
                 Session.Current.Scenario.IsCurrentPlayer(troop.BelongedFaction) && !troop.Operated)
             {
                 Point positionByPoint = Session.MainGame.mainGameScreen.GetPositionByPoint(Session.MainGame.mainGameScreen.SelectorStartPosition);
@@ -201,7 +201,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 white = Color.Green;
             }
             CacheManager.Draw(troop.TroopTexture, Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, new Rectangle?(troop.GetCurrentStopDisplayRectangle(troop.TroopTexture.Width / troop.CurrentAnimation.FrameCount)), white, 0f, Vector2.Zero, SpriteEffects.None, 0.7f);
-            if (Session.MainGame.mainGameScreen.SelectorTroops.HasGameObject(troop.ID))
+            if (Session.MainGame.mainGameScreen.SelectorTroops.Contains(troop))
             {
                 nullable = null;
                 CacheManager.Draw(Session.MainGame.mainGameScreen.Textures.TileFrameTextures[4], Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, nullable, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.699f);
@@ -211,7 +211,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 nullable = null;
                 CacheManager.Draw(Session.MainGame.mainGameScreen.Textures.TileFrameTextures[4], Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, nullable, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.699f);
             }
-            if (troop.Status != TroopStatus.一般)
+            if (troop.Status != TroopStatus.Normal)
             {
                 CacheManager.Draw(troop.StatusTileAnimation.Texture, Session.MainGame.mainGameScreen.mainMapLayer.Tiles[troop.Position.X, troop.Position.Y].Destination, new Rectangle?(troop.GetStatusTroopTileAnimationRectangle(troop.StatusTileAnimation.Texture.Width / troop.StatusTileAnimation.FrameCount)), Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.6998f);
             }

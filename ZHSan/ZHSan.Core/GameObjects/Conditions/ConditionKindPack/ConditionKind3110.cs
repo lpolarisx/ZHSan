@@ -1,30 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind3110 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind3110 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Faction faction)
     {
-        private int val;
-
-        public override bool CheckConditionKind(Faction faction)
-        {
-            return faction.CityCount >= val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return faction.CityCount >= condition.GetIntParam();
     }
 }
-

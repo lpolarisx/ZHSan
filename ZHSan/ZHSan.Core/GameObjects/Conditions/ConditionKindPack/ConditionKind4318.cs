@@ -1,18 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
+using GameEnums;
 
-
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+[DataContract]
+public class ConditionKind4318 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind4318 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
- 
-        public override bool CheckConditionKind(Person person)
-        {
-            return person.OutsideTask == OutsideTaskKind.称号;
-        }
+        return person.OutsideTask == OutsideTaskKind.称号;
     }
 }
-

@@ -1,41 +1,23 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind4060 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind4060 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int radius = 0;
-
-        public override void ApplyInfluenceKind(Person person)
+        if (person.LocationTroop != null)
         {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.StuntAttackRadius += this.radius;
-            }
+            person.LocationTroop.StuntAttackRadius += influence.GetIntParam();
         }
+    }
 
-        public override void InitializeParameter(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        if (person.LocationTroop != null)
         {
-            try
-            {
-                this.radius = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Person person)
-        {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.StuntAttackRadius -= this.radius;
-            }
+            person.LocationTroop.StuntAttackRadius -= influence.GetIntParam();
         }
     }
 }
-

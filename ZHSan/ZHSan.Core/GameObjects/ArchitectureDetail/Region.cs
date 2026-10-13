@@ -1,118 +1,83 @@
-﻿using GameObjects;
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using GameDatas;
+using GameGlobal;
 
-namespace GameObjects.ArchitectureDetail
+namespace GameObjects.ArchitectureDetail;
+
+/// <summary>
+/// 地区
+/// </summary>
+public class Region : GameObject
 {
-    [DataContract]
-    public class Region : GameObject
+    public List<Architecture> Architectures { get; set; } = new();
+    public Architecture RegionCore;
+
+    public int RegionCoreID { get; set; }
+
+    public string StatesListString { get; set; }
+
+    public List<State> States { get; set; } = new();
+
+    public Region(RegionConfig config)
     {
-        public ArchitectureList Architectures = new ArchitectureList();
-        public Architecture RegionCore;
-
-        [DataMember]
-        public int RegionCoreID;
-
-        [DataMember]
-        public string StatesListString;
-
-        public StateList States = new StateList();
-
-        public void Init()
-        {
-            Architectures = new ArchitectureList();
-            States = new StateList();
-        }
-
-        public int GetFactionScale(Faction faction)
-        {
-            if (this.Architectures.Count <= 0)
-            {
-                return 0;
-            }
-            int num = 0;
-            foreach (Architecture architecture in this.Architectures)
-            {
-                if ((architecture.BelongedFaction == null) || (faction == architecture.BelongedFaction))
-                {
-                    num++;
-                }
-            }
-            return ((num * 100) / this.Architectures.Count);
-        }
-
-        public int GetSectionScale(Section section)
-        {
-            if ((this.Architectures.Count <= 0) || (section.ArchitectureCount <= 0))
-            {
-                return 0;
-            }
-            int num = 0;
-            foreach (Architecture architecture in this.Architectures)
-            {
-                if (architecture.BelongedSection == section)
-                {
-                    num++;
-                }
-                if (num >= section.ArchitectureCount)
-                {
-                    return 100;
-                }
-            }
-            return ((num * 100) / section.ArchitectureCount);
-        }
-
-        public List<string> LoadStatesFromString(StateList states, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.States.Clear();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    State gameObject = states.GetGameObject(int.Parse(str)) as State;
-                    if (gameObject != null)
-                    {
-                        this.States.Add(gameObject);
-                        gameObject.LinkedRegion = this;
-                    }
-                    else
-                    {
-                        errorMsg.Add("州域ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("州域一栏应为半型空格分隔的州域ID");
-            }
-            return errorMsg;
-
-        }
-
-        public string RegionCoreString
-        {
-            get
-            {
-                return ((this.RegionCore != null) ? this.RegionCore.Name : "----");
-            }
-        }
-
-        public string StatesString
-        {
-            get
-            {
-                string str = "";
-                foreach (State state in this.States)
-                {
-                    str = str + state.Name + " ";
-                }
-                return str;
-            }
-        }
+        ID = config.Id;
+        Name = config.Name;
+        RegionCoreID = config.RegionCoreID;
+        StatesListString = config.StatesListString;
     }
-}
 
+    public RegionConfig ToConfig()
+    {
+        return new RegionConfig
+        {
+            Id = ID,
+            Name = Name,
+            RegionCoreID = RegionCoreID,
+            StatesListString = StatesListString,
+        };
+    }
+
+    public int GetFactionScale(Faction faction)
+    {
+        var architectureCount = Architectures.Count;
+
+        if (architectureCount <= 0) return 0;
+
+        int num = 0;
+        foreach (var architecture in Architectures)
+        {
+            if (architecture.BelongedFaction == null || faction == architecture.BelongedFaction)
+            {
+                num++;
+            }
+        }
+        return num * 100 / architectureCount;
+    }
+
+    public int GetSectionScale(Section section)
+    {
+        var sectionCount = section.ArchitectureCount;
+
+        if (Architectures.Count <= 0 || sectionCount <= 0) return 0;
+
+        int num = 0;
+        foreach (Architecture architecture in Architectures)
+        {
+            if (architecture.BelongedSection == section)
+            {
+                num++;
+            }
+
+            if (num >= sectionCount)
+            {
+                return 100;
+            }
+        }
+
+        return num * 100 / sectionCount;
+    }
+
+    public string RegionCoreString => RegionCore?.Name ?? "----";
+
+    public string StatesString => StaticMethods.SaveNameToString(States);
+}

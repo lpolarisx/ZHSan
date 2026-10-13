@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6010 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6010 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int increment;
+        person.InfluenceIncrementOfStrength += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Person person)
-        {
-            person.InfluenceIncrementOfStrength += this.increment;
-        }
-
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.InfluenceIncrementOfStrength -= this.increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        person.InfluenceIncrementOfStrength -= influence.GetIntParam();
     }
 }
-

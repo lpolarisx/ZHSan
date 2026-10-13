@@ -1,36 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind431 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind431 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private float multiple = 1;
+        troop.MultipleOfLeaderExperience = influence.GetFloatParam();
+    }
 
-
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.MultipleOfLeaderExperience = this.multiple;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.multiple = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.MultipleOfLeaderExperience = 1;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.MultipleOfLeaderExperience = 1;
     }
 }
-

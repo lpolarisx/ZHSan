@@ -1,77 +1,55 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2230 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2230 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int type = 0;
+        var type = influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Faction faction)
+        switch (type)
         {
-            switch (this.type)
-            {
-                case 0:
-                    faction.AllowAttackAfterMoveOfBubing = true;
-                    break;
-
-                case 1:
-                    faction.AllowAttackAfterMoveOfNubing = true;
-                    break;
-
-                case 2:
-                    faction.AllowAttackAfterMoveOfQibing = true;
-                    break;
-
-                case 3:
-                    faction.AllowAttackAfterMoveOfShuijun = true;
-                    break;
-
-                case 4:
-                    faction.AllowAttackAfterMoveOfQixie = true;
-                    break;
-            }
+            case 0:
+                faction.AllowAttackAfterMoveOfBubing = true;
+                break;
+            case 1:
+                faction.AllowAttackAfterMoveOfNubing = true;
+                break;
+            case 2:
+                faction.AllowAttackAfterMoveOfQibing = true;
+                break;
+            case 3:
+                faction.AllowAttackAfterMoveOfShuijun = true;
+                break;
+            case 4:
+                faction.AllowAttackAfterMoveOfQixie = true;
+                break;
         }
+    }
 
-        public override void InitializeParameter(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        var type = influence.GetIntParam();
+
+        switch (type)
         {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            switch (this.type)
-            {
-                case 0:
-                    faction.AllowAttackAfterMoveOfBubing = false;
-                    break;
-
-                case 1:
-                    faction.AllowAttackAfterMoveOfNubing = false;
-                    break;
-
-                case 2:
-                    faction.AllowAttackAfterMoveOfQibing = false;
-                    break;
-
-                case 3:
-                    faction.AllowAttackAfterMoveOfShuijun = false;
-                    break;
-
-                case 4:
-                    faction.AllowAttackAfterMoveOfQixie = false;
-                    break;
-            }
+            case 0:
+                faction.AllowAttackAfterMoveOfBubing = false;
+                break;
+            case 1:
+                faction.AllowAttackAfterMoveOfNubing = false;
+                break;
+            case 2:
+                faction.AllowAttackAfterMoveOfQibing = false;
+                break;
+            case 3:
+                faction.AllowAttackAfterMoveOfShuijun = false;
+                break;
+            case 4:
+                faction.AllowAttackAfterMoveOfQixie = false;
+                break;
         }
     }
 }
-

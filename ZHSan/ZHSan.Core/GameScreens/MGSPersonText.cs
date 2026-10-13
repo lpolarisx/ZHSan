@@ -20,6 +20,7 @@ using WorldOfTheThreeKingdoms.GameScreens;
 using WorldOfTheThreeKingdoms.GameScreens.ScreenLayers;
 using WorldOfTheThreeKingdoms.Resources;
 using GameManager;
+using GameEnums;
 
 //using GameObjects.PersonDetail.PersonMessages;
 
@@ -90,7 +91,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     if (!((facility.PositionOccupied <= 1) && Setting.Current.GlobalVariables.NoHintOnSmallFacility))
                     {
                         string sheshitupian = "sheshi\\sheshi" + facility.KindID.ToString() + ".jpg";
-                        this.xianshishijiantupian(architecture.BelongedFaction.Leader,architecture.Name, TextMessageKind.FacilityCompleted, "ArchitectureFacilityCompleted", sheshitupian, "sheshiwancheng",facility.Kind.Name,false );
+                        this.xianshishijiantupian(architecture.BelongedFaction.Leader,architecture.Name, TextMessageKind.FacilityCompleted, "ArchitectureFacilityCompleted", sheshitupian, "sheshiwancheng",facility.Name,false );
                         this.Plugins.GameRecordPlugin.AddBranch(architecture, "FacilityCompleted", architecture.Position);
                     }
                 }
@@ -101,46 +102,51 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public override void Architecturefashengzainan(Architecture architecture, int zainanID)
+        public override void Architecturefashengzainan(Architecture architecture, int disasterKindId)
         {
             if (((Session.Current.Scenario.CurrentPlayer != null) && architecture.BelongedFaction!=null  && Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction)) || Session.GlobalVariables.SkyEye)
             {
-                string zainanming = Session.Current.Scenario.GameCommonData.suoyouzainanzhonglei.Getzainanzhonglei(zainanID).Name;
-                if (Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction) && architecture.BelongedFaction != null)
+                if (Session.Current.Scenario.GameCommonData.AllDisasterKinds.TryGetValue(disasterKindId, out var disasterKind))
                 {
-                    this.xianshishijiantupian(architecture.BelongedFaction.Leader, architecture.Name, TextMessageKind.DisasterHappened, "fashengzainan", "zainan" + zainanID.ToString() + ".jpg", "zainan" + zainanID.ToString(), zainanming, false);
-                    /*
-                    architecture.TextDestinationString = zainanming;
-                    this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom);
-                    this.Plugins.tupianwenziPlugin.SetGameObjectBranch(architecture.BelongedFaction.Leader, architecture, "fashengzainan");
-                    this.Plugins.tupianwenziPlugin.IsShowing = true;
-                    */
+                    var disasterName = disasterKind.Name;
+                    if (Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction) && architecture.BelongedFaction != null)
+                    {
+                        this.xianshishijiantupian(architecture.BelongedFaction.Leader, architecture.Name, TextMessageKind.DisasterHappened, "fashengzainan", "zainan" + disasterKindId.ToString() + ".jpg", "zainan" + disasterKindId.ToString(), disasterName, false);
+                        /*
+                        architecture.TextDestinationString = disasterName;
+                        this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom);
+                        this.Plugins.tupianwenziPlugin.SetGameObjectBranch(architecture.BelongedFaction.Leader, architecture, "fashengzainan");
+                        this.Plugins.tupianwenziPlugin.IsShowing = true;
+                        */
+                    }
+                    architecture.TextDestinationString = disasterName;
+
+                    this.Plugins.GameRecordPlugin.AddBranch(architecture, "fashengzainan", architecture.Position);
                 }
-                architecture.TextDestinationString = zainanming;
-
-                this.Plugins.GameRecordPlugin.AddBranch(architecture, "fashengzainan", architecture.Position);
-
             }
         }
 
-        public override void ArchitectureHirePerson(PersonList personList)
+        public override void ArchitectureHirePerson(List<Person> persons)
         {
-            Person person = personList[0] as Person;
+            var person = persons.FirstOrDefault();
+
+            if (person == null) return;
+
             //if (((Session.Current.Scenario.CurrentPlayer == null) || Session.Current.Scenario.IsCurrentPlayer(person.BelongedFaction)) || Session.GlobalVariables.SkyEye)
-            if ((Session.Current.Scenario.CurrentPlayer != null) && Session.Current.Scenario.IsCurrentPlayer(person.BelongedFaction))
+            if (Session.Current.Scenario.CurrentPlayer != null && Session.Current.Scenario.IsCurrentPlayer(person.BelongedFaction))
             {
-                foreach (Person person2 in personList)
+                foreach (var other in persons)
                 {
-                    person2.TextResultString = person2.LocationArchitecture.Name;
-                    person2.TextDestinationString = person2.BelongedFaction.Name;
+                    other.TextResultString = other.LocationArchitecture.Name;
+                    other.TextDestinationString = other.BelongedFaction.Name;
 
-                    this.Plugins.tupianwenziPlugin.SetGameObjectBranch(person2, person2, TextMessageKind.HiredPerson, "ArchitectureHirePerson");
-                    this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom, Session.MainGame.mainGameScreen);
-                    this.Plugins.tupianwenziPlugin.IsShowing = true;
+                    Plugins.tupianwenziPlugin.SetGameObjectBranch(other, other, TextMessageKind.HiredPerson, "ArchitectureHirePerson");
+                    Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom, Session.MainGame.mainGameScreen);
+                    Plugins.tupianwenziPlugin.IsShowing = true;
 
-                    //this.Plugins.PersonBubblePlugin.AddPerson(person2, person2.Position, "HirePerson");
-                    //person2.TextDestinationString = person2.BelongedFaction.Name;
-                    this.Plugins.GameRecordPlugin.AddBranch(person2, "HirePerson", person2.Position);
+                    //Plugins.PersonBubblePlugin.AddPerson(other, other.Position, "HirePerson");
+                    //other.TextDestinationString = other.BelongedFaction.Name;
+                    Plugins.GameRecordPlugin.AddBranch(other, "HirePerson", other.Position);
                 }
             }
         }
@@ -165,7 +171,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public override void ArchitectureReleaseCaptiveAfterOccupied(Architecture architecture, PersonList persons)
+        public override void ArchitectureReleaseCaptiveAfterOccupied(Architecture architecture, List<Person> persons)
         {
             if (((Session.Current.Scenario.CurrentPlayer == null) || Session.Current.Scenario.CurrentPlayer.IsArchitectureKnown(architecture)) || Session.GlobalVariables.SkyEye)
             {
@@ -175,12 +181,27 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public override void ArchitectureRewardPersons(Architecture architecture, GameObjectList personlist)
+        public override void ArchitectureRewardPersons(Architecture architecture, List<Person> persons)
         {
-            if ((personlist.Count > 0) && (((Session.Current.Scenario.CurrentPlayer == null) || Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction)) || Session.GlobalVariables.SkyEye))
+            if (persons.Count > 0 && architecture != null && IsVisibleToPlayer(architecture.BelongedFaction))
             {
-                this.Plugins.PersonBubblePlugin.AddPerson(personlist[GameObject.Random(personlist.Count)], architecture.Position, TextMessageKind.Rewarded, "RewardPerson");
+                Plugins.PersonBubblePlugin.AddPerson(StaticMethods.GetRandomItem(persons), architecture.Position, TextMessageKind.Rewarded, "RewardPerson");
             }
+        }
+
+        /// <summary>
+        /// 是否对玩家可见
+        /// </summary>
+        /// <param name="faction"></param>
+        /// <returns></returns>
+        private bool IsVisibleToPlayer(Faction faction)
+        {
+            var scenario = Session.Current.Scenario;
+
+            // 观战模式 | 当前玩家 | 上帝视角
+            return scenario.CurrentPlayer == null
+                || scenario.IsCurrentPlayer(faction)
+                || Session.GlobalVariables.SkyEye;
         }
 
         public override void CaptivePlayerRelease(Faction from, Faction to, Captive captive)
@@ -439,7 +460,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (shijian == "CaptiveEscape")
             {
-                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.HasGameObject(p.BelongedCaptive))
+                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.Contains(p.BelongedCaptive))
                 {
                     zongshixianshi = true;
                     p.TextResultString = TextResultString;
@@ -487,7 +508,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (shijian == "CaptiveEscape")
             {
-                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.HasGameObject(p.BelongedCaptive))
+                if (p.BelongedFaction == Session.Current.Scenario.CurrentPlayer || Session.Current.Scenario.CurrentPlayer.Captives.Contains(p.BelongedCaptive))
                 {
                     zongshixianshi = true;
                     p.TextResultString = TextResultString;

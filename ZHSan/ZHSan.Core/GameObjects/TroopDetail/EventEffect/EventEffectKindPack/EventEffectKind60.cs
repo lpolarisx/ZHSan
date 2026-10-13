@@ -1,22 +1,20 @@
-﻿using GameGlobal;
-using GameManager;
-using GameObjects;
-using GameObjects.TroopDetail.EventEffect;
-using System;
+﻿using GameManager;
+using System.Runtime.Serialization;
 
+namespace GameObjects.TroopDetail.EventEffect.EventEffectKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.TroopDetail.EventEffect.EventEffectKindPack
+[DataContract]
+public class EventEffectKind60 : EventEffectKind
 {
-
-    [DataContract]public class EventEffectKind60 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person)
     {
-        public override void ApplyEffectKind(Person person)
-        {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.SetOnFire(Session.Parameters.FireDamageScale * Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(person.LocationTroop.Position).FireDamageRate);
-            }
+        var troop = person.LocationTroop;
+
+        if (troop != null)
+        {   
+            var rate = Session.Current.Scenario.GetTerrainDetailByPositionNoCheck(troop.Position).FireDamageRate;
+
+            troop.SetOnFire(Session.Parameters.FireDamageScale * rate);
         }
     }
 }
-

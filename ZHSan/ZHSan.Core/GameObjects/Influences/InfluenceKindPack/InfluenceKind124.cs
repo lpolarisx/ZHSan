@@ -1,22 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind124 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind124 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        public override void ApplyInfluenceKind(Architecture person)
-        {
-            person.DayAvoidInternalDecrementOnBattle = true;
-        }
+        arch.DayAvoidInternalDecrementOnBattle = true;
+    }
 
-        public override void PurifyInfluenceKind(Architecture person)
-        {
-            person.DayAvoidInternalDecrementOnBattle = false;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.DayAvoidInternalDecrementOnBattle = false;
     }
 }
-

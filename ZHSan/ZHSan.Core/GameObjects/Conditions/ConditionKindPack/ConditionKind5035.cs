@@ -1,46 +1,33 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind5035 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind5035 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Faction faction)
     {
-        private int val;
+        return Check(condition);
+    }
 
-        public override bool CheckConditionKind(Faction faction)
-        {
-            return Session.Current.Scenario.Date.Day < val;
-        }
+    public override bool CheckConditionKind(Condition condition, Architecture architecture)
+    {
+        return Check(condition);
+    }
 
-        public override bool CheckConditionKind(Architecture architecture)
-        {
-            return Session.Current.Scenario.Date.Day < val;
-        }
+    public override bool CheckConditionKind(Condition condition, Person person)
+    {
+        return Check(condition);
+    }
 
-        public override bool CheckConditionKind(Person person)
-        {
-            return Session.Current.Scenario.Date.Day < val;
-        }
+    public override bool CheckConditionKind(Condition condition, Troop troop)
+    {
+        return Check(condition);
+    }
 
-        public override bool CheckConditionKind(Troop troop)
-        {
-            return Session.Current.Scenario.Date.Day < val;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    private bool Check(Condition condition)
+    {
+        return Session.Current.Scenario.Date.Day < condition.GetIntParam();
     }
 }
-

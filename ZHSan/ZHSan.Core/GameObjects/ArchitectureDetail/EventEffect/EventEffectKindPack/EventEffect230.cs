@@ -1,31 +1,17 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect230 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect230 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
+        var princess = person.BelongedFactionWithPrincess;
 
-        public override void ApplyEffectKind(Person person, Event e)
+        if (princess != null)
         {
-            if (person.BelongedFactionWithPrincess != null)
-            {
-                person.AdjustRelation(person.BelongedFactionWithPrincess.Leader, 0, increment);
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.AdjustRelation(princess.Leader, 0, eventEffect.GetIntParam());
         }
     }
 }

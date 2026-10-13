@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind1005 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind1005 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
     {
-        private int increment;
+        architecture.IncrementOfMoraleCeiling += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfMoraleCeiling += this.increment;
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfMoraleCeiling -= this.increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        architecture.IncrementOfMoraleCeiling -= influence.GetIntParam();
     }
 }
-

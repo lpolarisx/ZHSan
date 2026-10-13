@@ -1,36 +1,21 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect1220 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1220 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int id;
+        var kindId = eventEffect.GetIntParam();
 
-        public override void ApplyEffectKind(Architecture a, Event e)
+        foreach (var facility in arch.Facilities)
         {
-            foreach (Facility f in a.Facilities)
+            if (facility.KindID == kindId)
             {
-                if (f.KindID == id)
-                {
-                    a.DemolishFacility(f);
-                    return;
-                }
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.id = int.Parse(parameter);
-            }
-            catch
-            {
+                arch.DemolishFacility(facility);
+                return;
             }
         }
     }
 }
-

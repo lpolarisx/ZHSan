@@ -1,41 +1,29 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3140 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3140 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float rate = 1f;
+        arch.RateOfFacilityEnduranceDown -= 1 - influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateOfFacilityEnduranceDown -= 1 - this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.RateOfFacilityEnduranceDown += 1 - influence.GetFloatParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        if (arch.FacilityCount <= 0) return -1;
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateOfFacilityEnduranceDown += 1 - this.rate;
-        }
+        var frontLineFirst = arch.FrontLine ? (1 - influence.GetFloatParam()) * 2 : 0.01;
+        var frontLineSecond = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1; 
 
-        public override double AIFacilityValue(Architecture a)
-        {
-            if (a.FacilityCount <= 0) return -1;
-            return (a.FrontLine ? (1 - this.rate) * 2 : 0.01) * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1);
-        }
+        return frontLineFirst * frontLineSecond * hostileLine * criticalHostile;
     }
 }
-

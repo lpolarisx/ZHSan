@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using WorldOfTheThreeKingdoms;
 using Microsoft.Xna.Framework.Graphics;
 using GameManager;
+using GameEnums;
 
 namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
@@ -31,22 +32,22 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                     Rectangle? nullable;
                     switch (this.CurrentPlayer.GetKnownAreaDataNoCheck(tile.Position))
                     {
-                        case InformationLevel.无:
+                        case InformationLevel.None:
                             nullable = null;
                             CacheManager.Draw(this.veilTexture, tile.Destination, nullable, this.BlendColorNone, 0f, Vector2.Zero, SpriteEffects.None, 0.6f);
                             break;
 
-                        case InformationLevel.低:
+                        case InformationLevel.Low:
                             nullable = null;
                             CacheManager.Draw(this.veilTexture, tile.Destination, nullable, this.BlendColorLow, 0f, Vector2.Zero, SpriteEffects.None, 0.6f);
                             break;
 
-                        case InformationLevel.中:
+                        case InformationLevel.Medium:
                             nullable = null;
                             CacheManager.Draw(this.veilTexture, tile.Destination, nullable, this.BlendColorMiddle, 0f, Vector2.Zero, SpriteEffects.None, 0.6f);
                             break;
 
-                        case InformationLevel.高:
+                        case InformationLevel.High:
                             nullable = null;
                             CacheManager.Draw(this.veilTexture, tile.Destination, nullable, this.BlendColorHigh, 0f, Vector2.Zero, SpriteEffects.None, 0.6f);
                             break;

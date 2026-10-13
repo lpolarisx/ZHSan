@@ -1,36 +1,28 @@
-﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
+using GameManager;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind320 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind320 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int combatMethodID;
+        var id = influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(id, out var combatMethod))
         {
-            troop.CombatMethods.AddCombatMethod(Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(this.combatMethodID));
+            troop.CombatMethods.TryAdd(combatMethod.ID, combatMethod);
         }
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.combatMethodID = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        var id = influence.GetIntParam();
 
-        public override void PurifyInfluenceKind(Troop troop)
+        if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(id, out var combatMethod))
         {
-            troop.CombatMethods.RemoveCombatMethod(Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod(this.combatMethodID));
+            troop.CombatMethods.Remove(combatMethod.ID);
         }
     }
 }
-

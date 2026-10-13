@@ -1,38 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind360 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind360 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int decrement;
+        troop.MoraleDecrementOfCriticalStrike += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.MoraleDecrementOfCriticalStrike += this.decrement;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.decrement = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.MoraleDecrementOfCriticalStrike -= this.decrement;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.MoraleDecrementOfCriticalStrike -= influence.GetIntParam();
     }
 }
-

@@ -105,7 +105,10 @@ namespace GameManager
                 {
                     var tex = dics[i];
                     var rec = Session.TextureRecs.FirstOrDefault(te => te.Key.Split('#')[0] == tex.Key).Value;
-                    if (type == CacheType.Live && (rec.CacheType == "Live" || rec.CacheType == "Scene" || rec.CacheType == "Page" || rec.CacheType == "Temp") ||
+                    // Live is the top-level reset (for example, when switching MODs).
+                    // Not every file texture is registered in TextureRecs, so keeping
+                    // unregistered entries here would retain images from the old MOD.
+                    if (type == CacheType.Live ||
                         type == CacheType.Scene && (rec.CacheType == "Scene" || rec.CacheType == "Page" || rec.CacheType == "Temp") ||
                         type == CacheType.Page && (rec.CacheType == "Page" || rec.CacheType == "Temp") ||
                         type == CacheType.Temp && (rec.CacheType == "Temp"))

@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using Platforms;
 using GameManager;
+using System.Linq;
 
 namespace ArchitectureDetail
 {
@@ -3427,39 +3428,36 @@ namespace ArchitectureDetail
                 }
                 this.CharacteristicText.AddText("特色", this.CharacteristicText.TitleColor);
                 this.CharacteristicText.AddNewLine();
-                foreach (Influence influence in this.ShowingArchitecture.Characteristics.Influences.Values)
+                foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
                 {
                     this.CharacteristicText.AddText(influence.Description, this.CharacteristicText.SubTitleColor);
                     this.CharacteristicText.AddNewLine();
                 }
                 this.CharacteristicText.ResortTexts();
-                this.FacilityText.AddText("设施", this.FacilityText.TitleColor);
-                this.FacilityText.AddNewLine();
-                if (this.ShowingArchitecture.BuildingFacility >= 0)
+
+                FacilityText.AddText("设施", FacilityText.TitleColor);
+                FacilityText.AddNewLine();
+                if (Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.TryGetValue(ShowingArchitecture.BuildingFacility, out var facilityLevel))
                 {
-                    FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
-                    if (facilityKind != null)
-                    {
-                        this.FacilityText.AddText("建造中：");
-                        this.FacilityText.AddText(facilityKind.Name, this.FacilityText.SubTitleColor);
-                        this.FacilityText.AddText("，剩余时间：");
-                        this.FacilityText.AddText((this.ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString(), this.FacilityText.SubTitleColor2);
-                        this.FacilityText.AddText("天");
-                        this.FacilityText.AddNewLine();
-                    }
+                    FacilityText.AddText("建造中：");
+                    FacilityText.AddText(facilityLevel.Name, FacilityText.SubTitleColor);
+                    FacilityText.AddText("，剩余时间：");
+                    FacilityText.AddText((ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString(), FacilityText.SubTitleColor2);
+                    FacilityText.AddText("天");
+                    FacilityText.AddNewLine();
                 }
-                this.FacilityText.AddText("已有设施" + this.ShowingArchitecture.Facilities.Count + "个", this.FacilityText.SubTitleColor3);
-                this.FacilityText.AddNewLine();
-                foreach (Facility facility in this.ShowingArchitecture.Facilities)
+                FacilityText.AddText("已有设施" + ShowingArchitecture.Facilities.Count + "个", FacilityText.SubTitleColor3);
+                FacilityText.AddNewLine();
+                foreach (Facility facility in ShowingArchitecture.Facilities)
                 {
-                    this.FacilityText.AddText(facility.Name, this.FacilityText.SubTitleColor);
-                    this.FacilityText.AddText("，占用空间：");
-                    this.FacilityText.AddText(facility.PositionOccupied.ToString(), this.FacilityText.SubTitleColor2);
-                    this.FacilityText.AddText("，维持费用：");
-                    this.FacilityText.AddText(facility.MaintenanceCost.ToString(), this.FacilityText.SubTitleColor2);
-                    this.FacilityText.AddNewLine();
+                    FacilityText.AddText(facility.Name, FacilityText.SubTitleColor);
+                    FacilityText.AddText("，占用空间：");
+                    FacilityText.AddText(facility.PositionOccupied.ToString(), FacilityText.SubTitleColor2);
+                    FacilityText.AddText("，维持费用：");
+                    FacilityText.AddText(facility.MaintenanceCost.ToString(), FacilityText.SubTitleColor2);
+                    FacilityText.AddNewLine();
                 }
-                this.FacilityText.ResortTexts();
+                FacilityText.ResortTexts();
             }
             if (Switch1 == "on")
             {
@@ -3517,7 +3515,7 @@ namespace ArchitectureDetail
                     {
                         this.TheCharacteristic1Text.AddText("特色", this.TheCharacteristic1Text.TitleColor);
                         this.TheCharacteristic1Text.AddNewLine();
-                        foreach (Influence influence in this.ShowingArchitecture.Characteristics.Influences.Values)
+                        foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
                         {
                             this.TheCharacteristic1Text.AddText(influence.Description, this.TheCharacteristic1Text.SubTitleColor);
                             this.TheCharacteristic1Text.AddNewLine();
@@ -3526,33 +3524,29 @@ namespace ArchitectureDetail
                     }
                     if (Switch25 == "on")
                     {
-                        this.TheFacility1Text.AddText("设施", this.TheFacility1Text.TitleColor);
-                        this.TheFacility1Text.AddNewLine();
-                        if (this.ShowingArchitecture.BuildingFacility >= 0)
+                        TheFacility1Text.AddText("设施", TheFacility1Text.TitleColor);
+                        TheFacility1Text.AddNewLine();
+                        if (Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.TryGetValue(ShowingArchitecture.BuildingFacility, out var facilityLevel))
                         {
-                            FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
-                            if (facilityKind != null)
-                            {
-                                this.TheFacility1Text.AddText("建造中：");
-                                this.TheFacility1Text.AddText(facilityKind.Name, this.TheFacility1Text.SubTitleColor);
-                                this.TheFacility1Text.AddText("，剩余时间：");
-                                this.TheFacility1Text.AddText((this.ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString(), this.TheFacility1Text.SubTitleColor2);
-                                this.TheFacility1Text.AddText("天");
-                                this.TheFacility1Text.AddNewLine();
-                            }
+                            TheFacility1Text.AddText("建造中：");
+                            TheFacility1Text.AddText(facilityLevel.Name, TheFacility1Text.SubTitleColor);
+                            TheFacility1Text.AddText("，剩余时间：");
+                            TheFacility1Text.AddText((ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString(), TheFacility1Text.SubTitleColor2);
+                            TheFacility1Text.AddText("天");
+                            TheFacility1Text.AddNewLine();
                         }
-                        this.TheFacility1Text.AddText("已有设施" + this.ShowingArchitecture.Facilities.Count + "个", this.TheFacility1Text.SubTitleColor3);
-                        this.TheFacility1Text.AddNewLine();
-                        foreach (Facility facility in this.ShowingArchitecture.Facilities)
+                        TheFacility1Text.AddText("已有设施" + ShowingArchitecture.Facilities.Count + "个", TheFacility1Text.SubTitleColor3);
+                        TheFacility1Text.AddNewLine();
+                        foreach (Facility facility in ShowingArchitecture.Facilities)
                         {
-                            this.TheFacility1Text.AddText(facility.Name, this.TheFacility1Text.SubTitleColor);
-                            this.TheFacility1Text.AddText("，占用空间：");
-                            this.TheFacility1Text.AddText(facility.PositionOccupied.ToString(), this.TheFacility1Text.SubTitleColor2);
-                            this.TheFacility1Text.AddText("，维持费用：");
-                            this.TheFacility1Text.AddText(facility.MaintenanceCost.ToString(), this.TheFacility1Text.SubTitleColor2);
-                            this.TheFacility1Text.AddNewLine();
+                            TheFacility1Text.AddText(facility.Name, TheFacility1Text.SubTitleColor);
+                            TheFacility1Text.AddText("，占用空间：");
+                            TheFacility1Text.AddText(facility.PositionOccupied.ToString(), TheFacility1Text.SubTitleColor2);
+                            TheFacility1Text.AddText("，维持费用：");
+                            TheFacility1Text.AddText(facility.MaintenanceCost.ToString(), TheFacility1Text.SubTitleColor2);
+                            TheFacility1Text.AddNewLine();
                         }
-                        this.TheFacility1Text.ResortTexts();
+                        TheFacility1Text.ResortTexts();
                     }
                 }                
                 if (Switch22 == "on")
@@ -3694,16 +3688,12 @@ namespace ArchitectureDetail
                     if (TheFacilityPositionCount > 0) { PageForFacilityPositionCount = "on"; }
                     PageForArchitectureKind = Switch43;
                     PageForArchitectureCharacteristic = Switch44;
-                    if (this.ShowingArchitecture.BuildingFacility >= 0)
+                    if (Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.TryGetValue(ShowingArchitecture.BuildingFacility, out var facilityLevel))
                     {                        
-                        FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
-                        if (facilityKind != null)
-                        {
-                            HasBuildingFacility = true;
-                            TheBuildingFacilityID=facilityKind.ID;
-                            TheBuildingFacilityName = facilityKind.Name;
-                            TheBuildingFacilityDay = (this.ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString();
-                        }
+                        HasBuildingFacility = true;
+                        TheBuildingFacilityID=facilityLevel.ID;
+                        TheBuildingFacilityName = facilityLevel.Name;
+                        TheBuildingFacilityDay = (this.ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString();
                     }
                     if (Switch42 == "on")
                     {
@@ -3714,26 +3704,22 @@ namespace ArchitectureDetail
                     }
                     if (Switch47 == "on")
                     {                                               
-                        if (this.ShowingArchitecture.BuildingFacility >= 0)
+                        if (Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.TryGetValue(ShowingArchitecture.BuildingFacility, out var facilityLevel1))
                         {
-                            FacilityKind facilityKind = Session.Current.Scenario.GameCommonData.AllFacilityKinds.GetFacilityKind(this.ShowingArchitecture.BuildingFacility);
-                            if (facilityKind != null)
-                            {
-                                this.TheFacility3Text.AddText(this.TheFacility3Text1,this.TheFacility3Text.TitleColor);
-                                this.TheFacility3Text.AddNewLine();
-                                this.TheFacility3Text.AddText(this.TheFacility3Text2);
-                                this.TheFacility3Text.AddText(facilityKind.Name, this.TheFacility3Text.SubTitleColor);
-                                this.TheFacility3Text.AddText(this.TheFacility3Text3);
-                                this.TheFacility3Text.AddText((this.ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString(), this.TheFacility3Text.SubTitleColor2);
-                                this.TheFacility3Text.AddText(this.TheFacility3Text4);
-                                this.TheFacility3Text.AddNewLine();
-                            }
+                            TheFacility3Text.AddText(TheFacility3Text1,TheFacility3Text.TitleColor);
+                            TheFacility3Text.AddNewLine();
+                            TheFacility3Text.AddText(TheFacility3Text2);
+                            TheFacility3Text.AddText(facilityLevel1.Name, TheFacility3Text.SubTitleColor);
+                            TheFacility3Text.AddText(TheFacility3Text3);
+                            TheFacility3Text.AddText((ShowingArchitecture.BuildingDaysLeft * Session.Parameters.DayInTurn).ToString(), TheFacility3Text.SubTitleColor2);
+                            TheFacility3Text.AddText(TheFacility3Text4);
+                            TheFacility3Text.AddNewLine();
                         }
-                        this.TheFacility3Text.AddText(this.TheFacility3Text5, this.TheFacility3Text.TitleColor);
+                        TheFacility3Text.AddText(TheFacility3Text5, TheFacility3Text.TitleColor);
                         if (ShowFacilityAllCount == "on")
                         {
                             this.TheFacility3Text.AddText(this.TheFacility3Text6);
-                            this.TheFacility3Text.AddText(this.ShowingArchitecture.Facilities.Count.ToString(), this.TheFacility3Text.SubTitleColor3);
+                            this.TheFacility3Text.AddText(ShowingArchitecture.Facilities.Count.ToString(), this.TheFacility3Text.SubTitleColor3);
                             this.TheFacility3Text.AddText(this.TheFacility3Text7);
                         }
                         this.TheFacility3Text.AddNewLine();
@@ -3741,34 +3727,53 @@ namespace ArchitectureDetail
                         this.TheFacility3Text.AddNewLine();
                         for (int i = 1; i <= TheAllFacilityNumber; i++)
                         {
-                            if (this.HasTheFacilityKind(TheFacilityKind(i)) == true) 
+                            var facilityKindId = TheFacilityKind(i);
+                            var facilities = ShowingArchitecture.GetFacilities(facilityKindId);
+
+                            var count = facilities.Count;
+
+                            // 存在该种类Id的设施
+                            if (count > 0) 
                             {
-                                this.TheFacility3Text.AddText(this.TheFacilityName(TheFacilityKind(i)), this.TheFacility3Text.SubTitleColor);
+                                var facility = facilities.FirstOrDefault();
+
+                                // 先取配置名称，没有则取设施名称
+                                var facilityName = TheFacilityName(facilityKindId);
+
+                                if (string.IsNullOrEmpty(facilityName))
+                                {
+                                    facilityName = facility.Name;
+                                }
+                                
+                                TheFacility3Text.AddText(facilityName, TheFacility3Text.SubTitleColor);
+
+                                var subTitleColor3 = TheFacility3Text.SubTitleColor3;
+
                                 if (ShowFacilityCount == "on")
                                 {
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text10);
-                                    this.TheFacility3Text.AddText(this.TheFacilityCount(TheFacilityKind(i)).ToString(), this.TheFacility3Text.SubTitleColor3);
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text11);
+                                    TheFacility3Text.AddText(TheFacility3Text10);
+                                    TheFacility3Text.AddText(count.ToString(), subTitleColor3);
+                                    TheFacility3Text.AddText(TheFacility3Text11);
                                 }
                                 if (ShowPositionOccupied == "on")
                                 {
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text12);
-                                    this.TheFacility3Text.AddText(this.TheFacilityPositionOccupied(TheFacilityKind(i)), this.TheFacility3Text.SubTitleColor3);
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text13);
+                                    TheFacility3Text.AddText(TheFacility3Text12);
+                                    TheFacility3Text.AddText(facility.PositionOccupied.ToString(), subTitleColor3);
+                                    TheFacility3Text.AddText(TheFacility3Text13);
                                 }
                                 if (ShowMaintenanceCost == "on")
                                 {
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text14);
-                                    this.TheFacility3Text.AddText(this.TheFacilityMaintenanceCost(TheFacilityKind(i)), this.TheFacility3Text.SubTitleColor3);
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text15);
+                                    TheFacility3Text.AddText(TheFacility3Text14);
+                                    TheFacility3Text.AddText(facility.MaintenanceCost.ToString(), subTitleColor3);
+                                    TheFacility3Text.AddText(TheFacility3Text15);
                                 }
                                 if (ShowFacilityDescription == "on")
                                 {
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text16);
-                                    this.TheFacility3Text.AddText(this.TheFacilityDescription(TheFacilityKind(i)), this.TheFacility3Text.SubTitleColor3);
-                                    this.TheFacility3Text.AddText(this.TheFacility3Text17);
+                                    TheFacility3Text.AddText(TheFacility3Text16);
+                                    TheFacility3Text.AddText(facility.Description, subTitleColor3);
+                                    TheFacility3Text.AddText(TheFacility3Text17);
                                 }
-                                this.TheFacility3Text.AddNewLine();
+                                TheFacility3Text.AddNewLine();
                             }
                             
                         }
@@ -4283,7 +4288,7 @@ namespace ArchitectureDetail
             int id=0;
             int ID = 0;
             int n = 1;
-            foreach (Influence influence in this.ShowingArchitecture.Characteristics.Influences.Values)
+            foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
             {
                 if (n == c) { ID = influence.ID; break; } n++;
             }
@@ -4397,7 +4402,7 @@ namespace ArchitectureDetail
         {
             bool H = false;
             int ID = -1;
-            foreach (Influence influence in this.ShowingArchitecture.Characteristics.Influences.Values)
+            foreach (var influence in this.ShowingArchitecture.Characteristics.Values)
             {
                 ID = influence.ID;
                 if (ID == i)
@@ -5065,30 +5070,21 @@ namespace ArchitectureDetail
                  else if (i == 199) { N = Facility199Name; }
                  else if (i == 200) { N = Facility200Name; }
             }
-            else
-            {
-              N = this.ShowingArchitecture.GetFacilityNameForKind(TheFacilityKind(i));           
-            }
+
             return N;
         }
+        
         private int TheFacilityCount(int i)
         {
             int C = -1;
-            C = this.ShowingArchitecture.GetFacilityCountForKind(TheFacilityKind(i)); 
+            
+            // 不包含在建设施
+            var includeBuilding = false;
+            C = this.ShowingArchitecture.GetFacilityKindCount(TheFacilityKind(i), includeBuilding);
+
             return C;
         }
-        private string TheFacilityPositionOccupied(int i)
-        {
-            string S = "";
-            S = this.ShowingArchitecture.GetFacilityPositionOccupiedForKind(TheFacilityKind(i)).ToString();
-            return S;
-        }
-        private string TheFacilityMaintenanceCost(int i)
-        {
-            string S = "";
-            S = this.ShowingArchitecture.GetFacilityMaintenanceCostForKind(TheFacilityKind(i)).ToString();
-            return S;
-        }
+        
         private string TheFacilityDescription(int i)
         {
             string D="";

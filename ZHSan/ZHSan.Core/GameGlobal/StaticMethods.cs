@@ -1,12 +1,12 @@
 ﻿using GameManager;
+using GameObjects;
 using MersenneTwister;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+using Serilog;
 using System;
 using System.Collections.Generic;
-////using System.Drawing;
+using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 
@@ -65,6 +65,8 @@ namespace GameGlobal
 
     public class StaticMethods
     {
+        private static readonly ILogger logger = Log.ForContext<StaticMethods>();
+
         public static Random RandomDigit = Randoms.Create();
 
         public static void AdjustRectangleInViewport(ref Microsoft.Xna.Framework.Rectangle rect)
@@ -456,10 +458,8 @@ namespace GameGlobal
 
         public static int Random(int maxValue)
         {
-            if (maxValue <= 0)
-            {
-                return 0;
-            }
+            if (maxValue <= 0) return 0;
+            
             return RandomDigit.Next(maxValue);
         }
 
@@ -596,6 +596,147 @@ namespace GameGlobal
             }
             return zainan;
         }
+
+        /// <summary>
+        /// 获取随机顺序列表(洗牌算法)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public static List<T> GetRandomList<T>(List<T> list)
+        {
+            var random = new Random();
+
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(0, i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 获取列表随机元素
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static T GetRandomItem<T>(List<T> list)
+        {
+             if (list == null || list.Count == 0)
+                throw new ArgumentException("获取随机元素的list不能为空");
+
+            Random random = new Random();
+            int index = random.Next(list.Count);
+
+            return list[index];
+        }
+
+        /// <summary>
+        /// 将Id保存为字符串
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static string SaveIdToString<T>(IEnumerable<T> items) where T : GameObject
+        {
+            if (items == null) return "";
+
+            return string.Join(" ", items.Select(x => x.ID));
+        }
+
+        /// <summary>
+        /// 将Name保存为字符串
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items"></param>
+        /// <returns></returns>
+        public static string SaveNameToString<T>(IEnumerable<T> items) where T : GameObject
+        {
+            return string.Join("•", items.Select(x => x.Name));
+        }
+
+        /// <summary>
+        /// 根据Id字符串获取列表 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="items"></param>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public static Dictionary<int, T> LoadFromString<T>(Dictionary<int, T> items, string ids) where T : GameObject
+        {
+            if (string.IsNullOrEmpty(ids)) return new Dictionary<int, T>();
+
+            var idArray = ids.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+            var result = new Dictionary<int, T>();
+            var noExistsIds = new List<string>();
+
+            foreach (var idStr in idArray)
+            {
+                if (int.TryParse(idStr, out var id) && items.TryGetValue(id, out var obj))
+                {
+                    result.TryAdd(obj.ID, obj);
+                }
+                else
+                {
+                    noExistsIds.Add(idStr);
+                }
+            }
+
+            if (noExistsIds.Count > 0)
+            {
+                logger.Error($"[{typeof(T).Name}], Id:{string.Join(",", noExistsIds)}不存在。");
+            }
+
+            return result;
+        }
+
+        public static Dictionary<int, List<T>> LoadListFromString<T>(Dictionary<int, T> items, string data) where T : GameObject
+        {
+            if (string.IsNullOrEmpty(data)) return new Dictionary<int, List<T>>();
+
+            var strArray = data.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+
+            var result = new Dictionary<int, List<T>>();
+
+            for (int i = 0; i < strArray.Length; i += 2)
+            {
+                var key = int.Parse(strArray[i]);
+                var id = int.Parse(strArray[i + 1]);
+
+                if (!items.TryGetValue(id, out var obj)) continue;
+                
+                if (result.ContainsKey(key))
+                {
+                    result[key].Add(obj);
+                }
+                else
+                {
+                    result[key] = new List<T> { obj };
+                }
+            }
+
+            return result;
+        }
+
+        public static string SaveKeyToString<T>(Dictionary<int, List<T>> data) where T : GameObject
+        {
+            var result = new StringBuilder();
+
+            foreach (var (key, values) in data)
+            {
+                foreach (var value in values)
+                {
+                    result.Append(key).Append(" ").Append(value.ID).Append(" ");
+                }
+            }
+            
+            return result.ToString();
+        }
+
+        public static string ToMark(bool value) => value ? "○" : "×";
     }
 }
-

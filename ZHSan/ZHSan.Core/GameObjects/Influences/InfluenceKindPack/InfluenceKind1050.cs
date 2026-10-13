@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind1050 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind1050 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
     {
-        private float rate;
+        architecture.RateIncrementOfPopulationCeiling += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateIncrementOfPopulationCeiling += this.rate;
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateIncrementOfPopulationCeiling -= this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        architecture.RateIncrementOfPopulationCeiling -= influence.GetFloatParam();
     }
 }
-

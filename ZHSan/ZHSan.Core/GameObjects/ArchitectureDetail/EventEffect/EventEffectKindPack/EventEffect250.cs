@@ -1,56 +1,38 @@
-﻿using GameObjects;
-using System;
-using GameManager;
+﻿using GameManager;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffect250 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect250 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int  targetFactionID;
-
-        public override void InitializeParameter(string parameter)
+        int factionId = eventEffect.GetIntParam();
+        var targetFaction = Session.Current.Scenario.Factions.GetValueOrDefault(factionId);
+        /*
+        if (targetFaction != null)
         {
-            try
-            {
-                this.targetFactionID = int.Parse(parameter);
-                //targetFaction = factions.GetGameObject(int.Parse(parameter)) as Faction;
-            }
-            catch
-            {
-                
-            }
-           
+            throw new Exception("targetFaction 为" + targetFaction.Name);
         }
+        */
 
+        var location = person.LocationArchitecture;
 
-        public override void ApplyEffectKind(Person person, Event e)
+        if (location != null)
         {
-            FactionList factionlist = Session.Current.Scenario.Factions;
-            Faction targetFaction = factionlist.GetGameObject(targetFactionID) as Faction;
-            /*
-            if (targetFaction != null)
-            {
-                throw new Exception("targetFaction 为" + targetFaction.Name);
-            }
-            */
-
-            if (person.BelongedFaction == null && person.LocationArchitecture != null && targetFaction != null)
+            if (person.BelongedFaction == null && targetFaction != null)
             {
                 //person.Status = GameObjects.PersonDetail.PersonStatus.Normal;
                 person.MoveToArchitecture(targetFaction.Capital, null, true, true, person.BelongedFaction);
                 person.ChangeFaction(targetFaction);
             }
-            else if (person.LocationArchitecture != null && person.LocationArchitecture.BelongedFaction != null)
+            else if (location.BelongedFaction != null)
             {
                 person.MoveToArchitecture(targetFaction.Capital, null, true, true, person.BelongedFaction);
                 person.ChangeFaction(targetFaction);
-                //person.ChangeFaction(targetFaction);
             }
         }
-
-       
-
     }
 }
-

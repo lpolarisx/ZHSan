@@ -1,29 +1,12 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect1070 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect1070 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Architecture arch, Event e)
     {
-        private int increment;
-
-        public override void ApplyEffectKind(Architecture a, Event e)
-        {
-            a.IncreaseFood(increment);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        arch.IncreaseFood(eventEffect.GetIntParam());
     }
 }
-

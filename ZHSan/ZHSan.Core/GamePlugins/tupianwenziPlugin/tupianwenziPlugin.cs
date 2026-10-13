@@ -16,6 +16,7 @@ using WorldOfTheThreeKingdoms;
 using Platforms;
 using GameManager;
 using Tools;
+using GameEnums;
 
 namespace tupianwenziPlugin
 {
@@ -133,18 +134,18 @@ namespace tupianwenziPlugin
 
         public void SetGameObjectBranch(object person, object gameObject, Enum kind, string branchName, string tupian, string shengyin)
         {
-            GameObject p = (GameObject) person;
-            TextMessageKind k = (TextMessageKind) kind;
-
-            List<String> msg = Session.Current.Scenario.GameCommonData.AllTextMessages.GetTextMessage(p.ID, k);
-            if (msg.Count > 0)
+            GameObject p = person as GameObject;
+            var msg = branchName;
+            if (p != null)
             {
-                SetGameObjectBranch(p, gameObject, msg[GameObject.Random(msg.Count)], tupian, shengyin);
+                var textMessageKind = (TextMessageKind) kind;
+                var messages = CommonData.GetPersonMessage(p.ID, textMessageKind);
+                if (messages.Count > 0)
+                {
+                    msg = StaticMethods.GetRandomItem(messages);
+                }
             }
-            else
-            {
-                SetGameObjectBranch(p, gameObject, branchName, tupian, shengyin);
-            }
+            SetGameObjectBranch(p, gameObject, msg, tupian, shengyin);
         }
 
         public void SetGameObjectBranch(object person, object gameObject, string branchName, string tupian, string shengyin ,string TryToShowString="")
@@ -156,8 +157,6 @@ namespace tupianwenziPlugin
             if (!Session.Current.Scenario.SkyEyeSimpleNotification(gameObject as GameObject)||!(Session.Current.Scenario.SkyEyeSimpleNotification(gameObject as GameObject) && Session.GlobalVariables.SkyEye))
             //if (!(Session.Current.Scenario.SkyEyeSimpleNotification(gameObject as GameObject) && Session.GlobalVariables.SkyEye))
             {
-
-                this.tupianwenzi.SetGameObjectBranch(person as GameObject, gameObject as GameObject, branchName, TryToShowString );
 
                 if (shengyin != "")
                 {
@@ -219,9 +218,8 @@ namespace tupianwenziPlugin
 
                 }
 
-                this.tupianwenzi.shijiantupianduilie.Enqueue(shijiantupian);
-                this.tupianwenzi.juxingduilie.Enqueue(shijiantupianjuxing);
-                this.tupianwenzi.shijianshengyinduilie.Enqueue(shijianshengyin);
+                // 图片和声音都准备好了再入队，和文本放在同一个队列项里
+                this.tupianwenzi.SetGameObjectBranch(person as GameObject, gameObject as GameObject, branchName, TryToShowString, shijiantupian, shijiantupianjuxing, shijianshengyin);
             }
 
         }

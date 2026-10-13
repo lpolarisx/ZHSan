@@ -1,19 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind3051 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind3051 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Faction faction)
     {
-
-        public override bool CheckConditionKind(Faction faction)
-        {
-            return !faction.IsAlien;
-        }
-
+        return !faction.IsAlien;
     }
 }
-

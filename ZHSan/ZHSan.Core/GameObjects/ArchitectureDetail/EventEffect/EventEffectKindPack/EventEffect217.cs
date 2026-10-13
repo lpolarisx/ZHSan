@@ -1,21 +1,16 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
+using GameObjects.PersonDetail;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect217 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect217 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        public override void ApplyEffectKind(Person person, Event e)
+        if (person.LocationArchitecture != null && person.Status == PersonStatus.Princess)
         {
-            if (person.LocationArchitecture != null && person.Status == GameObjects.PersonDetail.PersonStatus.Princess)
-            {
-                Architecture originalLocationArch = person.LocationArchitecture;
-                person.Status = GameObjects.PersonDetail.PersonStatus.Normal;
-            }
+            person.Status = PersonStatus.Normal;
         }
-
     }
 }
-

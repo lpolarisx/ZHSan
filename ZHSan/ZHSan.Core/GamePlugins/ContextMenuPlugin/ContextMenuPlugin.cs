@@ -128,7 +128,7 @@ namespace ContextMenuPlugin
                         if (i.Name.Equals("TroopCombatMethod")|| i.Name.Equals("TroopAutoCombatMethod"))
                         {
                             i.MenuItems.Clear();
-                            foreach (GameObjects.TroopDetail.CombatMethod m in Session.Current.Scenario.GameCommonData.AllCombatMethods.CombatMethods.Values)
+                            foreach (var m in Session.Current.Scenario.GameCommonData.AllCombatMethods.Values)
                             {
                                 MenuItem item = new MenuItem(i, kind, kind.contextMenu);
                                 item.ID = m.ID;
@@ -144,7 +144,7 @@ namespace ContextMenuPlugin
                         else if (i.Name.Equals("TroopStratagem"))
                         {
                             i.MenuItems.Clear();
-                            foreach (GameObjects.TroopDetail.Stratagem m in Session.Current.Scenario.GameCommonData.AllStratagems.Stratagems.Values)
+                            foreach (var m in Session.Current.Scenario.GameCommonData.AllStratagems.Values)
                             {
                                 MenuItem item = new MenuItem(i, kind, kind.contextMenu);
                                 item.ID = m.ID;
@@ -159,7 +159,7 @@ namespace ContextMenuPlugin
                         else if (i.Name.Equals("TroopStunt"))
                         {
                             i.MenuItems.Clear();
-                            foreach (GameObjects.PersonDetail.Stunt m in Session.Current.Scenario.GameCommonData.AllStunts.Stunts.Values)
+                            foreach (var m in Session.Current.Scenario.GameCommonData.AllStunts.Values)
                             {
                                 MenuItem item = new MenuItem(i, kind, kind.contextMenu);
                                 item.ID = m.ID;

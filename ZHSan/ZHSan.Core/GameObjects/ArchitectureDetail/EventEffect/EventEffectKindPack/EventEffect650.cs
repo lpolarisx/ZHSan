@@ -1,31 +1,19 @@
-﻿using GameObjects;
-using System;
+﻿using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect650 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect650 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private String tag;
+        var tag = eventEffect.Parameter;
 
-        public override void ApplyEffectKind(Person person, Event e)
+        int index = person.Tags.IndexOf(tag + ",");
+        if (index >= 0)
         {
-            int index = person.Tags.IndexOf(tag + ",");
-            if (index >= 0) {
-                person.Tags.Remove(index, tag.Length + 2);
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.tag = parameter;
-            }
-            catch
-            {
-            }
+            person.Tags.Remove(index, tag.Length + 2);
         }
     }
 }

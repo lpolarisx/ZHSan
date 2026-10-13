@@ -1,4 +1,5 @@
-﻿using GameManager;
+﻿using GameEnums;
+using GameManager;
 using GameObjects;
 using Microsoft.Xna.Framework;
 using System;
@@ -87,13 +88,14 @@ namespace GameObjects.TroopDetail
 
         private PathResult conflictionPathSearcher_OnCheckPosition(Point position, List<Point> middlePath, MilitaryKind kind)
         {
-            TroopList list = new TroopList();
-            TroopList list2 = new TroopList();
-            foreach (Troop troop in this.troop.BelongedFaction.KnownTroops.Values)
+            var list = new List<Troop>();
+            var list2 = new List<Troop>();
+
+            foreach (var troop in troop.BelongedFaction.KnownTroops.Values)
             {
-                if (!troop.IsFriendly(this.troop.BelongedFaction))
+                if (!troop.IsFriendly(troop.BelongedFaction))
                 {
-                    switch (this.troop.HostileAction)
+                    switch (troop.HostileAction)
                     {
                         case HostileActionKind.EvadeEffect:
                             if (troop.OffenceArea.HasPoint(position))
@@ -115,14 +117,14 @@ namespace GameObjects.TroopDetail
                     list2.Add(troop);
                 }
             }
-            if ((list.Count > 0) || (list2.Count > 0))
+            if (list.Count > 0 || list2.Count > 0)
             {
                 bool flag = false;
-                foreach (Troop troop in list)
+                foreach (var troop in list)
                 {
                     switch (this.troop.HostileAction)
                     {
-                        case HostileActionKind.NotCare:
+                        case HostileActionKind.Ignore:
                             Session.Current.Scenario.SetPenalizedMapDataByPosition(troop.Position, 0xdac);
                             break;
 
@@ -146,11 +148,11 @@ namespace GameObjects.TroopDetail
                     }
                 }*/
                 flag = this.ModifyFirstTierPath(this.troop.Position, this.troop.FirstTierDestination, middlePath, kind);
-                foreach (Troop troop in list)
+                foreach (var troop in list)
                 {
                     switch (this.troop.HostileAction)
                     {
-                        case HostileActionKind.NotCare:
+                        case HostileActionKind.Ignore:
                             Session.Current.Scenario.ClearPenalizedMapDataByPosition(troop.Position);
                             break;
 

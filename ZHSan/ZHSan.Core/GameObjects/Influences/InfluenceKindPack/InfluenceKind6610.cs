@@ -1,46 +1,32 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6610 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6610 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float increment;
+        var faction = arch.BelongedFaction;
 
-        public override void ApplyInfluenceKind(Architecture p)
+        if (faction != null)
         {
-            if (p.BelongedFaction != null)
-            {
-                p.BelongedFaction.techniquePointCostRateDecrease.Add(this.increment);
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture p)
-        {
-            if (p.BelongedFaction != null)
-            {
-                p.BelongedFaction.techniquePointCostRateDecrease.Remove(this.increment);
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.increment;
+            faction.techniquePointCostRateDecrease.Add(influence.GetFloatParam());
         }
     }
-}
 
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        var faction = arch.BelongedFaction;
+
+        if (faction != null)
+        {
+            faction.techniquePointCostRateDecrease.Remove(influence.GetFloatParam());
+        }
+    }
+
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetFloatParam();
+    }
+}

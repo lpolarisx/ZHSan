@@ -1,63 +1,38 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6420 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6420 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment;
-        private int disasterId;
+        var disasterId = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void ApplyInfluenceKind(Architecture a)
+        if (arch.disasterChanceDecrease.ContainsKey(disasterId))
         {
-            if (a.disasterChanceDecrease.ContainsKey(disasterId))
-            {
-                a.disasterChanceDecrease[disasterId] += this.increment;
-            }
-            else
-            {
-                a.disasterChanceDecrease[disasterId] = this.increment;
-            }
+            arch.disasterChanceDecrease[disasterId] += increment;
         }
-
-
-        public override void PurifyInfluenceKind(Architecture a)
+        else
         {
-            if (a.disasterChanceDecrease.ContainsKey(disasterId))
-            {
-                a.disasterChanceDecrease[disasterId] -= this.increment;
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.disasterId = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.increment / 10;
+            arch.disasterChanceDecrease[disasterId] = increment;
         }
     }
-}
 
+
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        var disasterId = influence.GetIntParam();
+
+        if (arch.disasterChanceDecrease.ContainsKey(disasterId))
+        {
+            arch.disasterChanceDecrease[disasterId] -= influence.GetIntParam2();
+        }
+    }
+
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetIntParam2() / 10;
+    }
+}

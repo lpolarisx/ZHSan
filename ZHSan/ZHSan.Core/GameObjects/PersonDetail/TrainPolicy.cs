@@ -1,56 +1,64 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
+﻿using System.Collections.Generic;
+using GameDatas;
 
-namespace GameObjects.PersonDetail
+namespace GameObjects.PersonDetail;
+
+/// <summary>
+/// 培育方针
+/// </summary>
+public class TrainPolicy : GameObject
 {
-    [DataContract]
-	public class TrainPolicy : GameObject
-	{
-        [DataMember]
-        public String Description { get; set; }
-        [DataMember]
-        public float Command { get; set; }
-        [DataMember]
-        public float Strength { get; set; }
-        [DataMember]
-        public float Intelligence { get; set; }
-        [DataMember]
-        public float Politics { get; set; }
-        [DataMember]
-        public float Glamour { get; set; }
-        [DataMember]
-        public float Skill { get; set; }
-        [DataMember]
-        public float Stunt { get; set; }
-        [DataMember]
-        public float Title { get; set; }
+    public string Description { get; set; }
 
-        public Dictionary<int, float> Weighting
-        {
-            get
-            {
-                Dictionary<int, float> dict = new Dictionary<int, float>();
-                dict.Add(1, this.Command);
-                dict.Add(2, this.Strength);
-                dict.Add(3, this.Intelligence);
-                dict.Add(4, this.Politics);
-                dict.Add(5, this.Glamour);
-                dict.Add(6, this.Skill);
-                dict.Add(7, this.Stunt);
-                dict.Add(8, this.Title);
-                return dict;
-            }
-        }
+    public float Command { get; set; }
 
-        public float WeightSum
+    public float Strength { get; set; }
+
+    public float Intelligence { get; set; }
+
+    public float Politics { get; set; }
+
+    public float Glamour { get; set; }
+
+    public float Skill { get; set; }
+
+    public float Stunt { get; set; }
+
+    public float Title { get; set; }
+
+    public TrainPolicy(TrainPolicyConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        Description = config.Description;
+        Command = config.Command;
+        Strength = config.Strength;
+        Intelligence = config.Intelligence;
+        Politics = config.Politics;
+        Glamour = config.Glamour;
+        Skill = config.Skill;
+        Stunt = config.Stunt;
+        Title = config.Title;
+    }
+
+    public Dictionary<int, float> Weighting
+    {
+        get
         {
-            get
+            Dictionary<int, float> dict = new Dictionary<int, float>
             {
-                return this.Command + this.Strength + this.Intelligence + this.Politics + this.Glamour + this.Skill + this.Stunt + this.Title;
-            }
+                { 1, this.Command },
+                { 2, this.Strength },
+                { 3, this.Intelligence },
+                { 4, this.Politics },
+                { 5, this.Glamour },
+                { 6, this.Skill },
+                { 7, this.Stunt },
+                { 8, this.Title }
+            };
+            return dict;
         }
-	}
+    }
+
+    public float WeightSum => Command + Strength + Intelligence + Politics + Glamour + Skill + Stunt + Title;
 }

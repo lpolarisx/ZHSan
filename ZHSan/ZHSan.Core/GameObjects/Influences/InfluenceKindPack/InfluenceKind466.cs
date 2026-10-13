@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind466 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind466 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private float rate;
+        person.RateIncrementOfConvince += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Person person)
-        {
-            person.RateIncrementOfConvince += this.rate;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.RateIncrementOfConvince -= this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        person.RateIncrementOfConvince -= influence.GetFloatParam();
     }
 }
-

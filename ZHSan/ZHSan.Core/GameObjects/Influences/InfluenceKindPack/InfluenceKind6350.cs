@@ -1,50 +1,19 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6350 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6350 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int increment;
-        private int count;
+        person.multipleChildrenRate += influence.GetIntParam();
+        person.maxChildren += influence.GetIntParam2();
+    }
 
-        public override void ApplyInfluenceKind(Person person)
-        {
-            person.multipleChildrenRate += this.increment;
-            person.maxChildren += this.count;
-        }
-
-
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.multipleChildrenRate -= this.increment;
-            person.maxChildren -= this.count;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.count = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        person.multipleChildrenRate -= influence.GetIntParam();
+        person.maxChildren -= influence.GetIntParam2();
     }
 }
-

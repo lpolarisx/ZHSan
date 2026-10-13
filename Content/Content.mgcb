@@ -3290,3 +3290,51 @@
 /processorParam:Quality=Best
 /build:Sound/Move.mp3
 
+#begin Music/Attack/Original-Attack.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Attack/Original-Attack.mp3
+
+#begin Music/Autumn/Original-Autumn.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Autumn/Original-Autumn.mp3
+
+#begin Music/Battle/Original-Battle.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Battle/Original-Battle.mp3
+
+#begin Music/Defend/Original-Defend.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Defend/Original-Defend.mp3
+
+#begin Music/Spring/Original-Spring.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Spring/Original-Spring.mp3
+
+#begin Music/Start/Original-Start.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Start/Original-Start.mp3
+
+#begin Music/Summer/Original-Summer.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Summer/Original-Summer.mp3
+
+#begin Music/Winter/Original-Winter.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Music/Winter/Original-Winter.mp3
+

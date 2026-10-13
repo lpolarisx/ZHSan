@@ -1,40 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3310 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3310 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment = 0;
+        arch.IncrementOfFactionTechniquePointPerDay += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfFactionTechniquePointPerDay += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.IncrementOfFactionTechniquePointPerDay -= influence.GetIntParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfFactionTechniquePointPerDay -= this.increment;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return this.increment / 5000.0;
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return influence.GetIntParam() / 5000.0;
     }
 }
-

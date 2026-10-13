@@ -1,472 +1,468 @@
-﻿using GameObjects;
-using System;
-using System.Runtime.InteropServices;
+﻿using System;
 using Microsoft.Xna.Framework;
-using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using GameManager;
+using GameEnums;
+using GameDatas;
 
-namespace GameObjects.Influences
+namespace GameObjects.Influences;
+
+public class Influence : GameObject
 {
-    [DataContract]
-    public class Influence : GameObject
+    #region DataMember
+
+    /// <summary>
+    /// 影响类型
+    /// </summary>
+    public InfluenceKind Kind { get; set; }
+
+    public int KindId { get; set; }
+
+    /// <summary>
+    /// 描述
+    /// </summary>
+    public string Description { get; set; }
+
+    private string parameter;
+    private int? intParameter;
+    private float? floatParameter;
+
+    /// <summary>
+    /// 参数1
+    /// </summary>
+    public string Parameter
     {
-        private string description;
-
-        [DataMember]
-        public InfluenceKind Kind;
-        private string parameter;
-        private string parameter2;
-
-        public Influence Clone()
+        get => parameter;
+        set
         {
-            return this.MemberwiseClone() as Influence;
+            parameter = value;
+            intParameter = null;
+            floatParameter = null;
         }
+    }
 
-        public HashSet<ApplyingArchitecture> appliedArch = new HashSet<ApplyingArchitecture>();
-        
-        public HashSet<ApplyingPerson> appliedPerson = new HashSet<ApplyingPerson>();
-        
-        public HashSet<ApplyingFaction> appliedFaction = new HashSet<ApplyingFaction>();
-        
-        public HashSet<ApplyingTroop> appliedTroop = new HashSet<ApplyingTroop>();
+    private string parameter2;
+    private int? intParameter2;
+    private float? floatParameter2;
 
-        public void Init()
+    /// <summary>
+    /// 参数2
+    /// </summary>
+    public string Parameter2
+    {
+        get => parameter2;
+        set
         {
-            appliedArch = new HashSet<ApplyingArchitecture>();
-            appliedPerson = new HashSet<ApplyingPerson>();
-            appliedFaction = new HashSet<ApplyingFaction>();
-            appliedTroop = new HashSet<ApplyingTroop>();
+            parameter2 = value;
+            intParameter2 = null;
+            floatParameter2 = null;
         }
-        
-        public void ApplyInfluence(Architecture architecture, Applier applier, int applierID)
-        {
-            ApplyingArchitecture a = new ApplyingArchitecture(architecture, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.ApplyInfluenceKind(architecture, this, applier, applierID);
-            }
-            catch
-            {
-            }
-        }         
+    }
 
-        public void ApplyInfluence(Faction faction, Applier applier, int applierID)
+    #endregion
+
+    public Influence(InfluenceConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        KindId = config.KindId;
+        Description = config.Description;
+        Parameter = config.Parameter;
+        Parameter2 = config.Parameter2;
+    }
+
+    /// <summary>
+    /// 获取参数1解析的int值
+    /// </summary>
+    /// <returns></returns>
+    public int GetIntParam()
+    {
+        if (!intParameter.HasValue)
         {
-            ApplyingFaction a = new ApplyingFaction(faction, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.ApplyInfluenceKind(faction, this, applier, applierID);
-            }
-            catch
-            {
-            }
+            intParameter = int.TryParse(parameter, out int v) ? v : 0;
         }
+        return intParameter.Value;
+    }
 
-        public void ApplyInfluence(Person person, Applier applier, int applierID, bool excludePersonal)
+    /// <summary>
+    /// 获取参数1解析的float值
+    /// </summary>
+    /// <returns></returns>
+    public float GetFloatParam()
+    {
+        if (!floatParameter.HasValue)
         {
-            ApplyingPerson a = new ApplyingPerson(person, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.ApplyInfluenceKind(person, this, applier, applierID, excludePersonal);
-            }
-            catch
-            {
-            }
+            floatParameter = float.TryParse(parameter, out float v) ? v : 0;
         }
+        return floatParameter.Value;
+    }
 
-        public void ApplyInfluence(Troop troop, Applier applier, int applierID)
+    /// <summary>
+    /// 获取参数2解析的int值
+    /// </summary>
+    /// <returns></returns>
+    public int GetIntParam2()
+    {
+        if (!intParameter2.HasValue)
         {
-            ApplyingTroop a = new ApplyingTroop(troop, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.ApplyInfluenceKind(troop, this, applier, applierID);
-            }
-            catch
-            {
-            }
+            intParameter2 = int.TryParse(parameter2, out int v) ? v : 0;
         }
+        return intParameter2.Value;
+    }
 
-        public void DoWork(Architecture architecture)
+    /// <summary>
+    /// 获取参数2解析的float值
+    /// </summary>
+    /// <returns></returns>
+    public float GetFloatParam2()
+    {
+        if (!floatParameter2.HasValue)
         {
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            this.Kind.DoWork(architecture);
+            floatParameter2 = float.TryParse(parameter2, out float v) ? v : 0;
         }
+        return floatParameter2.Value;
+    }
 
-        public int GetCredit(Troop source, Troop destination)
+    public HashSet<ApplyArchitecture> ApplyArchitectures { get; set; } = new();
+
+    public HashSet<ApplyPerson> ApplyPersons { get; set; } = new();
+
+    public HashSet<ApplyFaction> ApplyFactions { get; set; } = new();
+
+    public HashSet<ApplyTroop> ApplyTroops { get; set; } = new();
+
+    public void Init()
+    {
+        ApplyArchitectures = new();
+        ApplyPersons = new();
+        ApplyFactions = new();
+        ApplyTroops = new();
+    }
+
+    public static void ApplyInfluenceListToPerson(IEnumerable<Influence> influences, Person person, Applier applier, int id)
+    {
+        bool flag = false;
+        bool flag2 = false;
+        foreach (var influence in influences)
         {
-            return this.Kind.GetCredit(source, destination);
-        }
-
-        public int GetCreditWithPosition(Troop source, out Point? position)
-        {
-            //position = 0;
-            position = new Point(0, 0);
-            return this.Kind.GetCreditWithPosition(source, out position);
-        }
-
-        public bool IsVaild(Person person)
-        {
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.IsVaild(person);
-        }
-
-
-        public bool IsVaild(Troop troop)
-        {
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            return this.Kind.IsVaild(troop);
-        }
-
-        public void PurifyInfluence(Architecture architecture, Applier applier, int applierID)
-        {
-            ApplyingArchitecture a = new ApplyingArchitecture(architecture, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
+            if ((influence.Type != InfluenceType.Prerequisite) && (influence.Type != InfluenceType.Exclusive))
             {
-                this.Kind.PurifyInfluenceKind(architecture, this, applier, applierID);
-            }
-            catch
-            {
-            }
-        }        
-
-        public void PurifyInfluence(Faction faction, Applier applier, int applierID)
-        {
-            ApplyingFaction a = new ApplyingFaction(faction, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.PurifyInfluenceKind(faction, this, applier, applierID);
-            }
-            catch
-            {
-            }
-        }
-
-        public void PurifyInfluence(Person person, Applier applier, int applierID, bool excludePersonal)
-        {
-            ApplyingPerson a = new ApplyingPerson(person, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.PurifyInfluenceKind(person, this, applier, applierID, excludePersonal);
-            }
-            catch
-            {
-            }
-        }
-
-        public void TroopDestroyed(Troop troop)
-        {
-            appliedTroop.RemoveWhere((x) => { return x.troop == troop; });
-        }
-
-        public void PurifyInfluence(Troop troop, Applier applier, int applierID)
-        {
-            ApplyingTroop a = new ApplyingTroop(troop, applier, applierID);
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                this.Kind.PurifyInfluenceKind(troop, this, applier, applierID);
-            }
-            catch
-            {
-            }
-        }
-
-        public double AIFacilityValue(Architecture a)
-        {
-            this.Kind.InitializeParameter(this.Parameter);
-            this.Kind.InitializeParameter2(this.Parameter2);
-            try
-            {
-                return this.Kind.AIFacilityValue(a);
-            }
-            catch
-            {
-            }
-            return 0;
-        }
-
-        public override string ToString()
-        {
-            return this.Description;
-        }
-
-        [DataMember]
-        public string Description
-        {
-            get
-            {
-                return this.description;
-            }
-            set
-            {
-                this.description = value;
-            }
-        }
-
-        [DataMember]
-        public string Parameter
-        {
-            get
-            {
-                return this.parameter;
-            }
-            set
-            {
-                this.parameter = value;
-            }
-        }
-
-        [DataMember]
-        public string Parameter2
-        {
-            get
-            {
-                return this.parameter2;
-            }
-            set
-            {
-                this.parameter2 = value;
-            }
-        }
-
-        public bool TroopLeaderValid
-        {
-            get
-            {
-                return this.Kind.TroopLeaderValid;
-            }
-        }
-        /*
-        public bool ConditionValid
-        {
-            get
-            {
-                return this.Kind.ConditionValid;
-            }
-        }*/
-
-        public InfluenceType Type
-        {
-            get
-            {
-                return this.Kind.Type;
-            }
-        }
-
-        public float Value
-        {
-            get
-            {
-                return float.Parse(this.Parameter);
-            }
-        }
-
-        public double AIPersonValue
-        {
-            get
-            {
-                float p1;
-
-                if (float.TryParse(this.Parameter, out p1))
+                if (!flag || flag2)
                 {
-
+                    influence.ApplyInfluence(person, applier, id);
                 }
-                else
+                continue;
+            }
+            if (!(flag || (influence.Type != InfluenceType.Exclusive)))
+            {
+                flag = true;
+            }
+            if (influence.IsVaild(person))
+            {
+                if (influence.Type == InfluenceType.Exclusive)
                 {
-                    return this.Kind.AIPersonValue;
+                    flag2 = true;
+                    continue;
                 }
+            }
+            else if (influence.Type == InfluenceType.Prerequisite)
+            {
+                break;
+            }
+        }
+    }
 
-                //try
-                //{
-                    p1 = float.Parse(this.Parameter);
-                //}
-                //catch
-                //{
-                //    return this.Kind.AIPersonValue;
-                //}
+    public static void ApplyInfluenceList<T>(IEnumerable<Influence> influences, T target, Applier applier, int id) where T : GameObject
+    {
+        foreach (var influence in influences)
+        {
+            influence.ApplyInfluence(target, applier, id);
+        }
+    }
 
-                double v;
-                switch (this.Kind.ID)
-                {
-                    case 320:
-                        return this.Kind.AIPersonValue *
-                            (Session.Current.Scenario.GameCommonData.AllCombatMethods.GetCombatMethod((int)p1).Combativity * this.Kind.AIPersonValuePow);
-                    case 330:
-                        return this.Kind.AIPersonValue *
-                            (Session.Current.Scenario.GameCommonData.AllStunts.GetStunt((int)p1).Combativity * this.Kind.AIPersonValuePow);
-                    case 860:
-                        return this.Kind.AIPersonValue *
-                            (Session.Current.Scenario.GameCommonData.AllStratagems.GetStratagem((int)p1).Combativity * this.Kind.AIPersonValuePow);
-                    case 800:
-                    case 802:
-                    case 804:
-                    case 824:
-                    case 832:
-                        return this.Kind.AIPersonValue * (p1 - 1);
-                    case 801:
-                    case 803:
-                    case 805:
-                    case 825:
-                    case 833:
-                        return this.Kind.AIPersonValue * (1 - p1);
-                    case 200:
-                    case 220:
-                        try
+    public void ApplyInfluence(GameObject target, Applier applier, int id)
+    {
+        switch (target)
+        {
+            case Faction faction:
+                Kind.ApplyFromEntry(faction, this, applier, id);
+                break;
+            case Architecture arch:
+                Kind.ApplyFromEntry(arch, this, applier, id);
+                break;
+            case Person person:
+                Kind.ApplyFromEntry(person, this, applier, id);
+                break;
+            case Troop troop:
+                Kind.ApplyFromEntry(troop, this, applier, id);
+                break;
+            default:
+                throw new NotSupportedException($"不支持的影响对象: {target.GetType().Name}");
+        }
+    }
+
+
+    public void ApplyInfluence(Architecture arch, Applier applier, int id)
+    {
+        Kind.ApplyFromEntry(arch, this, applier, id);
+    }
+
+    public void ApplyInfluence(Faction faction, Applier applier, int applierID)
+    {
+        Kind.ApplyFromEntry(faction, this, applier, applierID);
+    }
+
+    public void ApplyInfluence(Person person, Applier applier, int applierID)
+    {
+        Kind.ApplyFromEntry(person, this, applier, applierID);
+    }
+
+    public void ApplyInfluence(Troop troop, Applier applier, int applierID)
+    {
+        Kind.ApplyFromEntry(troop, this, applier, applierID);
+    }
+
+    public void DoWork(Architecture architecture)
+    {
+        Kind.DoWork(this, architecture);
+    }
+
+    public int GetCredit(Troop source, Troop destination)
+    {
+        return Kind.GetCredit(this, source, destination);
+    }
+
+    public int GetCreditWithPosition(Troop source, out Point? position)
+    {
+        position = new Point(0, 0);
+        return Kind.GetCreditWithPosition(source, out position);
+    }
+
+    public bool IsVaild(Person person)
+    {
+        return Kind.IsVaild(this, person);
+    }
+
+
+    public bool IsVaild(Troop troop)
+    {
+        return Kind.IsVaild(this, troop);
+    }
+
+    public static void PurifyInfluenceList<T>(IEnumerable<Influence> influences, T target, Applier applier, int id) where T : GameObject
+    {
+        foreach (var influence in influences)
+        {
+            influence.PurifyInfluence(target, applier, id);
+        }
+    }
+
+    public void PurifyInfluence(GameObject target, Applier applier, int id)
+    {
+        switch (target)
+        {
+            case Faction faction:
+                Kind.PurifyFromEntry(faction, this, applier, id);
+                break;
+            case Architecture arch:
+                Kind.PurifyFromEntry(arch, this, applier, id);
+                break;
+            case Person person:
+                Kind.PurifyFromEntry(person, this, applier, id);
+                break;
+            case Troop troop:
+                Kind.PurifyFromEntry(troop, this, applier, id);
+                break;
+            default:
+                throw new NotSupportedException($"不支持的影响对象: {target.GetType().Name}");
+        }
+    }
+
+    public void PurifyInfluence(Architecture architecture, Applier applier, int applierID)
+    {
+        Kind.PurifyFromEntry(architecture, this, applier, applierID);
+    }
+
+    public void PurifyInfluence(Faction faction, Applier applier, int applierID)
+    {
+        Kind.PurifyFromEntry(faction, this, applier, applierID);
+    }
+
+    public void PurifyInfluence(Person person, Applier applier, int applierID)
+    {
+        Kind.PurifyFromEntry(person, this, applier, applierID);
+    }
+
+    public void TroopDestroyed(Troop troop)
+    {
+        ApplyTroops.RemoveWhere((x) => { return x.troop == troop; });
+    }
+
+    public void PurifyInfluence(Troop troop, Applier applier, int applierID)
+    {
+        Kind.PurifyFromEntry(troop, this, applier, applierID);
+    }
+
+    public double AIFacilityValue(Architecture arch)
+    {
+        return Kind.AIFacilityValue(this, arch);
+    }
+
+    public override string ToString() => Description;
+
+    public bool TroopLeaderValid => Kind.TroopLeaderValid;
+
+    public InfluenceType Type => Kind.Type;
+
+    public double AIPersonValue
+    {
+        get
+        {
+            var commonData = Session.Current.Scenario.GameCommonData;
+
+            var i1 = GetIntParam();
+            var f1 = GetFloatParam();
+            var i2 = GetIntParam2();
+            var f2 = GetFloatParam2();
+
+            var value = Kind.AIPersonValue;
+            var pow = Kind.AIPersonValuePow;
+
+            double v;
+            switch (Kind.ID)
+            {
+                case 320:
+                    {
+                        if (commonData.AllCombatMethods.TryGetValue(i1, out var combatMethod))
                         {
-                            int p2 = int.Parse(this.Parameter2);
-                            v = this.Kind.AIPersonValue * Math.Pow(p2, this.Kind.AIPersonValuePow);
-                            switch ((int) p1)
-                            {
-                                case 1:
-                                case 2:
-                                    return v * 2;
-                                case 3:
-                                case 5:
-                                    return v;
-                                case 6:
-                                    return v * 1.5;
-                                case 8:
-                                case 9:
-                                case 10:
-                                    return v * 0.5;
-                                default:
-                                    return 0;
-                            }
-                        }
-                        catch
-                        {
-                            return this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        }
-                    case 352:
-                        v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        try
-                        {
-                            float p2 = float.Parse(Parameter2);
-                            return this.Kind.AIPersonValue * Math.Min(p1, p2 - 0.5) * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        }
-                        catch
-                        {
-                            return v;
-                        }
-                    case 6140:
-                        v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        try
-                        {
-                            int p2 = int.Parse(this.Parameter2);
-                            if (p1 >= 100)
-                            {
-                                v *= 1.2;
-                            }
-                            if (p1 > 110)
-                            {
-                                v *= 1.5;
-                            }
-                            return v * p2;
-                        }
-                        catch
-                        {
-                            return v;
-                        }
-                    case 6350:
-                        v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        try
-                        {
-                            int p2 = int.Parse(this.Parameter2);
-                            return this.Kind.AIPersonValue * Math.Pow(p2 - 1, p1 / 100.0) * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        }
-                        catch
-                        {
-                            return v;
-                        }
-                    case 6360:
-                        v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        try
-                        {
-                            int p2 = int.Parse(this.Parameter2);
-                            return this.Kind.AIPersonValue * (Math.Max(p2, 100) / 100.0) * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        }
-                        catch
-                        {
-                            return v;
-                        }
-                    case 6420:
-                    case 6430:
-                    case 6450:
-                        try
-                        {
-                            float p2 = float.Parse(this.Parameter2);
-                            return this.Kind.AIPersonValue * Math.Pow(p2, this.Kind.AIPersonValuePow);
-                        }
-                        catch
-                        {
-                            return this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        }
-                    case 6700:
-                    case 6705:
-                    case 6710:
-                    case 6715:
-                    case 6720:
-                    case 6725:
-                    case 6730:
-                    case 6735:
-                    case 6740:
-                    case 6745:
-                    case 6760:
-                        v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        try
-                        {
-                            int p2 = int.Parse(this.Parameter2);
-                            return v * Math.Pow(p2, 1.2);
-                        }
-                        catch
-                        {
-                            return v;
-                        }
-                    case 6750:
-                    case 6755:
-                        v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
-                        try
-                        {
-                            int p2 = int.Parse(this.Parameter2);
-                            return v * Math.Pow(p2 / 1000, 1.2);
-                        }
-                        catch
-                        {
-                            return v;
-                        }
-                    default:
-                        if (p1 == 0 && this.Kind.AIPersonValuePow <= 0)
-                        {
-                            v = this.Kind.AIPersonValuePow >= 0 ? this.Kind.AIPersonValue : this.Kind.AIPersonValue * 10;
+                            return value * combatMethod.Combativity * pow;
                         }
                         else
                         {
-                            v = this.Kind.AIPersonValue * Math.Pow(p1, this.Kind.AIPersonValuePow);
+                            return 0;
                         }
+                    }
+                case 330:
+                    {
+                        if (commonData.AllStunts.TryGetValue(i1, out var stunt))
+                        {
+                            return value * stunt.Combativity * pow;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+                case 860:
+                    {
+                        if (commonData.AllStratagems.TryGetValue(i1, out var stratagem))
+                        {
+                            return value * stratagem.Combativity * pow;
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+                case 800:
+                case 802:
+                case 804:
+                case 824:
+                case 832:
+                    return value * (f1 - 1);
+                case 801:
+                case 803:
+                case 805:
+                case 825:
+                case 833:
+                    return value * (1 - f1);
+                case 200:
+                case 220:
+                    if (i2 == 0) return value * Math.Pow(f1, pow);
+
+                    v = value * Math.Pow(i2, pow);
+                    switch (i1)
+                    {
+                        case 1:
+                        case 2:
+                            return v * 2;
+                        case 3:
+                        case 5:
+                            return v;
+                        case 6:
+                            return v * 1.5;
+                        case 8:
+                        case 9:
+                        case 10:
+                            return v * 0.5;
+                        default:
+                            return 0;
+                    }
+                case 352:
+                    return value * Math.Min(f1, f2 - 0.5) * Math.Pow(f1, pow);
+                case 6140:
+                    v = value * Math.Pow(f1, pow);
+                    if (f1 >= 100)
+                    {
+                        v *= 1.2;
+                    }
+
+                    if (f1 > 110)
+                    {
+                        v *= 1.5;
+                    }
+                    return v * i2;
+                case 6350:
+                    return value * Math.Pow(i2 - 1, f1 / 100.0) * Math.Pow(f1, pow);
+                case 6360:
+                    return value * (Math.Max(i2, 100) / 100.0) * Math.Pow(f1, pow);
+                case 6420:
+                case 6430:
+                case 6450:
+                    return value * Math.Pow(i2, pow);
+                case 6700:
+                case 6705:
+                case 6710:
+                case 6715:
+                case 6720:
+                case 6725:
+                case 6730:
+                case 6735:
+                case 6740:
+                case 6745:
+                case 6760:
+                    v = value * Math.Pow(f1, pow);
+
+                    if (i2 == 0)
+                    {
                         return v;
-                }
+                    }
+                    else
+                    {
+                        return v * Math.Pow(i2, 1.2);
+                    }
+                case 6750:
+                case 6755:
+                    v = value * Math.Pow(f1, pow);
+
+                    if (i2 == 0)
+                    {
+                        return v;
+                    }
+                    else
+                    {
+                        return v * Math.Pow(i2 / 1000, 1.2);
+                    }
+                default:
+                    if (f1 == 0 && pow <= 0)
+                    {
+                        return pow == 0 ? value : value * 10;
+                    }
+                    else
+                    {
+                        return value * Math.Pow(f1, pow);
+                    }
             }
         }
     }
 }
-

@@ -1,22 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind471 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind471 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        public override void ApplyInfluenceKind(Person person)
-        {
-            person.InevitableSuccessOfJailBreak = true;
-        }
+        person.InevitableSuccessOfJailBreak = true;
+    }
 
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.InevitableSuccessOfJailBreak = false;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        person.InevitableSuccessOfJailBreak = false;
     }
 }
-

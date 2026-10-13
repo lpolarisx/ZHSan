@@ -1,64 +1,40 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2540 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2540 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        private int val;
-        private int type;
+        var count = condition.GetIntParam();
+        var kindId = condition.GetIntParam2();
 
-        public override bool CheckConditionKind(Architecture a)
+        int result = 0;
+        foreach (Military m in arch.Militaries)
         {
-            int result = 0;
-            foreach (Military m in a.Militaries)
+            if (m.KindID == kindId)
             {
-                if (m.KindID == type)
-                {
-                    result++;
-                }
+                result++;
             }
-            return result >= val;
         }
+        return result >= count;
+    }
 
-        public override bool CheckConditionKind(Faction faction)
-        {
-            int result = 0;
-            foreach (Military m in faction.Militaries)
-            {
-                if (m.KindID == type)
-                {
-                    result++;
-                }
-            }
-            return result >= val;
-        }
+    public override bool CheckConditionKind(Condition condition, Faction faction)
+    {
+        var count = condition.GetIntParam();
+        var kindId = condition.GetIntParam2();
 
-        public override void InitializeParameter(string parameter)
+        int result = 0;
+        foreach (Military m in faction.Militaries)
         {
-            try
+            if (m.KindID == kindId)
             {
-                this.val = int.Parse(parameter);
-            }
-            catch
-            {
+                result++;
             }
         }
 
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
+        return result >= count;
     }
 }
-

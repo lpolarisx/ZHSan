@@ -1,13 +1,9 @@
-using Microsoft.Xna.Framework.Content;
 using Tools;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
 using Platforms;
 using GameGlobal;
+using GameDatas;
 
 namespace GameManager
 {
@@ -68,55 +64,69 @@ namespace GameManager
 
         public static Setting Current = null;
 
-        public Setting()
-        {
+        public Setting() {}
 
+        public Setting(SettingConfig config)
+        {
+            UserGuid = config.UserGuid;
+            DeviceID = config.DeviceID;
+            Language = config.Language;
+            MusicVolume = config.MusicVolume;
+            SoundVolume = config.SoundVolume;
+            DisplayMode = config.DisplayMode;
+            Resolution = config.Resolution;
+            GamerName = config.GamerName;
+            SpeedUp = config.SpeedUp;
+            Chuchangsuiji = config.Chuchangsuiji;
+            MOD = config.MOD;
+            PortraitPack = config.PortraitPack;
+            GlobalVariables = new GlobalVariables(config.GlobalVariables);
+        }
+
+        public SettingConfig ToConfig()
+        {
+            return new SettingConfig
+            {
+                UserGuid = UserGuid,
+                DeviceID = DeviceID,
+                Language = Language,
+                MusicVolume = MusicVolume,
+                SoundVolume = SoundVolume,
+                DisplayMode = DisplayMode,
+                Resolution = Resolution,
+                GamerName = GamerName,
+                SpeedUp = SpeedUp,
+                Chuchangsuiji = Chuchangsuiji,
+                MOD = MOD,
+                PortraitPack = PortraitPack,
+                GlobalVariables = GlobalVariables.ToConfig(),
+            };
         }
 
         public static void Init(bool prepare)
         {
-            string file = "Setting.config";
-            if (Platform.Current.UserFileExist(file))
+            const string file = "Setting.config";
+
+            try
             {
-                try
+                if (Platform.Current.UserFileExist(file))
                 {
-                    Current = SimpleSerializer.DeserializeJsonFile<Setting>(file, true, false) ?? new Setting();
-
-                    if (prepare)
-                    {
-                        Prepare();
-                    }
-
-                    Save();
+                    Current = SimpleSerializer.DeserializeJsonFile<Setting>(file, true) ?? new Setting();
                 }
-                catch (Exception ex)
-                {
-                    WebTools.TakeWarnMsg("初始用户设置失败:Setting.config", "Init:", ex);
-                }
-             }
-
-            if (Current == null)
-            {
-                Current = new Setting();
-
-                if (prepare)
-                {
-                    Prepare();
-                }
-
-                Save();
             }
-            else
+            catch (Exception ex)
             {
-                Current = new Setting();
-                
-                if (prepare)
-                {
-                    Prepare();
-                }
-
-                Save();
+                WebTools.TakeWarnMsg("初始用户设置失败:Setting.config", "Init:", ex);
             }
+            
+            Current ??= new Setting();
+
+            if (prepare)
+            {
+                Prepare();
+            }
+
+            Save();
 
             //if (Platform.PlatFormType == PlatFormType.iOS)  //|| Platform.PlatForm == PlatForm.WinRT || Platform.PlatForm == PlatForm.WP)
             //{
@@ -127,83 +137,94 @@ namespace GameManager
         public static void Save()
         {
             string file1 = "Setting.config";
-            SimpleSerializer.SerializeJsonFile<Setting>(Setting.Current, file1, false);
+
+            // string filePath = Platform.Current.GetUserFilePath("Setting.config");
+            // var settingStore = new JsonStore<SettingConfig>(filePath);
+            // settingStore.Save(Setting.Current);
+
+            SimpleSerializer.SerializeJsonFile<Setting>(Setting.Current, file1);
         }
 
         static void Prepare()
         {
-            if (Current != null)
+            if (Current == null) return;
+
+            if (string.IsNullOrEmpty(Current.UserGuid))
             {
-                if (String.IsNullOrEmpty(Current.UserGuid))
-                {
-                    Current.UserGuid = Guid.NewGuid().ToString();
-                }
-
-                if (String.IsNullOrEmpty(Current.DeviceID))
-                {
-                    Current.DeviceID = Platform.Current.GetDeviceID();
-                }
-
-                if (String.IsNullOrEmpty(Current.DisplayMode))
-                {
-                    Current.DisplayMode = Platform.Current.PreferFullMode;
-                }
-                if (Current.MusicVolume == null)
-                {
-                    Current.MusicVolume = 70;
-                }
-                if (Current.SoundVolume == null)
-                {
-                    Current.SoundVolume = 50;
-                }
-                if (Current.SpeedUp == null)
-                {
-                    Current.SpeedUp = 6;
-                }
-                if (String.IsNullOrEmpty(Current.Chuchangsuiji.ToString()))
-                {
-                    Current.Chuchangsuiji = false;
-                }
-    
-                //if (Current.NewsBoard == null)
-                //{
-                //    Current.NewsBoard = new NewsBoard() { Detail = "游戏公告加载中，请稍候……" };
-                //}
-
-                if (String.IsNullOrEmpty(Current.Language))
-                {
-                    string name = "";
-                    try
-                    {
-                        name = Platform.Current.CurrentLanguage; // System.Globalization.CultureInfo.InstalledUICulture.Name;
-                    }
-                    catch (Exception ex)
-                    {
-                        //獲取系統語言失敗
-                    }
-                    if (name.ToLower().Contains("cn"))  // == "zh-cn")
-                    {
-                        Current.Language = "cn";
-                    }
-                    else
-                    {
-                        Current.Language = "tw";
-                    }
-                }
-
-                if (Current.GlobalVariables == null)
-                {
-                    Current.GlobalVariables = Session.globalVariablesBasic.Clone();
-                }
-
-                if (String.IsNullOrEmpty(Session.Resolution))  // Season.PlatForm == PlatForm.iOS || Season.PlatForm == PlatForm.WinRT || Season.PlatForm == PlatForm.WP)
-                {
-                    Session.Resolution = Platform.PreferResolution;
-                }
-                Session.RealResolution = Session.Resolution = Setting.Current.Resolution;
-
+                Current.UserGuid = Guid.NewGuid().ToString();
             }
+
+            if (string.IsNullOrEmpty(Current.DeviceID))
+            {
+                Current.DeviceID = Platform.Current.GetDeviceID();
+            }
+
+            if (string.IsNullOrEmpty(Current.DisplayMode))
+            {
+                Current.DisplayMode = Platform.Current.PreferFullMode;
+            }
+
+            if (Current.MusicVolume == null)
+            {
+                Current.MusicVolume = 70;
+            }
+
+            if (Current.SoundVolume == null)
+            {
+                Current.SoundVolume = 50;
+            }
+
+            if (Current.SpeedUp == null)
+            {
+                Current.SpeedUp = 6;
+            }
+
+            if (string.IsNullOrEmpty(Current.Chuchangsuiji.ToString()))
+            {
+                Current.Chuchangsuiji = false;
+            }
+
+            //if (Current.NewsBoard == null)
+            //{
+            //    Current.NewsBoard = new NewsBoard() { Detail = "游戏公告加载中，请稍候……" };
+            //}
+
+            if (string.IsNullOrEmpty(Current.Language))
+            {
+                DetectLanguage();
+            }
+
+            if (Current.GlobalVariables == null)
+            {
+                Current.GlobalVariables = Session.globalVariablesBasic.Clone();
+            }
+
+            if (string.IsNullOrEmpty(Session.Resolution))  // Season.PlatForm == PlatForm.iOS || Season.PlatForm == PlatForm.WinRT || Season.PlatForm == PlatForm.WP)
+            {
+                Session.Resolution = Platform.PreferResolution;
+            }
+            
+            Session.RealResolution = Session.Resolution = Setting.Current.Resolution;
         }
 
+        /// <summary>
+        /// 检测系统语言
+        /// </summary>
+        /// <returns></returns>
+        private static string DetectLanguage()
+        {
+            string name = null;
+            try
+            {
+                name = Platform.Current.CurrentLanguage;
+            }
+            catch
+            {
+                // 获取系统语言失败,使用默认值
+            }
+
+            bool isCn = name != null && name.Contains("cn", StringComparison.OrdinalIgnoreCase);
+            return isCn ? "cn" : "tw";
+        }
     }
 }

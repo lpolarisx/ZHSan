@@ -160,6 +160,11 @@ namespace TabListPlugin
             {
                 s = ((bool)obj) ? "○" : "×";
             }
+            else if (obj is Enum enumValue)
+            {
+                // 枚举显示Description里的中文名，而不是枚举成员名
+                s = Extensions.EnumExtensions.GetDescription(enumValue);
+            }
             else
             {
                 s = obj.ToString();

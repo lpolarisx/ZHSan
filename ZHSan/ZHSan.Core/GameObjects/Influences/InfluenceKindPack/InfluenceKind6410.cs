@@ -1,41 +1,29 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6410 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6410 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment;
+        arch.facilityEnduranceIncrease += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture a)
-        {
-            a.facilityEnduranceIncrease += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.facilityEnduranceIncrease -= influence.GetIntParam();
+    }
 
-        public override void PurifyInfluenceKind(Architecture a)
-        {
-            a.facilityEnduranceIncrease -= this.increment;
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        if (arch.FacilityCount <= 0) return -1;
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        var frontLineFirst = arch.FrontLine ? (1 - influence.GetIntParam()) * 2 : 0.01;
+        var frontLineSecond = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1;
 
-        public override double AIFacilityValue(Architecture a)
-        {
-            if (a.FacilityCount <= 0) return -1;
-            return (a.FrontLine ? (1 - this.increment) * 2 : 0.01) * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1);
-        }
+        return frontLineFirst * frontLineSecond * hostileLine * criticalHostile;
     }
 }
-

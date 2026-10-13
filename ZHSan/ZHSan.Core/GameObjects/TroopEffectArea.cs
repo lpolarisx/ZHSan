@@ -1,19 +1,10 @@
-﻿using GameObjects.TroopDetail.EventEffect;
-using System;
+﻿namespace GameObjects;
 
-
-namespace GameObjects
+public class TroopEffectArea
 {
+    public TroopDetail.EventEffect.EventEffect Effect;
 
-    public class TroopEffectArea
-    {
-        public GameObjects.TroopDetail.EventEffect.EventEffect Effect;
-        public EffectAreaKind Kind;
+    public EffectAreaKind Kind;
 
-        public override string ToString()
-        {
-            return (this.Kind + " " + this.Effect.Name);
-        }
-    }
+    public override string ToString() => $"{Kind} {Effect.Name}";
 }
-

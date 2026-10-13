@@ -1,73 +1,49 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind7000 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind7000 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private float rate;
-        private int militaryKindID;
+        troop.DefenceRateIncrementInViewArea += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.DefenceRateIncrementInViewArea += this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.DefenceRateIncrementInViewArea -= influence.GetFloatParam();
+    }
 
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.DefenceRateIncrementInViewArea -= this.rate;
-        }
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var rate = influence.GetFloatParam();
+        var militaryKindId = influence.GetIntParam2();
 
-        public override void InitializeParameter(string parameter)
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            try
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && troopByPosition.Army != null && troopByPosition.Army.KindID == militaryKindId)
             {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
+                troopByPosition.RateOfDefence += rate;
             }
         }
+    }
 
-        public override void InitializeParameter2(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var rate = influence.GetFloatParam();
+        var militaryKindId = influence.GetIntParam2();
+
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            try
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && troopByPosition.Army != null && troopByPosition.Army.KindID == militaryKindId)
             {
-                this.militaryKindID = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
-            {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && (troopByPosition.Army != null) && (troopByPosition.Army.KindID == this.militaryKindID)) 
-                {
-                    troopByPosition.RateOfDefence += this.rate;
-                }
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
-            {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && (troopByPosition.Army != null) && (troopByPosition.Army.KindID == this.militaryKindID)) 
-                {
-                    troopByPosition.RateOfDefence -= this.rate;
-                }
+                troopByPosition.RateOfDefence -= rate;
             }
         }
     }
 }
-

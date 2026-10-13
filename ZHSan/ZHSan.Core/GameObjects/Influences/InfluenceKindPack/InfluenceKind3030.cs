@@ -1,41 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3030 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3030 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float rate = 0f;
+        arch.RateIncrementOfMonthFood += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateIncrementOfMonthFood += this.rate;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.RateIncrementOfMonthFood -= influence.GetFloatParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var foodEnoughRate = arch.IsFoodEnough ? 0 : 0.5;
+        var foodAbundantRate = arch.IsFoodAbundant ? 0 : 0.5;
+        var foodIncomeEnoughRate = arch.IsFoodIncomeEnough ? 0 : 1000;
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.RateIncrementOfMonthFood -= this.rate;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return (1 - Math.Pow((double)a.Food / a.FoodCeiling, 0.5) + (a.IsFoodEnough ? 0 : 0.5) + (a.IsFoodAbundant ? 0 : 0.5) + (a.IsFoodIncomeEnough ? 0 : 1000))
-                * (a.ExpectedFood * this.rate / 20000.0);
-        }
+        return (1 - Math.Pow((double)arch.Food / arch.FoodCeiling, 0.5) + foodEnoughRate + foodAbundantRate + foodIncomeEnoughRate) * (arch.ExpectedFood * influence.GetFloatParam() / 20000.0);
     }
 }
-

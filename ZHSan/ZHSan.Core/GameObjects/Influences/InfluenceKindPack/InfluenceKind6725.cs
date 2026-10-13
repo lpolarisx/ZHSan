@@ -1,47 +1,24 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
+using System.Collections.Generic;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind6725 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind6725 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int increment;
-        private int prob;
+        var prob = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void ApplyInfluenceKind(Person t)
-        {
-            t.IntelligenceIncrease.Add(new System.Collections.Generic.KeyValuePair<int, int>(prob, increment));
-        }
+        person.IntelligenceIncrease.Add(new KeyValuePair<int, int>(prob, increment));
+    }
 
-        public override void PurifyInfluenceKind(Person t)
-        {
-            t.IntelligenceIncrease.Remove(new System.Collections.Generic.KeyValuePair<int, int>(prob, increment));
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        var prob = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.prob = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        person.IntelligenceIncrease.Remove(new KeyValuePair<int, int>(prob, increment));
     }
 }
-

@@ -1,18 +1,13 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect221 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect221 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        public override void ApplyEffectKind(Person person, Event e)
-        {
-            person.Spouse.Spouse = null;
-            person.Spouse = null;
-        }
-
+        person.Spouse.Spouse = null;
+        person.Spouse = null;
     }
 }
-

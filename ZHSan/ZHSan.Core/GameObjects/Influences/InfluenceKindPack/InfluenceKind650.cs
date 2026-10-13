@@ -1,61 +1,47 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
+using Microsoft.Xna.Framework;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind650 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind650 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int increment;
+        troop.ChanceIncrementOfCriticalStrikeInViewArea += influence.GetIntParam();
+    }
 
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.ChanceIncrementOfCriticalStrikeInViewArea -= influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
+    public override void ApplyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var increment = influence.GetIntParam();
+        
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            troop.ChanceIncrementOfCriticalStrikeInViewArea += this.increment;
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.ChanceIncrementOfCriticalStrikeInViewArea -= this.increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && architecture.IsFriendly(troopByPosition.BelongedFaction))
             {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
+                troopByPosition.ChanceIncrementOfCriticalStrike += increment;
             }
         }
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
-            {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && architecture.IsFriendly(troopByPosition.BelongedFaction))
-                {
-                    troopByPosition.ChanceIncrementOfCriticalStrike += this.increment;
-                }
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture architecture)
+    {
+        var increment = influence.GetIntParam();
 
-        public override void PurifyInfluenceKind(Architecture architecture)
+        foreach (Point point in architecture.ViewArea.Area)
         {
-            foreach (Microsoft.Xna.Framework.Point point in architecture.ViewArea.Area)
+            Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
+            if (troopByPosition != null && architecture.IsFriendly(troopByPosition.BelongedFaction))
             {
-                Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(point);
-                if ((troopByPosition != null) && architecture.IsFriendly(troopByPosition.BelongedFaction))
-                {
-                    troopByPosition.ChanceIncrementOfCriticalStrike -= this.increment;
-                }
+                troopByPosition.ChanceIncrementOfCriticalStrike -= increment;
             }
         }
     }
 }
-

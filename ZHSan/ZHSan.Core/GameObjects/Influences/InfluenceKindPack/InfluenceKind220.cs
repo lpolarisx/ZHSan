@@ -1,137 +1,98 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind220 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind220 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int increment = 0;
-        private int terrain = 0;
+        var terrain = influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        var value = influence.GetIntParam2();
+
+        switch (terrain)
         {
-            if (troop != null)
-            {
-                switch (this.terrain)
-                {
-                    case 1:
-                        troop.CriticalChanceIncrementOfPlain += this.increment;
-                        break;
-
-                    case 2:
-                        troop.CriticalChanceIncrementOfGrassland += this.increment;
-                        break;
-
-                    case 3:
-                        troop.CriticalChanceIncrementOfForrest += this.increment;
-                        break;
-
-                    case 4:
-                        troop.CriticalChanceIncrementOfMarsh += this.increment;
-                        break;
-
-                    case 5:
-                        troop.CriticalChanceIncrementOfMountain += this.increment;
-                        break;
-
-                    case 6:
-                        troop.CriticalChanceIncrementOfWater += this.increment;
-                        break;
-
-                    case 7:
-                        troop.CriticalChanceIncrementOfRidge += this.increment;
-                        break;
-
-                    case 8:
-                        troop.CriticalChanceIncrementOfWasteland += this.increment;
-                        break;
-
-                    case 9:
-                        troop.CriticalChanceIncrementOfDesert += this.increment;
-                        break;
-
-                    case 10:
-                        troop.CriticalChanceIncrementOfCliff += this.increment;
-                        break;
-                }
-            }
+            case 1:
+                troop.CriticalChanceIncrementOfPlain += value;
+                break;
+            case 2:
+                troop.CriticalChanceIncrementOfGrassland += value;
+                break;
+            case 3:
+                troop.CriticalChanceIncrementOfForrest += value;
+                break;
+            case 4:
+                troop.CriticalChanceIncrementOfMarsh += value;
+                break;
+            case 5:
+                troop.CriticalChanceIncrementOfMountain += value;
+                break;
+            case 6:
+                troop.CriticalChanceIncrementOfWater += value;
+                break;
+            case 7:
+                troop.CriticalChanceIncrementOfRidge += value;
+                break;
+            case 8:
+                troop.CriticalChanceIncrementOfWasteland += value;
+                break;
+            case 9:
+                troop.CriticalChanceIncrementOfDesert += value;
+                break;
+            case 10:
+                troop.CriticalChanceIncrementOfCliff += value;
+                break;
         }
+    }
 
-        public override void InitializeParameter(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        var terrain = influence.GetIntParam();
+
+        var value = influence.GetIntParam2();
+
+        switch (terrain)
         {
-            try
-            {
-                this.terrain = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            case 1:
+                troop.CriticalChanceIncrementOfPlain -= value;
+                break;
+
+            case 2:
+                troop.CriticalChanceIncrementOfGrassland -= value;
+                break;
+
+            case 3:
+                troop.CriticalChanceIncrementOfForrest -= value;
+                break;
+
+            case 4:
+                troop.CriticalChanceIncrementOfMarsh -= value;
+                break;
+
+            case 5:
+                troop.CriticalChanceIncrementOfMountain -= value;
+                break;
+
+            case 6:
+                troop.CriticalChanceIncrementOfWater -= value;
+                break;
+
+            case 7:
+                troop.CriticalChanceIncrementOfRidge -= value;
+                break;
+
+            case 8:
+                troop.CriticalChanceIncrementOfWasteland -= value;
+                break;
+
+            case 9:
+                troop.CriticalChanceIncrementOfDesert -= value;
+                break;
+
+            case 10:
+                troop.CriticalChanceIncrementOfCliff -= value;
+                break;
         }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                switch (this.terrain)
-                {
-                    case 1:
-                        troop.CriticalChanceIncrementOfPlain -= this.increment;
-                        break;
-
-                    case 2:
-                        troop.CriticalChanceIncrementOfGrassland -= this.increment;
-                        break;
-
-                    case 3:
-                        troop.CriticalChanceIncrementOfForrest -= this.increment;
-                        break;
-
-                    case 4:
-                        troop.CriticalChanceIncrementOfMarsh -= this.increment;
-                        break;
-
-                    case 5:
-                        troop.CriticalChanceIncrementOfMountain -= this.increment;
-                        break;
-
-                    case 6:
-                        troop.CriticalChanceIncrementOfWater -= this.increment;
-                        break;
-
-                    case 7:
-                        troop.CriticalChanceIncrementOfRidge -= this.increment;
-                        break;
-
-                    case 8:
-                        troop.CriticalChanceIncrementOfWasteland -= this.increment;
-                        break;
-
-                    case 9:
-                        troop.CriticalChanceIncrementOfDesert -= this.increment;
-                        break;
-
-                    case 10:
-                        troop.CriticalChanceIncrementOfCliff -= this.increment;
-                        break;
-                }
-            }
-        }
-
-
     }
 }
-

@@ -1,45 +1,26 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Conditions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GameObjects.Conditions.ConditionKindPack
+namespace GameObjects.Conditions.ConditionKindPack;
+
+[DataContract]
+public class ConditionKind1910 : ConditionKind
 {
-    [DataContract]
-    class ConditionKind1910 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
-        private int number = 0;
+        var conditionId = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Troop troop)
+        if (Session.Current.Scenario.GameCommonData.AllConditions.TryGetValue(conditionId, out var matchCondition))
         {
-            Condition c = Session.Current.Scenario.GameCommonData.AllConditions.GetCondition(number);
-            if (c != null)
+            foreach (Person p in troop.Persons)
             {
-                foreach (Person p in troop.Persons)
+                if (matchCondition.CheckCondition(p))
                 {
-                    if (c.CheckCondition(p))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
-            return false;
         }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+        return false;
     }
 }

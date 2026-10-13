@@ -1,38 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind381 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind381 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int defence = 0;
+        troop.BaseDefenceConsidered = influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            troop.BaseDefenceConsidered = this.defence;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.defence = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.BaseDefenceConsidered = 0;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.BaseDefenceConsidered = 0;
     }
 }
-

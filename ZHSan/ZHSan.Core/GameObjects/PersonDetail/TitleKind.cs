@@ -1,42 +1,65 @@
-﻿using GameObjects;
-using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System.Collections.Generic;
+using GameDatas;
 
-namespace GameObjects.PersonDetail
+namespace GameObjects.PersonDetail;
+
+/// <summary>
+/// 称号类别
+/// </summary>
+public class TitleKind : GameObject
 {
-    [DataContract]
-    public class TitleKind : GameObject
-    {
-        [DataMember]
-        public bool Combat { get; set; }
-        [DataMember]
-        public int StudyDay { get; set; }
-        [DataMember]
-        public int SuccessRate { get; set; }
-        [DataMember]
-        public bool Recallable { get; set; }
-        [DataMember]
-        public bool RandomTeachable { get; set; }
+    /// <summary>
+    /// 战斗
+    /// </summary>
+    public bool Combat { get; set; }
 
-        private bool? inheritable;
-        public bool IsInheritable(TitleTable allTitles)
+    /// <summary>
+    /// 习得天数
+    /// </summary>
+    public int StudyDay { get; set; }
+
+    /// <summary>
+    /// 习得成功率
+    /// </summary>
+    public int SuccessRate { get; set; }
+
+    /// <summary>
+    /// 可免除
+    /// </summary>
+    public bool Recallable { get; set; }
+
+    /// <summary>
+    /// 可额外传授
+    /// </summary>
+    public bool RandomTeachable { get; set; }
+
+    private bool? inheritable;
+
+    public bool IsInheritable(List<Title> titles)
+    {
+        if (inheritable.HasValue) return inheritable.Value;
+
+        inheritable = false;
+        foreach (var title in titles)
         {
-            if (inheritable.HasValue)
+            if (title.KindId == ID && title.CanBeBorn())
             {
-                return inheritable.Value;
+                inheritable = true;
+                break;
             }
-            foreach (Title t in allTitles.GetTitleList())
-            {
-                if (t.Kind.Equals(this) && t.CanBeBorn())
-                {
-                    inheritable = true;
-                    return true;
-                }
-            }
-            inheritable = false;
-            return false;
         }
+
+        return inheritable.Value;
+    }
+
+    public TitleKind(TitleKindConfig config)
+    {
+        ID = config.Id;
+        Name = config.Name;
+        Combat = config.Combat;
+        StudyDay = config.StudyDay;
+        SuccessRate = config.SuccessRate;
+        Recallable = config.Recallable;
+        RandomTeachable = config.RandomTeachable;
     }
 }
-

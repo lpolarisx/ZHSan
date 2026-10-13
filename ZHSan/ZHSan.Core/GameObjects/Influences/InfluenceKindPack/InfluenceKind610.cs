@@ -1,27 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind610 : InfluenceKind
 {
 
-    [DataContract]public class InfluenceKind610 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-
-        public override void ApplyInfluenceKind(Troop troop)
+        if (troop.BaseNoAccidentalInjury)
         {
-            if (troop.BaseNoAccidentalInjury)
-            {
-                troop.NoAccidentalInjury = true;
-            }
-            troop.BaseNoAccidentalInjury = true;
+            troop.NoAccidentalInjury = true;
         }
+        troop.BaseNoAccidentalInjury = true;
+    }
 
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            troop.BaseNoAccidentalInjury = false;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.BaseNoAccidentalInjury = false;
     }
 }
-

@@ -1,21 +1,14 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿namespace GameObjects;
 
-namespace GameObjects
+public class FoodPack
 {
-    [DataContract]
-    public class FoodPack
-    {
-        [DataMember]
-        public int Days;
-        [DataMember]
-        public int Food;
+    public int Days;
 
-        public FoodPack(int food, int days)
-        {
-            this.Food = food;
-            this.Days = days;
-        }
+    public int Food;
+
+    public FoodPack(int food, int days)
+    {
+        Food = food;
+        Days = days;
     }
 }
-

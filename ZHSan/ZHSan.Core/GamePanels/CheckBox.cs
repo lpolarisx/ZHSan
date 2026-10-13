@@ -129,6 +129,10 @@ namespace GamePanels
         /// 鼠标移动上去的颜色
         /// </summary>
         public Color ViewTextColorMouseOver = Color.Yellow;
+        public Color? ViewTextColorSelected;
+        private Color CurrentTextColor => Selected
+            ? ViewTextColorSelected ?? ViewTextColorMouseOver
+            : MouseOver ? ViewTextColorMouseOver : ViewTextColor;
         public DateTime? prePressTime;
         /// <summary>
         /// 文字的缩放倍数
@@ -163,7 +167,7 @@ namespace GamePanels
                     }
                     else if (Enable)
                     {
-                        return (!Selected && !MouseOver ? cbTextureRecs.Recs[0] : (cbTextureRecs.Recs.Length > 1 ? cbTextureRecs.Recs[1] : cbTextureRecs.Recs[0]));
+                        return (!Selected ? cbTextureRecs.Recs[0] : (cbTextureRecs.Recs.Length > 1 ? cbTextureRecs.Recs[1] : cbTextureRecs.Recs[0]));
                     }
                     else
                     {
@@ -396,7 +400,7 @@ namespace GamePanels
                 //此处必须新建一个新变量，否会可能发生自己累加情况
                 Vector2 _offset = (Vector2)(offset == null ? new Vector2(bound.Width(), 2) : offset + new Vector2(bound.Width(), 0));//如果偏移量为空则加上默认的偏移量
 
-                bounds = CacheManager.DrawStringReturnBounds(viewFont ?? Session.Current.Font, Text, (basePos == null ? (Vector2)(Position + _offset) : (Vector2)(Position + basePos + _offset)) * DrawScale, (MouseOver || Selected) ? ViewTextColorMouseOver * Alpha : ViewTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
+                bounds = CacheManager.DrawStringReturnBounds(viewFont ?? Session.Current.Font, Text, (basePos == null ? (Vector2)(Position + _offset) : (Vector2)(Position + basePos + _offset)) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
 
                 bounds.Add(bound);
 
@@ -406,7 +410,7 @@ namespace GamePanels
                     List<Bounds> _b;//处理Text为空的情况
                     AlignTexts.ForEach(at =>
                     {
-                        _b = CacheManager.DrawStringReturnBounds(viewFont ?? Session.Current.Font, at.Text, (basePos == null ? (Vector2)(Position + _offset + at.Offset) : (Vector2)(Position + basePos + _offset + at.Offset)) * DrawScale, (MouseOver || Selected) ? ViewTextColorMouseOver * Alpha : ViewTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
+                        _b = CacheManager.DrawStringReturnBounds(viewFont ?? Session.Current.Font, at.Text, (basePos == null ? (Vector2)(Position + _offset + at.Offset) : (Vector2)(Position + basePos + _offset + at.Offset)) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, 0f);
                         if (_b.Count > 0)//处理Text为空的情况
                             b.Add(_b[0]);
                     });
@@ -428,8 +432,8 @@ namespace GamePanels
                 //此处必须新建一个新变量，否会可能发生自己累加情况
                 Vector2 _offsetText = (Vector2)(offsetText == null ? new Vector2(((Rectangle)cbRectangle).Width, 2) : offsetText + new Vector2(((Rectangle)cbRectangle).Width, 0));//如果偏移量为空则加上默认的偏移量
 
-                bounds = CacheManager.DrawStringReturnBounds(batch, ViewFont, Text, (Vector2)(Position + _offsetText) * DrawScale, (MouseOver || Selected) ? ViewTextColorMouseOver * Alpha : ViewTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
-                bounds.Add(new Bounds() { X = Position.X, Y = Position.Y, X2 = Position.X + ((Rectangle)cbRectangle).Width, Y2 = Position.Y + ((Rectangle)cbRectangle).Height });
+                bounds = CacheManager.DrawStringReturnBounds(batch, ViewFont, Text, (Vector2)(Position + _offsetText) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
+                bounds.Add(new Bounds() { X = Position.X, Y = Position.Y, X2 = Position.X + ((Rectangle)cbRectangle).Width * Scale, Y2 = Position.Y + ((Rectangle)cbRectangle).Height * Scale });
 
                 if (AlignTexts.Count > 0)
                 {
@@ -437,7 +441,7 @@ namespace GamePanels
                     List<Bounds> _b;//处理Text为空的情况
                     AlignTexts.ForEach(at =>
                     {
-                        _b = CacheManager.DrawStringReturnBounds(batch, ViewFont, at.Text, (Vector2)(Position + _offsetText + at.Offset) * DrawScale, (MouseOver || Selected) ? ViewTextColorMouseOver * Alpha : ViewTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
+                        _b = CacheManager.DrawStringReturnBounds(batch, ViewFont, at.Text, (Vector2)(Position + _offsetText + at.Offset) * DrawScale, CurrentTextColor * Alpha, 0f, Vector2.Zero, Scale * ViewTextScale, SpriteEffects.None, Depth);
                         if (_b.Count > 0)//处理Text为空的情况
                             b.Add(_b[0]);
                     });
@@ -453,7 +457,7 @@ namespace GamePanels
             //此处必须新建一个新变量，否会可能发生自己累加情况
             Vector2 _offsetText = (Vector2)(offsetText == null ? new Vector2(((Rectangle)cbRectangle).Width, 2) : offsetText + new Vector2(((Rectangle)cbRectangle).Width, 0));
             bounds = CacheManager.CalculateTextBounds(ViewFont, Text, OffsetPos + _offsetText, Scale);
-            bounds.Add(new Bounds() { X = OffsetPos.X, Y = OffsetPos.Y, X2 = OffsetPos.X + ((Rectangle)cbRectangle).Width, Y2 = OffsetPos.Y + ((Rectangle)cbRectangle).Height });//加上复选框的范围
+            bounds.Add(new Bounds() { X = OffsetPos.X, Y = OffsetPos.Y, X2 = OffsetPos.X + ((Rectangle)cbRectangle).Width * Scale, Y2 = OffsetPos.Y + ((Rectangle)cbRectangle).Height * Scale });//加上复选框的范围
             Width = 0;
             bounds.ForEach(b => Width = Width > b.Width() ? Width : b.Width());
             if (bounds.Count > 1)
@@ -507,10 +511,10 @@ namespace GamePanels
         /// <returns>返回是否经过控件的布尔值</returns>
         public bool IsInCanvasTexture(float poX, float poY)
         {
+            PreMouseOver = MouseOver;
+            MouseOver = false;
             if (Visible && (Enable || FireEventWhenUnEnable))
             {
-
-                PreMouseOver = MouseOver;
 
                 foreach (Bounds relativeBound in bounds)
                     //通过三个条件相与判定鼠标是否经过控件
@@ -525,10 +529,10 @@ namespace GamePanels
                         };
 
 
-                        MouseOver = baseFrame.Position.X <= poX && poX <= baseFrame.Position.X + baseFrame.VisualFrame.Width  //鼠标在可视框架之内
-                            && baseFrame.Position.Y <= poY && poY <= baseFrame.Position.Y + baseFrame.VisualFrame.Height
-                            && bound.X - ExtDis <= poX && poX <= bound.X2 + ExtDis  //鼠标在控件范围之内
-                            && bound.Y - ExtDis <= poY && poY <= bound.Y2 + ExtDis;
+                        MouseOver = baseFrame.Position.X <= poX && poX < baseFrame.Position.X + baseFrame.VisualFrame.Width  //鼠标在可视框架之内
+                            && baseFrame.Position.Y <= poY && poY < baseFrame.Position.Y + baseFrame.VisualFrame.Height
+                            && bound.X - ExtDis <= poX && poX < bound.X2 + ExtDis  //鼠标在控件范围之内
+                            && bound.Y - ExtDis <= poY && poY < bound.Y2 + ExtDis;
 
                         if (MouseOver)
                             return MouseOver;//一旦判断鼠标在一个范围内则停止其他范围矩形的判断检索

@@ -1,41 +1,25 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3300 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3300 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment = 0;
+        arch.IncrementOfFactionReputationPerDay += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfFactionReputationPerDay += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.IncrementOfFactionReputationPerDay -= influence.GetIntParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var isReputationEnough = arch.BelongedFaction.Reputation >= Session.Current.Scenario.Parameters.MaxReputationForRecruit;
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfFactionReputationPerDay -= this.increment;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return (a.BelongedFaction.Reputation >= Session.Current.Scenario.Parameters.MaxReputationForRecruit ? 0.001 : this.increment / 5.0);
-        }
+        return isReputationEnough ? 0.001 : influence.GetIntParam() / 5.0;
     }
 }
-

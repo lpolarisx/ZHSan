@@ -1,35 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2360 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2360 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int increment;
+        faction.IncrementOfResistStratagemChance += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.IncrementOfResistStratagemChance += this.increment;
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            faction.IncrementOfResistStratagemChance -= this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.IncrementOfResistStratagemChance -= influence.GetIntParam();
     }
 }
-

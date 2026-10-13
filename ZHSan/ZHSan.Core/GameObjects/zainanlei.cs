@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-
-
+﻿using System.Runtime.Serialization;
 
 namespace GameObjects
 {
@@ -12,26 +6,13 @@ namespace GameObjects
     public class zainanlei : GameObject
 	{
         [DataMember]
-        public int zainanleixing
-        {
-            get;
-            set;
-        }
+        public int zainanleixing { get; set; }
 
-        public zainanzhongleilei zainanzhonglei=new zainanzhongleilei() ;
+        public DisasterKind DisasterKind { get; set; } = new();
 
         [DataMember]
-        public int shengyutianshu
-        {
-            get;
-            set;
-        }
+        public int shengyutianshu { get; set; }
 
-        public string SavezainantoString()
-        {
-            string result = "";
-            result = zainanleixing.ToString() + " " + shengyutianshu.ToString()+" ";
-            return result;
-        }
+        public string SavezainantoString() => $"{zainanleixing} {shengyutianshu} ";
     }
 }

@@ -1,52 +1,47 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
+using GameEnums;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind395 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind395 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        public override void ApplyInfluenceKind(Troop troop)
+        if (troop.GetCurrentStratagemSuccess(troop.OrientationTroop, false, false, false))
         {
-            if (troop.GetCurrentStratagemSuccess(troop.OrientationTroop, false, false, false))
-            {
-                troop.OrientationTroop.SetRecoverFromChaos();
-            }
-            foreach (Troop troop2 in troop.AreaStratagemTroops)
-            {
-                if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
-                {
-                    troop2.SetRecoverFromChaos();
-                }
-            }
+            troop.OrientationTroop.SetRecoverFromChaos();
         }
-
-        public override int GetCredit(Troop source, Troop destination)
+        
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
-            if (!this.IsVaild(destination))
+            if (troop.GetCurrentStratagemSuccess(troop2, false, false, false))
             {
-                return 0;
+                troop2.SetRecoverFromChaos();
             }
-            int num = 0;
-            int pureFightingForce = source.PureFightingForce;
-            foreach (Troop troop in source.GetAreaStratagemTroops(destination, true))
-            {
-                int num3 = source.GetStratagemSuccessChanceCredit(troop, false, false, false);
-                if (num3 > 0)
-                {
-                    num3 = (num3 * troop.FightingForce) / pureFightingForce;
-                    num += num3;
-                }
-            }
-            return (num * 2);
-        }
-
-        public override bool IsVaild(Troop troop)
-        {
-            return (troop.Status == TroopStatus.混乱 || troop.Status == TroopStatus.挑衅 || troop.Status == TroopStatus.伪报);
         }
     }
-}
 
+    public override int GetCredit(Influence influence, Troop source, Troop destination)
+    {
+        if (!IsVaild(influence, destination)) return 0;
+
+        var sum = 0;
+        int pureFightingForce = source.PureFightingForce;
+        foreach (var troop in source.GetAreaStratagemTroops(destination, true))
+        {
+            int num3 = source.GetStratagemSuccessChanceCredit(troop, false, false, false);
+            if (num3 > 0)
+            {
+                num3 = num3 * troop.FightingForce / pureFightingForce;
+                sum += num3;
+            }
+        }
+        return sum * 2;
+    }
+
+    public override bool IsVaild(Influence influence, Troop troop)
+    {
+        return troop.Status == TroopStatus.Chaos || troop.Status == TroopStatus.Attract || troop.Status == TroopStatus.Rumour;
+    }
+}

@@ -1,5 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using System;
+﻿using GameDatas;
+using Microsoft.Xna.Framework;
 using System.Runtime.Serialization;
 
 namespace GameObjects
@@ -8,16 +8,30 @@ namespace GameObjects
     public class NoFoodPosition
     {
         [DataMember]
-        public int Days;
+        public int Days { get; set; }
 
         [DataMember]
-        public Point Position;
+        public Point Position { get; set; }
 
         public NoFoodPosition(Point position, int days)
         {
-            this.Position = position;
-            this.Days = days;
+            Position = position;
+            Days = days;
         }
+
+        public NoFoodPosition(NoFoodConfig config)
+        {
+            Position = config.Position;
+            Days = config.Days;
+        }
+
+        public NoFoodConfig ToConfig()
+        {
+            return new NoFoodConfig
+            {
+                Position = Position,
+                Days = Days,
+            };
+        } 
     }
 }
-

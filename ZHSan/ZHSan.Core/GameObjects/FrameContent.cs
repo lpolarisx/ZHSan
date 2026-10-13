@@ -24,6 +24,7 @@ namespace GameObjects
         public FrameFunction Function;
         protected bool isShowing;
         public Point MapViewSelectorButtonPosition;
+        public Point MapViewSelectorButtonSize;
         public GameDelegates.VoidFunction MapViewSelectorFunction;
         private bool okButtonEnabled;
         public Point OKButtonPosition;

@@ -1,41 +1,23 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind5050 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind5050 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        private int chance = 0;
-
-        public override void ApplyInfluenceKind(Person person)
+        if (person.LocationTroop != null)
         {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.ChanceOfDoubleDamage += this.chance;
-            }
+            person.LocationTroop.ChanceOfDoubleDamage += influence.GetIntParam();
         }
+    }
 
-        public override void InitializeParameter(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        if (person.LocationTroop != null)
         {
-            try
-            {
-                this.chance = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Person person)
-        {
-            if (person.LocationTroop != null)
-            {
-                person.LocationTroop.ChanceOfDoubleDamage -= this.chance;
-            }
+            person.LocationTroop.ChanceOfDoubleDamage -= influence.GetIntParam();
         }
     }
 }
-

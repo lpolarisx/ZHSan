@@ -1,40 +1,22 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3501 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3501 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private float rate = 1f;
+        arch.StrengthTrainingFacilityRate += influence.GetFloatParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.StrengthTrainingFacilityRate += rate;   
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.StrengthTrainingFacilityRate -= influence.GetFloatParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.rate = float.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.StrengthTrainingFacilityRate-= rate;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return 1;
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        return 1;
     }
 }
-

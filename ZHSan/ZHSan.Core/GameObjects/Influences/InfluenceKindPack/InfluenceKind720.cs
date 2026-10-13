@@ -1,64 +1,46 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind720 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind720 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        private int maxDays;
+        var maxDays = influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Troop troop)
+        var enemy = troop.OrientationTroop;
+        var inevitableSuccess = troop.InevitableRumourOnLowerIntelligence || troop.InevitableStratagemOnLowerIntelligence;
+
+        if (troop.GetCurrentStratagemSuccess(enemy, inevitableSuccess, enemy.NeverBeIntoChaos || enemy.OutburstNeverBeIntoChaos || enemy.InvincibleRumour, enemy.InvincibleStratagemFromLowerIntelligence))
         {
-            if (troop.GetCurrentStratagemSuccess(troop.OrientationTroop, 
-                troop.InevitableRumourOnLowerIntelligence || troop.InevitableStratagemOnLowerIntelligence,
-                (troop.OrientationTroop.NeverBeIntoChaos || troop.OrientationTroop.OutburstNeverBeIntoChaos) || troop.OrientationTroop.InvincibleRumour, 
-                troop.OrientationTroop.InvincibleStratagemFromLowerIntelligence))
-            {
-                troop.OrientationTroop.SetRumour(troop.GenerateCastRumourDay(this.maxDays));
-            }
-            foreach (Troop troop2 in troop.AreaStratagemTroops)
-            {
-                if (troop.GetCurrentStratagemSuccess(troop2,
-                    troop.InevitableRumourOnLowerIntelligence || troop.InevitableStratagemOnLowerIntelligence,
-                    (troop2.NeverBeIntoChaos || troop2.OutburstNeverBeIntoChaos) || troop2.InvincibleRumour, 
-                    troop2.InvincibleStratagemFromLowerIntelligence))
-                {
-                    troop2.SetRumour(troop.GenerateCastRumourDay(this.maxDays));
-                }
-            }
+            enemy.SetRumour(troop.GenerateCastRumourDay(maxDays));
         }
 
-        public override int GetCredit(Troop source, Troop destination)
+        foreach (var troop2 in troop.AreaStratagemTroops)
         {
-            int num = 0;
-            int pureFightingForce = source.PureFightingForce;
-            foreach (Troop troop in source.GetAreaStratagemTroops(destination, false))
+            if (troop.GetCurrentStratagemSuccess(troop2, inevitableSuccess, troop2.NeverBeIntoChaos || troop2.OutburstNeverBeIntoChaos || troop2.InvincibleRumour, troop2.InvincibleStratagemFromLowerIntelligence))
             {
-                int num3 = source.GetStratagemSuccessChanceCredit(troop, 
-                    source.InevitableRumourOnLowerIntelligence || source.InevitableStratagemOnLowerIntelligence, 
-                    troop.InvincibleAttract, troop.InvincibleStratagemFromLowerIntelligence);
-                if (num3 > 0)
-                {
-                    num3 = ((num3 + ((troop.Army.Scales - 5) * 10)) * troop.PureFightingForce) / pureFightingForce;
-                    num += num3;
-                }
-            }
-            return ((num * (2 + (source.IncrementOfRumourDay * 3))) / 2);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.maxDays = int.Parse(parameter);
-            }
-            catch
-            {
+                troop2.SetRumour(troop.GenerateCastRumourDay(maxDays));
             }
         }
     }
-}
 
+    public override int GetCredit(Influence influence, Troop source, Troop destination)
+    {
+        var inevitableSuccess = source.InevitableRumourOnLowerIntelligence || source.InevitableStratagemOnLowerIntelligence;
+
+        var sum = 0;
+        int pureFightingForce = source.PureFightingForce;
+        foreach (var troop in source.GetAreaStratagemTroops(destination))
+        {
+            int num3 = source.GetStratagemSuccessChanceCredit(troop, inevitableSuccess, troop.InvincibleAttract, troop.InvincibleStratagemFromLowerIntelligence);
+            if (num3 > 0)
+            {
+                num3 = (num3 + (troop.Army.Scales - 5) * 10) * troop.PureFightingForce / pureFightingForce;
+                sum += num3;
+            }
+        }
+        return sum * (2 + source.IncrementOfRumourDay * 3) / 2;
+    }
+}

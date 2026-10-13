@@ -481,6 +481,7 @@ namespace GameFormFramePlugin
             //this.SelectAllButtonPosition = frameContent.SelectAllButtonPosition;
             this.CancelButtonPosition = frameContent.CancelButtonPosition;
             this.MapViewSelectorButtonPosition = frameContent.MapViewSelectorButtonPosition;
+            frameContent.MapViewSelectorButtonSize = this.mapviewselectorbuttonSize;
             this.SetPosition(frameContent.FramePosition);
             frameContent.ReCalculate();
             frameContent.InitializeMapViewSelectorButton();

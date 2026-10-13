@@ -1,18 +1,12 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind2600 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind2600 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        public override bool CheckConditionKind(Architecture a)
-        {
-            return a.youzainan;
-        }
-
+        return arch.youzainan;
     }
 }
-

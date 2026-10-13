@@ -1,27 +1,25 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.Serialization;
+using GameDatas;
 
-namespace GameObjects
+namespace GameObjects;
+
+public class TreasureCreationSetting : GameObject
 {
-    [DataContract]
-    public class TreasureCreationSetting : GameObject
+    public List<int> EligibleInfluenceIDs { get; set; } = new List<int>();
+
+    public int TreasureGroup { get; set; }
+
+    public int Cost { get; set; }
+
+    public List<int> PicIDs { get; set; } = new List<int>();
+
+    public TreasureCreationSetting(TreasureCreationSettingConfig config)
     {
-        //[DataMember]
-        //public int ID { get; set; }
-
-        //[DataMember]
-        //public string Name { get; set; }
-
-        [DataMember]
-        public List<int> EligibleInfluenceIDs { get; set; } = new List<int>();
-
-        [DataMember]
-        public int TreasureGroup { get; set; }
-
-        [DataMember]
-        public int Cost { get; set; }
-
-        [DataMember]
-        public List<int> PicIDs { get; set; } = new List<int>();
+        ID = config.Id;
+        Name = config.Name;
+        EligibleInfluenceIDs = config.EligibleInfluenceIDs;
+        TreasureGroup = config.TreasureGroup;
+        Cost = config.Cost;
+        PicIDs = config.PicIDs;
     }
 }

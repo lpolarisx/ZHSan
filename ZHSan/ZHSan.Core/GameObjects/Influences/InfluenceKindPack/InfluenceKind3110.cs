@@ -1,40 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3110 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3110 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment = 0;
+        arch.MoraleOfRecruitment += influence.GetIntParam() - 50;
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.MoraleOfRecruitment += this.increment - 50;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.MoraleOfRecruitment -= influence.GetIntParam() - 50;
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var frontLineFirst = arch.FrontLine ? (influence.GetIntParam() - 50) / 25.0 : 0.01;
+        var frontLineSecond = arch.FrontLine ? 2 : 1;
+        var hostileLine = arch.HostileLine ? 2 : 1;
+        var criticalHostile = arch.CriticalHostile ? 2 : 1; 
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.MoraleOfRecruitment -= this.increment - 50;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return (a.FrontLine ? (this.increment - 50) / 25.0 : 0.01) * (a.FrontLine ? 2 : 1) * (a.HostileLine ? 2 : 1) * (a.CriticalHostile ? 2 : 1);
-        }
+        return frontLineFirst * frontLineSecond * hostileLine * criticalHostile;
     }
 }
-

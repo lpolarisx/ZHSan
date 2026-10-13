@@ -1,50 +1,33 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2420 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2420 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int increment;
+        faction.IncrementOfRoutewayRadius += influence.GetIntParam();
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.IncrementOfRoutewayRadius += this.increment;
-            if (Session.Current.Scenario.NewInfluence)
-            {
-                foreach (Routeway routeway in faction.Routeways)
-                {
-                    routeway.ReGenerateRoutePointArea();
-                }
-            }
-        }
+        ReGenerateRoutePointArea(faction);
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.IncrementOfRoutewayRadius -= influence.GetIntParam();
 
-        public override void PurifyInfluenceKind(Faction faction)
+        ReGenerateRoutePointArea(faction);
+    }
+
+    private void ReGenerateRoutePointArea(Faction faction)
+    {
+        if (Session.Current.Scenario.NewInfluence)
         {
-            faction.IncrementOfRoutewayRadius -= this.increment;
-            if (Session.Current.Scenario.NewInfluence)
+            foreach (var routeway in faction.Routeways)
             {
-                foreach (Routeway routeway in faction.Routeways)
-                {
-                    routeway.ReGenerateRoutePointArea();
-                }
+                routeway.ReGenerateRoutePointArea();
             }
         }
     }
 }
-

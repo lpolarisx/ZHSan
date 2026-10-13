@@ -1,34 +1,20 @@
-﻿using GameObjects;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect350 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect350 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int increment;
+        var faction = person.BelongedFaction;
 
-        public override void ApplyEffectKind(Person person, Event e)
+        if (person != faction?.Leader)
         {
-            if (person.BelongedFaction != null && person != person.BelongedFaction.Leader)
-            {
-                int idealOffset = Person.GetIdealOffset(person , person.BelongedFaction.Leader);
+            int idealOffset = Person.GetIdealOffset(person, faction.Leader);
 
-                idealOffset += increment;
-            }
-
+            idealOffset += eventEffect.GetIntParam();
         }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
     }
 }

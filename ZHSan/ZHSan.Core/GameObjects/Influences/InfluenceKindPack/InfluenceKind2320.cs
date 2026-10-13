@@ -1,36 +1,18 @@
-﻿using GameGlobal;
-using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using GameEnums;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2320 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2320 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int increment;
+        faction.LevelOfView = (InformationLevel)((int)faction.LevelOfView + influence.GetIntParam() - 3);
+    }
 
-        public override void ApplyInfluenceKind(Faction faction)
-        {
-            faction.LevelOfView = (InformationLevel) ((int) faction.LevelOfView + this.increment - 3);
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            faction.LevelOfView = (InformationLevel)((int)faction.LevelOfView - this.increment - 3);
-        }
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        faction.LevelOfView = (InformationLevel)((int)faction.LevelOfView - influence.GetIntParam() - 3);
     }
 }
-

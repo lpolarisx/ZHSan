@@ -1,22 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind262 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind262 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Person person)
     {
-        public override void ApplyInfluenceKind(Person person)
-        {
-            person.ImmunityOfDieInBattle = true;
-        }
+        person.ImmunityOfDieInBattle = true;
+    }
 
-        public override void PurifyInfluenceKind(Person person)
-        {
-            person.ImmunityOfDieInBattle = false;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Person person)
+    {
+        person.ImmunityOfDieInBattle = false;
     }
 }
-

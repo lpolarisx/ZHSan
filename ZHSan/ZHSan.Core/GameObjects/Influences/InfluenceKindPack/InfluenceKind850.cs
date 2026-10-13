@@ -1,28 +1,17 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind850 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind850 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
-        public override void ApplyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.ProhibitCombatMethod = true;
-            }
-        }
+        troop.ProhibitCombatMethod = true;
+    }
 
-        public override void PurifyInfluenceKind(Troop troop)
-        {
-            if (troop != null)
-            {
-                troop.ProhibitCombatMethod = false;
-            }
-        }
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.ProhibitCombatMethod = false;
     }
 }
-

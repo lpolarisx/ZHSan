@@ -1,56 +1,22 @@
 ﻿using GameManager;
-using GameObjects;
-using System;
-
-
 using System.Runtime.Serialization;
-using Tools;
 
-namespace GameObjects.ArchitectureDetail.EventEffect
+namespace GameObjects.ArchitectureDetail.EventEffect;
+
+[DataContract]
+public class EventEffect2200 : EventEffectKind
 {
-
-    [DataContract]public class EventEffect2200 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Faction faction, Event e)
     {
-        private int increment;
+        if (faction == null) return;
 
-        public override void ApplyEffectKind(Faction f, Event e)
-        {
-            try
-            {
-                if (f == null)
-                {
-                    throw new Exception("f=null");
-                }
-                if (Session.Current.Scenario.DiplomaticRelations == null)
-                {
-                    throw new Exception("Session.Current.Scenario.DiplomaticRelations=null");
-                }
-                GameObjectList d = Session.Current.Scenario.DiplomaticRelations.GetDiplomaticRelationListByFactionID(f.ID);
-                if (d == null)
-                {
-                    throw new Exception("d=null");
-                }
-                foreach (GameObjects.FactionDetail.DiplomaticRelation i in d)
-                {
-                    i.Relation += increment;
-                }
-            }
-            catch (Exception ex)
-            {
-                WebTools.TakeWarnMsg("ApplyEffectKind:ID" + ID, "", ex);
-            }
-        }
+        var increment = eventEffect.GetIntParam();
 
-        public override void InitializeParameter(string parameter)
+        var diplomaticRelations = Session.Current.Scenario.GetDiplomaticRelationListByFactionID(faction.ID);
+
+        foreach (var relation in diplomaticRelations)
         {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            relation.Relation += increment;
         }
     }
 }
-

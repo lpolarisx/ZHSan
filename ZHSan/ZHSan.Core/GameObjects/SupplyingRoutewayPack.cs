@@ -1,9 +1,7 @@
 ﻿using System;
 
-
 namespace GameObjects
 {
-
     public class SupplyingRoutewayPack
     {
         public int Credit;

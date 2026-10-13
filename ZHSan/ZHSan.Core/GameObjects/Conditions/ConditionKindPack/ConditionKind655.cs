@@ -1,42 +1,26 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind655 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind655 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Person person)
     {
-        private int number = 0;
+        var influenceId = condition.GetIntParam();
 
-        public override bool CheckConditionKind(Person person)
+        foreach (var skill in person.Skills.Values)
         {
-            foreach (GameObjects.PersonDetail.Skill i in person.Skills.Skills.Values)
-            {
-                if (i.Influences.HasInfluence(this.number)) return false;
-            }
-            foreach (GameObjects.PersonDetail.Title t in person.Titles)
-            {
-                if (t.Influences.HasInfluence(this.number)) return false;
-            }
-            foreach (GameObjects.PersonDetail.Stunt i in person.Stunts.Stunts.Values)
-            {
-                if (i.Influences.HasInfluence(this.number)) return false;
-            }
-            return true;
+            if (skill.Influences.ContainsKey(influenceId)) return false;
         }
-
-        public override void InitializeParameter(string parameter)
+        foreach (var title in person.Titles)
         {
-            try
-            {
-                this.number = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            if (title.Influences.ContainsKey(influenceId)) return false;
         }
+        foreach (var stunt in person.Stunts.Values)
+        {
+            if (stunt.Influences.ContainsKey(influenceId)) return false;
+        }
+        return true;
     }
 }
-

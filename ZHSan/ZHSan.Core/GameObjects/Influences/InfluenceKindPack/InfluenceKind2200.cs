@@ -1,89 +1,57 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind2200 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind2200 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Faction faction)
     {
-        private int increment = 0;
-        private int type = 0;
+        var type = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
 
-        public override void ApplyInfluenceKind(Faction faction)
+        switch (type)
         {
-            switch (this.type)
-            {
-                case 0:
-                    faction.AntiArrowChanceIncrementOfBubing += this.increment;
-                    break;
-
-                case 1:
-                    faction.AntiArrowChanceIncrementOfNubing += this.increment;
-                    break;
-
-                case 2:
-                    faction.AntiArrowChanceIncrementOfQibing += this.increment;
-                    break;
-
-                case 3:
-                    faction.AntiArrowChanceIncrementOfShuijun += this.increment;
-                    break;
-
-                case 4:
-                    faction.AntiArrowChanceIncrementOfQixie += this.increment;
-                    break;
-            }
+            case 0:
+                faction.AntiArrowChanceIncrementOfBubing += increment;
+                break;
+            case 1:
+                faction.AntiArrowChanceIncrementOfNubing += increment;
+                break;
+            case 2:
+                faction.AntiArrowChanceIncrementOfQibing += increment;
+                break;
+            case 3:
+                faction.AntiArrowChanceIncrementOfShuijun += increment;
+                break;
+            case 4:
+                faction.AntiArrowChanceIncrementOfQixie += increment;
+                break;
         }
+    }
 
-        public override void InitializeParameter(string parameter)
+    public override void PurifyInfluenceKind(Influence influence, Faction faction)
+    {
+        var type = influence.GetIntParam();
+        var increment = influence.GetIntParam2();
+
+        switch (type)
         {
-            try
-            {
-                this.type = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void InitializeParameter2(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
-
-        public override void PurifyInfluenceKind(Faction faction)
-        {
-            switch (this.type)
-            {
-                case 0:
-                    faction.AntiArrowChanceIncrementOfBubing -= this.increment;
-                    break;
-
-                case 1:
-                    faction.AntiArrowChanceIncrementOfNubing -= this.increment;
-                    break;
-
-                case 2:
-                    faction.AntiArrowChanceIncrementOfQibing -= this.increment;
-                    break;
-
-                case 3:
-                    faction.AntiArrowChanceIncrementOfShuijun -= this.increment;
-                    break;
-
-                case 4:
-                    faction.AntiArrowChanceIncrementOfQixie -= this.increment;
-                    break;
-            }
+            case 0:
+                faction.AntiArrowChanceIncrementOfBubing -= increment;
+                break;
+            case 1:
+                faction.AntiArrowChanceIncrementOfNubing -= increment;
+                break;
+            case 2:
+                faction.AntiArrowChanceIncrementOfQibing -= increment;
+                break;
+            case 3:
+                faction.AntiArrowChanceIncrementOfShuijun -= increment;
+                break;
+            case 4:
+                faction.AntiArrowChanceIncrementOfQixie -= increment;
+                break;
         }
     }
 }
-

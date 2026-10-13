@@ -1,20 +1,18 @@
-﻿using GameObjects;
-using GameObjects.Conditions;
-using System;
+﻿using System.Runtime.Serialization;
 
+namespace GameObjects.Conditions.ConditionKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Conditions.ConditionKindPack
+[DataContract]
+public class ConditionKind1604 : ConditionKind
 {
-
-    [DataContract]public class ConditionKind1604 : ConditionKind
+    public override bool CheckConditionKind(Condition condition, Troop troop)
     {
+        var army = troop.Army;
 
-        public override bool CheckConditionKind(Troop troop)
-        {
-            return troop.Army.FollowedLeader != null && troop.BelongedFaction != null && 
-                troop.Army.FollowedLeader.ID == troop.BelongedFaction.LeaderID;
-        }
+        var faction = troop.BelongedFaction;
 
+        var result = army.FollowedLeader != null && faction != null && army.FollowedLeader.ID == faction.LeaderID;
+
+        return result;
     }
 }
-

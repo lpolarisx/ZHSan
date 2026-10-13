@@ -1,40 +1,27 @@
-﻿using GameObjects;
-using GameObjects.Influences;
-using System;
+﻿using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.Influences.InfluenceKindPack;
 
-using System.Runtime.Serialization;namespace GameObjects.Influences.InfluenceKindPack
+[DataContract]
+public class InfluenceKind3010 : InfluenceKind
 {
-
-    [DataContract]public class InfluenceKind3010 : InfluenceKind
+    public override void ApplyInfluenceKind(Influence influence, Architecture arch)
     {
-        private int increment = 0;
+        arch.IncrementOfMonthFood += influence.GetIntParam();
+    }
 
-        public override void ApplyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfMonthFood += this.increment;
-        }
+    public override void PurifyInfluenceKind(Influence influence, Architecture arch)
+    {
+        arch.IncrementOfMonthFood -= influence.GetIntParam();
+    }
 
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.increment = int.Parse(parameter);
-            }
-            catch
-            {
-            }
-        }
+    public override double AIFacilityValue(Influence influence, Architecture arch)
+    {
+        var foodEnoughRate = arch.IsFoodEnough ? 0 : 0.5;
+        var foodAbundantRate = arch.IsFoodAbundant ? 0 : 0.5;
+        var foodIncomeEnoughRate = arch.IsFoodIncomeEnough ? 0 : 1000;
 
-        public override void PurifyInfluenceKind(Architecture architecture)
-        {
-            architecture.IncrementOfMonthFood -= this.increment;
-        }
-
-        public override double AIFacilityValue(Architecture a)
-        {
-            return (1 - Math.Pow((double)a.Food / a.FoodCeiling, 0.5) + (a.IsFoodEnough ? 0 : 0.5) + (a.IsFoodAbundant ? 0 : 0.5) + (a.IsFoodIncomeEnough ? 0: 1000)) * this.increment / 200000.0;
-        }
+        return (1 - Math.Pow((double)arch.Food / arch.FoodCeiling, 0.5) + foodEnoughRate + foodAbundantRate + foodIncomeEnoughRate) * influence.GetIntParam() / 200000.0;
     }
 }
-

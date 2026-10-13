@@ -1,35 +1,19 @@
 ﻿using GameManager;
-using GameObjects;
-using GameObjects.PersonDetail;
-using System;
+using System.Runtime.Serialization;
 
+namespace GameObjects.ArchitectureDetail.EventEffect;
 
-using System.Runtime.Serialization;namespace GameObjects.ArchitectureDetail.EventEffect
+[DataContract]
+public class EventEffect270 : EventEffectKind
 {
-
-
-    [DataContract]public class EventEffect270 : EventEffectKind
+    public override void ApplyEffectKind(EventEffect eventEffect, Person person, Event e)
     {
-        private int preferredType;
+        if (person.BelongedFaction == null || person.LocationArchitecture == null || person.BelongedCaptive != null) return;
 
-        public override void ApplyEffectKind(Person person, Event e)
+        var generatorTypeId = eventEffect.GetIntParam();
+        if (Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes.TryGetValue(generatorTypeId, out var type))
         {
-            if (person.BelongedFaction != null && person.LocationArchitecture != null && person.BelongedCaptive == null)
-            {
-                PersonGeneratorType type = Session.Current.Scenario.GameCommonData.AllPersonGeneratorTypes[preferredType] as PersonGeneratorType;
-                person.LocationArchitecture.GenerateOfficer(type,true);
-            }
-        }
-
-        public override void InitializeParameter(string parameter)
-        {
-            try
-            {
-                this.preferredType = int.Parse(parameter);
-            }
-            catch
-            {
-            }
+            person.LocationArchitecture.GenerateOfficer(type, true);
         }
     }
 }
