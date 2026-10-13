@@ -3381,7 +3381,7 @@ namespace GameObjects
 
             if (captiveData != null && !editing)
             {
-                foreach (var captive in captiveData)
+                foreach (var captive in captiveData.ToList())
                 {
                     var personId = captive.CaptivePersonID;
                     var person = AllPersons.GetValueOrDefault(personId);
@@ -3392,7 +3392,7 @@ namespace GameObjects
                     }
                     else
                     {
-                        person.SetBelongedCaptive(captive, PersonStatus.Captive);
+                        //person.SetBelongedCaptive(captive, PersonStatus.Captive);
                         person.Status = PersonStatus.Captive;
                         captive.CaptivePersonID = person.ID;
                     }
@@ -4948,7 +4948,7 @@ namespace GameObjects
                 military.ShelledMilitaryID = military.ShelledMilitary?.ID ?? -1;
             }
 
-            var captives = GetCaptives();
+            var captives = captiveData = GetCaptives();
             foreach (var captive in captives)
             {
                 captive.CaptivePersonID = captive.CaptivePerson?.ID ?? -1;
@@ -5007,7 +5007,7 @@ namespace GameObjects
                 }
             }
             
-            captiveData = GetCaptives();
+            //captiveData = GetCaptives();
 
             if (saveMap)
             {

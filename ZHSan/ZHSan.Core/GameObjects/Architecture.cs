@@ -14682,7 +14682,7 @@ namespace GameObjects
                     || !mayor.Available 
                     || mayor.BelongedFaction != BelongedFaction 
                     || mayor.BelongedFaction == null 
-                    || (mayor.LocationArchitecture != this && mayor.BelongedTroop == null)))
+                    || (mayor.LocationArchitecture != this && mayor.LocationTroop == null)))
                 {
                     Mayor = null;
                 }

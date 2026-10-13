@@ -89,13 +89,13 @@ namespace GameObjects
         {
             get
             {
-                if (this.CaptivePerson.LocationArchitecture != null)
-                {
-                    return this.CaptivePerson.LocationArchitecture.BelongedFaction;
-                }
-                else if (this.CaptivePerson.LocationTroop != null)
+                if (this.CaptivePerson.LocationTroop != null)
                 {
                     return this.CaptivePerson.LocationTroop.BelongedFaction;
+                }
+                else if (this.CaptivePerson.LocationArchitecture != null)
+                {
+                    return this.CaptivePerson.LocationArchitecture.BelongedFaction;
                 }
                 else
                 {
@@ -105,8 +105,14 @@ namespace GameObjects
             }
         }
 
-        public Architecture LocationArchitecture => CaptivePerson.LocationArchitecture;
-
+        public Architecture LocationArchitecture
+        {
+            get
+            {
+                return this.CaptivePerson.LocationTroop != null? this.CaptivePerson.LocationTroop.Leader.LocationArchitecture
+                        : this.CaptivePerson.LocationArchitecture;
+            }
+        }
         public Troop LocationTroop => CaptivePerson.LocationTroop;
 
         public void DayEvent()
@@ -174,7 +180,8 @@ namespace GameObjects
             {
                 Faction f = this.CaptivePerson.BelongedFaction;
                 this.CaptivePerson.LocationArchitecture = f.Capital;
-                this.CaptivePerson.Status = GameObjects.PersonDetail.PersonStatus.Normal;
+                //this.CaptivePerson.Status = GameObjects.PersonDetail.PersonStatus.Normal;
+                this.CaptivePerson.SetBelongedCaptive(null, GameObjects.PersonDetail.PersonStatus.Normal);
                 this.CaptivePerson.MoveToArchitecture(f.Capital, position, false, true, null);
             }
             
