@@ -5329,8 +5329,8 @@ namespace GameObjects
 
         public int GetCostByPosition(Point position, bool oblique, int DirectionCost, MilitaryKind kind)
         {
-            //if ((this.Army.Kind.OneAdaptabilityKind > 0) && (this.Army.Kind.OneAdaptabilityKind != (int) Session.Current.Scenario.GetTerrainKindByPosition(position)))
-            if (!this.Army.Kind.IsShell && (kind.OneAdaptabilityKind > 0) && (kind.OneAdaptabilityKind != (int)Session.Current.Scenario.GetTerrainKindByPosition(position))
+            if ((this.Army.Kind.OneAdaptabilityKind > 0) && (this.Army.Kind.OneAdaptabilityKind != (int) Session.Current.Scenario.GetTerrainKindByPosition(position))
+            //if (!this.Army.Kind.IsShell && (kind.OneAdaptabilityKind > 0) && (kind.OneAdaptabilityKind != (int)Session.Current.Scenario.GetTerrainKindByPosition(position))
                 && Session.Current.Scenario.GetArchitectureByPosition(position) == null)
             {
                 return 1000;
@@ -12386,7 +12386,9 @@ namespace GameObjects
                         {
                             bool runAnimation = Session.Current.Scenario.IsKnownToAnyPlayer(this);
 
-                            bool oldInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(this.position);
+                            //bool oldInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(this.position);
+                            // 关键修复：oldInWater 用旧位置，newInWater 用新位置
+                            bool oldInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(this.PreviousPosition);
                             bool newInWater = this.Army.bushiShuijunBingqieChuyuShuiyu(value);
                             bool changeArmyKind = oldInWater != newInWater;
 
