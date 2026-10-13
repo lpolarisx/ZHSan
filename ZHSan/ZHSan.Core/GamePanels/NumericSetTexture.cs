@@ -19,7 +19,6 @@ namespace GamePanels
         public int AllowNumber { get; set; }
         public int? NowNumber { get; set; }
         public Vector2 Position { get; set; }
-        public int clickTimes = 0;
         public int Unit { get; set; }
 
         public bool DisNumber = true;
@@ -82,20 +81,22 @@ namespace GamePanels
 
         public void Update(int poX, int poY, ref int nowNumber, ref bool pressed, Vector2? basePosition)
         {
-            if (!Enable) return;
+            if (!Enable)
+            {
+                nowNumber = NowNumber ?? 0;
+                return;
+            }
             leftTexture.MouseOver = leftTexture.IsInTexture(poX, poY, basePosition);
             rightTexture.MouseOver = rightTexture.IsInTexture(poX, poY, basePosition);
             if (InputManager.IsPressed)
             {
                 if (leftTexture.MouseOver)
                 {
-                    clickTimes++;
-                    if (NowNumber > MinNumber && clickTimes >= 1) { NowNumber -= Unit; clickTimes = 0; }
+                    if (NowNumber > MinNumber) { NowNumber -= Unit; }
                 }
                 else if (rightTexture.MouseOver)
                 {
-                    clickTimes++;
-                    if (NowNumber < AllowNumber && NowNumber < MaxNumber && clickTimes >= 1) { NowNumber += Unit; clickTimes = 0; }
+                    if (NowNumber < AllowNumber && NowNumber < MaxNumber) { NowNumber = Math.Min(NowNumber.Value + Unit, Math.Min(AllowNumber, MaxNumber)); }//步进后不能超过上限
                 }
                 if (IsInTexture(poX, poY, leftTexture.Position + new Vector2(leftTexture.Width + (IsModeS ? 2 : 10), 0f) + (basePosition == null ? Vector2.Zero : (Vector2)basePosition), groundTextureWidth, groundTextureHeight))
                 {
@@ -178,7 +179,6 @@ namespace GamePanels
         public float? NowNumber { get; set; }
         public Vector2 Position { get; set; }
 
-        public int clickTimes = 0;
         public float Unit { get; set; }
 
         public bool DisNumber = true;
@@ -244,20 +244,24 @@ namespace GamePanels
 
         public void Update(int poX, int poY, ref float nowNumber, ref bool pressed, Vector2? basePosition)
         {
-            if (!Enable) return;
+            if (!Enable)
+            {
+                nowNumber = NowNumber ?? 0;
+                return;
+            }
+            Vector2 basePos = basePosition ?? Vector2.Zero;
             leftTexture.MouseOver = leftTexture.IsInTexture(poX, poY, basePosition);
-            rightTexture.MouseOver = rightTexture.IsInTexture(poX, poY, new Vector2(basePosition.Value.X + Widthchange, basePosition.Value.Y + Heightchange));
+            //右按钮的偏移要与Draw保持一致
+            rightTexture.MouseOver = rightTexture.IsInTexture(poX, poY, new Vector2(basePos.X + Widthchange, basePos.Y));
             if (InputManager.IsPressed)
             {
                 if (leftTexture.MouseOver)
                 {
-                    clickTimes++;
-                    if (NowNumber > MinNumber && clickTimes >= 1) { NowNumber -= Unit; clickTimes = 0; }
+                    if (NowNumber > MinNumber) { NowNumber -= Unit; }
                 }
                 else if (rightTexture.MouseOver)
                 {
-                    clickTimes++;
-                    if (NowNumber < AllowNumber && NowNumber < MaxNumber && clickTimes >= 1) { NowNumber += Unit; clickTimes = 0; }
+                    if (NowNumber < AllowNumber && NowNumber < MaxNumber) { NowNumber = Math.Min(NowNumber.Value + Unit, Math.Min(AllowNumber, MaxNumber)); }//步进后不能超过上限
                 }
                 if (IsInTexture(poX, poY, leftTexture.Position + new Vector2(leftTexture.Width + (IsModeS ? 2 : 10), 0f) + (basePosition == null ? Vector2.Zero : (Vector2)basePosition), groundTextureWidth + Widthchange, groundTextureHeight + Heightchange))
                 {
@@ -326,7 +330,11 @@ namespace GamePanels
             else width = 0;
 
             //CacheManager.Draw(IsModeS ? @"Content\Textures\Resources\Start\NumberSetS-Fill" : @"Content\Textures\Resources\Start\NumberSet-Fill", new Vector2(Convert.ToInt32(pos.X + basePosition.X) + 2, Convert.ToInt32(pos.Y + basePosition.Y) + 3), new Rectangle(0, 0, width, fillTextureHeight + Heightchange - 3), Color.Orange * alpha);
-            CacheManager.Draw(IsModeS ? @"Content\Textures\Resources\Start\NumberSetS-Fill" : @"Content\Textures\Resources\Start\NumberSet-Fill", new Rectangle(Convert.ToInt32(pos.X + basePosition.X) + 2, Convert.ToInt32(pos.Y + basePosition.Y), width - 4, fillTextureHeight + Heightchange), null, Color.White * alpha,0f,Vector2.Zero,SpriteEffects.None,0f);
+            //数值很小时width - 4为负，负宽度会在滑槽左侧画出一小段镜像的填充
+            if (width > 4)
+            {
+                CacheManager.Draw(IsModeS ? @"Content\Textures\Resources\Start\NumberSetS-Fill" : @"Content\Textures\Resources\Start\NumberSet-Fill", new Rectangle(Convert.ToInt32(pos.X + basePosition.X) + 2, Convert.ToInt32(pos.Y + basePosition.Y), width - 4, fillTextureHeight + Heightchange), null, Color.White * alpha, 0f, Vector2.Zero, SpriteEffects.None, 0f);
+            }
 
             rightTexture.Draw(new Vector2(basePosition.X + Widthchange, basePosition.Y), Color.White * alpha);
             leftTexture.Draw(basePosition, Color.White * alpha);
@@ -339,7 +347,8 @@ namespace GamePanels
             }
             else
             {
-                CacheManager.DrawString(Session.Current.Font, DisNumberText ? ViewText + NowNumber.ToString() : NowNumber.ToString(),new Vector2(( leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8))).X, (leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8))).Y+Heightchange), Color.White * alpha,0f,Vector2.Zero,((float)leftTexture.Height+Heightchange)/leftTexture.Height * NumberTextScale,SpriteEffects.None,0f);
+                Vector2 textPos = leftTexture.Position + basePosition + (IsModeS ? new Vector2(55, 3) : new Vector2(156, 8)) + new Vector2(0, Heightchange);
+                CacheManager.DrawString(Session.Current.Font, DisNumberText ? ViewText + NowNumber.ToString() : NowNumber.ToString(), textPos, Color.White * alpha, 0f, Vector2.Zero, (leftTexture.Height + Heightchange) / leftTexture.Height * NumberTextScale, SpriteEffects.None, 0f);
             }
         }
 

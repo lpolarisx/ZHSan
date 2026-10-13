@@ -13,23 +13,26 @@ namespace GamePanels
     /// </summary>
     public class LinkButton
     {
-        //Device gra = SeasonGame.Current.Device;
+        //全角字符的宽度，半角字符按一半计算
         int PerCharacterWidth = 28;
         int PerCharacterHeight = 30;
-        private string text;
-        public string Text
+        public string Text { get; set; }
+        public float TextScale = 1f;
+        /// <summary>
+        /// 按文字内容估算的宽度（未乘TextScale），点击范围和下划线都以它为准
+        /// </summary>
+        int TextWidth
         {
             get
             {
-                return text;
-            }
-            set
-            {
-                text = value;
-                //Texture = FontCharacter.Load(text, Session.DisplayFont, 12, color);
+                int width = 0;
+                foreach (char ch in Text ?? "")
+                {
+                    width += ch > 128 ? PerCharacterWidth : PerCharacterWidth / 2;
+                }
+                return width;
             }
         }
-        public float TextScale = 1f;
         public bool FireEventWhenUnEnable = false;
         public bool MouseOver { get; set; }
         public bool Visible { get; set; }
@@ -52,10 +55,10 @@ namespace GamePanels
         {
             if (OnButtonPress != null)
             {
-                OnButtonPress.Invoke(null, null);
+                OnButtonPress.Invoke(this, null);
             }
         }
-        public void Update(Vector3? basePos, bool sound)
+        public void Update(Vector2? basePos, bool sound)
         {
             MouseOver = IsInTexture(InputManager.PoX, InputManager.PoY, basePos);
             if (MouseOver)
@@ -63,10 +66,14 @@ namespace GamePanels
                 if (!PreMouseOver && sound) Platform.Current.PlayEffect(@"Content\Sound\Move");
                 if (InputManager.IsPressed)
                 {
+                    if (!Platform.IsActive)
+                    {
+                        return;
+                    }
                     if (lastClickTime != null)
                     {
                         TimeSpan ts = DateTime.Now - (DateTime)lastClickTime;
-                        if (ts.TotalSeconds < 1 || !Platform.IsActive)
+                        if (ts.TotalSeconds < 0.3f)
                         {
                             return;
                         }
@@ -76,21 +83,14 @@ namespace GamePanels
                 }
             }
         }
-        public bool IsInTexture(int poX, int poY, Vector3? basePos)
+        public bool IsInTexture(int poX, int poY, Vector2? basePos)
         {
             if (Visible && (Enable || FireEventWhenUnEnable))
             {
                 PreMouseOver = MouseOver;
-                if (basePos == null)
-                {
-                    MouseOver = this.Position.X <= poX && poX <= this.Position.X + (PerCharacterWidth * Text.Length)
-                        && this.Position.Y <= poY && poY <= this.Position.Y + PerCharacterHeight;
-                }
-                else
-                {
-                    MouseOver = this.Position.X + ((Vector3)basePos).X <= poX && poX <= this.Position.X + ((Vector3)basePos).X + (PerCharacterWidth * Text.Length)
-                        && this.Position.Y + ((Vector3)basePos).Y <= poY && poY <= this.Position.Y + ((Vector3)basePos).Y + PerCharacterHeight;
-                }
+                Vector2 pos = Position + (basePos ?? Vector2.Zero);
+                MouseOver = pos.X <= poX && poX <= pos.X + TextWidth * TextScale
+                    && pos.Y <= poY && poY <= pos.Y + PerCharacterHeight * TextScale;
             }
             else
             {
@@ -107,11 +107,11 @@ namespace GamePanels
             if (Visible)
             {
                 CacheManager.DrawString(Session.Current.Font, Text, Position, (Enable ? Color : Color.Silver) * alpha, 0f, Vector2.Zero, TextScale, Microsoft.Xna.Framework.Graphics.SpriteEffects.None, 0f);
-                //Rectangle rec = new Rectangle(Convert.ToInt32(Position.X), Convert.ToInt32(Position.Y + Texture.Height - 3), Convert.ToInt32(Texture.Width), 1);
-                Rectangle rec = new Rectangle(0, 0, PerCharacterWidth * Text.Length, 1);
                 if (MouseOver)
                 {
-                    CacheManager.Draw(@"Content\Textures\Resources\Start\Line-Red", Position + new Vector2(0, PerCharacterHeight - 5), rec, Color.White * alpha, Microsoft.Xna.Framework.Graphics.SpriteEffects.None, TextScale);
+                    //下划线贴图会再按TextScale放大，所以源矩形用缩放前的宽度
+                    Rectangle rec = new Rectangle(0, 0, TextWidth, 1);
+                    CacheManager.Draw(@"Content\Textures\Resources\Start\Line-Red", Position + new Vector2(0, (PerCharacterHeight - 5) * TextScale), rec, Color.White * alpha, Microsoft.Xna.Framework.Graphics.SpriteEffects.None, TextScale);
                 }
             }
         }

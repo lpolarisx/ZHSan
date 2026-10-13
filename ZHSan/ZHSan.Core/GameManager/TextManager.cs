@@ -152,9 +152,10 @@ namespace GameManager
                 var te = texs[i];
 
                 // te为空字符串时, bound为[0, 0, 0, 0], 若最后一行空字符串则导致长文本高度计算错误
-                bound = !string.IsNullOrWhiteSpace(te) ? 
+                // 第一行就是空字符串时没有上一行可用, 用该行位置上的空范围
+                bound = !string.IsNullOrWhiteSpace(te) ?
                         GetTextBounds(te, pos + new Vector2(0, i * pair.Size * scale), scale) :
-                        bounds[i-1];
+                        i > 0 ? bounds[i-1] : GetTextBounds("", pos, scale);
 
                 //bound = font.CalcStringBounds(te, pos + new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
                 bounds.Add(bound);
@@ -200,7 +201,9 @@ namespace GameManager
                     bound = font.GetFont(30).TextBounds(currentLine, new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
                     //bound = font.CalcStringBounds(currentLine.ToString(), new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
 
-                    if (bound.Width() * scale > lineWidth)//如果当前这些文字超过行宽的
+                    //TextBounds已经按scale缩放过，不能再乘一次
+                    //只有一个字就超宽时无法再拆，否则会一直原地换行
+                    if (bound.Width() > lineWidth && currentLine.Length > 1)//如果当前这些文字超过行宽的
                     {
                         autoWrapText += (currentLine.Substring(0, currentLine.Length - 1) + '\n');//换行，并将当前行所有文字存入修改后的自动换行变量中
                         currentIndex = j;

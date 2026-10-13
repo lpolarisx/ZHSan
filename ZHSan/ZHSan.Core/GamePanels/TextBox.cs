@@ -26,14 +26,12 @@ namespace GamePanels
         float totalElapse;
         bool displaycursor;
 
-#pragma warning disable CS0414 // The field 'TextBox.lastInputTime' is assigned but its value is never used
-        float lastInputTime = 0f;
-#pragma warning restore CS0414 // The field 'TextBox.lastInputTime' is assigned but its value is never used
-        float afterLastInputTime = 0f;
-		float afterLastTextTime = 0f;
-
-        int PerCharacterWidth = 29;
-        int PerCharacterHeight = 29;
+        //按住不放时，先等待KeyRepeatDelay，再每隔KeyRepeatInterval重复一次
+        const float KeyRepeatDelay = 0.5f;
+        const float KeyRepeatInterval = 0.05f;
+        Microsoft.Xna.Framework.Input.Keys? heldKey;
+        float keyHoldTime = 0f;
+        float keyRepeatTime = 0f;
 
         public float tranAlpha = 1f;
 
@@ -44,7 +42,8 @@ namespace GamePanels
         {
             get
             {
-                return text.NullToStringTrim();
+                //不能在这里Trim，否则刚输入的空格会在输入下一个字符时丢失
+                return text ?? "";
             }
             set
             {
@@ -183,14 +182,14 @@ namespace GamePanels
                     else if (getChar.CharaterType == characterType.Enter)
                     {
                         //Text += "\r";
-                        if (OnKeyEnterPress != null) OnKeyEnterPress.Invoke(null, null);
+                        if (OnKeyEnterPress != null) OnKeyEnterPress.Invoke(this, EventArgs.Empty);
                         Platform.Current.ClearChars(); //WindowInputCapturer.myCharacters.Clear();
                         break;
                     }
                     else if (getChar.CharaterType == characterType.Tab)
                     {
                         //Text += "    ";
-                        if (OnKeyTabPress != null) { OnKeyTabPress.Invoke(null, null); }
+                        if (OnKeyTabPress != null) { OnKeyTabPress.Invoke(this, EventArgs.Empty); }
                         Platform.Current.ClearChars(); //WindowInputCapturer.myCharacters.Clear();
                         break;
                     }
@@ -201,10 +200,48 @@ namespace GamePanels
                     getChar.IsUsed = true;
                 }
             }
-            if (getChars != null && getChars.Count > 0)
-            {
+        }
 
+        /// <summary>
+        /// 取得本帧要处理的按键：新按下的键立即返回，按住不放的键按重复节奏返回，否则返回null
+        /// </summary>
+        /// <param name="repeating">返回的按键是否来自按住不放的重复</param>
+        Microsoft.Xna.Framework.Input.Keys? GetInputKey(float gameTime, out bool repeating)
+        {
+            repeating = false;
+            foreach (var key in InputManager.KeyBoardState.GetPressedKeys())
+            {
+                if (key == Microsoft.Xna.Framework.Input.Keys.LeftShift || key == Microsoft.Xna.Framework.Input.Keys.RightShift)
+                {
+                    continue;
+                }
+                if (InputManager.KeyBoardStatePre.IsKeyUp(key))
+                {
+                    heldKey = key;
+                    keyHoldTime = keyRepeatTime = 0f;
+                    return key;
+                }
             }
+
+            if (heldKey == null || InputManager.KeyBoardState.IsKeyUp((Microsoft.Xna.Framework.Input.Keys)heldKey))
+            {
+                heldKey = null;
+                return null;
+            }
+
+            keyHoldTime += gameTime;
+            if (keyHoldTime < KeyRepeatDelay)
+            {
+                return null;
+            }
+            keyRepeatTime += gameTime;
+            if (keyRepeatTime < KeyRepeatInterval)
+            {
+                return null;
+            }
+            keyRepeatTime = 0f;
+            repeating = true;
+            return heldKey;
         }
 
         public void HandleInput(float gameTime)
@@ -215,6 +252,7 @@ namespace GamePanels
             }
             EventFired = false;
             btTexture.Update(InputManager.PoX, InputManager.PoY, null);
+            MouseOver = btTexture.MouseOver;
             if (btTexture.MouseOver && InputManager.IsPressed)
             {
                 if (OnButtonPress != null) PressButton();
@@ -259,7 +297,7 @@ namespace GamePanels
                 Selected = true;
                 if (!preSelected && OnTextBoxSelected != null)
                 {
-                    OnTextBoxSelected.Invoke(null, null);
+                    OnTextBoxSelected.Invoke(this, null);
                 }
             }
 
@@ -270,73 +308,44 @@ namespace GamePanels
                 {
                     if (InputManager.HasKeys && (TextBoxMode != GamePanels.TextBoxMode.Chinese || Platform.PlatFormType == PlatFormType.Desktop || Platform.PlatFormType == PlatFormType.UWP && Platform.Current.KeyBoardAvailable)) //Season.PlatForm == PlatForm.WinRT || 
                     {
-                        if (InputManager.KeyBoardState == InputManager.KeyBoardStatePre)
+                        bool repeating;
+                        var inputKey = GetInputKey(gameTime, out repeating);
+                        if (inputKey == null)
                         {
-                            afterLastInputTime += gameTime;
-                            if (afterLastInputTime < 0.1f)
-                            {
-                                return;
-                            }
-							afterLastInputTime = 0f;
+                            return;
                         }
-                        else
+                        var key = (Microsoft.Xna.Framework.Input.Keys)inputKey;
+                        bool shift = InputManager.KeyBoardState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift)
+                            || InputManager.KeyBoardState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightShift);
+                        if (key == Microsoft.Xna.Framework.Input.Keys.Tab)
                         {
-                        }                        
-						bool shift = false;
-						if (InputManager.KeyBoardState.IsKeyDown (Microsoft.Xna.Framework.Input.Keys.LeftShift)
-							|| InputManager.KeyBoardState.IsKeyDown (Microsoft.Xna.Framework.Input.Keys.RightShift)) {
-							shift = true;
-						}
-                        if (InputManager.KeyBoardState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Tab))
-                        {
-                            if (OnKeyTabPress != null) 
-                            { 
-                                OnKeyTabPress.Invoke(null, null);
+                            //Tab和回车只在按下的那一刻触发一次，按住不重复
+                            if (!repeating && OnKeyTabPress != null)
+                            {
+                                OnKeyTabPress.Invoke(this, EventArgs.Empty);
                                 EventFired = true;
                             }
                         }
-                        else if (InputManager.KeyBoardState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Enter))
+                        else if (key == Microsoft.Xna.Framework.Input.Keys.Enter)
                         {
-                            if (OnKeyEnterPress != null)
+                            if (!repeating && OnKeyEnterPress != null)
                             {
-                                OnKeyEnterPress.Invoke(null, null);
+                                OnKeyEnterPress.Invoke(this, EventArgs.Empty);
                                 EventFired = true;
                             }
                         }
-                        else if (InputManager.KeyBoardState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Back) && !String.IsNullOrEmpty(Text))
+                        else if (key == Microsoft.Xna.Framework.Input.Keys.Back)
                         {
-                            afterLastTextTime += gameTime;
-                            if (afterLastTextTime < 0.04f)
+                            if (!String.IsNullOrEmpty(Text))
                             {
-                                return;
+                                Text = Text.Remove(Text.Length - 1, 1);
                             }
-                            afterLastTextTime = 0f;
-                            Text = Text.Remove(Text.Length - 1, 1);
-                        }
-                        else if (InputManager.KeyBoardState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.Space))
-                        {
-                            afterLastTextTime += gameTime;
-                            if (afterLastTextTime < 0.04f)
-                            {
-                                return;
-                            }
-                            afterLastTextTime = 0f;
-                            Text = Text.Insert(Text.Length, " ");
                         }
                         else
                         {
-                            string tex = InputManager.ConvertKeyToChar(shift);
+                            string tex = InputManager.ConvertKeyToChar(key, shift);
                             if (!String.IsNullOrEmpty(tex))
                             {
-                                afterLastTextTime += gameTime;
-                                if (afterLastTextTime < 0.1f && !String.IsNullOrEmpty(Text) && Text.ToCharArray()[Text.Length - 1].ToString() == tex)
-                                {
-                                    return;
-                                }
-                                //if (!String.IsNullOrEmpty (Text) && Text.ToCharArray ()[Text.Length-1].ToString() == tex) {
-                                //	return;
-                                //}
-                                afterLastTextTime = 0f;
                                 Text += tex;
                                 Platform.Current.PlayEffect(@"Content\Sound\Move");
                             }
@@ -358,7 +367,7 @@ namespace GamePanels
                     ViewText = Text.WordsSubString(8);
                     if (CheckTextValid != null)
                     {
-                        CheckTextValid.Invoke(null, null);
+                        CheckTextValid.Invoke(this, EventArgs.Empty);
                     }
                 }
             }
@@ -420,8 +429,9 @@ namespace GamePanels
         {
             if (Visible && (Enable || FireEventWhenUnEnable))
             {
-                MouseOver = this.Position.X <= poX && poX <= this.Position.X + (Text.Length * PerCharacterWidth) // texture.Width
-                    && this.Position.Y <= poY && poY <= this.Position.Y + PerCharacterHeight;
+                //以文本框底图的范围为准，与HandleInput的点击判定一致
+                MouseOver = btTexture.Position.X <= poX && poX <= btTexture.Position.X + btTexture.Width
+                    && btTexture.Position.Y <= poY && poY <= btTexture.Position.Y + btTexture.Height;
             }
             else
             {

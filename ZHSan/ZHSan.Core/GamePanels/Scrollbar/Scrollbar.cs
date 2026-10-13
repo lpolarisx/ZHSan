@@ -18,12 +18,22 @@ namespace GamePanels.Scrollbar
         Horizontal,
         Vertical,
     }
-    public class Scrollbar
+    public class Scrollbar : IDisposable
     {
         /// <summary>
         /// 包含滚动条的框架
         /// </summary>
         public Frame baseFrame;
+        /// <summary>
+        /// 滚动条按钮可以移动的最大像素距离
+        /// </summary>
+        protected float MaxDisValue
+        {
+            get
+            {
+                return Math.Max(scrollbarType == ScrollbarType.Horizontal ? BarTexture.Width - ButtonTexture.Width : BarTexture.Height - ButtonTexture.Height, 0);
+            }
+        }
         /// <summary>
         /// 滚动条按钮的像素值
         /// </summary>
@@ -36,44 +46,25 @@ namespace GamePanels.Scrollbar
             set
             {
                 //设置滚动条像素值的边界
-                if (value < 0)
-                    _disValue = 0;
-                else if (value > (scrollbarType == ScrollbarType.Horizontal ? BarTexture.Width - ButtonTexture.Width : BarTexture.Height - ButtonTexture.Height))
-                    _disValue = scrollbarType == ScrollbarType.Horizontal ? BarTexture.Width - ButtonTexture.Width : BarTexture.Height - ButtonTexture.Height;
-                else
-                    _disValue = value;
-
+                _disValue = MathHelper.Clamp(value, 0, MaxDisValue);
             }
         }
         /// <summary>
-        /// 滚动条的值
+        /// 滚动条的值，范围0到1
         /// </summary>
         public float Value
         {
             get
             {
-                _value = DisValue / (scrollbarType == ScrollbarType.Horizontal ? BarTexture.Width - ButtonTexture.Width : BarTexture.Height - ButtonTexture.Height);
-                if (_value < 0)
-                    _value = 0;
-                if (_value > 1)
-                    _value = 1;
-                return _value;
+                //滚动条和按钮一样长时没有可移动的距离，不能做除法
+                return MaxDisValue > 0 ? MathHelper.Clamp(DisValue / MaxDisValue, 0, 1) : 0;
             }
 
             set
             {
-                if (value < 0)
-                    _value = 0;
-                else if (value > 1)
-                    _value = 1;
-                else
-                    _value = value;
+                DisValue = MathHelper.Clamp(value, 0, 1) * MaxDisValue;
             }
         }
-        /// <summary>
-        /// 滚动条的值
-        /// </summary>
-        private float _value;
         /// <summary>
         /// 滚动条的边界值
         /// </summary>
@@ -201,8 +192,21 @@ namespace GamePanels.Scrollbar
             return tex;
         }
 
+        /// <summary>
+        /// 释放滚动条和按钮的材质
+        /// </summary>
+        public void Dispose()
+        {
+            if (ButtonTexture != null)
+                ButtonTexture.Dispose();
+            if (BarTexture != null)
+                BarTexture.Dispose();
+        }
+
         public void Draw()
         {
+            if (!Visible)
+                return;
 
             switch (scrollbarType)//根据滚动条的类型设置滚动条和按钮的位置坐标
             {
@@ -283,9 +287,15 @@ namespace GamePanels.Scrollbar
         {
             MouseOver = Enable && IsInTexture(Convert.ToSingle(poX), Convert.ToSingle(poY), basePos) && (poX != 0 || poY != 0);//设置鼠标是否经过滚动条的布尔值变量
 
-            if (scrollbarType == ScrollbarType.Vertical && InputManager.PinchMove != 0 && IsInFrame(poX, poY))//如果鼠标在框架内滚动滚轮
+            //桌面平台的鼠标滚轮不会写入PinchMove，要从鼠标状态里取，一格是120
+            //窗口失焦时InputManager不更新，前后两帧的差值会一直保留，所以要判断IsActive
+            float rolling = InputManager.PinchMove;
+            if (rolling == 0 && Platform.IsActive)
+                rolling = (InputManager.NowMouse.ScrollWheelValue - InputManager.MouseStatePre.ScrollWheelValue) / 120f;
+
+            if (scrollbarType == ScrollbarType.Vertical && rolling != 0 && IsInFrame(poX, poY))//如果鼠标在框架内滚动滚轮
             {
-                DisValue -= InputManager.PinchMove * RollingDistance;//更改相应的按钮纵坐标像素值
+                DisValue -= rolling * RollingDistance;//更改相应的按钮纵坐标像素值
                 InputManager.PinchMove = 0;
                 return;
             }
@@ -296,6 +306,8 @@ namespace GamePanels.Scrollbar
                 preDown = false;
                 return;
             }
+            if (preDown && !down)//释放的那一帧没有调用Update（比如切换了界面）时，不能一直停在拖动状态
+                preDown = false;
             if (preDown)//如果鼠标一直按下，即使偏离按钮一样可以起到按下滚动条按钮的功能（拖动按钮）
             {
                 PressBarButton();
