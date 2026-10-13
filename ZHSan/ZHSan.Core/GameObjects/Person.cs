@@ -666,6 +666,11 @@ namespace GameObjects
 
         public void SetBelongedCaptive(Captive captive, PersonStatus status)
         {
+            if (captive == null)
+                Session.Current.Scenario.captiveData.Remove(this.BelongedCaptive);
+            else
+                Session.Current.Scenario.captiveData.Add(captive);
+
             BelongedCaptive = captive;
             Status = captive == null ? status : PersonStatus.Captive;
         }
@@ -1359,7 +1364,7 @@ namespace GameObjects
                 {
                     return this.LocationTroop.BelongedFaction;
                 }
-                else if (this.Status == PersonStatus.Captive)
+                else if (this.Status == PersonStatus.Captive && this.BelongedCaptive != null)
                 {
                     return this.BelongedCaptive.CaptiveFaction;
                 }
@@ -1379,7 +1384,7 @@ namespace GameObjects
                 {
                     return this.LocationTroop.BelongedFaction;
                 }
-                else if (this.Status == PersonStatus.Captive)
+                else if (this.Status == PersonStatus.Captive && this.BelongedCaptive != null)
                 {
                     return this.BelongedCaptive.CaptiveFaction;
                 }
@@ -5702,7 +5707,7 @@ namespace GameObjects
         {
             get
             {
-                return WillLoseLoyalty || (this.BelongedCaptive.LocationArchitecture.captiveLoyaltyFall.Count > 0);
+                return WillLoseLoyalty || (this.BelongedCaptive != null && this.BelongedCaptive.LocationArchitecture.captiveLoyaltyFall.Count > 0);
             }
         }
 
@@ -5727,7 +5732,7 @@ namespace GameObjects
             }
             else
             {
-                if (this.LocationArchitecture != null)
+                if (this.BelongedCaptive?.LocationArchitecture != null)
                 {
                     foreach (KeyValuePair<int, int> i in this.BelongedCaptive.LocationArchitecture.captiveLoyaltyFall)
                     {
