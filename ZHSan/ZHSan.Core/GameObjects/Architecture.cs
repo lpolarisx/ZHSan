@@ -5604,10 +5604,11 @@ namespace GameObjects
             {
                 Routeway routeway = new Routeway();
                 routeway.ID = Session.Current.Scenario.Routeways.GetNewId();
-                Session.Current.Scenario.Routeways.Add(routeway.ID, routeway);
+                
                 this.BelongedFaction.AddRouteway(routeway);
                 routeway.StartArchitecture = this;
                 this.Routeways.Add(routeway);
+                Session.Current.Scenario.Routeways.Add(routeway.ID, routeway);
                 routeway.Extend(p);
 
                 var routewayArchitecturesByPosition = Session.Current.Scenario.GetRoutewayArchitecturesByPosition(routeway, p);
