@@ -62,7 +62,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 cundangShijianJiange = Session.Current.Scenario.DaySince - shangciCundangShijian;
 
-                if (cundangShijianJiange >= Setting.Current.GlobalVariables.AutoSaveFrequency)
+                if (cundangShijianJiange >= Setting.Current.GlobalVariables.AutoSaveFrequency * Session.Parameters.DayInTurn)
                 {
                     if (Setting.Current.GlobalVariables.doAutoSave)
                     {
