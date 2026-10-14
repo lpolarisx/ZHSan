@@ -17,6 +17,7 @@ namespace GameManager
 
         private static Desktop desktop;
         private static Action cancelAction;
+        private static Action afterCloseAction;
         // 弹窗关闭时鼠标键可能还按着，等松开之后再把输入还给原有界面，避免点穿
         private static bool waitingForRelease;
         private static bool rightButtonWasDown;
@@ -76,13 +77,18 @@ namespace GameManager
             Desktop.Root = root;
         }
 
-        public static void Close()
+        /// <summary>
+        /// 关闭弹窗
+        /// </summary>
+        /// <param name="afterClose">等鼠标键松开、输入还给原有界面的时候调用。关闭后要接着打开原有界面的窗口时放在这里，避免关闭弹窗的那次点击落到新窗口上</param>
+        public static void Close(Action afterClose = null)
         {
             if (IsShowing)
             {
                 desktop.Root = null;
                 cancelAction = null;
                 waitingForRelease = true;
+                afterCloseAction = afterClose;
             }
         }
 
@@ -96,6 +102,9 @@ namespace GameManager
             if (waitingForRelease && !anyButtonDown)
             {
                 waitingForRelease = false;
+                Action afterClose = afterCloseAction;
+                afterCloseAction = null;
+                afterClose?.Invoke();
             }
             if (!IsShowing)
             {

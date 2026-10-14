@@ -269,18 +269,60 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             CurrentArchitecture.DemolishFacility(facilityToRemove);
         }
 
+        /// <summary>
+        /// 对选定的势力开展一种外交。需要派人的弹出外交人员列表，不需要的直接执行
+        /// </summary>
+        public void StartDiplomacy(DiplomacyKind kind, DiplomaticRelation relation)
+        {
+            switch (kind)
+            {
+                case DiplomacyKind.Enhance:
+                    CurrentDiplomaticRelation = relation;
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetEnhanceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                    break;
+
+                case DiplomacyKind.Ally:
+                    CurrentDiplomaticRelation = relation;
+                    //this.CurrentDiplomaticRelation.Relation = 301;
+                    //this.mainGameScreen.xianshishijiantupian(this.CurrentArchitecture.BelongedFaction.Leader, this.CurrentArchitecture.BelongedFaction.Leader.Name, "AllyDiplomaticRelation", "AllyDiplomaticRelation.jpg", "AllyDiplomaticRelation", this.CurrentDiplomaticRelation.FactionName, true);
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAllyDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.Persons], null, "外交人员", "Ability");
+                    break;
+
+                case DiplomacyKind.Truce:
+                    CurrentDiplomaticRelation = relation;
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetTruceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                    break;
+
+                case DiplomacyKind.QuanXiang:
+                    CurrentDiplomaticRelation = relation;
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetQuanXiangDiplomaticRelationPerson, false, true, true, false, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                    break;
+
+                case DiplomacyKind.Reset:
+                    var factionName = CurrentArchitecture.BelongedFaction.ID == relation.RelationFaction1ID ? relation.RelationFaction2String : relation.RelationFaction1String;
+
+                    Session.MainGame.mainGameScreen.xianshishijiantupian(Session.Current.Scenario.NeutralPerson, CurrentArchitecture.BelongedFaction.Leader.Name, "ResetDiplomaticRelation", "ResetDiplomaticRelation.jpg", "ResetDiplomaticRelation", factionName, true);
+                    CurrentArchitecture.BelongedFaction.Leader.DecreaseKarma(5);
+                    relation.Relation = 0;
+                    break;
+
+                case DiplomacyKind.Denounce:
+                    if (CurrentArchitecture.Fund >= 120000)
+                    {
+                        var toEncircle = relation.RelationFaction1 == CurrentArchitecture.BelongedFaction ? relation.RelationFaction2 : relation.RelationFaction1;
+                        CurrentArchitecture.BelongedFaction.Encircle(CurrentArchitecture, toEncircle);
+                    }
+                    break;
+            }
+        }
+
         private void FrameFunction_Architecture_AfterGetFriendlyDiplomaticRelation()
         {
-            int factionId = CurrentArchitecture.BelongedFaction.ID;
             var diplomaticRelations = CurrentArchitecture.GetResetDiplomaticRelationList().Where(x => x.Selected);
 
             foreach (var relation in diplomaticRelations)
             {
-                var factionName = factionId == relation.RelationFaction1ID ? relation.RelationFaction2String : relation.RelationFaction1String;
-
-                Session.MainGame.mainGameScreen.xianshishijiantupian(Session.Current.Scenario.NeutralPerson, CurrentArchitecture.BelongedFaction.Leader.Name, "ResetDiplomaticRelation", "ResetDiplomaticRelation.jpg", "ResetDiplomaticRelation", factionName, true);
-                CurrentArchitecture.BelongedFaction.Leader.DecreaseKarma(5);
-                relation.Relation = 0;
+                StartDiplomacy(DiplomacyKind.Reset, relation);
             }
         }
 
@@ -290,8 +332,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (diplomaticRelation != null)
             {
-                CurrentDiplomaticRelation = diplomaticRelation;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetEnhanceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                StartDiplomacy(DiplomacyKind.Enhance, diplomaticRelation);
             }
         }
 
@@ -301,8 +342,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (diplomaticRelation != null)
             {
-                CurrentDiplomaticRelation = diplomaticRelation;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetTruceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                StartDiplomacy(DiplomacyKind.Truce, diplomaticRelation);
             }
         }
 
@@ -312,8 +352,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (diplomaticRelation != null)
             {
-                CurrentDiplomaticRelation = diplomaticRelation;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetQuanXiangDiplomaticRelationPerson, false, true, true, false, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                StartDiplomacy(DiplomacyKind.QuanXiang, diplomaticRelation);
             }
         }
 
@@ -326,6 +365,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 if (CurrentArchitecture.Fund >= 50000 && person.GoToQuanXiangDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 50000;
+                    Session.MainGame.mainGameScreen.ShowDiplomacyDepart([person], "QuanXiangDiplomacyDepart");
                 }
             }
         }
@@ -336,10 +376,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (diplomaticRelation != null)
             {
-                CurrentDiplomaticRelation = diplomaticRelation;
-                //this.CurrentDiplomaticRelation.Relation = 301;
-                //this.mainGameScreen.xianshishijiantupian(this.CurrentArchitecture.BelongedFaction.Leader, this.CurrentArchitecture.BelongedFaction.Leader.Name, "AllyDiplomaticRelation", "AllyDiplomaticRelation.jpg", "AllyDiplomaticRelation", this.CurrentDiplomaticRelation.FactionName, true);
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAllyDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.Persons], null, "外交人员", "Ability");
+                StartDiplomacy(DiplomacyKind.Ally, diplomaticRelation);
             }
         }
 
@@ -347,39 +384,51 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             var persons = CurrentArchitecture.GetDiplomaticPersons().Where(x => x.Selected);
 
+            var envoys = new List<Person>();
+
             foreach (var diplomaticperson in persons)
             {
                 if (CurrentArchitecture.Fund >= 10000 && diplomaticperson.GoToDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 10000;
+                    envoys.Add(diplomaticperson);
                 }
             }
+            Session.MainGame.mainGameScreen.ShowDiplomacyDepart(envoys, "EnhanceDiplomacyDepart");
         }
 
         private void FrameFunction_Architecture_AfterGetTruceDiplomaticRelationPerson()
         {
             var persons = CurrentArchitecture.GetDiplomaticPersons().Where(x => x.Selected);
 
+            var envoys = new List<Person>();
+
             foreach (var diplomaticperson in persons)
             {
                 if (CurrentArchitecture.Fund >= 50000 && diplomaticperson.GoToTruceDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 50000;
+                    envoys.Add(diplomaticperson);
                 }
             }
+            Session.MainGame.mainGameScreen.ShowDiplomacyDepart(envoys, "TruceDiplomacyDepart");
         }
 
         private void FrameFunction_Architecture_AfterGetAllyDiplomaticRelationPerson()
         {
             var persons = CurrentArchitecture.GetDiplomaticPersons().Where(x => x.Selected);
 
+            var envoys = new List<Person>();
+
             foreach (var diplomaticperson in persons)
             {
                 if (CurrentArchitecture.Fund >= 20000 && diplomaticperson.GoToAllyDiplomatic(CurrentDiplomaticRelation))
                 {
                     CurrentArchitecture.Fund -= 20000;
+                    envoys.Add(diplomaticperson);
                 }
             }
+            Session.MainGame.mainGameScreen.ShowDiplomacyDepart(envoys, "AllyDiplomacyDepart");
         }
 
         private void FrameFunction_Architecture_AfterGetDenounceDiplomaticRelation()
@@ -388,11 +437,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             foreach (var relation in diplomaticRelations)
             {
-                if (CurrentArchitecture.Fund >= 120000)
-                {
-                    var toEncircle = relation.RelationFaction1 == CurrentArchitecture.BelongedFaction ? relation.RelationFaction2 : relation.RelationFaction1;
-                    CurrentArchitecture.BelongedFaction.Encircle(CurrentArchitecture, toEncircle);
-                }
+                StartDiplomacy(DiplomacyKind.Denounce, relation);
             }
         }
 

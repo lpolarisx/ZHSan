@@ -455,6 +455,38 @@
     <Leaf Property="" Text="。" Color="4294967295"></Leaf>
   </Branch>
   
+  <Branch Name="EnhanceDiplomacyDepart">
+    <Leaf Property="" Text="主公放心，在下" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="这就带上金银珠宝前往" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="处修好。" Color="4294967295"></Leaf>
+  </Branch>
+
+  <Branch Name="AllyDiplomacyDepart">
+    <Leaf Property="" Text="在下" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="这就出使" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="，说服其与我军结为同盟，共图大业。" Color="4294967295"></Leaf>
+  </Branch>
+
+  <Branch Name="TruceDiplomacyDepart">
+    <Leaf Property="" Text="在下" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="这就出使" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="，商议罢兵停战之事。" Color="4294967295"></Leaf>
+  </Branch>
+
+  <Branch Name="QuanXiangDiplomacyDepart">
+    <Leaf Property="" Text="在下" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="这就出使" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="，晓以利害，劝其早日归顺我军。" Color="4294967295"></Leaf>
+  </Branch>
+
   <Branch Name="EnhaneceDiplomaticRelation">
     <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
     <Leaf Property="" Text="派人向" Color="4294967295"></Leaf>

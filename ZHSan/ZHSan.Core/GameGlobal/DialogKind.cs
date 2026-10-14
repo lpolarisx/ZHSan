@@ -17,7 +17,8 @@ namespace GameGlobal
         TreasureDetail,
         CreateTroop,
         tupianwenzi,
-        liangdaobianji
+        liangdaobianji,
+        Diplomacy
     }
 }
 

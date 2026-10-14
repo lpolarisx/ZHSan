@@ -101,6 +101,27 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
 
+        /// <summary>
+        /// 外交面板。确认一项外交并办完之后（选完外交人员、看完事件图片）回到面板，仍选中刚才的势力，
+        /// 在面板里点取消才回到地图
+        /// </summary>
+        private void ShowDiplomacyDialog(Architecture architecture, DiplomaticRelation selected)
+        {
+            DiplomacyDialog.Show(architecture, selected, (kind, relation) =>
+            {
+                this.screenManager.StartDiplomacy(kind, relation);
+                this.RunWhenIdle(() =>
+                {
+                    // 办外交的过程中城池可能已经易主
+                    if (architecture.BelongedFaction != null && Session.Current.Scenario.IsCurrentPlayer(architecture.BelongedFaction) && architecture.DiplomaticAvail())
+                    {
+                        this.CurrentArchitecture = architecture;
+                        this.ShowDiplomacyDialog(architecture, relation);
+                    }
+                });
+            });
+        }
+
         private void HandleContextMenuResult(ContextMenuResult result)
         {
             GameDelegates.VoidFunction function = null;
@@ -673,6 +694,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
                 case ContextMenuResult.Faction_SelectPrince :
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectPrince, false, true, true, false, [.. CurrentArchitecture.BelongedFaction.Leader.ChildrenCanBeSelectedAsPrince()], null, "立储", "");
+                    break;
+                case ContextMenuResult.Faction_Diplomatic:
+                    this.ShowDiplomacyDialog(this.CurrentArchitecture, null);
                     break;
                 case ContextMenuResult.Faction_Diplomatic_QuanXiangDiplomaticRelation: //劝降
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.DiplomaticRelation, FrameFunction.GetQuanXiangDiplomaticRelation, false, true, true, false, [.. CurrentArchitecture.GetQuanXiangDiplomaticRelationList()], null, "劝降", "");
