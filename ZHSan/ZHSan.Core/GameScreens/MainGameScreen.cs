@@ -59,6 +59,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private Point position;
         private RoutewayLayer routewayLayer;
         private ScreenManager screenManager;
+        private Action idleAction;
         private float scrollSpeedScale;
         private float scrollSpeedScaleDefault;
         private float scrollSpeedScaleSpeedy;
@@ -2127,6 +2128,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.Plugins.FactionTechniquesPlugin.IsShowing = true;
         }
 
+        /// <summary>
+        /// 等所有窗口、事件图片都关掉、回到地图的时候调用一次。用来在一串操作办完之后回到原来的窗口
+        /// </summary>
+        public void RunWhenIdle(Action action)
+        {
+            this.idleAction = action;
+        }
+
         public void ShowTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, GameObjectList gameObjectList, GameObjectList selectedObjectList, string title, string tabName)
         {
             if ((gameObjectList != null) && (gameObjectList.Count != 0))
@@ -2975,6 +2984,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 switch (base.UndoneWorks.Peek().Kind)
                 {
                     case UndoneWorkKind.None:
+                        if (this.idleAction != null)
+                        {
+                            // 本帧只做这件事，它一般会再打开窗口，不让这一帧的鼠标操作落到地图上
+                            Action action = this.idleAction;
+                            this.idleAction = null;
+                            action();
+                            break;
+                        }
 
                         this.UpdateToolBar(gameTime);
                         this.UpdateScreenBlind(gameTime);

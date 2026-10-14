@@ -37,13 +37,26 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public override void renwukaishitishi(Person person, Architecture architecture)
+        /// <summary>
+        /// 派出外交使者之后，由第一个人出来说一句话，说明和谁一起、去哪个势力、做什么
+        /// </summary>
+        /// <param name="envoys">这次派出去的使者，可以为空</param>
+        /// <param name="branchName">对话在tupianwenziTextTree.xml里的分支名</param>
+        public void ShowDiplomacyDepart(List<Person> envoys, string branchName)
         {
-            if (Session.Current.Scenario.IsCurrentPlayer(person.BelongedFaction))
+            if (envoys.Count == 0 || !Session.Current.Scenario.IsCurrentPlayer(envoys[0].BelongedFaction))
             {
-                person.TextResultString = architecture.Name;
-                this.Plugins.GameRecordPlugin.AddBranch(person, "PersonTravel", architecture.Position);
+                return;
             }
+            Person speaker = envoys[0];
+            Faction target = Session.Current.Scenario.Factions.GetValueOrDefault(speaker.DiplomaticTargetFactionID);
+            // 同行的人最多点三个名字，再多就说“等人”
+            List<string> companions = envoys.Skip(1).Take(3).Select(x => x.Name).ToList();
+            speaker.TextResultString = companions.Count == 0 ? "" : "与" + string.Join("、", companions) + (envoys.Count > 4 ? "等人" : "");
+            speaker.TextDestinationString = target?.Name ?? "";
+            this.Plugins.tupianwenziPlugin.SetGameObjectBranch(speaker, speaker, branchName, "", "");
+            this.Plugins.tupianwenziPlugin.SetPosition(ShowPosition.Bottom, Session.MainGame.mainGameScreen);
+            this.Plugins.tupianwenziPlugin.IsShowing = true;
         }
 
         public override void ArchitectureBeginRecentlyAttacked(Architecture architecture)

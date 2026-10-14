@@ -258,7 +258,12 @@ namespace GameGlobal
         YearTable_Year5,
         YearTable_OwnFaction,
         ChangeFaction,
-        Switch_SkyEyeSimpleNotification
+        Switch_SkyEyeSimpleNotification,
+
+        /// <summary>
+        /// 势力-外交，打开外交面板
+        /// </summary>
+        Faction_Diplomatic
     }
 }
 

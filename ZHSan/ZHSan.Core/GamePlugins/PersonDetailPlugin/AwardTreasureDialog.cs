@@ -16,11 +16,13 @@ namespace PersonDetailPlugin
 {
     /// <summary>
     /// 赏赐宝物弹窗：横向列出君主手里某一种类的宝物，选中后点确认赏赐给武将。
-    /// 用Myra绘制。还没有美术素材，底板、边框、按钮都先用纯色代替。
+    /// 用Myra绘制，底板和按钮取自MyraSkin的基础图，宝物卡片还是纯色。
     /// </summary>
     internal class AwardTreasureDialog
     {
         private const int DialogWidth = 760;
+        // 内容离底板边缘的距离，要避开底板四周的花纹
+        private const int DialogPadding = 28;
         private const int CardWidth = 150;
         private const int CardHeight = 230;
         private const int PictureSize = 96;
@@ -28,11 +30,9 @@ namespace PersonDetailPlugin
         private const int DragThreshold = 6;
         private const string DefaultPicture = "Content/Textures/Resources/Treasure/9999.png";
 
-        private static readonly Color PanelColor = new Color(38, 54, 64);
         private static readonly Color CardColor = new Color(26, 38, 46);
         private static readonly Color CardOverColor = new Color(44, 64, 76);
         private static readonly Color LineColor = new Color(90, 110, 120);
-        private static readonly Color GoldColor = new Color(214, 182, 96);
 
         private readonly Person person;
         private readonly Person leader;
@@ -89,26 +89,25 @@ namespace PersonDetailPlugin
             {
                 Width = DialogWidth,
                 Spacing = 12,
-                Padding = new Thickness(20, 16),
+                // 上边留得少，让标题落在底板那条横线的上面
+                Padding = new Thickness(DialogPadding, 7, DialogPadding, DialogPadding),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Background = new SolidBrush(PanelColor),
-                Border = new SolidBrush(GoldColor),
-                BorderThickness = new Thickness(2)
+                Background = MyraSkin.PanelBackground
             };
 
             dialog.Widgets.Add(new Label
             {
                 Text = "赏赐宝物",
-                Font = TextManager.GetFont(28),
-                TextColor = GoldColor,
+                Font = TextManager.GetFont(24),
+                TextColor = MyraSkin.TextTitle,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
             dialog.Widgets.Add(new Label
             {
                 Text = this.leader.Name + " 赏赐给 " + this.person.Name,
                 Font = TextManager.GetFont(18),
-                TextColor = Color.WhiteSmoke,
+                TextColor = MyraSkin.TextPrimary,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
 
@@ -122,7 +121,7 @@ namespace PersonDetailPlugin
                 {
                     Text = "君主没有可赏赐的同类宝物",
                     Font = TextManager.GetFont(20),
-                    TextColor = Color.Gray,
+                    TextColor = MyraSkin.TextSecondary,
                     Height = CardHeight,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
@@ -132,7 +131,7 @@ namespace PersonDetailPlugin
             this.selectedLabel = new Label
             {
                 Font = TextManager.GetFont(18),
-                TextColor = Color.WhiteSmoke,
+                TextColor = MyraSkin.TextPrimary,
                 Wrap = true,
                 // 固定两行的高度，选中不同宝物时弹窗大小不跳动
                 Height = 52
@@ -144,9 +143,9 @@ namespace PersonDetailPlugin
                 Spacing = 40,
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-            this.okButton = CreateButton("确认", out this.okLabel);
+            this.okButton = MyraSkin.CreateButton("确认", 90, out this.okLabel);
             this.okButton.Click += this.OkButton_Click;
-            Button cancelButton = CreateButton("取消", out _);
+            Button cancelButton = MyraSkin.CreateButton("取消", 90, out _);
             cancelButton.Click += (sender, args) => this.Close();
             buttons.Widgets.Add(this.okButton);
             buttons.Widgets.Add(cancelButton);
@@ -181,7 +180,7 @@ namespace PersonDetailPlugin
             {
                 Content = panel,
                 ShowVerticalScrollBar = false,
-                Width = DialogWidth - 44,
+                Width = DialogWidth - 2 * DialogPadding,
                 // 多留出横向滚动条的高度
                 Height = CardHeight + 20
             };
@@ -223,21 +222,21 @@ namespace PersonDetailPlugin
             {
                 Text = treasure.Name,
                 Font = TextManager.GetFont(18),
-                TextColor = Color.Khaki,
+                TextColor = MyraSkin.TextPrimary,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
             content.Widgets.Add(new Label
             {
                 Text = "价值 " + treasure.Worth,
                 Font = TextManager.GetFont(15),
-                TextColor = Color.Orange,
+                TextColor = MyraSkin.TextHighlight,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
             content.Widgets.Add(new Label
             {
                 Text = string.Join("\n", GetInfluenceDescriptions(treasure)),
                 Font = TextManager.GetFont(15),
-                TextColor = Color.SkyBlue,
+                TextColor = MyraSkin.TextSecondary,
                 Wrap = true,
                 Width = CardWidth - 16,
                 HorizontalAlignment = HorizontalAlignment.Center
@@ -248,7 +247,7 @@ namespace PersonDetailPlugin
                 {
                     Text = "（不生效）",
                     Font = TextManager.GetFont(15),
-                    TextColor = Color.Gray,
+                    TextColor = MyraSkin.TextDisabled,
                     HorizontalAlignment = HorizontalAlignment.Center
                 });
             }
@@ -273,31 +272,6 @@ namespace PersonDetailPlugin
                 }
             };
             return card;
-        }
-
-        private static Button CreateButton(string text, out Label label)
-        {
-            label = new Label
-            {
-                Text = text,
-                Font = TextManager.GetFont(20),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            return new Button
-            {
-                Content = label,
-                Width = 130,
-                Height = 42,
-                Background = new SolidBrush(CardColor),
-                OverBackground = new SolidBrush(CardOverColor),
-                PressedBackground = new SolidBrush(LineColor),
-                FocusedBackground = new SolidBrush(CardColor),
-                DisabledBackground = new SolidBrush(CardColor),
-                Border = new SolidBrush(GoldColor),
-                DisabledBorder = new SolidBrush(LineColor),
-                BorderThickness = new Thickness(1)
-            };
         }
 
         private static Texture2D LoadPicture(Treasure treasure)
@@ -341,26 +315,26 @@ namespace PersonDetailPlugin
             for (int i = 0; i < this.cards.Count; i++)
             {
                 bool isSelected = this.treasures[i] == treasure;
-                this.cards[i].Border = new SolidBrush(isSelected ? GoldColor : LineColor);
+                this.cards[i].Border = new SolidBrush(isSelected ? MyraSkin.TextHighlight : LineColor);
             }
 
             this.okButton.Enabled = treasure != null;
-            this.okLabel.TextColor = treasure != null ? Color.WhiteSmoke : Color.Gray;
+            this.okLabel.TextColor = treasure != null ? MyraSkin.TextPrimary : MyraSkin.TextSecondary;
 
             if (treasure == null)
             {
                 this.selectedLabel.Text = this.treasures.Count > 0 ? "请选择要赏赐的宝物" : "";
-                this.selectedLabel.TextColor = Color.Gray;
+                this.selectedLabel.TextColor = MyraSkin.TextSecondary;
             }
             else if (this.WillTakeEffect(treasure))
             {
                 this.selectedLabel.Text = "已选：" + treasure.Name + "　" + treasure.InfluenceString;
-                this.selectedLabel.TextColor = Color.WhiteSmoke;
+                this.selectedLabel.TextColor = MyraSkin.TextPrimary;
             }
             else
             {
                 this.selectedLabel.Text = "已选：" + treasure.Name + "\n" + this.person.Name + "已有价值更高的同类宝物，赏赐后不会生效";
-                this.selectedLabel.TextColor = Color.Orange;
+                this.selectedLabel.TextColor = MyraSkin.TextWarning;
             }
         }
 

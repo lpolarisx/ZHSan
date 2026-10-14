@@ -152,20 +152,7 @@
         <MenuItem ID="11" Name="ZhaoXianBang" DisplayName="招贤榜">
           <MenuItem ID="1" Name="GenerateOfficer" DisplayName="招贤" DisplayIfTrue="CanZhaoXian" />
         </MenuItem>
-        <MenuItem ID="3" Name="Diplomatic" DisplayName="外交">
-          <MenuItem ID="1" Name="EnhanceDiplomaticRelation" DisplayName="亲善"
-            DisplayIfTrue="EnhanceDiplomaticRelationAvail" />
-          <MenuItem ID="2" Name="AllyDiplomaticRelation" DisplayName="结盟"
-            DisplayIfTrue="AllyDiplomaticRelationAvail" />
-          <MenuItem ID="3" Name="ResetDiplomaticRelation" DisplayName="断交"
-            DisplayIfTrue="ResetDiplomaticRelationAvail" />
-          <MenuItem ID="4" Name="DenounceDiplomaticRelation" DisplayName="声讨"
-            DisplayIfTrue="DenounceDiplomaticRelationAvail" />
-          <MenuItem ID="5" Name="TruceDiplomaticRelation" DisplayName="停战"
-            DisplayIfTrue="TruceDiplomaticRelationAvail" />
-          <MenuItem ID="6" Name="QuanXiangDiplomaticRelation" DisplayName="劝降"
-            DisplayIfTrue="QuanXiangDiplomaticRelationAvail" />
-        </MenuItem>
+        <MenuItem ID="3" Name="Diplomatic" DisplayName="外交" DisplayIfTrue="DiplomaticAvail" />
         <MenuItem ID="4" Name="ManageTechniques" DisplayName="技巧" />
         <MenuItem ID="5" Name="KillRelease" DisplayName="处置">
           <MenuItem ID="1" Name="ReleaseSelfPerson" DisplayName="流放下属"

@@ -528,6 +528,20 @@ namespace GameManager
         }
 
         /// <summary>
+        /// 获取人物头像的材质，供不经过DrawZhsanAvatar自行绘制的地方（如Myra控件）使用。
+        /// 材质放在临时缓存里，可能被清理，使用前要检查IsDisposed，失效了就重新取
+        /// </summary>
+        /// <param name="person"></param>
+        /// <param name="size"></param>
+        /// <returns>找不到头像文件时返回null</returns>
+        public static Texture2D LoadZhsanAvatar(Person person, PortraitSize size = PortraitSize.Medium)
+        {
+            var path = GetPersonPortraitPath(person, null, size);
+
+            return String.IsNullOrEmpty(path) ? null : LoadAvatar(path, false, true, TextureShape.None, null);
+        }
+
+        /// <summary>
         /// 获取头像路径
         /// </summary>
         /// <param name="person"></param>

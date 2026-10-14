@@ -11817,6 +11817,15 @@ namespace GameObjects
             }
         }
 
+        /// <summary>
+        /// 外交面板的入口。只要有别的势力就能打开，每种外交方式能不能用在面板里再判断
+        /// </summary>
+        /// <returns></returns>
+        public bool DiplomaticAvail()
+        {
+            return GetEnhanceDiplomaticRelationList().Count > 0;
+        }
+
         public bool ResetDiplomaticRelationAvail()
         {
             if (this.BelongedFaction == null)
