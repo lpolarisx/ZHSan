@@ -197,6 +197,9 @@ namespace WorldOfTheThreeKingdoms
             //基本材質初始化
             Session.TextureRecs = TextureRecsManager.AllTextureRectangles();
 
+            //Myra创建任何控件之前都要先设置，否则加载默认样式时会报MyraEnvironment.Game is null
+            MyraUI.Initialize(this);
+
             if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
             {
                 Platform.Current.SetWindowAllowUserResizing(true);
@@ -573,6 +576,9 @@ namespace WorldOfTheThreeKingdoms
             }
 
             SpriteBatch.End();
+
+            // Myra弹窗用自己的批次绘制，要等上面的批次结束之后再画，才能盖在最上层
+            MyraUI.Draw();
 
             if (takePicture == true && String.IsNullOrEmpty(err))
             {

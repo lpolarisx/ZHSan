@@ -106,7 +106,6 @@
         internal Person IDN;
         private string ThePersonSound;
         internal string Switch3;
-        private int CurrentTreasureGID;
 
 
         public PersonDetail()
@@ -204,6 +203,7 @@
 
         private void screen_OnMouseLeftUp(Point position)
         {
+            if (!this.IsTopDialog) return;
             if (StaticMethods.PointInRectangle(position, new Rectangle(this.BiographyText.DisplayOffset.X, this.BiographyText.DisplayOffset.Y, this.BiographyClient.Width, this.BiographyClient.Height)))
             {
                 if (this.BiographyText.CurrentPageIndex < (this.BiographyText.PageCount - 1))
@@ -333,65 +333,47 @@
                 this.ShowingPerson.BeAvailable();
                 this.ShowingPerson.PersonBiography.InGame=Session.Current.Scenario.Date.ToString()+"，因奇怪的力量复活了。"+ "\u000a"+ this.ShowingPerson.PersonBiography.InGame;
             }
-            if (StaticMethods.PointInRectangle(position, this.TreasureBGClientDisplayPosition))
+            if (this.CanAwardTreasure && StaticMethods.PointInRectangle(position, this.TreasureBGClientDisplayPosition))
             {
                 for (int num = 0; num < this.TreasureGroup.Count; num++)
                 {
-                    if (this.ShowingPerson.BelongedFaction != null && StaticMethods.PointInRectangle(position, this.TreasuresClientDisplayPosition(this.TreasureGroup[num])))
+                    if (StaticMethods.PointInRectangle(position, this.TreasuresClientDisplayPosition(this.TreasureGroup[num])))
                     {
-                       
-                        this.CurrentTreasureGID = (TreasureGroup[num]);
-                        this.TreasureText.Clear();
-                        //this.TreasureText.AddText("可赏赐宝物列表", Color.Khaki);
-                        //this.TreasureText.AddNewLine();
-                        foreach (Treasure t in this.ShowingPerson.BelongedFaction.Leader.Treasures)
+                        Person person = this.ShowingPerson;
+                        AwardTreasureDialog.Show(person, this.TreasureGroup[num], treasure =>
                         {
-                            if (t.TreasureGroup == TreasureGroup[num])
-                            {
-                                this.TreasureText.AddText(t.Name, Color.Khaki);
-                                this.TreasureText.AddText(t.InfluenceString, Color.SkyBlue);
-                                this.TreasureText.AddNewLine();
-                            }
-                        }
-                        this.TreasureText.ResortTexts();
-
+                            // 只赏赐不收回：武将原有的同类宝物仍归他，按价值高低决定哪件生效
+                            person.BelongedFaction.Leader.LoseTreasure(treasure);
+                            person.AwardedTreasure(treasure);
+                        });
+                        break;
                     }
                 }
             }
-            if (StaticMethods.PointInRectangle(position, this.MoreMessageBGDisplayPosition2) && this.TreasureText.RowHeight > 0)
-            {
-                int num2 = (position.Y - this.MoreMessageBGDisplayPosition2.Y) / this.TreasureText.RowHeight;
-                if (num2 > -1)
-                {
-                    int num3 = num2;
-                    var treasures = ShowingPerson.BelongedFaction.Leader.TreasureListforGroup(CurrentTreasureGID);
-
-                    if (this.ShowingPerson.BelongedFaction != null && treasures.Count > num3)
-                    {
-                        var treasure = treasures[num3];
-                        foreach (var t in ShowingPerson.TreasureListforGroup(CurrentTreasureGID))
-                        {
-                            this.ShowingPerson.LoseTreasure(t);
-                            this.ShowingPerson.BelongedFaction.Leader.ReceiveTreasure(t);
-                        }
-                        this.ShowingPerson.BelongedFaction.Leader.LoseTreasure(treasure);
-                        this.ShowingPerson.ReceiveTreasure(treasure);
-                        this.TreasureText.Clear();
-                        //this.TreasureText.AddText("可赏赐宝物列表", Color.Khaki);
-                        //this.TreasureText.AddNewLine();
-                        foreach (var t in treasures)
-                        {                            
-                                this.TreasureText.AddText(t.Name, Color.Khaki);
-                                this.TreasureText.AddText(t.InfluenceString, Color.SkyBlue);
-                                this.TreasureText.AddNewLine();                           
-                        }
-                        this.TreasureText.ResortTexts();
-                    }
-                }
         }
+
+        // 与城池菜单里的“授予宝物”一致：只能赏赐给玩家势力中身在己方城池的非君主武将
+        private bool CanAwardTreasure
+        {
+            get
+            {
+                Faction faction = this.ShowingPerson.BelongedFaction;
+                return faction != null && faction.Leader != null && Session.Current.Scenario.IsCurrentPlayer(faction)
+                    && faction.GetPersonsInArchitectureExceptLeader().Contains(this.ShowingPerson);
+            }
+        }
+
+        // 赏赐宝物的弹窗、赏赐后的提示都盖在本窗口之上，它们显示时的鼠标操作不归本窗口处理
+        private bool IsTopDialog
+        {
+            get
+            {
+                return !MyraUI.IsBlockingInput && this.screen.PeekUndoneWork().Kind == UndoneWorkKind.SubDialog;
+            }
         }
         private void screen_OnMouseMove(Point position, bool leftDown)
         {
+            if (!this.IsTopDialog) return;
             bool flag = false;
             if (!flag)
             {              
@@ -798,6 +780,7 @@
 
         private void screen_OnMouseRightUp(Point position)
         {
+            if (!this.IsTopDialog) return;
             this.IsShowing = false;
         }
 
@@ -1219,13 +1202,6 @@
                 return  new Rectangle(this.MoreMessageBGClient.X + this.DisplayOffset.X, this.MoreMessageBGClient.Y + this.DisplayOffset.Y, this.MoreMessageBGSize.X, this.MoreMessageBGSize.Y);
             }
          }
-        private Rectangle MoreMessageBGDisplayPosition2
-        {
-            get
-            {
-                return new Rectangle(this.DisplayOffset.X + 861, this.DisplayOffset.Y + this.MoreMessageClient.Y, this.MoreMessageBGSize.X, this.MoreMessageBGSize.Y);
-            }
-        }
         private Rectangle StuntDisplayPosition
         {
             get
