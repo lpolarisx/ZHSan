@@ -225,6 +225,17 @@ namespace GameManager
         }
 
         /// <summary>
+        /// 取指定字号的字体，供直接使用FontStashSharp字体的地方（如Myra控件）使用
+        /// </summary>
+        public static SpriteFontBase GetFont(float size)
+        {
+            if (font == null)
+                Init(CacheManager.FontPair.Name, CacheManager.FontPair.Size);
+
+            return font.GetFont(size);
+        }
+
+        /// <summary>
         /// 文字超过指定宽度时截断，并在末尾加上省略号
         /// </summary>
         /// <param name="text">要处理的文字</param>

@@ -24,7 +24,7 @@
         <ProjectReference Include="..\ZHSan.Core\ZHSan.Core.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="FontStashSharp.MonoGame" Version="1.5.2" />
+        <PackageReference Include="FontStashSharp.MonoGame" Version="1.6.1" />
         <PackageReference Include="MersenneTwister" Version="1.0.6" />
         <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.*" />
         <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.*" />
