@@ -5223,6 +5223,39 @@ namespace GameObjects
             }
         }
 
+        /// <summary>
+        /// 把正运往这座城的钱粮改送原势力离这里最近的城，路上要多走两城之间的路程。原势力没有别的城时什么也不做
+        /// </summary>
+        private void RedirectIncomingPacks(Faction oldFaction)
+        {
+            if (this.FundPacks.Count == 0 && this.FoodPacks.Count == 0) return;
+
+            Architecture nearest = null;
+            int nearestDays = int.MaxValue;
+            foreach (var a in oldFaction.Architectures)
+            {
+                if (a == this) continue;
+
+                int days = Session.Current.Scenario.GetTransferFundDays(this, a);
+                if (days < nearestDays)
+                {
+                    nearest = a;
+                    nearestDays = days;
+                }
+            }
+            if (nearest == null) return;
+
+            nearestDays = Math.Max(1, nearestDays);
+            foreach (var pack in this.FundPacks)
+            {
+                nearest.AddFundPack(pack.Fund, pack.Days + nearestDays);
+            }
+            foreach (var pack in this.FoodPacks)
+            {
+                nearest.AddFoodPack(pack.Food, pack.Days + nearestDays);
+            }
+        }
+
         public void ClearFundPacks()
         {
             FundPacks.Clear();
@@ -7109,10 +7142,10 @@ namespace GameObjects
         private void AIDiplomaticTactics()
         {
            // this.AIQuanXiang();
-            this.AIGeDi();
+            this.AICede();
         }
 
-        private void AIGeDi()
+        private void AICede()
         {
             return;
 #pragma warning disable CS0162 // Unreachable code detected
@@ -7139,9 +7172,9 @@ namespace GameObjects
                     && GameObject.GetChance(40 - BelongedFaction.Leader.PersonalLoyalty * 10))
                 {
                     var person = StaticMethods.GetRandomItem(MovablePersons);
-                    var diplomaticRelations = GetGeDiDiplomaticRelationList();
+                    var diplomaticRelations = GetCedeDiplomaticRelationList();
 
-                    person.GoToGeDiDiplomatic(StaticMethods.GetRandomItem(diplomaticRelations));
+                    person.GoToCedeDiplomatic(StaticMethods.GetRandomItem(diplomaticRelations));
                 }
             }
         }
@@ -11853,7 +11886,7 @@ namespace GameObjects
         /// 割地
         /// </summary>
         /// <returns></returns>
-        public List<DiplomaticRelation> GetGeDiDiplomaticRelationList()
+        public List<DiplomaticRelation> GetCedeDiplomaticRelationList()
         {
             var result = new List<DiplomaticRelation>();
 
@@ -11870,7 +11903,7 @@ namespace GameObjects
             return result;
         }
 
-        public bool GeDiDiplomaticRelationAvail() //割地
+        public bool CedeDiplomaticRelationAvail() //割地
         {
             if (this.BelongedFaction == null)
             {
@@ -11949,6 +11982,11 @@ namespace GameObjects
             }
             if (this.BelongedFaction != null && this.BelongedFaction != faction)
             {
+                // 城被别的势力夺走时，正运来的钱粮改送原势力最近的城；势力解散（faction为null）时就没了
+                if (faction != null)
+                {
+                    this.RedirectIncomingPacks(oldFaction);
+                }
                 ClearFundPacks();
                 this.ClearFoodPacks();
                 this.ClearRouteways();

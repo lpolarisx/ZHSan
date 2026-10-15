@@ -239,6 +239,7 @@ namespace GameObjects
             OutsideDestination = config.OutsideDestination;
             OutsideTask = config.OutsideTask;
             DiplomaticTargetFactionID = config.DiplomaticTargetFactionID;
+            DiplomacyDeal = config.DiplomacyDeal;
             PersonalLoyalty = config.PersonalLoyalty;
             PictureIndex = config.PictureIndex;
             PoliticsExperience = config.PoliticsExperience;
@@ -364,6 +365,7 @@ namespace GameObjects
                 OutsideDestination = OutsideDestination,
                 OutsideTask = OutsideTask,
                 DiplomaticTargetFactionID = DiplomaticTargetFactionID,
+                DiplomacyDeal = DiplomacyDeal,
                 PersonalLoyalty = PersonalLoyalty,
                 PictureIndex = PictureIndex,
                 PoliticsExperience = PoliticsExperience,
@@ -1962,6 +1964,8 @@ namespace GameObjects
 
         public void ToDeath(Person killerInBattle, Faction oldFaction)
         {
+            this.AbandonNegotiation();
+
             Architecture locationArchitecture;
             Troop locationTroop = null;
             GameObjects.Faction belongedFaction = oldFaction;
@@ -3917,7 +3921,7 @@ namespace GameObjects
             }
         }
 
-        private bool GeDiSuccess(Faction sourceFaction, Faction targetFaction, Person shizhe)
+        private bool CedeSuccess(Faction sourceFaction, Faction targetFaction, Person shizhe)
         {
             if (sourceFaction == null || targetFaction == null) return false;
 
@@ -3929,55 +3933,27 @@ namespace GameObjects
 
         }
 
-        public void DoGeDiDiplomatic() //割地
+        public void DoCedeDiplomatic() //割地
         {
             this.OutsideTask = OutsideTaskKind.无;
             this.TargetArchitecture = Session.Current.Scenario.GetArchitectureByPosition(this.OutsideDestination.Value);
             Faction targetFaction = this.TargetArchitecture.BelongedFaction;
             this.OutsideDestination = null;
 
-            Architecture a = this.BelongedFaction.GetGeDiArchitecture(targetFaction);
+            Architecture a = this.BelongedFaction.GetCedeArchitecture(targetFaction, this.BelongedArchitecture);
 
-            if (a == null) return;
-
-            if (GeDiSuccess(this.BelongedFaction, targetFaction, this))
+            if (a != null && CedeSuccess(this.BelongedFaction, targetFaction, this))
             {
-                AfterGeDi(this.BelongedFaction, targetFaction, a, this);
+                AfterCede(this.BelongedFaction, targetFaction, a, this);
             }
+            this.TargetArchitecture = this.LocationArchitecture;
         }
 
-        private static void AfterGeDi(Faction sourceFaction, Faction targetFaction, Architecture a, Person shizhe)
+        private static void AfterCede(Faction sourceFaction, Faction targetFaction, Architecture a, Person shizhe)
         {
-            Session.MainGame.mainGameScreen.xianshishijiantupian(shizhe, sourceFaction.Leader.Name, TextMessageKind.GeDi, "GeDiDiplomaticRelation", "GeDiDiplomaticRelation.jpg", "shilimiewang", targetFaction.Name, true);
+            Session.MainGame.mainGameScreen.xianshishijiantupian(shizhe, a.Name, TextMessageKind.Cede, "CedeDiplomaticRelation", "TruceDiplomaticRelation.jpg", "TruceDiplomaticRelation", targetFaction.Name, true);
 
-            var persons = a.GetPersonsExcludeNvGuan();
-
-            foreach (var person in persons)
-            {
-                person.MoveToArchitecture(sourceFaction.Capital);
-            }
-
-            foreach (var person in a.GetMovingPersons())
-            {
-                person.MoveToArchitecture(sourceFaction.Capital);
-            }
-            
-            foreach (var military in a.movableMilitaries)
-            {
-                a.TransferMilitary(military, sourceFaction.Capital);
-            }
-            
-            foreach (Military m in sourceFaction.TransferingMilitaries)
-            {
-                if (m.TargetArchitecture == a)
-                {
-                    double distance = Session.Current.Scenario.GetDistance(a.ArchitectureArea, sourceFaction.Capital.ArchitectureArea);
-                    m.TargetArchitecture = sourceFaction.Capital;
-                    //m.ArrivingDays += Math.Max(1, (int)(m.TransferDays(distance) * (1 - a.TroopTransportDayRate)));
-                    m.ArrivingDays += Math.Max(1, (int)(m.TransferDays(distance) * (1 - a.TroopTransportDayRate)));
-                }
-            }
-            a.ChangeFaction(targetFaction);
+            sourceFaction.CedeArchitecture(a, targetFaction);
 
             //停战1年
             if (Session.Current.Scenario.GetDiplomaticRelationTruce(sourceFaction.ID, targetFaction.ID) < 360)
@@ -3989,6 +3965,49 @@ namespace GameObjects
             shizhe.AddPoliticsExperience(50);
             shizhe.IncreaseReputation(500);
             shizhe.IncreaseOfficerMerit(20);
+        }
+
+        /// <summary>
+        /// 谈判使者到达对方都城，按谈好的条款交割。途中情况有变、条款已无法履行时作罢，带去的钱粮退回
+        /// </summary>
+        public void DoNegotiation()
+        {
+            this.OutsideTask = OutsideTaskKind.无;
+            this.TargetArchitecture = Session.Current.Scenario.GetArchitectureByPosition(this.OutsideDestination.Value);
+            this.OutsideDestination = null;
+
+            // 随行的使者没带条款，到了就回来。提议方或接受方已经灭亡时deal也为null，无从交割，提议方还在就把钱粮退回去
+            DiplomacyDeal deal = this.DiplomacyDeal == null ? null : FactionDetail.DiplomacyDeal.FromConfig(this.DiplomacyDeal, this);
+            if (deal == null)
+            {
+                this.AbandonNegotiation();
+                this.TargetArchitecture = this.LocationArchitecture;
+                return;
+            }
+            this.DiplomacyDeal = null;
+
+            string reason = deal.Source != this.BelongedFaction ? "使者已非本势力之人。" : deal.GetInvalidReason(true);
+            if (reason != null)
+            {
+                deal.RefundSource();
+                Session.MainGame.mainGameScreen.xianshishijiantupian(this, reason, "NegotiationVoided", "chuzhan.jpg", "BreakDiplomaticRelation", deal.Target.Name, false);
+            }
+            else
+            {
+                string result = deal.Execute(true);
+                Session.MainGame.mainGameScreen.xianshishijiantupian(this, result, "NegotiationConcluded", "AllyDiplomaticRelation.jpg", "TruceDiplomaticRelation", deal.Target.Name, true);
+            }
+            this.TargetArchitecture = this.LocationArchitecture;
+        }
+
+        // 谈判没能交割就作罢（目的地易主、使者途中身亡或离开势力），带去的钱粮退回
+        private void AbandonNegotiation()
+        {
+            if (this.DiplomacyDeal != null)
+            {
+                FactionDetail.DiplomacyDeal.RefundSource(this.DiplomacyDeal);
+                this.DiplomacyDeal = null;
+            }
         }
 
         public void DoQuanXiangDiplomatic()
@@ -4272,7 +4291,18 @@ namespace GameObjects
                     break ;
 
                 case OutsideTaskKind.割地:
-                    if (!this.CancelDiplomaticTaskIfTargetLost(0)) this.DoGeDiDiplomatic();
+                    if (!this.CancelDiplomaticTaskIfTargetLost(0)) this.DoCedeDiplomatic();
+                    break;
+
+                case OutsideTaskKind.谈判:
+                    if (this.CancelDiplomaticTaskIfTargetLost(0))
+                    {
+                        this.AbandonNegotiation();
+                    }
+                    else
+                    {
+                        this.DoNegotiation();
+                    }
                     break;
             }
         }
@@ -5676,6 +5706,8 @@ namespace GameObjects
         /// </summary>
         private static void ClearOutsideTaskAndRecordNoFaction(Person person, Faction oldFaction)
         {
+            person.AbandonNegotiation();
+
             if (person.TargetArchitecture != null)
             {
                 person.TargetArchitecture = null;
@@ -6199,7 +6231,7 @@ namespace GameObjects
             }
         }
 
-        public bool GoToGeDiDiplomatic(DiplomaticRelation relation) //割地
+        public bool GoToCedeDiplomatic(DiplomaticRelation relation) //割地
         {
             if (relation == null) return false;
 
@@ -6253,6 +6285,38 @@ namespace GameObjects
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 出使对方都城谈判。主使带着谈成的条款，提议方的钱粮在出发时扣下由主使带去；随行的使者只是同去同回
+        /// </summary>
+        public bool GoToNegotiation(DiplomacyDeal deal, bool lead)
+        {
+            Architecture targetArchitecture = deal.Target.Capital;
+            if (targetArchitecture == null || this.LocationArchitecture == targetArchitecture) return false;
+
+            OutsideDestination = targetArchitecture.Position;
+            this.TargetArchitecture = targetArchitecture;
+            // 与停战使者一样计算路程
+            this.TaskDays = (int)Math.Ceiling(Session.Current.Scenario.GetDistance(this.BelongedArchitecture.Position, targetArchitecture.Position) / 10.0) * Session.Parameters.DayInTurn;
+            this.TaskDays = Math.Clamp(this.TaskDays, 1, 5);
+            ArrivingDays = this.TaskDays * 2;
+            this.LocationArchitecture = this.BelongedArchitecture;
+            this.WorkKind = ArchitectureWorkKind.无;
+            this.OutsideTask = OutsideTaskKind.谈判;
+            this.DiplomaticTargetFactionID = deal.Target.ID;
+            if (lead)
+            {
+                deal.PaySource();
+                this.DiplomacyDeal = deal.ToConfig();
+            }
+            else
+            {
+                this.DiplomacyDeal = null;
+            }
+            Session.MainGame.mainGameScreen.renwukaishitishi(this, this.TargetArchitecture);
+            this.Status = PersonStatus.Moving;
+            return true;
         }
 
         public bool GoToQuanXiangDiplomatic(DiplomaticRelation relation) //劝降
@@ -8125,6 +8189,9 @@ namespace GameObjects
         // 外交任务出发时的目标势力ID，到达时用于判断目的地是否已易主；-1表示未记录
         [DataMember]
         public int DiplomaticTargetFactionID { get; set; } = -1;
+
+        // 谈判使者带着的已谈成条款，到达对方都城时交割；不在谈判途中为null
+        public DiplomacyDealConfig DiplomacyDeal { get; set; }
 
         public string OutsideTaskDaysString => TaskDays > 0 ? $"{TaskDays * Session.Parameters.DayInTurn}天" : "----";
 

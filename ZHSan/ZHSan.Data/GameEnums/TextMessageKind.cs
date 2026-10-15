@@ -664,7 +664,7 @@ public enum TextMessageKind
     /// <summary>
     /// 割地
     /// </summary>
-    GeDi = 131,
+    Cede = 131,
 
     /// <summary>
     /// 合併對付玩家

@@ -21,5 +21,6 @@ public enum OutsideTaskKind
     劫狱,
     劝降,
     暗杀,
-    割地
+    割地,
+    谈判
 }

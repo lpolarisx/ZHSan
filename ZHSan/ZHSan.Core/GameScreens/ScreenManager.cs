@@ -272,10 +272,28 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         /// <summary>
         /// 对选定的势力开展一种外交。需要派人的弹出外交人员列表，不需要的直接执行
         /// </summary>
-        public void StartDiplomacy(DiplomacyKind kind, DiplomaticRelation relation)
+        /// <param name="deal">谈判谈成的条款，只有Negotiate用到</param>
+        public void StartDiplomacy(DiplomacyKind kind, DiplomaticRelation relation, DiplomacyDeal deal = null)
         {
             switch (kind)
             {
+                case DiplomacyKind.Negotiate:
+                    // 政治最高的主使带着条款去交割，其余随行
+                    Person lead = deal.LeadEnvoy;
+                    if (lead != null && lead.GoToNegotiation(deal, true))
+                    {
+                        var envoys = new List<Person> { lead };
+                        foreach (var envoy in deal.Envoys)
+                        {
+                            if (envoy != lead && envoy.GoToNegotiation(deal, false))
+                            {
+                                envoys.Add(envoy);
+                            }
+                        }
+                        Session.MainGame.mainGameScreen.ShowDiplomacyDepart(envoys, "NegotiationDepart");
+                    }
+                    break;
+
                 case DiplomacyKind.Enhance:
                     CurrentDiplomaticRelation = relation;
                     Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetEnhanceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
@@ -302,8 +320,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     var factionName = CurrentArchitecture.BelongedFaction.ID == relation.RelationFaction1ID ? relation.RelationFaction2String : relation.RelationFaction1String;
 
                     Session.MainGame.mainGameScreen.xianshishijiantupian(Session.Current.Scenario.NeutralPerson, CurrentArchitecture.BelongedFaction.Leader.Name, "ResetDiplomaticRelation", "ResetDiplomaticRelation.jpg", "ResetDiplomaticRelation", factionName, true);
-                    CurrentArchitecture.BelongedFaction.Leader.DecreaseKarma(5);
-                    relation.Relation = 0;
+                    DiplomacyEvaluator.BreakAlliance(CurrentArchitecture.BelongedFaction, relation);
                     break;
 
                 case DiplomacyKind.Denounce:

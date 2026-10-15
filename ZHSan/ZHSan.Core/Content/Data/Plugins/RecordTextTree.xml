@@ -130,6 +130,13 @@
     <Leaf Text="自立。" Color="4292730333"></Leaf>
     <Leaf Text="\n" Color="4292730333"></Leaf>
   </Branch>
+  <Branch Name="FactionAlly">
+    <Leaf Property="Name" Color="4293771363"></Leaf>
+    <Leaf Text="与" Color="4292730333"></Leaf>
+    <Leaf Property="TextDestinationString" Color="4291469309"></Leaf>
+    <Leaf Text="结为同盟。" Color="4292730333"></Leaf>
+    <Leaf Text="\n" Color="4292730333"></Leaf>
+  </Branch>
   <Branch Name="FactionDestroy">
     <Leaf Property="Name" Color="4293771363"></Leaf>
     <Leaf Text="的势力灭亡了。" Color="4292730333"></Leaf>

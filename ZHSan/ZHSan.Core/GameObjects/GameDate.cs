@@ -26,6 +26,11 @@ namespace GameObjects
         [DataMember]
         public int Year { get; set; } = 184;
 
+        /// <summary>
+        /// 从公元起算的第几个月，用来判断两个日期是否在同一个月
+        /// </summary>
+        public int MonthIndex => Year * 12 + Month;
+
         public GameDate(GameDateConfig config)
         {
             Year = config.Year;

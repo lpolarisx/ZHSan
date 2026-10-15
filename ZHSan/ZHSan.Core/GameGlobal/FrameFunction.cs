@@ -123,7 +123,7 @@
         SelectMarryTo,
         SelectTrainableChildren,
         SelectTrainPolicy,
-        GetGeDiDiplomaticRelation
+        GetCedeDiplomaticRelation
     }
 }
 

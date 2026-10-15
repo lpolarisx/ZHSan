@@ -20,7 +20,7 @@ namespace GameGlobal
         Ally,
 
         /// <summary>
-        /// 断交
+        /// 解除同盟
         /// </summary>
         Reset,
 
@@ -37,6 +37,11 @@ namespace GameGlobal
         /// <summary>
         /// 劝降
         /// </summary>
-        QuanXiang
+        QuanXiang,
+
+        /// <summary>
+        /// 谈判：按谈成的条款派使者出发
+        /// </summary>
+        Negotiate
     }
 }

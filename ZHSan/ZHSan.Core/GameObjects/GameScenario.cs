@@ -96,6 +96,60 @@ namespace GameObjects
         public GameDate Date = new GameDate();
 
         public Dictionary<long, DiplomaticRelation> DiplomaticRelations { get; set; } = new();
+
+        // AI遣使向玩家提出的条款，等玩家空闲时逐个弹窗处理。AI可能在后台线程里提议，存取都要加锁。
+        // 不存档：读档后没处理的提议就作废了
+        private readonly List<DiplomacyDeal> pendingDiplomacyProposals = new();
+
+        // 每个玩家势力上次有AI来使的月份，所有AI合计每月只来一次。不存档，读档后这个月可能多来一次
+        private readonly Dictionary<int, int> lastDiplomacyProposalMonth = new();
+
+        public void AddDiplomacyProposal(DiplomacyDeal deal)
+        {
+            lock (pendingDiplomacyProposals)
+            {
+                pendingDiplomacyProposals.Add(deal);
+                lastDiplomacyProposalMonth[deal.Target.ID] = Date.MonthIndex;
+            }
+        }
+
+        /// <summary>
+        /// 这个玩家势力这个月还能不能接待AI来使
+        /// </summary>
+        public bool CanReceiveDiplomacyProposal(Faction target)
+        {
+            lock (pendingDiplomacyProposals)
+            {
+                return !lastDiplomacyProposalMonth.TryGetValue(target.ID, out int month) || month != Date.MonthIndex;
+            }
+        }
+
+        /// <summary>
+        /// 是否已有这个势力发给对方、还没处理的提议
+        /// </summary>
+        public bool HasDiplomacyProposal(Faction source, Faction target)
+        {
+            lock (pendingDiplomacyProposals)
+            {
+                return pendingDiplomacyProposals.Exists(x => x.Source == source && x.Target == target);
+            }
+        }
+
+        /// <summary>
+        /// 取出一个发给这个玩家势力的提议，没有就返回null
+        /// </summary>
+        public DiplomacyDeal TakeDiplomacyProposal(Faction target)
+        {
+            lock (pendingDiplomacyProposals)
+            {
+                int index = pendingDiplomacyProposals.FindIndex(x => x.Target == target);
+                if (index < 0) return null;
+
+                DiplomacyDeal deal = pendingDiplomacyProposals[index];
+                pendingDiplomacyProposals.RemoveAt(index);
+                return deal;
+            }
+        }
         
         /// <summary>
         /// 设施
@@ -4181,6 +4235,19 @@ namespace GameObjects
             ExtensionInterface.call("MonthEvent", new Object[] { this });
 
             this.AIMergeAgainstPlayer();
+
+            foreach (var relation in DiplomaticRelations.Values)
+            {
+                relation.NegotiationCount = 0;
+                if (relation.ProposalCooldown > 0)
+                {
+                    relation.ProposalCooldown--;
+                }
+                if (relation.AllianceCooldown > 0)
+                {
+                    relation.AllianceCooldown--;
+                }
+            }
 
             foreach (var faction in StaticMethods.GetRandomList(Factions.Values.ToList()))
             {
