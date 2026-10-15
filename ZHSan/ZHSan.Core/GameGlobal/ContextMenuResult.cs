@@ -108,7 +108,7 @@ namespace GameGlobal
         Faction_Diplomatic_DenounceDiplomaticRelation,
         Faction_Diplomatic_TruceDiplomaticRelation,
         Faction_Diplomatic_QuanXiangDiplomaticRelation,//劝降
-        Faction_Diplomatic_GeDiDiplomaticRelation,//割地
+        Faction_Diplomatic_CedeDiplomaticRelation,//割地
         Faction_officePosition_jingongzijin,
         Faction_officePosition_jingongliangcao,
         Faction_officePosition_SelfBecomeEmperor,

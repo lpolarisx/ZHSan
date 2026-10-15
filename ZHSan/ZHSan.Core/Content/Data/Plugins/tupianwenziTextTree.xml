@@ -487,6 +487,14 @@
     <Leaf Property="" Text="，晓以利害，劝其早日归顺我军。" Color="4294967295"></Leaf>
   </Branch>
 
+  <Branch Name="NegotiationDepart">
+    <Leaf Property="" Text="在下" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="这就出使" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="，按议定的条款与其缔约。" Color="4294967295"></Leaf>
+  </Branch>
+
   <Branch Name="EnhaneceDiplomaticRelation">
     <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
     <Leaf Property="" Text="派人向" Color="4294967295"></Leaf>
@@ -776,6 +784,28 @@ Color="4294967295"></Leaf>
     <Leaf Property="" Text="派人试图向" Color="4294967295"></Leaf>
     <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
     <Leaf Property="" Text="发起劝降，但是很不幸失败了！" Color="4294967295"></Leaf>
+  </Branch>
+
+  <Branch Name="CedeDiplomaticRelation">
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="被割让给了" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="，双方约定停战一年。" Color="4294967295"></Leaf>
+  </Branch>
+
+  <Branch Name="NegotiationConcluded">
+    <Leaf Property="" Text="与" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="谈判达成。" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+  </Branch>
+
+  <Branch Name="NegotiationVoided">
+    <Leaf Property="" Text="与" Color="4294967295"></Leaf>
+    <Leaf Property="TextDestinationString" Text="" Color="4286644223"></Leaf>
+    <Leaf Property="" Text="的谈判未能履行：" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Text="" Color="4278255360"></Leaf>
+    <Leaf Property="" Text="带去的钱粮如数带回。" Color="4294967295"></Leaf>
   </Branch>
     
  <Branch Name="ZhaoXian">

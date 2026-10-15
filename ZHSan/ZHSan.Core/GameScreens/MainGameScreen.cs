@@ -2993,6 +2993,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             break;
                         }
 
+                        // AI遣使来访，玩家空闲时逐个弹窗。已经无法履行的提议直接丢掉
+                        if (Session.Current.Scenario.CurrentPlayer != null)
+                        {
+                            DiplomacyDeal proposal = Session.Current.Scenario.TakeDiplomacyProposal(Session.Current.Scenario.CurrentPlayer);
+                            if (proposal != null && DiplomacyProposalDialog.Show(proposal))
+                            {
+                                break;
+                            }
+                        }
+
                         this.UpdateToolBar(gameTime);
                         this.UpdateScreenBlind(gameTime);
                         //this.Plugins.youcelanPlugin.Update(gameTime);

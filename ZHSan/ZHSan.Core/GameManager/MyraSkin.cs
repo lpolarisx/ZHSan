@@ -91,6 +91,21 @@ namespace GameManager
         /// </summary>
         public static readonly Color TextDisabled = new Color(0x77, 0x85, 0x89);
 
+        /// <summary>
+        /// 列表行、卡片的底色：深青灰
+        /// </summary>
+        public static readonly Color ListRowColor = new Color(26, 38, 46);
+
+        /// <summary>
+        /// 列表行、卡片鼠标移上去的底色
+        /// </summary>
+        public static readonly Color ListRowOverColor = new Color(44, 64, 76);
+
+        /// <summary>
+        /// 列表行选中的底色，取自按钮图的蓝
+        /// </summary>
+        public static readonly Color ListRowSelectedColor = new Color(6, 86, 124);
+
         // 按钮图四角花纹的大小。图高30，上下各切14，中间只剩2行纯色用来拉伸
         private const int ButtonCorner = 14;
 

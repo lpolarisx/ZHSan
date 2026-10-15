@@ -107,9 +107,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         /// </summary>
         private void ShowDiplomacyDialog(Architecture architecture, DiplomaticRelation selected)
         {
-            DiplomacyDialog.Show(architecture, selected, (kind, relation) =>
+            DiplomacyDialog.Show(architecture, selected, (kind, relation, deal) =>
             {
-                this.screenManager.StartDiplomacy(kind, relation);
+                this.screenManager.StartDiplomacy(kind, relation, deal);
                 this.RunWhenIdle(() =>
                 {
                     // 办外交的过程中城池可能已经易主
@@ -702,8 +702,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.DiplomaticRelation, FrameFunction.GetQuanXiangDiplomaticRelation, false, true, true, false, [.. CurrentArchitecture.GetQuanXiangDiplomaticRelationList()], null, "劝降", "");
                     break;
 
-                case ContextMenuResult.Faction_Diplomatic_GeDiDiplomaticRelation:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.DiplomaticRelation, FrameFunction.GetGeDiDiplomaticRelation, false, true, true, false, [.. CurrentArchitecture.GetGeDiDiplomaticRelationList()], null, "割地", "");
+                case ContextMenuResult.Faction_Diplomatic_CedeDiplomaticRelation:
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.DiplomaticRelation, FrameFunction.GetCedeDiplomaticRelation, false, true, true, false, [.. CurrentArchitecture.GetCedeDiplomaticRelationList()], null, "割地", "");
                     break;
                 case ContextMenuResult.Faction_Diplomatic_EnhanceDiplomaticRelation:
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.DiplomaticRelation, FrameFunction.GetEnhanceDiplomaticRelation, false, true, true, false, [.. CurrentArchitecture.GetEnhanceDiplomaticRelationList()], null, "亲善", "");

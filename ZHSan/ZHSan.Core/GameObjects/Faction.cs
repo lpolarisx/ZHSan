@@ -1708,6 +1708,8 @@ namespace GameObjects
         {
             if (Leader.Status == PersonStatus.Captive) return;
 
+            this.AINegotiate();
+
             int playerRate = Session.Parameters.AIEncirclePlayerRate;
 
             foreach (var faction in Session.Current.Scenario.PlayerFactions) 
@@ -1758,6 +1760,270 @@ namespace GameObjects
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 主动援助时最多拿出余钱余粮的几成（再乘慷慨度）
+        /// </summary>
+        private const double AidShare = 0.3;
+
+        /// <summary>
+        /// 同一对势力提议过后，要隔几个月才会再提
+        /// </summary>
+        private const int ProposalCooldownMonths = 6;
+
+        // 上次主动遣使提议的月份，每月最多提一次。不存档，读档后这个月可能多提一次
+        private int lastProposalMonth = -1;
+
+        /// <summary>
+        /// AI按处境主动向别的势力提议，每月最多一次，从各家里挑最要紧的一份。对玩家是遣使来访，放进待办等玩家空闲时弹窗；
+        /// 对AI不弹窗，对方按估值当场答复，谈成当场交割
+        /// </summary>
+        private void AINegotiate()
+        {
+            if (this.Capital == null) return;
+
+            var scenario = Session.Current.Scenario;
+            int month = scenario.Date.MonthIndex;
+            // 每天都会调用，平均一个月考虑一次
+            if (this.lastProposalMonth == month || GameObject.Random(30) != 0) return;
+
+            DiplomacyDeal best = null;
+            DiplomaticRelation bestRelation = null;
+            int bestPriority = 0;
+            // 打乱顺序，同样要紧的提议不总落在同一家
+            foreach (var other in StaticMethods.GetRandomList(scenario.Factions.Values.ToList()))
+            {
+                if (other == this || other.Capital == null) continue;
+                if (!scenario.TryGetDiplomaticRelation(this.ID, other.ID, out var relation)) continue;
+                if (relation.ProposalCooldown > 0) continue;
+
+                if (scenario.IsPlayer(other) && (scenario.HasDiplomacyProposal(this, other) || !scenario.CanReceiveDiplomacyProposal(other))) continue;
+
+                DiplomacyDeal deal = this.CreateProposal(other, relation, out int priority);
+                if (deal == null || priority <= bestPriority || deal.GetInvalidReason(false) != null) continue;
+
+                best = deal;
+                bestRelation = relation;
+                bestPriority = priority;
+            }
+            if (best == null) return;
+
+            this.lastProposalMonth = month;
+            bestRelation.ProposalCooldown = ProposalCooldownMonths;
+            if (scenario.IsPlayer(best.Target))
+            {
+                scenario.AddDiplomacyProposal(best);
+            }
+            else
+            {
+                this.NegotiateWithAI(best);
+            }
+        }
+
+        /// <summary>
+        /// 与AI势力谈判：对方接受就交割；对方还价时，还得起就加上再交割，否则作罢。
+        /// 结盟和割城这样的大事告知玩家，钱粮往来不打扰
+        /// </summary>
+        private void NegotiateWithAI(DiplomacyDeal deal)
+        {
+            DiplomacyResponse response = DiplomacyEvaluator.Respond(deal);
+            if (response.Kind == DiplomacyResponseKind.Counter)
+            {
+                // 还价要从余钱余粮里出，不能动用维持城池所需的那部分
+                Architecture capital = this.Capital;
+                bool affordable = deal.GiveFund + response.ExtraFund <= Math.Max(0, capital.Fund - capital.EnoughFund)
+                    && deal.GiveFood + response.ExtraFood <= Math.Max(0, capital.Food - capital.EnoughFood);
+                if (!affordable) return;
+
+                deal.GiveFund += response.ExtraFund;
+                deal.GiveFood += response.ExtraFood;
+                if (deal.GetInvalidReason(false) != null) return;
+            }
+            else if (response.Kind != DiplomacyResponseKind.Accept)
+            {
+                return;
+            }
+
+            deal.Execute(false);
+            if (deal.Alliance)
+            {
+                // 与玩家接壤的势力结盟才弹窗告知，其余的只记进记录，免得刷屏
+                bool nearPlayer = Session.Current.Scenario.PlayerFactions.Any(x => this.adjacentTo(x) || deal.Target.adjacentTo(x));
+                if (nearPlayer)
+                {
+                    Session.MainGame.mainGameScreen.xianshishijiantupian(this.Leader, this.Leader.Name, TextMessageKind.CreateAlly, "AllyDiplomaticRelation", "AllyDiplomaticRelation.jpg", "AllyDiplomaticRelation", deal.Target.Name, true);
+                }
+                else
+                {
+                    this.TextDestinationString = deal.Target.Name;
+                    Session.MainGame.mainGameScreen.Plugins.GameRecordPlugin.AddBranch(this, "FactionAlly", this.Capital.Position);
+                }
+            }
+            else if (deal.GiveArchitectures.Count > 0)
+            {
+                string names = string.Join("、", deal.GiveArchitectures.Select(x => x.Name));
+                Session.MainGame.mainGameScreen.xianshishijiantupian(this.Leader, names, TextMessageKind.Cede, "CedeDiplomaticRelation", "TruceDiplomaticRelation.jpg", "TruceDiplomaticRelation", deal.Target.Name, true);
+            }
+        }
+
+        /// <summary>
+        /// 按处境拟一份提议，依次考虑：被打得吃紧时纳币割地求和、兵强时向弱邻索贡、关系好又有需要时请盟、交好的势力缺钱粮时援助、缺粮时以钱换粮。
+        /// 都不合适时返回null
+        /// </summary>
+        /// <param name="priority">提议有多要紧，越大越要紧：求和4、索贡3、请盟2、援助和换粮1</param>
+        private DiplomacyDeal CreateProposal(Faction other, DiplomaticRelation relation, out int priority)
+        {
+            priority = 0;
+            bool allied = relation.Relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold;
+            bool hostileNeighbor = !allied && relation.Truce == 0 && relation.Relation < 0 && this.adjacentTo(other);
+            double ratio = (double)other.Power / Math.Max(1, this.Power);
+            int spareFund = Math.Max(0, this.Capital.Fund - this.Capital.EnoughFund);
+            var deal = new DiplomacyDeal(this, other, this.Capital);
+
+            if (hostileNeighbor && ratio > 1.5 && this.IsAttackedBy(other))
+            {
+                // 停战对强的一方是损失，按对方眼里的损失出价，钱不够就割城
+                deal.TruceDays = 180;
+                int deficit = -DiplomacyEvaluator.Evaluate(deal);
+                if (deficit > 0)
+                {
+                    if (deficit <= spareFund)
+                    {
+                        deal.GiveFund = RoundUp(deficit, 1000);
+                    }
+                    else if (ratio > 3 && this.ArchitectureCount >= 3)
+                    {
+                        Architecture ceded = this.GetCedeArchitecture(other, null);
+                        if (ceded != null)
+                        {
+                            deal.GiveArchitectures.Add(ceded);
+                        }
+                        deal.GiveFund = spareFund / 2 / 1000 * 1000;
+                    }
+                    else if (spareFund >= deficit / 2)
+                    {
+                        deal.GiveFund = spareFund / 1000 * 1000;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                priority = 4;
+                return deal;
+            }
+
+            if (hostileNeighbor && ratio < 0.5 && this.Leader.Ambition >= 3)
+            {
+                deal.TruceDays = 180;
+                deal.RequestFund = Math.Min(other.Capital.Fund / 3, 100000) / 1000 * 1000;
+                priority = 3;
+                return deal.RequestFund >= 10000 ? deal : null;
+            }
+
+            // 没有结盟的必要，或者结盟后自己或对方月初就会解除同盟的，不请盟，免得盟约成了空文
+            if (!allied && relation.Relation >= DiplomacyEvaluator.AllyRelation && this.NeedsAllianceWith(other)
+                && !this.WouldBreakAfterAlliance(other) && !other.WouldBreakAfterAlliance(this))
+            {
+                deal.Alliance = true;
+                deal.GiveFund = Math.Min(spareFund / 4, 30000) / 1000 * 1000;
+                priority = 2;
+                return deal;
+            }
+
+            Architecture otherCapital = other.Capital;
+            if (relation.Relation >= DiplomacyEvaluator.AllyRelation && (!otherCapital.IsFundEnough || !otherCapital.IsFoodEnough) && GameObject.GetChance(50))
+            {
+                // 交好的势力缺钱缺粮，从余钱余粮里白送一些，补到够用为止。肯拿出多少与对方开口索要时一样看关系和这个月的心情
+                double generosity = DiplomacyEvaluator.GetGenerosity(relation, other, this);
+                int spareFood = Math.Max(0, this.Capital.Food - this.Capital.EnoughFood);
+                deal.GiveFund = Math.Min(Math.Max(0, otherCapital.EnoughFund - otherCapital.Fund), (int)(spareFund * AidShare * generosity)) / 1000 * 1000;
+                deal.GiveFood = Math.Min(Math.Max(0, otherCapital.EnoughFood - otherCapital.Food), (int)(spareFood * AidShare * generosity)) / 10000 * 10000;
+                if (deal.GiveFund >= 5000 || deal.GiveFood >= 50000)
+                {
+                    priority = 1;
+                    return deal;
+                }
+                deal.GiveFund = 0;
+                deal.GiveFood = 0;
+            }
+
+            if (relation.Relation >= 0 && !this.Capital.IsFoodEnough && spareFund >= 20000 && otherCapital.Food > otherCapital.EnoughFood * 2)
+            {
+                // 出的钱比市价略高，对方才肯卖
+                deal.GiveFund = Math.Min(spareFund / 2, 100000) / 1000 * 1000;
+                deal.RequestFood = (int)(deal.GiveFund * DiplomacyEvaluator.FoodPerFund / 1.3) / 10000 * 10000;
+                priority = 1;
+                return deal.RequestFood > 0 ? deal : null;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 与这个势力结盟后，接壤的势力就全是盟友了，而邻居里又有比自己弱的，
+        /// 月初（ResetFriendlyDiplomaticRelations）就会挑最弱的一家解除同盟。条件与那里保持一致
+        /// </summary>
+        private bool WouldBreakAfterAlliance(Faction other)
+        {
+            if (Session.Current.Scenario.IsPlayer(this) || this.Leader.StrategyTendency == PersonStrategyTendency.维持现状) return false;
+
+            var neighbors = this.GetAdjecentFactions();
+            if (!neighbors.Contains(other)) return false;
+
+            int threshold = Session.GlobalVariables.FriendlyDiplomacyThreshold;
+            foreach (var f in neighbors)
+            {
+                if (f != other && Session.Current.Scenario.GetDiplomaticRelation(this.ID, f.ID) < threshold) return false;
+            }
+            return neighbors.Exists(f => f.Power < this.Power);
+        }
+
+        /// <summary>
+        /// 有结盟的必要：双方都与同一个比自己强的非友好势力接壤（共同的敌人），或者自己正受攻击、对方又与自己接壤能来支援
+        /// </summary>
+        private bool NeedsAllianceWith(Faction other)
+        {
+            var neighbors = this.GetAdjecentFactions();
+            if (neighbors.Contains(other) && this.IsUnderAttack()) return true;
+
+            var otherNeighbors = other.GetAdjecentFactions();
+            foreach (var f in neighbors)
+            {
+                if (f != other && f.Power > this.Power && !this.IsFriendly(f) && !other.IsFriendly(f) && otherNeighbors.Contains(f)) return true;
+            }
+            return false;
+        }
+
+        // 有城池视野内有这个势力的部队
+        private bool IsAttackedBy(Faction faction)
+        {
+            return this.GetTroopsInView().Any(x => x.BelongedFaction == faction);
+        }
+
+        // 有城池视野内有非友好势力的部队
+        private bool IsUnderAttack()
+        {
+            return this.GetTroopsInView().Any(x => x.BelongedFaction != null && !this.IsFriendly(x.BelongedFaction));
+        }
+
+        // 各城池视野内的部队。只看在不在视野里，不像GetHostileTroopsInView那样逐支部队寻路判断能否打到城下，省得拖慢AI回合
+        private IEnumerable<Troop> GetTroopsInView()
+        {
+            foreach (var a in this.Architectures)
+            {
+                foreach (var point in a.ViewArea.Area)
+                {
+                    Troop troop = Session.Current.Scenario.GetTroopByPosition(point);
+                    if (troop != null) yield return troop;
+                }
+            }
+        }
+
+        private static int RoundUp(int value, int unit)
+        {
+            return (value + unit - 1) / unit * unit;
         }
 
         private int? powerCache = null;
@@ -5168,9 +5434,10 @@ namespace GameObjects
 
                 if (toBreak != null)
                 {
-                    Session.Current.Scenario.SetDiplomaticRelation(ID, toBreak.ID, 0);
-
-                    Leader.DecreaseKarma(5);
+                    if (Session.Current.Scenario.TryGetDiplomaticRelation(ID, toBreak.ID, out var brokenRelation))
+                    {
+                        DiplomacyEvaluator.BreakAlliance(this, brokenRelation);
+                    }
 
                     //AI宣布主动解盟
                     Session.MainGame.mainGameScreen.xianshishijiantupian(toBreak.Leader, this.Leader.Name, TextMessageKind.ResetDiplomaticRelation, "ResetDiplomaticRelation", "ResetDiplomaticRelation.jpg", "ResetDiplomaticRelation", toBreak.LeaderName, true);
@@ -5182,7 +5449,8 @@ namespace GameObjects
                     Faction opposite = rel.GetDiplomaticFaction(this.ID);
                     if (opposite != null)
                     {
-                        if (rel.Relation > 300) continue;
+                        // 同盟的关系不随机变动，免得悄悄散伙
+                        if (rel.IsAlliance) continue;
                         if (rel.Truce > 0)
                         {
                             rel.Relation += 5;
@@ -6919,14 +7187,68 @@ namespace GameObjects
             return result;
         }
 
-        public Architecture GetGeDiArchitecture(Faction targetFaction)
+        /// <summary>
+        /// 把一座城交给别的势力：城里的武将、在途前往这座城的武将和编队都撤回本势力都城，
+        /// 城里存的钱粮和正运往这座城的钱粮也运回都城，只交出城池本身
+        /// </summary>
+        public void CedeArchitecture(Architecture a, Faction targetFaction)
+        {
+            int days = Math.Max(1, Session.Current.Scenario.GetTransferFundDays(a, this.Capital));
+            this.Capital.AddFundPack(a.Fund, days);
+            this.Capital.AddFoodPack(a.Food, days);
+            a.DecreaseFund(a.Fund);
+            a.DecreaseFood(a.Food);
+            // 在途的钱粮先到这座城，再转运都城
+            foreach (var pack in a.FundPacks)
+            {
+                this.Capital.AddFundPack(pack.Fund, pack.Days + days);
+            }
+            foreach (var pack in a.FoodPacks)
+            {
+                this.Capital.AddFoodPack(pack.Food, pack.Days + days);
+            }
+            a.ClearFundPacks();
+            a.ClearFoodPacks();
+
+            foreach (var person in a.GetPersonsExcludeNvGuan())
+            {
+                person.MoveToArchitecture(this.Capital);
+            }
+
+            foreach (var person in a.GetMovingPersons())
+            {
+                person.MoveToArchitecture(this.Capital);
+            }
+
+            foreach (var military in a.movableMilitaries)
+            {
+                a.TransferMilitary(military, this.Capital);
+            }
+
+            foreach (Military m in this.TransferingMilitaries)
+            {
+                if (m.TargetArchitecture == a)
+                {
+                    double distance = Session.Current.Scenario.GetDistance(a.ArchitectureArea, this.Capital.ArchitectureArea);
+                    m.TargetArchitecture = this.Capital;
+                    m.ArrivingDays += Math.Max(1, (int)(m.TransferDays(distance) * (1 - a.TroopTransportDayRate)));
+                }
+            }
+            a.ChangeFaction(targetFaction);
+        }
+
+        /// <summary>
+        /// 自动挑选割给对方的城池：都城以外离对方最近、视野内没有敌军的城
+        /// </summary>
+        /// <param name="exclude">不能割的城，一般是使者所属的城</param>
+        public Architecture GetCedeArchitecture(Faction targetFaction, Architecture exclude)
         {
             Architecture result = null;
             int dist = int.MaxValue;
 
             foreach (var a in Architectures)
             {
-                if (a != this.Capital)
+                if (a != this.Capital && a != exclude)
                 {
                     int innerDist = int.MaxValue;
                     foreach (var b in targetFaction.Architectures)
@@ -6935,7 +7257,7 @@ namespace GameObjects
 
                         if (d < innerDist)
                         {
-                            d = innerDist;
+                            innerDist = d;
                         }
                     }
 

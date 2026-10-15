@@ -191,6 +191,8 @@ public class PersonConfig : BaseConfig
 
     public int DiplomaticTargetFactionID { get; set; } = -1;
 
+    public DiplomacyDealConfig DiplomacyDeal { get; set; }
+
     public int PersonalLoyalty { get; set; }
 
     public int PictureIndex { get; set; }
