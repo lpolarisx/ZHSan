@@ -76,7 +76,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         //public FreeText qizidezi;
         public bool editMode = false;
         public bool ShowArchitectureConnectedLine = false;
-        public bool ShowFactionBorder = true;
+        public bool ShowFactionBorder = false;
         private int ditukuaidezhi = 1;
 
         private bool mapEdited = false;
