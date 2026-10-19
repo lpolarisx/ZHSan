@@ -97,7 +97,7 @@ namespace GameObjects
             {
                 Id = ID,
                 Name = Name,
-                KindId = KindID,
+                KindId = kindID,  // 存真实兵种，KindID在水上会返回运兵船
                 Quantity = Quantity,
                 Morale = Morale,
                 Combativity = Combativity,
