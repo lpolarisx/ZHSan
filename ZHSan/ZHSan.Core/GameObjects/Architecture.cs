@@ -325,7 +325,6 @@ namespace GameObjects
 
         public List<PopulationPack> PopulationPacks { get; set; } = new();
 
-        public List<Military> MergeMilitaryList { get; set; } = new();
 
         public List<Military> Militaries { get; set; } = new();
 
@@ -7573,9 +7572,12 @@ namespace GameObjects
         {
             var result = new List<Military>();
 
-            foreach (var otherMilitary in MergeMilitaryList)
+            foreach (var otherMilitary in Militaries)
             {
-                if (otherMilitary != military && otherMilitary.Kind.Equals(military.Kind))
+                if (otherMilitary != military
+                    && otherMilitary.Kind.Equals(military.Kind)
+                    && otherMilitary.Quantity < otherMilitary.Kind.MaxScale
+                    && otherMilitary.InjuryQuantity == 0)
                 {
                     result.Add(otherMilitary);
                 }
