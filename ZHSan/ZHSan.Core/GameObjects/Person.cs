@@ -3365,7 +3365,7 @@ namespace GameObjects
 
             if (architectureByPosition == null) return false;
 
-            if (target.BelongedFaction != null && target.BelongedFaction.Leader == this) return false;
+            if (target.BelongedFaction != null && target.BelongedFaction.Leader == target) return false;
 
             int idealOffset = Person.GetIdealOffset(target, this.BelongedFaction.Leader) - this.ConvinceIdealSkip;
 
