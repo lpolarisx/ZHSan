@@ -720,12 +720,36 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 if (targetArchitecture != null)
                 {
                     double distance = (double)Session.Current.Scenario.GetDistance(this.CurrentArchitecture.ArchitectureArea, targetArchitecture.ArchitectureArea);
+                    var failReasons = new List<string>();
 
                     foreach (Military military in this.CurrentMilitaries)
                     {
-                        if (this.CurrentArchitecture.Fund >= military.TransferFundCost(distance) && 
-                            this.CurrentArchitecture.Food >= military.TransferFoodCost(distance) &&
-                            !this.CurrentArchitecture.IsSurrounded() && !targetArchitecture.IsSurrounded())
+                        string failReason = null;
+                        if (this.CurrentArchitecture.IsSurrounded())
+                        {
+                            failReason = this.CurrentArchitecture.Name + "被包围，无法运兵";
+                        }
+                        else if (targetArchitecture.IsSurrounded())
+                        {
+                            failReason = targetArchitecture.Name + "被包围，无法运兵";
+                        }
+                        else if (this.CurrentArchitecture.Fund < military.TransferFundCost(distance))
+                        {
+                            failReason = military.Name + "：资金不足，需要" + military.TransferFundCost(distance) + "，现有" + this.CurrentArchitecture.Fund;
+                        }
+                        else if (this.CurrentArchitecture.Food < military.TransferFoodCost(distance))
+                        {
+                            failReason = military.Name + "：粮草不足，需要" + military.TransferFoodCost(distance) + "，现有" + this.CurrentArchitecture.Food;
+                        }
+
+                        if (failReason != null)
+                        {
+                            if (!failReasons.Contains(failReason))
+                            {
+                                failReasons.Add(failReason);
+                            }
+                        }
+                        else
                         {
                             this.CurrentArchitecture.DecreaseFund(military.TransferFundCost(distance));
                             this.CurrentArchitecture.DecreaseFood(military.TransferFoodCost(distance));
@@ -737,6 +761,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             this.CurrentArchitecture.BelongedFaction.TransferingMilitaries.Add(military);
                             Session.MainGame.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");//移至此处防止运输失败有声音
                         }
+                    }
+
+                    if (failReasons.Count > 0)
+                    {
+                        Session.MainGame.mainGameScreen.Plugins.PersonBubblePlugin.AddPersonText(this.CurrentArchitecture.BelongedFaction.Leader, this.CurrentArchitecture.Position, "运兵失败：" + string.Join("；", failReasons));
                     }
                 }
                 //Session.MainGame.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
@@ -801,6 +830,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 CurrentMilitary = militaries.FirstOrDefault();
                 CurrentMilitaries = [.. militaries];
+                // 清空手动出征残留的武将选择，避免选点后误走手动出征分支
+                CurrentPerson = null;
+                CurrentGameObjects = null;
                 Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.ArchitectureAvailableContactArea));
             }
         }

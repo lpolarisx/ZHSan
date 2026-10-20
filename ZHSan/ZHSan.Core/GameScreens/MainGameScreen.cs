@@ -900,11 +900,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case SelectingUndoneWorkKind.ArchitectureAvailableContactArea:
                     if (!this.selectingLayer.Canceled)
                     {
-                        if(this.CurrentMilitaries.Count==1 && this.CurrentMilitary!=null && this.CurrentPerson!=null)//加上this.CurrentPerson!=null防止自动出征一部队错误
+                        if(this.CurrentMilitaries.Count==1 && this.CurrentMilitary!=null && this.CurrentPerson!=null && this.CurrentGameObjects!=null)//手动出征；自动出征时CurrentPerson/CurrentGameObjects为null
                         {
                             this.screenManager.SetCreatingTroopPosition(this.selectingLayer.SelectedPoint);
                         }
-                        else if (this.CurrentMilitaries.Count > 1)
+                        else if (this.CurrentMilitaries.Count > 0)
                         {
                             this.screenManager.SetTroopsPosition(this.selectingLayer.SelectedPoint);
                         }
