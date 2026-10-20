@@ -1,5 +1,7 @@
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using GameDatas.Converts;
 
 namespace GameDatas;
 
@@ -65,7 +67,8 @@ public class ArchitectureConfig : BaseConfig
 
     // public zainanlei zainan { get; set; }
 
-    public Dictionary<int, int> CaptiveLoyaltyFall { get; set; }
+    [JsonConverter(typeof(KeyValuePairListJsonConverter))]
+    public List<KeyValuePair<int, int>> CaptiveLoyaltyFall { get; set; }
 
     public bool NoFundToSustainFacility { get; set; }
 
