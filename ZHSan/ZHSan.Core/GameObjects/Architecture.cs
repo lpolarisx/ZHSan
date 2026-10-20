@@ -148,7 +148,7 @@ namespace GameObjects
             RobberTroopID = config.RobberTroopId;
             TransferFoodArchitectureID = config.TransferFoodArchitectureId;
             TroopershipAvailable = config.TroopershipAvailable;
-            captiveLoyaltyFall = config.CaptiveLoyaltyFall.ToList();
+            captiveLoyaltyFall = config.CaptiveLoyaltyFall?.ToList() ?? new List<KeyValuePair<int, int>>();
             noFundToSustainFacility = config.NoFundToSustainFacility;
             SuspendTroopTransfer = config.SuspendTroopTransfer;
             MayorOnDutyDays = config.MayorOnDutyDays;
@@ -218,7 +218,7 @@ namespace GameObjects
                 RobberTroopId = RobberTroopID,
                 TransferFoodArchitectureId = TransferFoodArchitectureID,
                 TroopershipAvailable = TroopershipAvailable,
-                CaptiveLoyaltyFall = captiveLoyaltyFall.Distinct().ToDictionary(x => x.Key, x => x.Value),
+                CaptiveLoyaltyFall = captiveLoyaltyFall.ToList(),
                 NoFundToSustainFacility = noFundToSustainFacility,
                 SuspendTroopTransfer = SuspendTroopTransfer,
                 MayorOnDutyDays = MayorOnDutyDays,
