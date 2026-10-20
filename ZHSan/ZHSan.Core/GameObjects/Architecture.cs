@@ -12020,7 +12020,7 @@ namespace GameObjects
                         }
 
                         int hateDays = (int)((Math.Pow(5, person2.PersonalLoyalty - 2) * 10 + GameObject.Random(20) - 30) * Session.GlobalVariables.ProhibitFactionAgainstDestroyer);
-                        if (hateDays > 0)
+                        if (hateDays > 0 && faction != null) // 君主死亡无继承人时faction为null，没有可记恨的势力
                         {
                             if (person2.ProhibitedFactionID.ContainsKey(faction.ID))
                             {
@@ -12053,7 +12053,7 @@ namespace GameObjects
                         }
 
                         int hateDays = (int)(Math.Pow(5, person2.PersonalLoyalty - 2) * 10 + GameObject.Random(20) - 10);
-                        if (hateDays > 0)
+                        if (hateDays > 0 && faction != null) // 君主死亡无继承人时faction为null，没有可记恨的势力
                         {
                             if (person2.ProhibitedFactionID.ContainsKey(faction.ID))
                             {
