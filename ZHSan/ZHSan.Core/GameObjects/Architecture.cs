@@ -11546,6 +11546,11 @@ namespace GameObjects
 
         private void RecruitmentMilitary(Military military)
         {
+            // 兵役不足一个最小编制时暂停补充（不扣资金、统治、民心），保留补充任务，等兵役积累后继续
+            if (military.RecruitmentPerson != null && military.Quantity < military.Kind.MaxScale && this.MilitaryPopulation < military.Kind.MinScale)
+            {
+                return;
+            }
 
             if ((((this.MilitaryPopulation != 0) && (this.Population != 0) && (!Session.GlobalVariables.PopulationRecruitmentLimit
                 || (this.ArmyQuantity <= this.Population)))  && ((this.Fund >= (Session.Parameters.RecruitmentFundCost * this.AreaCount * (this.CanRecruitMilitary(military.Kind) ? 1 : 10))))
