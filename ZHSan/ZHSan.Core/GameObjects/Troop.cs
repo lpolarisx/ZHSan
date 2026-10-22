@@ -4521,11 +4521,7 @@ namespace GameObjects
 
                 MoveCaptiveIntoArchitecture(arch);
 
-                var persons = new List<Person>();
-                foreach (Person p in persons.ToList())
-                {
-                    persons.Add(p);
-                }
+                var persons = Persons.ToList();
                 Destroy(true, false);
 
                 foreach (var p in persons)

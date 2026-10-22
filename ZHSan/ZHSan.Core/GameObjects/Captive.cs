@@ -133,8 +133,10 @@ namespace GameObjects
                                 {
                                     ReturnRansom();
                                 }
-
-                                eventManager.Publish(new PlayerReleaseEvent(BelongedFaction, CaptiveFaction, this));
+                                else
+                                {
+                                    eventManager.Publish(new PlayerReleaseEvent(BelongedFaction, CaptiveFaction, this));
+                                }
 
                                 // Session.MainGame.mainGameScreen.CaptivePlayerRelease(BelongedFaction, CaptiveFaction, this);
                             }
