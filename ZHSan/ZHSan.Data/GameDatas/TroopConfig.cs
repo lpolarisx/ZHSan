@@ -364,4 +364,9 @@ public class TroopConfig : BaseConfig
     // public int willTroopID { get; set; } = -1;
     
     public int AutoCombatMethodID { get; set; } = -1;
+
+    /// <summary>
+    /// 玩家上次给该部队选的战法，快捷键R重复使用
+    /// </summary>
+    public int LastCombatMethodID { get; set; } = -1;
 }

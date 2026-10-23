@@ -194,6 +194,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         this.DateGo(-999);
                     }
                 }
+                else if (InputManager.KeyBoardState.IsKeyDown(Keys.Tab))
+                {
+                    this.currentKey = Keys.Tab;
+                    if (!this.editMode)
+                    {
+                        bool shift = InputManager.KeyBoardState.IsKeyDown(Keys.LeftShift) || InputManager.KeyBoardState.IsKeyDown(Keys.RightShift);
+                        this.JumpToAdjacentUnoperatedTroop(!shift, true);
+                    }
+                }
                 else if (InputManager.KeyBoardState.IsKeyDown(Keys.Q))
                 {
                     this.currentKey = Keys.Q;
@@ -293,6 +302,140 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             //}
         }
 
+        /// <summary>
+        /// 按势力部队顺序跳到下一支（或上一支）未行动的部队，到头后从另一端继续
+        /// </summary>
+        /// <param name="openMenu">跳过去后顺便打开该部队的菜单（Tab快捷键用）</param>
+        public void JumpToAdjacentUnoperatedTroop(bool next, bool openMenu = false)
+        {
+            Faction faction = Session.Current.Scenario.CurrentPlayer;
+            if (faction == null || faction.Troops.Count == 0)
+            {
+                return;
+            }
+            int count = faction.Troops.Count;
+            // troopSequence记的是上次跳到的部队在Troops中的位置，-1表示本回合还没跳过
+            int start = faction.troopSequence;
+            if (start < 0 || start >= count)
+            {
+                start = next ? -1 : count;
+            }
+            for (int i = 1; i <= count; i++)
+            {
+                int index = ((start + (next ? i : -i)) % count + count) % count;
+                Troop troop = faction.Troops[index] as Troop;
+                if (troop != null && !troop.Operated)
+                {
+                    // 只高亮当前这一支，之前跳过的部队取消高亮
+                    foreach (Troop t in faction.Troops)
+                    {
+                        t.DrawSelected = false;
+                    }
+                    faction.troopSequence = index;
+                    troop.DrawSelected = true;
+                    this.JumpTo(troop.Position);
+                    if (openMenu)
+                    {
+                        this.OpenTroopMenu(troop);
+                    }
+                    return;
+                }
+            }
+        }
+
+        private void OpenTroopMenu(Troop troop)
+        {
+            if (this.Plugins.ContextMenuPlugin.IsShowing || !Session.Current.Scenario.IsPlayerControlling())
+            {
+                return;
+            }
+            this.CurrentTroop = troop;
+            Rectangle destination = this.GetDestination(troop.Position);
+            this.Plugins.ContextMenuPlugin.IsShowing = true;
+            this.Plugins.ContextMenuPlugin.SetCurrentGameObject(troop);
+            this.Plugins.ContextMenuPlugin.SetMenuKindByName("TroopLeftClick");
+            this.Plugins.ContextMenuPlugin.Prepare(destination.Right, destination.Top, base.viewportSize);
+            this.bianduiLiebiaoBiaoji = "TroopLeftClick";
+        }
+
+        /// <summary>
+        /// 部队菜单打开时的快捷键：Tab/Shift+Tab换到下一支/上一支部队，1~9用第N个战法，R用该部队上次的战法
+        /// </summary>
+        private void HandleContextMenuKey()
+        {
+            if (this.currentKey != Keys.None)
+            {
+                if (!InputManager.KeyBoardState.IsKeyUp(this.currentKey))
+                {
+                    return;
+                }
+                this.currentKey = Keys.None;
+            }
+            if (this.bianduiLiebiaoBiaoji != "TroopLeftClick" || this.CurrentTroop == null)
+            {
+                return;
+            }
+            KeyboardState keyboard = InputManager.KeyBoardState;
+            if (keyboard.IsKeyDown(Keys.Tab))
+            {
+                this.currentKey = Keys.Tab;
+                bool shift = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
+                this.Plugins.ContextMenuPlugin.Close(ContextMenuResult.None, 0);
+                this.JumpToAdjacentUnoperatedTroop(!shift, true);
+                return;
+            }
+            if (keyboard.IsKeyDown(Keys.R))
+            {
+                this.currentKey = Keys.R;
+                if (this.CurrentTroop.LastCombatMethodID == -1)
+                {
+                    this.ShowTroopHint(this.CurrentTroop, "部队还没有用过战法");
+                }
+                else
+                {
+                    this.UseCombatMethodByKey(this.CurrentTroop.LastCombatMethodID);
+                }
+                return;
+            }
+            for (int i = 1; i <= 9; i++)
+            {
+                Keys digit = Keys.D0 + i;
+                Keys numPad = Keys.NumPad0 + i;
+                if (keyboard.IsKeyDown(digit) || keyboard.IsKeyDown(numPad))
+                {
+                    this.currentKey = keyboard.IsKeyDown(digit) ? digit : numPad;
+                    List<CombatMethod> combatMethods = this.CurrentTroop.GetOrderedCombatMethods();
+                    if (i > combatMethods.Count)
+                    {
+                        this.ShowTroopHint(this.CurrentTroop, "部队没有第" + i + "个战法");
+                    }
+                    else
+                    {
+                        this.UseCombatMethodByKey(combatMethods[i - 1].ID);
+                    }
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 能用就关闭菜单，与点击菜单里的战法效果相同；不能用就提示原因，菜单保持打开
+        /// </summary>
+        private void UseCombatMethodByKey(int id)
+        {
+            string failReason = this.CurrentTroop.GetCombatMethodFailReason(id);
+            if (failReason != null)
+            {
+                this.ShowTroopHint(this.CurrentTroop, failReason);
+                return;
+            }
+            this.Plugins.ContextMenuPlugin.Close(ContextMenuResult.TroopCombatMethod, id);
+        }
+
+        private void ShowTroopHint(Troop troop, string text)
+        {
+            this.Plugins.PersonBubblePlugin.AddPersonText(troop.Leader, troop.Position, text);
+        }
 
 
     }

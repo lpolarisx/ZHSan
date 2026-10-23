@@ -121,6 +121,7 @@ namespace PluginInterface
         void SetIHelp(IHelp iHelp);
         void SetMenuKindByID(int ID);
         void SetMenuKindByName(string Name);
+        void Close(ContextMenuResult result, int paramID);
         void SetScreen(Screen screen);
         void ShezhiBianduiLiebiaoXinxi(bool Xianshi, Rectangle Weizhi);
         int CurrentParamID { get; }

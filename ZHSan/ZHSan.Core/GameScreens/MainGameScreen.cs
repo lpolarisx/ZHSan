@@ -2083,6 +2083,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (Session.Current.Scenario.GameCommonData.AllCombatMethods.TryGetValue(id, out var combatMethod))
             {
                 CurrentTroop.CurrentCombatMethod = combatMethod;
+                CurrentTroop.LastCombatMethodID = id;
 
                 CurrentTroop.AttackDefaultKind = (TroopAttackDefaultKind)combatMethod.AttackDefaultString;
                 CurrentTroop.AttackTargetKind = (TroopAttackTargetKind)combatMethod.AttackTargetString;
@@ -3056,6 +3057,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     case UndoneWorkKind.Dialog:
                         this.UpdateDialog(gameTime);
 
+                        break;
+                    case UndoneWorkKind.ContextMenu:
+                        this.HandleContextMenuKey();
                         break;
                     case UndoneWorkKind.tupianwenzi:
                         this.Updatetupianwenzi(gameTime);

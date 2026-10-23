@@ -93,31 +93,15 @@ namespace MapLayerPlugin
         }
         private void screen_OnMouseLeftUP(Point position)
         {
-            if (base.Enabled && Hastroops())
+            if (base.Enabled)
             {
-                if (list.Count >= 1)
+                if (StaticMethods.PointInRectangle(position, this.NextTroopDisplayPosition))
                 {
-                    Faction faction = Session.Current.Scenario.CurrentPlayer;
-                    if (StaticMethods.PointInRectangle(position, this.NextTroopDisplayPosition))
-                    {
-                        if (faction.troopSequence == -1 || faction.troopSequence > list.Count - 1)
-                        {
-                            faction.troopSequence = 0;
-                        }
-                            (faction.Troops[faction.troopSequence] as Troop).DrawSelected = true;
-                            Session.MainGame.mainGameScreen.JumpTo((faction.Troops[faction.troopSequence] as Troop).Position);
-                            faction.troopSequence++;
-                    }   
-                    else if (StaticMethods.PointInRectangle(position, this.LastTroopDisplayPosition))
-                    {
-                        if (faction.troopSequence == -1 || faction.troopSequence > list.Count - 1)
-                        {
-                            faction.troopSequence = list.Count - 1;
-                        }
-                            (faction.Troops[faction.troopSequence] as Troop).DrawSelected = true;
-                            Session.MainGame.mainGameScreen.JumpTo((faction.Troops[faction.troopSequence] as Troop).Position);
-                            faction.troopSequence--;
-                    }
+                    Session.MainGame.mainGameScreen.JumpToAdjacentUnoperatedTroop(true);
+                }
+                else if (StaticMethods.PointInRectangle(position, this.LastTroopDisplayPosition))
+                {
+                    Session.MainGame.mainGameScreen.JumpToAdjacentUnoperatedTroop(false);
                 }
             }
         }

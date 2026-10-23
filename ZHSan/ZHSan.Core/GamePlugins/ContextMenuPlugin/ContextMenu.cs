@@ -303,6 +303,19 @@ namespace ContextMenuPlugin
             }
         }
 
+        /// <summary>
+        /// 不经鼠标点击，直接以指定结果关闭菜单（键盘快捷键用）
+        /// </summary>
+        public void Close(ContextMenuResult result, int paramID)
+        {
+            if (this.IsShowing)
+            {
+                this.CurrentParamID = paramID;
+                this.Result = result;
+                this.IsShowing = false;
+            }
+        }
+
         public void SetMenuKindByID(int ID)
         {
             this.menuToDisplay = this.GetMenuKindByID(ID);

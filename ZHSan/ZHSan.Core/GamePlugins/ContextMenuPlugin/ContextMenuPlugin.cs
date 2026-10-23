@@ -192,6 +192,11 @@ namespace ContextMenuPlugin
             this.contextMenu.SetMenuKindByName(Name);
         }
 
+        public void Close(ContextMenuResult result, int paramID)
+        {
+            this.contextMenu.Close(result, paramID);
+        }
+
         public void SetScreen(Screen screen)
         {
             this.contextMenu.Initialize();

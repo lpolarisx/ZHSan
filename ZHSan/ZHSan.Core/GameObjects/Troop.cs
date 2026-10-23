@@ -694,6 +694,7 @@ namespace GameObjects
             // willArchitectureID = config.willArchitectureID;
             // willTroopID = config.willTroopID;
             AutoCombatMethodID = config.AutoCombatMethodID;
+            LastCombatMethodID = config.LastCombatMethodID;
         }
 
 
@@ -779,6 +780,7 @@ namespace GameObjects
                 // willArchitectureID = willArchitectureID,
                 // willTroopID = willTroopID,
                 AutoCombatMethodID = AutoCombatMethodID,
+                LastCombatMethodID = LastCombatMethodID,
             };
         }
 
@@ -5292,10 +5294,50 @@ namespace GameObjects
         {
             if (CombatMethods.TryGetValue(id, out var combatMethod))
             {
-                return $"{combatMethod.Name}({combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming})";
+                // 前面的序号就是数字快捷键
+                int number = GetOrderedCombatMethods().IndexOf(combatMethod) + 1;
+                string prefix = number >= 1 && number <= 9 ? number + "." : "";
+                return $"{prefix}{combatMethod.Name}({combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming})";
             }
 
             return "----";
+        }
+
+        /// <summary>
+        /// 部队拥有的战法，顺序与菜单一致，数字快捷键按这个顺序编号
+        /// </summary>
+        public List<CombatMethod> GetOrderedCombatMethods()
+        {
+            return Session.Current.Scenario.GameCommonData.AllCombatMethods.Values.Where(m => CombatMethods.ContainsKey(m.ID)).ToList();
+        }
+
+        /// <summary>
+        /// 战法当前不能使用的原因，能使用时返回null
+        /// </summary>
+        public string GetCombatMethodFailReason(int id)
+        {
+            if (!CombatMethodAvail())
+            {
+                return "部队当前状态不能使用战法";
+            }
+            if (ProhibitAllAction || ProhibitCombatMethod)
+            {
+                return "部队被禁止使用战法";
+            }
+            if (!CombatMethods.TryGetValue(id, out var combatMethod))
+            {
+                return "部队没有这个战法";
+            }
+            if (!combatMethod.IsCastable(this))
+            {
+                return combatMethod.Name + "当前不满足使用条件";
+            }
+            int cost = combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming;
+            if (cost > Combativity)
+            {
+                return $"战意不足，{combatMethod.Name}需要{cost}，现有{Combativity}";
+            }
+            return null;
         }
 
         public GameArea GetContactArea(Point position)
@@ -11777,6 +11819,12 @@ namespace GameObjects
 
         [DataMember]
         public int AutoCombatMethodID { get; set; } = -1;
+
+        /// <summary>
+        /// 玩家上次给该部队选的战法，快捷键R重复使用
+        /// </summary>
+        [DataMember]
+        public int LastCombatMethodID { get; set; } = -1;
 
         public string CurrentDestinationChallengePersonName;
 
