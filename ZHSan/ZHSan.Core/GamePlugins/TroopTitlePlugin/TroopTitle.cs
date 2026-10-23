@@ -1,4 +1,5 @@
 ﻿using GameFreeText;
+using System;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -180,6 +181,13 @@ namespace TroopTitlePlugin
 
         internal PlatformTexture TheFoodNormal2Texture;
         internal PlatformTexture TheFoodShortage2Texture;
+
+        internal PlatformTexture TirednessTexture;
+        internal Rectangle TirednessIconPosition;
+        internal PlatformTexture TheTiredness1Texture;
+        internal Rectangle TheTirednessIcon1Position;
+        internal PlatformTexture TheTiredness2Texture;
+        internal Rectangle TheTirednessIcon2Position;
         internal Rectangle TheFoodIcon2Position;
 
         internal PlatformTexture TheNoControl1Texture;
@@ -241,8 +249,13 @@ namespace TroopTitlePlugin
                     //    UIKind = "New2";
                     //}
                 }
+                bool showStatus = playerControlling && (Session.GlobalVariables.SkyEye || Session.Current.Scenario.IsCurrentPlayer(troop.BelongedFaction));
+                int foodLevel = showStatus ? FoodShortageLevel(troop) : 0;
+                Color foodColor = FoodIconColor(foodLevel);
+                int tirednessLevel = showStatus ? TirednessLevel(troop) : 0;
+                Color portraitColor = TirednessPortraitColor(tirednessLevel);
                 if (UIKind == "Old")
-                {                    
+                {
                     Rectangle? sourceRectangle = null;
                     CacheManager.Draw(this.BackgroundTexture, new Rectangle(this.displayOffset.X, this.displayOffset.Y, this.BackgroundSize.X, this.BackgroundSize.Y), sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.47f);
                     CacheManager.Draw(this.shiqicaotupian, new Rectangle(this.displayOffset.X + this.shiqicaoweizhi.X, this.displayOffset.Y + this.shiqicaoweizhi.Y, this.shiqicaoweizhi.Width, this.shiqicaoweizhi.Height), sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.469f);
@@ -259,7 +272,8 @@ namespace TroopTitlePlugin
                     //{
                     //CacheManager.Draw(troop.Leader.TroopPortrait, new Rectangle(this.displayOffset.X + this.PortraitPosition.X, this.displayOffset.Y + this.PortraitPosition.Y, this.PortraitPosition.Width, this.PortraitPosition.Height), null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.4687f);
 
-                    CacheManager.DrawZhsanAvatar(troop.Leader, new Rectangle(this.displayOffset.X + this.PortraitPosition.X, this.displayOffset.Y + this.PortraitPosition.Y, this.PortraitPosition.Width, this.PortraitPosition.Height), 0.4687f, PortraitSize.Small);
+                    CacheManager.DrawZhsanAvatar(troop.Leader, new Rectangle(this.displayOffset.X + this.PortraitPosition.X, this.displayOffset.Y + this.PortraitPosition.Y, this.PortraitPosition.Width, this.PortraitPosition.Height), 0.4687f, PortraitSize.Small, portraitColor);
+                    this.DrawTirednessIcon(this.TirednessTexture, this.TirednessIconPosition, tirednessLevel, 0.4686f);
 
                     //}
                     //catch { }
@@ -306,10 +320,10 @@ namespace TroopTitlePlugin
                                     break;
                             }
                         }
-                        if (troop.Food < troop.FoodCostPerDay)
+                        if (foodLevel > 0)
                         {
                             sourceRectangle = null;
-                            CacheManager.Draw(this.FoodShortageTexture, this.FoodIconDisplayPosition, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.4688f);
+                            CacheManager.Draw(this.FoodShortageTexture, this.FoodIconDisplayPosition, sourceRectangle, foodColor, 0f, Vector2.Zero, SpriteEffects.None, 0.4688f);
                         }
                         /*
                         else
@@ -347,7 +361,8 @@ namespace TroopTitlePlugin
                     //{ 
                         //CacheManager.Draw(troop.Leader.TroopPortrait, this.ThePortraitDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.469f);
 
-                        CacheManager.DrawZhsanAvatar(troop.Leader, this.ThePortraitDisplayPosition, 0.469f, PortraitSize.Small);
+                        CacheManager.DrawZhsanAvatar(troop.Leader, this.ThePortraitDisplayPosition, 0.469f, PortraitSize.Small, portraitColor);
+                        this.DrawTirednessIcon(this.TheTiredness1Texture, this.TheTirednessIcon1Position, tirednessLevel, 0.463f);
 
                         if (ShowFactionName1Background == "on")
                         {
@@ -404,9 +419,9 @@ namespace TroopTitlePlugin
                                     break;
                             }
                         }
-                        if (troop.Food < troop.FoodCostPerDay)
+                        if (foodLevel > 0)
                         {
-                            CacheManager.Draw(this.TheFoodShortage1Texture, this.TheFoodIconDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
+                            CacheManager.Draw(this.TheFoodShortage1Texture, this.TheFoodIconDisplayPosition, null, foodColor, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
                         }
                     }
                     if (troop.CurrentStunt != null)
@@ -470,7 +485,8 @@ namespace TroopTitlePlugin
                     //catch { }
                     //try
                     //{
-                    CacheManager.DrawZhsanAvatar(troop.Leader, this.ThePortraitDisplayPosition, 0.469f, PortraitSize.Small);
+                    CacheManager.DrawZhsanAvatar(troop.Leader, this.ThePortraitDisplayPosition, 0.469f, PortraitSize.Small, portraitColor);
+                    this.DrawTirednessIcon(this.TheTiredness2Texture, this.TheTirednessIcon2Position, tirednessLevel, 0.463f);
                     //CacheManager.Draw(troop.Leader.TroopPortrait, this.ThePortraitDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.469f);
                         if (ShowFactionName2Background == "on" && this.FactionName2Background != null)
                         {
@@ -541,9 +557,9 @@ namespace TroopTitlePlugin
                                     break;
                             }
                         }
-                        if (troop.Food < troop.FoodCostPerDay)
+                        if (foodLevel > 0)
                         {
-                            CacheManager.Draw(this.TheFoodShortage2Texture, this.TheFoodIconDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
+                            CacheManager.Draw(this.TheFoodShortage2Texture, this.TheFoodIconDisplayPosition, null, foodColor, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
                         }
                     }
                     if (troop.CurrentStunt != null)
@@ -611,6 +627,59 @@ namespace TroopTitlePlugin
                 this.displayOffset = value;
                 this.ResetTextsPosition();
             }
+        }
+
+        // 余粮不超过这么多天就提前预警
+        private const int FoodWarningDays = 3;
+        // 部队疲劳超过40士气不再恢复，超过60士气开始下降（见Troop每日士气结算）
+        private const int TirednessLight = 40;
+        private const int TirednessHeavy = 60;
+
+        /// <summary>
+        /// 缺粮档位：0正常，1余粮不足FoodWarningDays天，2已不够一天
+        /// </summary>
+        private static int FoodShortageLevel(Troop troop)
+        {
+            int cost = troop.FoodCostPerDay;
+            if (cost <= 0) return 0;
+            if (troop.Food < cost) return 2;
+            if (troop.Food < cost * (FoodWarningDays + 1)) return 1;
+            return 0;
+        }
+
+        private static Color FoodIconColor(int level)
+        {
+            if (level == 1) return Color.Gold;
+            if (level == 2)
+            {
+                // 断粮时红色呼吸闪烁
+                float pulse = 0.6f + 0.4f * (float)((Math.Sin(Environment.TickCount / 200.0) + 1) / 2);
+                return Color.Red * pulse;
+            }
+            return Color.White;
+        }
+
+        /// <summary>
+        /// 疲劳档位：0正常，1轻度（显示汗滴），2重度（汗滴加头像变暗）
+        /// </summary>
+        private static int TirednessLevel(Troop troop)
+        {
+            int tiredness = troop.Tiredness;
+            if (tiredness > TirednessHeavy) return 2;
+            if (tiredness > TirednessLight) return 1;
+            return 0;
+        }
+
+        private static Color TirednessPortraitColor(int level)
+        {
+            return level == 2 ? new Color(150, 100, 100) : Color.White;
+        }
+
+        private void DrawTirednessIcon(PlatformTexture texture, Rectangle position, int level, float depth)
+        {
+            if (level == 0 || texture == null) return;
+            Rectangle rect = new Rectangle(this.DisplayOffset.X + position.X, this.DisplayOffset.Y + position.Y, position.Width, position.Height);
+            CacheManager.Draw(texture, rect, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, depth);
         }
 
         private Rectangle FoodIconDisplayPosition

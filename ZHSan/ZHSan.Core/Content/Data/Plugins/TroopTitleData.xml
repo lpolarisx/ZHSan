@@ -136,4 +136,8 @@
   <Item75></Item75>
   <Theshiqi2 FileName="shiqi2.png" X="37" Y="28" Width="59" Height="4"></Theshiqi2>
   <Thezhanyi2 FileName="zhanyi2.png" X="36" Y="32" Width="56" Height="4"></Thezhanyi2>
+  <!-- 疲劳汗滴，按节点名读取，放在头像右上角；三套样式各一个 -->
+  <TirednessIcon FileName="Tiredness.png" X="16" Y="-4" Width="14" Height="14"></TirednessIcon>
+  <TheTirednessIcon1 FileName="Tiredness.png" X="30" Y="8" Width="14" Height="14"></TheTirednessIcon1>
+  <TheTirednessIcon2 FileName="Tiredness.png" X="18" Y="6" Width="14" Height="14"></TheTirednessIcon2>
 </Root>

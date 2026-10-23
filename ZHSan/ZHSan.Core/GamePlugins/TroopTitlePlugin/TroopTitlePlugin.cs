@@ -285,6 +285,22 @@ namespace TroopTitlePlugin
             this.troopTitle.Thezhanyi2Texture = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TroopTitle\Data\Icon\" + node.Attributes.GetNamedItem("FileName").Value);
             this.troopTitle.Thezhanyi2Position = StaticMethods.LoadRectangleFromXMLNode(node);
 
+            // 疲劳图标是后加的，按节点名读取，避免打乱上面的下标；缺节点就不显示
+            this.troopTitle.TirednessTexture = this.LoadTirednessIcon(nextSibling, "TirednessIcon", out this.troopTitle.TirednessIconPosition);
+            this.troopTitle.TheTiredness1Texture = this.LoadTirednessIcon(nextSibling, "TheTirednessIcon1", out this.troopTitle.TheTirednessIcon1Position);
+            this.troopTitle.TheTiredness2Texture = this.LoadTirednessIcon(nextSibling, "TheTirednessIcon2", out this.troopTitle.TheTirednessIcon2Position);
+        }
+
+        private PlatformTexture LoadTirednessIcon(XmlNode root, string name, out Microsoft.Xna.Framework.Rectangle position)
+        {
+            XmlNode node = root.SelectSingleNode(name);
+            if (node == null)
+            {
+                position = Microsoft.Xna.Framework.Rectangle.Empty;
+                return null;
+            }
+            position = StaticMethods.LoadRectangleFromXMLNode(node);
+            return CacheManager.GetTempTexture(DataPath + node.Attributes.GetNamedItem("FileName").Value);
         }
 
         public void SetGraphicsDevice()
