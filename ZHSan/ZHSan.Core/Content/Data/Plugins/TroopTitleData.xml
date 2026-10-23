@@ -39,15 +39,15 @@
   <Item23></Item23>
   <Item24></Item24>
   <Item25></Item25>
-  <FactionNameText X="3" Y="-8" Width="20" Height="10"
+  <FactionNameText X="6" Y="-11" Width="20" Height="12"
           FontName="宋体"
           FontSize="9"
           FontStyle="Regular"
           FontColor="4280163870"
-          Align="Left"
-          FactionNameKind="1" ShowFactionNameBackground="off" Background="Null.png">
+          Align="Middle"
+          FactionNameKind="2" ShowFactionNameBackground="off" Background="Null.png">
   </FactionNameText>
-  <FactionColor ColorPicture="Faction.png" ColorBackground="qizi.png" X="0" Y="-25" Width="50" Height="45"></FactionColor>
+  <FactionColor ColorPicture="Faction.png" ColorBackground="qizi.png" ColorFill="FactionFill.png" X="0" Y="-25" Width="50" Height="45"></FactionColor>
   <Item28></Item28>
   <Item29></Item29>
   <Item30></Item30>
@@ -56,7 +56,7 @@
             FontSize="9"
             FontStyle="Regular"
             FontColor="4294967295"
-            Align="Middle">
+            Align="Left">
   </TroopName>
   <Item32></Item32>
   <Item33></Item33>
@@ -68,7 +68,7 @@
       FontSize="10"
       FontStyle="Regular"
       FontColor="4294967295"
-      Align="Middle">
+      Align="Left">
   </Thebingli1Text>
  <TheSpeed1Text X="50" Y="0" Width="42" Height="25"
       FontName="宋体"
@@ -95,15 +95,15 @@
   <Item53></Item53>
   <Item54></Item54>
   <Item55></Item55>
-  <FactionName2Text X="8" Y="-10" Width="20" Height="10"
+  <FactionName2Text X="9" Y="-13" Width="20" Height="12"
           FontName="宋体"
           FontSize="9"
           FontStyle="Regular"
           FontColor="4294967295"
-          Align="Left"
-          FactionNameKind="1" ShowFactionNameBackground="off" Background="Null.png">
+          Align="Middle"
+          FactionNameKind="2" ShowFactionNameBackground="off" Background="Null.png">
   </FactionName2Text>
-  <FactionColor2 ColorPicture="Faction.png" ColorBackground="qizi.png" X="3" Y="-25" Width="50" Height="40"></FactionColor2>
+  <FactionColor2 ColorPicture="Faction.png" ColorBackground="qizi.png" ColorFill="FactionFill.png" X="3" Y="-25" Width="50" Height="40"></FactionColor2>
   <Item58></Item58>
   <Item59></Item59>
   <Item60></Item60>
@@ -138,6 +138,6 @@
   <Thezhanyi2 FileName="zhanyi2.png" X="36" Y="32" Width="56" Height="4"></Thezhanyi2>
   <!-- 疲劳汗滴，按节点名读取，放在头像右上角；三套样式各一个 -->
   <TirednessIcon FileName="Tiredness.png" X="16" Y="-4" Width="14" Height="14"></TirednessIcon>
-  <TheTirednessIcon1 FileName="Tiredness.png" X="30" Y="8" Width="14" Height="14"></TheTirednessIcon1>
+  <TheTirednessIcon1 FileName="Tiredness.png" X="68" Y="7" Width="14" Height="14"></TheTirednessIcon1>
   <TheTirednessIcon2 FileName="Tiredness.png" X="18" Y="6" Width="14" Height="14"></TheTirednessIcon2>
 </Root>

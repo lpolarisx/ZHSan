@@ -125,6 +125,8 @@ namespace TroopTitlePlugin
         internal FreeText FactionName2Text;
         internal string FactionName1Kind;
         internal string FactionName2Kind;
+        internal Color FactionName1Color;
+        internal Color FactionName2Color;
         internal string ShowFactionName1Background;
         internal string ShowFactionName2Background;
         internal PlatformTexture FactionName1Background;
@@ -135,6 +137,8 @@ namespace TroopTitlePlugin
         internal PlatformTexture FactionColor1Background;
         internal PlatformTexture FactionColor2Picture;
         internal PlatformTexture FactionColor2Background;
+        internal PlatformTexture FactionColor1Fill;
+        internal PlatformTexture FactionColor2Fill;
         internal Rectangle FactionColor1Position;
         internal Rectangle FactionColor2Position;
 
@@ -369,6 +373,10 @@ namespace TroopTitlePlugin
                             CacheManager.Draw(this.FactionName1Background, this.FactionNameDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.462f);
                         }
                         CacheManager.Draw(this.FactionColor1Picture, this.FactionColorDisplayPosition, null, white, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
+                        if (this.FactionColor1Fill != null)
+                        {
+                            CacheManager.Draw(this.FactionColor1Fill, this.FactionColorDisplayPosition, null, white, 0f, Vector2.Zero, SpriteEffects.None, 0.464f);
+                        }
                         CacheManager.Draw(this.FactionColor1Background, this.FactionColorDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.465f);
                     //}
                     //catch { }
@@ -428,22 +436,8 @@ namespace TroopTitlePlugin
                     {
                         CacheManager.Draw(this.TheStunt1Texture, this.TheStuntIconDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
                     }
-                    if (FactionName1Kind == "1")
-                    {
-                        this.FactionName1Text.Text = troop.Leader.SurName;
-                    }
-                    else if (FactionName1Kind == "2")
-                    {
-                        this.FactionName1Text.Text = troop.Leader.BelongedFaction.Leader.SurName;
-                    }
-                    else if (FactionName1Kind == "3")
-                    {
-                        if (troop.Leader.BelongedFaction.Leader.Name == troop.Leader.BelongedFaction.Name)
-                        {
-                            this.FactionName1Text.Text = troop.Leader.BelongedFaction.Leader.SurName;
-                        }
-                        this.FactionName1Text.Text = troop.Leader.BelongedFaction.Name;
-                    }
+                    this.FactionName1Text.Text = FlagText(troop, FactionName1Kind);
+                    this.FactionName1Text.TextColor = FlagTextColor(white, this.FactionName1Color);
                     this.TroopName1Text.Text = troop.Leader.Name;
                     this.Thebingli1Text.Text = troop.Army.Quantity.ToString();
                     this.FactionName1Text.Draw(0.462f);
@@ -495,6 +489,10 @@ namespace TroopTitlePlugin
                     if (this.FactionColor2Picture != null)
                     {
                         CacheManager.Draw(this.FactionColor2Picture, this.FactionColorDisplayPosition, null, white, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
+                    }
+                    if (this.FactionColor2Fill != null)
+                    {
+                        CacheManager.Draw(this.FactionColor2Fill, this.FactionColorDisplayPosition, null, white, 0f, Vector2.Zero, SpriteEffects.None, 0.464f);
                     }
                     if (this.FactionColor2Background != null)
                     {
@@ -566,22 +564,8 @@ namespace TroopTitlePlugin
                     {
                         CacheManager.Draw(this.TheStunt2Texture, this.TheStuntIconDisplayPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.463f);
                     }
-                    if (FactionName2Kind == "1")
-                    {
-                        this.FactionName2Text.Text = troop.Leader.SurName;
-                    }
-                    else if (FactionName2Kind == "2")
-                    {
-                        this.FactionName2Text.Text = troop.Leader.BelongedFaction.Leader.SurName;
-                    }
-                    else if (FactionName2Kind == "3")
-                    {
-                        if(troop.Leader.BelongedFaction.Leader.Name==troop.Leader.BelongedFaction.Name)
-                        {
-                            this.FactionName2Text.Text = troop.Leader.BelongedFaction.Leader.SurName;
-                        }
-                        this.FactionName2Text.Text = troop.Leader.BelongedFaction.Name;
-                    }
+                    this.FactionName2Text.Text = FlagText(troop, FactionName2Kind);
+                    this.FactionName2Text.TextColor = FlagTextColor(white, this.FactionName2Color);
                     this.TroopName2Text.Text = troop.Leader.Name;
                     this.Thebingli2Text.Text = troop.Army.Quantity.ToString();
                     this.FactionName2Text.Draw(0.462f);
@@ -590,6 +574,24 @@ namespace TroopTitlePlugin
                 }
                 
             }
+        }
+
+        // 旗上的字：1 主将姓，2 君主姓，3 势力名；无势力时退回主将姓
+        private static string FlagText(Troop troop, string kind)
+        {
+            Faction faction = troop.BelongedFaction;
+            if (faction == null || faction.Leader == null || kind == "1")
+            {
+                return troop.Leader.SurName;
+            }
+            return kind == "3" ? faction.Name : faction.Leader.SurName;
+        }
+
+        // 浅色的旗写配置里的深字，深色的旗写白字
+        private static Color FlagTextColor(Color flagColor, Color darkText)
+        {
+            float luminance = 0.299f * flagColor.R + 0.587f * flagColor.G + 0.114f * flagColor.B;
+            return luminance > 150 ? darkText : Color.White;
         }
 
         private void ResetTextsPosition()

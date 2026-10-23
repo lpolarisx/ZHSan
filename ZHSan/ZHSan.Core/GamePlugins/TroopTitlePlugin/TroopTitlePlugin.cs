@@ -149,6 +149,7 @@ namespace TroopTitlePlugin
             rectangle = StaticMethods.LoadRectangleFromXMLNode(node);
             StaticMethods.LoadFontAndColorFromXMLNode(node, out font, out color);
             this.troopTitle.FactionName1Text = new FreeText(font, color);
+            this.troopTitle.FactionName1Color = color;
             this.troopTitle.FactionName1Text.Position = rectangle;
             this.troopTitle.FactionName1Text.Align = (TextAlign)Enum.Parse(typeof(TextAlign), node.Attributes.GetNamedItem("Align").Value);
             this.troopTitle.FactionName1Position.X = int.Parse(node.Attributes.GetNamedItem("X").Value);
@@ -162,6 +163,7 @@ namespace TroopTitlePlugin
             this.troopTitle.FactionColor1Position = StaticMethods.LoadRectangleFromXMLNode(node);
             this.troopTitle.FactionColor1Picture = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TroopTitle\Data\FactionPicture\" + node.Attributes.GetNamedItem("ColorPicture").Value);
             this.troopTitle.FactionColor1Background = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TroopTitle\Data\FactionPicture\" + node.Attributes.GetNamedItem("ColorBackground").Value);
+            this.troopTitle.FactionColor1Fill = LoadFactionFill(node);
             node = nextSibling.ChildNodes.Item(31);
             rectangle = StaticMethods.LoadRectangleFromXMLNode(node);
             StaticMethods.LoadFontAndColorFromXMLNode(node, out font, out color);
@@ -223,6 +225,7 @@ namespace TroopTitlePlugin
             rectangle = StaticMethods.LoadRectangleFromXMLNode(node);
             StaticMethods.LoadFontAndColorFromXMLNode(node, out font, out color);
             this.troopTitle.FactionName2Text = new FreeText(font, color);
+            this.troopTitle.FactionName2Color = color;
             this.troopTitle.FactionName2Text.Position = rectangle;
             this.troopTitle.FactionName2Text.Align = (TextAlign)Enum.Parse(typeof(TextAlign), node.Attributes.GetNamedItem("Align").Value);
             this.troopTitle.FactionName2Position.X = int.Parse(node.Attributes.GetNamedItem("X").Value);
@@ -236,6 +239,7 @@ namespace TroopTitlePlugin
             this.troopTitle.FactionColor2Position = StaticMethods.LoadRectangleFromXMLNode(node);
             this.troopTitle.FactionColor2Picture = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TroopTitle\Data\FactionPicture\" + node.Attributes.GetNamedItem("ColorPicture").Value);
             this.troopTitle.FactionColor2Background = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TroopTitle\Data\FactionPicture\" + node.Attributes.GetNamedItem("ColorBackground").Value);
+            this.troopTitle.FactionColor2Fill = LoadFactionFill(node);
             node = nextSibling.ChildNodes.Item(61);
             rectangle = StaticMethods.LoadRectangleFromXMLNode(node);
             StaticMethods.LoadFontAndColorFromXMLNode(node, out font, out color);
@@ -289,6 +293,13 @@ namespace TroopTitlePlugin
             this.troopTitle.TirednessTexture = this.LoadTirednessIcon(nextSibling, "TirednessIcon", out this.troopTitle.TirednessIconPosition);
             this.troopTitle.TheTiredness1Texture = this.LoadTirednessIcon(nextSibling, "TheTirednessIcon1", out this.troopTitle.TheTirednessIcon1Position);
             this.troopTitle.TheTiredness2Texture = this.LoadTirednessIcon(nextSibling, "TheTirednessIcon2", out this.troopTitle.TheTirednessIcon2Position);
+        }
+
+        // 旗面整块填势力色用的白色蒙版，没配 ColorFill 就只描边
+        private PlatformTexture LoadFactionFill(XmlNode node)
+        {
+            XmlNode fill = node.Attributes.GetNamedItem("ColorFill");
+            return fill == null ? null : CacheManager.GetTempTexture(DataPath + @"FactionPicture\" + fill.Value);
         }
 
         private PlatformTexture LoadTirednessIcon(XmlNode root, string name, out Microsoft.Xna.Framework.Rectangle position)
