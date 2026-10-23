@@ -11,6 +11,7 @@ using System;
 //using System.Drawing;
 using System.Xml;
 using WorldOfTheThreeKingdoms;
+using WorldOfTheThreeKingdoms.GameScreens;
 
 namespace ArchitectureDetail
 {
@@ -25,6 +26,10 @@ namespace ArchitectureDetail
         private string pluginName = "ArchitectureDetailPlugin";
         private string version = "1.0.0";
         private const string XMLFilename = "ArchitectureDetailData.xml";
+        // 建筑详情改用Myra绘制的ArchitectureDetailDialog，旧界面先保留，改成false就切回旧界面
+        private static readonly bool UseMyraDialog = true;
+        // 列表里点建筑时先设置建筑、再设置IsShowing，Myra页面在设置IsShowing时才打开
+        private Architecture pendingArchitecture;
 
         public void Dispose()
         {
@@ -2794,6 +2799,11 @@ namespace ArchitectureDetail
 
         public void SetArchitecture(object architecture)
         {
+            if (UseMyraDialog)
+            {
+                this.pendingArchitecture = architecture as Architecture;
+                return;
+            }
             this.architectureDetail.SetArchitecture(architecture as Architecture);
             /////以下添加
             if (this.architectureDetail.Switch1 == "on")
@@ -2894,6 +2904,15 @@ namespace ArchitectureDetail
             }
             set
             {
+                if (UseMyraDialog)
+                {
+                    if (value && this.pendingArchitecture != null)
+                    {
+                        ArchitectureDetailDialog.Show(this.pendingArchitecture);
+                    }
+                    this.pendingArchitecture = null;
+                    return;
+                }
                 this.architectureDetail.IsShowing = value;
             }
         }

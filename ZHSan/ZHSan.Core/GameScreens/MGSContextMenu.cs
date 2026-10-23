@@ -147,7 +147,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             switch (result)
             {
                 case ContextMenuResult.Architecture_Detail:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Architecture, FrameFunction.Browse, false, true, false, false, this.CurrentArchitecture.GetGameObjectList(), null, "", "");
+                    ArchitectureDetailDialog.Show(this.CurrentArchitecture);
                     break;
 
                 case ContextMenuResult.Architecture_Persons:

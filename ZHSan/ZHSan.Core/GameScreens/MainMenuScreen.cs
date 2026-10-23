@@ -136,7 +136,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         string[] hards1 = new string[] { "beginner", "easy", "normal", "hard", "veryhard", "custom" };
         string[] hards2 = new string[] { "入门", "初级", "上级", "超级", "修罗", "自订" };
 
-        string[] AvaliableResolutions = new string[] { "1024*768", "1280*720", "1368*768", "1440*900", "1920*1080" };
+        string[] AvaliableResolutions = new string[] { "1024*768", "1280*720", "1368*768", "1440*900", "1920*1080", "2560*1440", "3840*2160" };
 
         //private bool doNotSetDifficultyToCustom = false;
 
