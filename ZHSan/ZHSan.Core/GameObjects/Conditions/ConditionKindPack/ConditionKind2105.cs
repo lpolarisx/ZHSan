@@ -7,6 +7,6 @@ public class ConditionKind2105 : ConditionKind
 {
     public override bool CheckConditionKind(Condition condition, Architecture arch)
     {
-        return arch.AgricultureCeiling > 0 && arch.Agriculture / arch.AgricultureCeiling >= condition.GetFloatParam();
+        return arch.AgricultureCeiling > 0 && (float)arch.Agriculture / arch.AgricultureCeiling >= condition.GetFloatParam();
     }
 }

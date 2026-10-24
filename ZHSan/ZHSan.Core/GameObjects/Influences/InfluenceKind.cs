@@ -329,11 +329,28 @@ public class InfluenceKind : GameObject
 
     public void PurifyFromEntry(Faction faction, Influence influence, Applier applier, int id)
     {
-        if (!AppliesToFaction) return;
+        // 与 ApplyFromEntry(Faction) 对称：势力入口施加时会展开到建筑/部队/人物，移除时也要同样展开
+        if (AppliesToFaction)
+        {
+            PurifyFromFaction(influence, faction, applier, id);
+            return;
+        }
 
-        PurifyFromFaction(influence, faction, applier, id);
-        PurifyFromArchitectures(influence, faction.Architectures, applier, id);
-        PurifyFromTroops(influence, faction.Troops, applier, id);
+        if (AppliesToArchitecture)
+        {
+            PurifyFromArchitectures(influence, faction.Architectures, applier, id);
+            return;
+        }
+
+        if (AppliesToTroop)
+        {
+            PurifyFromTroops(influence, faction.Troops, applier, id);
+        }
+
+        if (AppliesToPerson)
+        {
+            PurifyFromPersons(influence, faction.Persons, applier, id);
+        }
     }
 
     public void PurifyFromEntry(Person person, Influence influence, Applier applier, int id)

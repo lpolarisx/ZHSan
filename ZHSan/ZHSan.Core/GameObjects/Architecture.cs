@@ -6249,6 +6249,9 @@ namespace GameObjects
         {
             SetRecentlyAttacked();
 
+            // 城墙已破时不再扣耐久，也不重复触发破城状态
+            if (Endurance <= 0) return 0;
+
             var realDecrement = 0;
             if (Endurance > decrement)
             {
@@ -6257,10 +6260,11 @@ namespace GameObjects
             }
             else
             {
+                // 先记下剩余耐久再清零，破城这一击也要扣设施耐久
+                realDecrement = Endurance;
                 Endurance = 0;
                 RecentlyBreaked = 30;
                 WallStateChange();
-                realDecrement = Endurance;
             }
 
             DecreaseFacilityEndurance(realDecrement);

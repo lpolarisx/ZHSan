@@ -74,7 +74,7 @@ namespace GameObjects
 
                 Endurance += Math.Max(1, increase);
 
-                Endurance = Math.Max(Endurance, EnduranceCeiling);
+                Endurance = Math.Min(Endurance, EnduranceCeiling);
             }
         }
 
