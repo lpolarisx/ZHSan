@@ -516,7 +516,7 @@ public class MilitaryKind : GameObject
             return false;
         }
 
-        if (CreateBesideWater && arch.IsBesideWater)
+        if (CreateBesideWater && !arch.IsBesideWater)
         {
             return false;
         }
