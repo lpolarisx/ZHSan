@@ -388,20 +388,25 @@ namespace GameObjects
                     }
                     if (baseViewArea == null || troop.BelongedFaction == null) return false;
                     
+                    var matched = new bool[TargetPersons.Count];
                     int num = 0;
                     foreach (var point in baseViewArea.Area)
                     {
                         if (!troop.BelongedFaction.IsPositionKnown(point)) continue;
-                        
+
                         var troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
                         if (troopByPositionNoCheck == null) continue;
-                        
-                        foreach (var relation in TargetPersons)
+
+                        bool friendly = troop.IsFriendly(troopByPositionNoCheck.BelongedFaction);
+                        for (int i = 0; i < TargetPersons.Count; i++)
                         {
-                            if (relation.Relation == PersonRelationKind.友好 
-                                && troop.IsFriendly(troopByPositionNoCheck.BelongedFaction) 
+                            if (matched[i]) continue;
+
+                            var relation = TargetPersons[i];
+                            if ((relation.Relation == PersonRelationKind.友好) == friendly
                                 && troopByPositionNoCheck.Persons.Contains(relation.SpeakingPerson))
                             {
+                                matched[i] = true;
                                 num++;
                             }
                         }
@@ -497,12 +502,13 @@ namespace GameObjects
             {
                 int personId = int.Parse(strArray[i + 1]);
 
-                if (persons.TryGetValue(personId, out var person))
+                // 兼容旧存档：之前误存成枚举名（如“友好”）而非数字
+                if (persons.TryGetValue(personId, out var person) && Enum.TryParse(strArray[i], out PersonRelationKind relation))
                 {
                     personRelations.Add(new PersonRelation
                     {
                         SpeakingPerson = person,
-                        Relation = (PersonRelationKind)int.Parse(strArray[i])
+                        Relation = relation
                     });
                 }
             }
@@ -546,7 +552,7 @@ namespace GameObjects
             var sb = new StringBuilder();
             foreach (var relation in TargetPersons)
             {
-                sb.Append(relation.Relation).Append(' ').Append(relation.SpeakingPerson.ID).Append(' ');
+                sb.Append((int)relation.Relation).Append(' ').Append(relation.SpeakingPerson.ID).Append(' ');
             }
             return sb.ToString();
         }

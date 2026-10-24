@@ -2180,6 +2180,7 @@ namespace GameObjects
             if (PositionOutOfRange(position)) return result;
 
             var routePoints = MapTileData[position.X, position.Y].SupplyingRoutePoints;
+            if (routePoints == null) return result;
 
             foreach (var point in routePoints)
             {
