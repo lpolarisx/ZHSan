@@ -274,15 +274,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (this.dantiaoLayer != null)
             {
+                //单挑全屏显示，其余界面暂不绘制
                 this.dantiaoLayer.Draw();
+
+                if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop || Platform.PlatFormType == PlatFormType.UWP && !Platform.IsMobile)
+                {
+                    this.DrawMouseArrow();
+                }
+                return;
             }
 
             this.tileAnimationLayer.Draw(base.viewportSize);
-            
-            if (this.dantiaoLayer == null)//防止结果结算在单挑界面出现前
-            {
-                this.troopLayer.Draw(base.viewportSize, gameTime);
-            }
+
+            this.troopLayer.Draw(base.viewportSize, gameTime);
             
             this.mapVeilLayer.Draw(base.viewportSize);
 

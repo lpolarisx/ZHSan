@@ -128,6 +128,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         List<CheckBox> btScenarioPlayersList = new List<CheckBox>();
         //List<ButtonTexture> btScenarioPlayersListPaged = new List<ButtonTexture>();
 
+        List<ButtonTexture> btDantiaoFactionsList = new List<ButtonTexture>();
+        List<ButtonTexture> btDantiaoFactionsListPaged = new List<ButtonTexture>();
+
+        //主菜单阶段没有当前剧本，Faction.Persons/Leader不可用，按势力预先分好武将
+        Dictionary<int, List<Person>> dantiaoFactionPersons = new Dictionary<int, List<Person>>();
+
+        List<Person> DantiaoPersonsOf(Faction f) => dantiaoFactionPersons.GetValueOrDefault(f.ID) ?? new List<Person>();
+
+        Dictionary<int, int> dantiaoFactionCities = new Dictionary<int, int>();
+
         List<ButtonTexture> btDantiaoPlayersList = new List<ButtonTexture>();
         List<ButtonTexture> btDantiaoPlayersListPaged = new List<ButtonTexture>();
 
@@ -408,7 +418,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                             //InitConfig();
 
-                            MenuType = MenuType.New;
+                            //单挑结束后回到主菜单首页
+                            MenuType = MenuType.None;
+                            selectfaction = false;
+                            dantiao = false;
 
                             btScenarioSelectList.ForEach(bt =>
                             {
@@ -418,6 +431,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             btScenarioPlayersList.Clear();
 
                             pageIndex1 = 1;
+
+                            CurrentScenario.Players = String.Join(",", ScreenLayers.DantiaoLayer.Persons.GetLast(2).Select(pe => pe.BelongedFaction.ID).Distinct());
 
                             Session.StartScenario(CurrentScenario, false);
 
@@ -2556,6 +2571,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                         ScreenLayers.DantiaoLayer.Persons = new List<Person>();
 
+                        var loadingName = CurrentScenario.Name;
+
                         new Task(() =>
                         {
 
@@ -2564,25 +2581,29 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                 Platform.Sleep(100);
                             }
 
-                            var scenarioName = $@"Content\Data\Scenario\{CurrentScenario.Name}.json";
+                            var loaded = MainGameScreen.LoadScenarioData(loadingName, true);
 
-                            scenario = MainGameScreen.LoadScenarioData(scenarioName, true);
+                            var factionButtons = new List<ButtonTexture>();
 
-                            var factions = scenario.Factions;
+                            var personsByFaction = loaded.AllPersons.Values
+                                .Where(p => p.BelongedFaction != null)
+                                .GroupBy(p => p.BelongedFaction.ID)
+                                .ToDictionary(g => g.Key, g => g.ToList());
 
-                            btScenarioPlayersList = new List<CheckBox>();
+                            var citiesByFaction = loaded.Architectures.Values
+                                .Where(a => a.BelongedFaction != null)
+                                .GroupBy(a => a.BelongedFaction.ID)
+                                .ToDictionary(g => g.Key, g => g.Count());
 
-                            for (int i = 0; i < factions.Count; i++)
+                            foreach (var id0 in loaded.Factions.Values)
                             {
-                                var id0 = factions[i];
-                                var btPlayer = new CheckBox(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", "", null)
+                                var btPlayer = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", null)
                                 {
-                                    ID = id0.Name,
-                                    bounds = new List<FontStashSharp.Bounds>()
+                                    ID = id0.Name
                                 };
                                 btPlayer.OnButtonPress += (sender0, e0) =>
                                 {
-                                    var btP = (CheckBox)sender0;
+                                    var btP = (ButtonTexture)sender0;
                                     var id1 = btP.ID;
 
                                     faction = scenario.Factions.Values.FirstOrDefault(fi => fi.Name == id1);
@@ -2595,9 +2616,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                                     btDantiaoPlayersList = new List<ButtonTexture>();
 
-                                    for (int j = 0; j < faction.Persons.Count; j++)
+                                    var factionPersons = DantiaoPersonsOf(faction);
+
+                                    for (int j = 0; j < factionPersons.Count; j++)
                                     {
-                                        var per = faction.Persons[j] as Person;
+                                        var per = factionPersons[j];
                                         var btPer = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", null)
                                         {
                                             ID = per.Name
@@ -2606,7 +2629,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                         {
                                             var btG = (ButtonTexture)sender1;
 
-                                            var person = faction.Persons.FirstOrDefault(x => x.Name == btG.ID);
+                                            var person = factionPersons.FirstOrDefault(x => x.Name == btG.ID);
 
                                             ScreenLayers.DantiaoLayer.Persons.Add(person);
 
@@ -2626,10 +2649,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                     pageIndex2 = 1;
 
                                 };
-                                btScenarioPlayersList.Add(btPlayer);
+                                factionButtons.Add(btPlayer);
                             }
 
                             pageIndex1 = 1;
+
+                            //加载期间又换了剧本，丢弃这次结果
+                            if (CurrentScenario?.Name != loadingName) return;
+
+                            //列表建好后再公开，避免主线程读到一半
+                            btDantiaoFactionsList = factionButtons;
+                            dantiaoFactionPersons = personsByFaction;
+                            dantiaoFactionCities = citiesByFaction;
+                            scenario = loaded;
 
                         }).Start();
                     }
@@ -3577,14 +3609,17 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         if (faction == null)
                         {
-                            //btScenarioPlayersListPaged = GenericTools.GetPageList<CheckBox>(btScenarioPlayersList, pageIndex1.ToString(), 15, ref pageCount1, ref page1);
+                            if (scenario != null)
+                            {
+                                btDantiaoFactionsListPaged = GenericTools.GetPageList<ButtonTexture>(btDantiaoFactionsList, pageIndex1.ToString(), 15, ref pageCount1, ref page1);
 
-                            //for (int i = 0; i < btScenarioPlayersListPaged.Count; i++)
-                            //{
-                            //    var btOne = btScenarioPlayersListPaged[i];
-                            //    btOne.Position = new Vector2(480, 151 + 24 * i);
-                            //    btOne.Update();
-                            //}
+                                for (int i = 0; i < btDantiaoFactionsListPaged.Count; i++)
+                                {
+                                    var btOne = btDantiaoFactionsListPaged[i];
+                                    btOne.Position = new Vector2(480, 151 + 24 * i);
+                                    btOne.Update();
+                                }
+                            }
                         }
                         else
                         {
@@ -4495,6 +4530,25 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         {
                             if (faction == null)
                             {
+                                btDantiaoFactionsListPaged.ForEach(bt =>
+                                {
+                                    var fac = scenario.Factions.Values.FirstOrDefault(f => f.Name == bt.ID);
+                                    if (fac == null) return;
+
+                                    bt.Scale = 0.5f;
+                                    bt.Draw(null, Color.White * alpha);
+
+                                    var color = bt.MouseOver ? Color.Yellow : Color.White;
+                                    CacheManager.DrawString(Session.Current.Font, fac.Name, bt.Position + new Vector2(30, 2), color * alpha, 0f, Vector2.Zero, 0.5f, SpriteEffects.None, 1f);
+                                    var leader = scenario.AllPersons.GetValueOrDefault(fac.LeaderID);
+                                    CacheManager.DrawString(Session.Current.Font, leader?.Name ?? "", bt.Position + new Vector2(100, 2), color * alpha, 0f, Vector2.Zero, 0.5f, SpriteEffects.None, 1f);
+                                    CacheManager.DrawString(Session.Current.Font, dantiaoFactionCities.GetValueOrDefault(fac.ID).ToString(), bt.Position + new Vector2(192, 2), color * alpha, 0f, Vector2.Zero, 0.5f, SpriteEffects.None, 1f);
+                                    if (bt.MouseOver && leader != null)
+                                    {
+                                        CacheManager.DrawZhsanAvatar(leader, new Rectangle(221, 81, 191, 191), 0f, PortraitSize.Medium, Color.White * alpha, PortraitDefaultType.Military);
+                                    }
+                                });
+
                                 //    btScenarioPlayersListPaged.ForEach(bt =>
                                 //    {
                                 //        int index = btScenarioPlayersList.IndexOf(bt);
@@ -4550,7 +4604,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                                     Color color = bt.Selected ? Color.Yellow : Color.White;
                                     if (index >= 0)
                                     {
-                                        var person = faction.Persons[index] as Person;
+                                        var person = DantiaoPersonsOf(faction)[index];
 
                                         bt.Scale = 0.5f;
                                         bt.Draw(null, Color.White * alpha);
