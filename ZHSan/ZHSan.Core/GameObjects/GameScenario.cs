@@ -3151,7 +3151,7 @@ namespace GameObjects
 
                 if (person == null)
                 {
-                    logger.Error($"兄弟关系的人物Id: [{key}]不存在");
+                    logger.Information($"兄弟关系的人物Id: [{key}]不存在");
                     continue;
                 }
 
@@ -3170,7 +3170,7 @@ namespace GameObjects
                     }
                     else
                     {
-                        logger.Error($"兄弟关系的兄弟人物Id: [{id}]不存在");
+                        logger.Information($"兄弟关系的兄弟人物Id: [{id}]不存在");
                     }
                 }
 
@@ -3230,7 +3230,7 @@ namespace GameObjects
 
                 if (person == null)
                 {
-                    logger.Error($"亲密关系的人物Id: [{key}]不存在");
+                    logger.Information($"亲密关系的人物Id: [{key}]不存在");
                     continue;
                 }
 
@@ -3244,7 +3244,7 @@ namespace GameObjects
                     }
                     else
                     {
-                        logger.Error($"亲密关系的亲爱人物Id: [{id}]不存在");
+                        logger.Information($"亲密关系的亲爱人物Id: [{id}]不存在");
                     }
                 }
             }
@@ -3255,7 +3255,7 @@ namespace GameObjects
 
                 if (person == null)
                 {
-                    logger.Error($"厌恶关系的人物Id: [{key}]不存在");
+                    logger.Information($"厌恶关系的人物Id: [{key}]不存在");
                     continue;
                 }
 
@@ -3269,7 +3269,7 @@ namespace GameObjects
                     }
                     else
                     {
-                        logger.Error($"厌恶关系的厌恶人物Id: [{id}]不存在");
+                        logger.Information($"厌恶关系的厌恶人物Id: [{id}]不存在");
                     }
                 }
             }
@@ -3280,7 +3280,7 @@ namespace GameObjects
 
                 if (person == null)
                 {
-                    logger.Error($"所属关系的人物Id: [{key}]不存在");
+                    logger.Information($"所属关系的人物Id: [{key}]不存在");
                     continue;
                 }
 
@@ -3294,7 +3294,7 @@ namespace GameObjects
                     }
                     else
                     {
-                        logger.Error($"所属关系的所属人物Id: [{id}]不存在");
+                        logger.Information($"所属关系的所属人物Id: [{id}]不存在");
                     }
                 }
             }
@@ -3372,11 +3372,11 @@ namespace GameObjects
 
                 if (person == null)
                 {
-                    logger.Error($"人物关系, 人物Id: [{id}]不存在");
+                    logger.Information($"人物关系, 人物Id: [{id}]不存在");
                 }
                 if (otherPerson == null)
                 {
-                    logger.Error($"人物关系, 其他人物Id: [{otherId}]不存在");
+                    logger.Information($"人物关系, 其他人物Id: [{otherId}]不存在");
                 }
             }
 
@@ -3388,7 +3388,7 @@ namespace GameObjects
                     var person = AllPersons.GetValueOrDefault(personId);
                     if (person == null)
                     {
-                        logger.Error($"俘虏Id: [{captive.ID}], 人物Id: [{personId}]不存在");
+                        logger.Information($"俘虏Id: [{captive.ID}], 人物Id: [{personId}]不存在");
                         continue;
                     }
                     else
@@ -3407,7 +3407,7 @@ namespace GameObjects
                 var kindId = military.KindID;
                 if (!GameCommonData.AllMilitaryKinds.ContainsKey(kindId))
                 {
-                    logger.Error($"编队Id: [{military.ID}], 军队Id: [{kindId}]不存在");
+                    logger.Information($"编队Id: [{military.ID}], 军队Id: [{kindId}]不存在");
                     continue;
                 }
 
@@ -3445,7 +3445,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"建筑种类Id：{architecture.KindId}, 不存在");
+                    logger.Information($"建筑种类Id：{architecture.KindId}, 不存在");
                 }
 
                 var architectureId = architecture.ID;
@@ -3470,7 +3470,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"州域Id: [{stateId}]不存在");
+                    logger.Information($"州域Id: [{stateId}]不存在");
                 }
 
                 architecture.Characteristics = StaticMethods.LoadFromString(GameCommonData.AllInfluences, architecture.CharacteristicsString);
@@ -3577,7 +3577,7 @@ namespace GameObjects
                 var startArchitecture = Architectures.GetValueOrDefault(routeway.StartArchitectureString);
                 if (startArchitecture == null)
                 {
-                    logger.Error($"建筑Id: {routeway.StartArchitectureString}不存在");
+                    logger.Information($"建筑Id: {routeway.StartArchitectureString}不存在");
                 }
 
                 startArchitecture.Routeways.Add(routeway);
@@ -3603,7 +3603,7 @@ namespace GameObjects
 
                 if (troop.StartingArchitecture == null)
                 {
-                    logger.Error($"部队出发地Id: [{troop.StartingArchitectureString}]不存在");
+                    logger.Information($"部队出发地Id: [{troop.StartingArchitectureString}]不存在");
                 }
 
                 //troop.PersonsString = reader["Persons"].ToString();
@@ -3671,7 +3671,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"军区委任类型Id: [{section.AIDetailIDString}]不存在");
+                    logger.Information($"军区委任类型Id: [{section.AIDetailIDString}]不存在");
                 }
 
                 var sectionArchitectures = StaticMethods.LoadFromString(Architectures, section.ArchitecturesString).Values.ToList();
@@ -5226,7 +5226,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"条件类型Id:[{kindId}]不存在");
+                    logger.Information($"条件类型Id:[{kindId}]不存在");
                 }
             }
 
@@ -5239,7 +5239,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"影响类型Id:[{kindId}]不存在");
+                    logger.Information($"影响类型Id:[{kindId}]不存在");
                 }
             }
 
@@ -5252,7 +5252,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"事件影响类型Id:[{kindId}]不存在");
+                    logger.Information($"事件影响类型Id:[{kindId}]不存在");
                 }
             }
 
@@ -5265,7 +5265,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    logger.Error($"部队事件影响类型Id:[{kindId}]不存在");
+                    logger.Information($"部队事件影响类型Id:[{kindId}]不存在");
                 }
             }
         }

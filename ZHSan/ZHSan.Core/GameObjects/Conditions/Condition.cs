@@ -141,7 +141,7 @@ public class Condition : GameObject
             // 忽略不存在的条件类型，并重置negate
             if (conditionKind == null)
             {
-                logger.Error($"条件Id:[{condition.ID}]不存在种类");
+                logger.Information($"条件Id:[{condition.ID}]不存在种类");
                 negate = false;
                 result = false;
                 continue;
@@ -228,7 +228,7 @@ public class Condition : GameObject
 
             if (!conditions.TryGetValue(conditionId, out var condition))
             {
-                logger.Error($"条件Id:[{conditionIdStr}]不存在");
+                logger.Information($"条件Id:[{conditionIdStr}]不存在");
             }
 
             result.Add(condition, value);

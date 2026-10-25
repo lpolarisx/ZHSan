@@ -196,6 +196,12 @@ namespace GameManager
                 currentIndex = 0;
                 for (int j = 0; j < te.Length; j++)
                 {
+                    //扩展区生僻字占两个char（代理对），要一起取，不能拆开
+                    int charStart = j;
+                    if (char.IsHighSurrogate(te[j]) && j + 1 < te.Length && char.IsLowSurrogate(te[j + 1]))
+                    {
+                        j++;
+                    }
 
                     currentLine = te.Substring(currentIndex, j - currentIndex + 1);//取出当前索引位置前的所有文字用于判断这些文字是否超过行宽度
                     bound = font.GetFont(30).TextBounds(currentLine, new Vector2(0, i * pair.Size * scale), new Vector2(scale, scale));
@@ -203,11 +209,11 @@ namespace GameManager
 
                     //TextBounds已经按scale缩放过，不能再乘一次
                     //只有一个字就超宽时无法再拆，否则会一直原地换行
-                    if (bound.Width() > lineWidth && currentLine.Length > 1)//如果当前这些文字超过行宽的
+                    if (bound.Width() > lineWidth && charStart > currentIndex)//如果当前这些文字超过行宽的
                     {
-                        autoWrapText += (currentLine.Substring(0, currentLine.Length - 1) + '\n');//换行，并将当前行所有文字存入修改后的自动换行变量中
-                        currentIndex = j;
-                        j--;//当前的字超过行宽度，需要倒回去一个字开始继续处理
+                        autoWrapText += (te.Substring(currentIndex, charStart - currentIndex) + '\n');//换行，并将当前行所有文字存入修改后的自动换行变量中
+                        currentIndex = charStart;
+                        j = charStart - 1;//当前的字超过行宽度，需要倒回去一个字开始继续处理
                     }
                 }
 
@@ -261,7 +267,7 @@ namespace GameManager
             while (low < high)
             {
                 int mid = (low + high + 1) / 2;
-                if (MeasureText(text.Substring(0, mid) + ellipsis, scale).X <= maxWidth)
+                if (MeasureText(SafePrefix(text, mid) + ellipsis, scale).X <= maxWidth)
                 {
                     low = mid;
                 }
@@ -270,7 +276,19 @@ namespace GameManager
                     high = mid - 1;
                 }
             }
-            return text.Substring(0, low) + ellipsis;
+            return SafePrefix(text, low) + ellipsis;
+        }
+
+        /// <summary>
+        /// 取前length个char，如果正好切在代理对（扩展区生僻字）中间就少取一位，避免留下半个字
+        /// </summary>
+        public static string SafePrefix(string text, int length)
+        {
+            if (length > 0 && length < text.Length && char.IsHighSurrogate(text[length - 1]))
+            {
+                length--;
+            }
+            return text.Substring(0, length);
         }
         /*
         

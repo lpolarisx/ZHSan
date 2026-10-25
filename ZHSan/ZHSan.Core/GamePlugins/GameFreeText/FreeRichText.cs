@@ -192,23 +192,24 @@ namespace GameFreeText
             SimpleText text;
             string str = this.Texts[index].Text;
             int textWidth = 0;
-            int length = 1;
-            do
+            int length = 0;//能放进当前行的char数
+            while (length < str.Length)
             {
-                textWidth = GetTextWidth(str.Substring(0, length));  // this.Builder.GetTextWidth(str.Substring(0, length));
+                //扩展区生僻字占两个char（代理对），要一起取，不能拆开
+                int next = length + (char.IsHighSurrogate(str[length]) && length + 1 < str.Length ? 2 : 1);
+                textWidth = GetTextWidth(str.Substring(0, next));  // this.Builder.GetTextWidth(str.Substring(0, length));
                 if ((currentWidth + textWidth) >= this.ClientWidth)
                 {
                     break;
                 }
-                length++;
+                length = next;
             }
-            while (length <= str.Length);
-            if (length > str.Length)
+            if (length == str.Length)
             {
                 //暫去掉，待考慮
                 //throw new Exception("RichText Width Error.");
             }
-            if (length == 1)
+            if (length == 0)
             {
                 SimpleText local1 = this.Texts[index];
                 local1.Row++;
@@ -222,7 +223,7 @@ namespace GameFreeText
                 return false;
             }
             text = new SimpleText {
-                Text = str.Substring(length - 1),
+                Text = str.Substring(length),
                 TextColor = this.Texts[index].TextColor,
                 Row = this.Texts[index].Row + 1,
                 Builder = this.Builder,
@@ -237,7 +238,7 @@ namespace GameFreeText
                 this.currentRow = 0;
                 this.PageIndexs.Add(index + 1);
             }
-            this.Texts[index].Text = str.Substring(0, length - 1);
+            this.Texts[index].Text = str.Substring(0, length);
             //this.Texts[index].TextTexture = this.Builder.CreateTextTexture(this.Texts[index].Text);
             return true;
         }

@@ -352,7 +352,7 @@ namespace GameObjects
             var kind = InfluenceKindFactory.CreateInfluenceKindByID(id);
             if (kind == null)
             {
-                logger.Error($"影响类型Id:[{id}]不存在");
+                logger.Information($"影响类型Id:[{id}]不存在");
                 return null;
             }
 
@@ -373,7 +373,7 @@ namespace GameObjects
             var kind = ConditionKindFactory.CreateConditionKindByID(id);
             if (kind == null)
             {
-                logger.Error($"条件类型Id:[{id}]不存在");
+                logger.Information($"条件类型Id:[{id}]不存在");
                 return null;
             }
 
@@ -389,7 +389,7 @@ namespace GameObjects
             var kind = ArchitectureDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(id);
             if (kind == null)
             {
-                logger.Error($"建筑事件影响种类Id:[{id}]不存在");
+                logger.Information($"建筑事件影响种类Id:[{id}]不存在");
                 return null;
             }
 
@@ -405,7 +405,7 @@ namespace GameObjects
             var kind = TroopDetail.EventEffect.EventEffectKindFactory.CreateEventEffectKindByID(id);
             if (kind == null)
             {
-                logger.Error($"部队事件影响种类Id:[{id}]不存在");
+                logger.Information($"部队事件影响种类Id:[{id}]不存在");
                 return null;
             }
 

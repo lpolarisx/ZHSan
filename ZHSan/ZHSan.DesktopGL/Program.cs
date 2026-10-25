@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using Microsoft.Xna.Framework.Input;
 using Serilog;
+using Serilog.Events;
 using System.Text;
 using System.Runtime.InteropServices;
 
@@ -39,8 +40,11 @@ public static class Program
         // 配置Seriol日志
         var logTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} - {Message:lj}{NewLine}{Exception}";
 
+        // 挂着调试器（VSCode调试）时输出全部日志；直接运行exe（包括发给别人的Debug目录）只记警告以上
+        var minimumLevel = System.Diagnostics.Debugger.IsAttached ? LogEventLevel.Debug : LogEventLevel.Warning;
+
         Log.Logger = new LoggerConfiguration()
-                            .MinimumLevel.Debug()
+                            .MinimumLevel.Is(minimumLevel)
                             .WriteTo.Console(outputTemplate: logTemplate)
                             .WriteTo.File("logs/game.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 3, outputTemplate: logTemplate)
                             .CreateLogger();
