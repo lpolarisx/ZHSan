@@ -87,6 +87,9 @@ namespace GameManager
         //public Parameters gameParameters = new Parameters();
         //public GlobalVariables globalVariables = new GlobalVariables();
 
+        /// <summary>
+        /// 界面排版用的逻辑宽度。电脑版开了界面缩放时是窗口宽度除以缩放倍数
+        /// </summary>
         public static int ResolutionX
         {
             get
@@ -96,10 +99,13 @@ namespace GameManager
                 {
                     int.TryParse(Resolution.Split('*')[0].Trim(), out resolutionX);
                 }
-                return resolutionX;
+                return (int)Math.Round(resolutionX / UIScale);
             }
         }
 
+        /// <summary>
+        /// 界面排版用的逻辑高度。电脑版开了界面缩放时是窗口高度除以缩放倍数
+        /// </summary>
         public static int ResolutionY
         {
             get
@@ -109,7 +115,41 @@ namespace GameManager
                 {
                     int.TryParse(Resolution.Split('*')[1].Trim(), out resolutionY);
                 }
-                return resolutionY;
+                return (int)Math.Round(resolutionY / UIScale);
+            }
+        }
+
+        /// <summary>
+        /// 电脑版的界面缩放倍数。高分辨率下整个游戏界面按这个倍数放大，排版仍按窗口大小除以倍数后的逻辑分辨率。
+        /// 手机版有自己的缩放，这里固定为1
+        /// </summary>
+        /// <summary>
+        /// 当前画面绘制时乘的缩放倍数：开始菜单固定按1280x720放大，游戏里开了缩放时按SpriteScale2放大。
+        /// 自己开SpriteBatch或画布的地方用它换算，才能和游戏画面对齐
+        /// </summary>
+        public static Vector2 CurrentDrawScale
+        {
+            get
+            {
+                if (MainGame.mainGameScreen == null || MainGame.loadingScreen != null)
+                {
+                    return new Vector2(MainGame.SpriteScale1.M11, MainGame.SpriteScale1.M22);
+                }
+                return MainGame.disScale ? new Vector2(MainGame.SpriteScale2.M11, MainGame.SpriteScale2.M22) : Vector2.One;
+            }
+        }
+
+        private static bool IsDesktop => Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop;
+
+        public static float UIScale
+        {
+            get
+            {
+                if (!IsDesktop || Setting.Current == null || Setting.Current.UIScale == null || Setting.Current.UIScale <= 100)
+                {
+                    return 1f;
+                }
+                return Setting.Current.UIScale.Value / 100f;
             }
         }
 
@@ -421,6 +461,11 @@ namespace GameManager
 
             screenscalex2 = Convert.ToSingle(width) / Session.ResolutionX;  // 1120f;
             screenscaley2 = Convert.ToSingle(height) / Session.ResolutionY;  // 630f;
+            if (IsDesktop)
+            {
+                // 逻辑分辨率取整过，直接用缩放倍数，横竖一致不变形
+                screenscalex2 = screenscaley2 = UIScale;
+            }
 
             //screenScale = screenscalex >= screenscaley ? screenscaley : screenscalex;
 
@@ -440,13 +485,15 @@ namespace GameManager
             //}
 
             InputManager.ScaleDraw = new Vector2(1, 1);
-            if (setScale)
+            // 开了界面缩放时，在开始菜单里改分辨率也要按倍数放大
+            if (setScale || UIScale != 1f)
             {
                 InputManager.Scale2 = new Vector2(screenscalex2, screenscaley2);
                 Session.MainGame.disScale = true;
             }
             else
             {
+                InputManager.Scale2 = Vector2.One;
                 Session.MainGame.disScale = false;
             }
 

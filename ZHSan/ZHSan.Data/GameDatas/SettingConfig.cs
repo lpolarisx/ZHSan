@@ -17,6 +17,11 @@ public class SettingConfig
     
     public string Resolution { get; set; }
 
+    /// <summary>
+    /// 界面缩放百分比，只用于电脑版
+    /// </summary>
+    public int? UIScale { get; set; }
+
     public string GamerName { get; set; }
 
     //[DataMember]

@@ -24,6 +24,11 @@ namespace GameManager
         public string DisplayMode { get; set; }
         [DataMember]
         public string Resolution { get; set; }
+        /// <summary>
+        /// 界面缩放百分比，只用于电脑版。为空或100时不缩放
+        /// </summary>
+        [DataMember]
+        public int? UIScale { get; set; }
         [DataMember]
         public string GamerName { get; set; }
         //[DataMember]
@@ -75,6 +80,7 @@ namespace GameManager
             SoundVolume = config.SoundVolume;
             DisplayMode = config.DisplayMode;
             Resolution = config.Resolution;
+            UIScale = config.UIScale;
             GamerName = config.GamerName;
             SpeedUp = config.SpeedUp;
             Chuchangsuiji = config.Chuchangsuiji;
@@ -94,6 +100,7 @@ namespace GameManager
                 SoundVolume = SoundVolume,
                 DisplayMode = DisplayMode,
                 Resolution = Resolution,
+                UIScale = UIScale,
                 GamerName = GamerName,
                 SpeedUp = SpeedUp,
                 Chuchangsuiji = Chuchangsuiji,

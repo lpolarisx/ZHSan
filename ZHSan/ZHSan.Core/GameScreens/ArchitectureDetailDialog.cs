@@ -1022,6 +1022,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             // 只画图片的这一块，null时画整张
             private readonly Rectangle? source;
             private Texture2D texture;
+            // 材质相对原图的倍数，取到@2x高清图时是2
+            private float density = 1f;
 
             public TextureImage(string name, int width, int height, Rectangle? source = null)
             {
@@ -1036,11 +1038,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 if (this.texture == null || this.texture.IsDisposed)
                 {
-                    this.texture = CacheManager.LoadTexture(this.name);
+                    this.texture = CacheManager.LoadTextureForDraw(this.name, out this.density);
                 }
                 if (this.texture != null)
                 {
-                    context.Draw(this.texture, dest, this.source, color, 0f, 0f, null);
+                    context.Draw(this.texture, dest, CacheManager.ScaleSource(this.source, this.density), color, 0f, 0f, null);
                 }
             }
         }

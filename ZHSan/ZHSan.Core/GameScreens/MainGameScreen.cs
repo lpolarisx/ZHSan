@@ -3457,10 +3457,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             if (Platform.GraphicsDevice != null)
             {
+                // 电脑版开了界面缩放时，地图和界面按窗口大小除以缩放倍数的逻辑分辨率排版
+                int logicalWidth = (int)Math.Round(Platform.GraphicsDevice.Viewport.Width / Session.UIScale);
+                int logicalHeight = (int)Math.Round(Platform.GraphicsDevice.Viewport.Height / Session.UIScale);
                 if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
                 {
-                    this.viewportSize.X = Platform.GraphicsDevice.Viewport.Width;
-                    this.viewportSize.Y = Platform.GraphicsDevice.Viewport.Height - this.Plugins.ToolBarPlugin.Height;
+                    this.viewportSize.X = logicalWidth;
+                    this.viewportSize.Y = logicalHeight - this.Plugins.ToolBarPlugin.Height;
                 }
                 else
                 {
@@ -3468,8 +3471,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.viewportSize.Y = Convert.ToInt32(Session.ResolutionY - this.Plugins.ToolBarPlugin.Height - 10);  // Platform.GraphicsDevice.Viewport.Height - this.Plugins.ToolBarPlugin.Height;
                 }
 
-                this.viewportSizeFull.X = Platform.GraphicsDevice.Viewport.Width;
-                this.viewportSizeFull.Y = Platform.GraphicsDevice.Viewport.Height;
+                this.viewportSizeFull.X = logicalWidth;
+                this.viewportSizeFull.Y = logicalHeight;
 
                 this.Plugins.ToolBarPlugin.SetRealViewportSize(new Point(this.viewportSize.X, this.viewportSize.Y));
 

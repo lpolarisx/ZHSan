@@ -35,13 +35,32 @@ namespace GameManager
 
         public static Dictionary<string, Microsoft.Xna.Framework.Graphics.Texture2D> texs = new Dictionary<string, Microsoft.Xna.Framework.Graphics.Texture2D>();
 
+        // 字形按这个倍数生成，与界面缩放倍数一致，放大后文字才清楚
+        private static float fontResolutionFactor = 1f;
+
         public static void Init(string name, int size)
         {
             var bytes = Platform.Current.LoadFile(name);
 
-            font = new FontSystem();
+            fontResolutionFactor = (float)Math.Ceiling(Session.UIScale);
+            font = new FontSystem(new FontSystemSettings
+            {
+                FontResolutionFactor = fontResolutionFactor
+            });
             font.AddFont(bytes);
             //font = DynamicSpriteFont.FromTtf(bytes, size, 2048, 2048);
+        }
+
+        /// <summary>
+        /// 界面缩放倍数变了以后调用，按新的倍数重新生成字形。已经建好的Myra控件还拿着旧字体，要重新打开才生效
+        /// </summary>
+        public static void RefreshFontResolution()
+        {
+            if (font != null && fontResolutionFactor != (float)Math.Ceiling(Session.UIScale))
+            {
+                font.Dispose();
+                font = null;
+            }
         }
 
         public static void DrawTexts(string text, FontPair pair, Microsoft.Xna.Framework.Vector2 pos, Microsoft.Xna.Framework.Color color, int space = 0, float scale = 1f, float? depth = null)

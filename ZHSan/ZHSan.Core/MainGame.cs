@@ -437,7 +437,7 @@ namespace WorldOfTheThreeKingdoms
                 {
                     try
                     {
-                        if (screenshot == null || screenshot.GraphicsDevice == null)
+                        if (screenshot == null || screenshot.IsDisposed || screenshot.GraphicsDevice == null || screenshot.Width != Platform.GraphicsDevice.Viewport.Width || screenshot.Height != Platform.GraphicsDevice.Viewport.Height)
                         {
                             screenshot = new RenderTarget2D(Platform.GraphicsDevice, Platform.GraphicsDevice.Viewport.Width, Platform.GraphicsDevice.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.None);
                         }

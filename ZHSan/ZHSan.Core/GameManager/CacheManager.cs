@@ -316,12 +316,113 @@ namespace GameManager
             return tex;
         }
 
+        // 高清图放在原图旁边，文件名在扩展名前加@2x，宽高正好是原图的两倍。
+        // 只在开了界面缩放时使用；排版、点击判定仍按原图大小，画的时候再换算
+        private const string HiResSuffix = "@2x";
+        private const float HiResDensity = 2f;
+        // 原图名对应的高清图名，没有高清图时为null。文件是否存在只查一次
+        private static readonly Dictionary<string, string> hiResNames = new Dictionary<string, string>();
+
+        private static string GetHiResName(string name)
+        {
+            if (String.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+            lock (hiResNames)
+            {
+                if (hiResNames.TryGetValue(name, out string cached))
+                {
+                    return cached;
+                }
+            }
+            string result = null;
+            int dot = name.LastIndexOf('.');
+            int slash = Math.Max(name.LastIndexOf('/'), name.LastIndexOf('\\'));
+            if (dot > slash)
+            {
+                string candidate = name.Substring(0, dot) + HiResSuffix + name.Substring(dot);
+                if (Platform.Current.FileExists(candidate))
+                {
+                    result = candidate;
+                }
+            }
+            lock (hiResNames)
+            {
+                hiResNames[name] = result;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 取画图用的材质：开了界面缩放且有@2x高清图时取高清图。
+        /// density是材质相对原图的倍数，自己画的地方要把裁图区域乘上它、绘制倍数除以它
+        /// </summary>
+        public static Texture2D LoadTextureForDraw(string name, out float density)
+        {
+            return LoadTextureForDraw(name, false, false, out density);
+        }
+
+        private static Texture2D LoadTextureForDraw(string name, bool isUser, bool isTemp, out float density)
+        {
+            density = 1f;
+            if (!isUser && Session.UIScale > 1f)
+            {
+                string hiRes = GetHiResName(name);
+                if (hiRes != null)
+                {
+                    Texture2D hiResTexture = LoadTexture(hiRes, false, isTemp, TextureShape.None, null);
+                    if (hiResTexture != null && !hiResTexture.IsDisposed)
+                    {
+                        density = HiResDensity;
+                        return hiResTexture;
+                    }
+                }
+            }
+            return LoadTexture(name, isUser, isTemp, TextureShape.None, null);
+        }
+
+        /// <summary>
+        /// 把按原图算的裁图区域换算到高清图上
+        /// </summary>
+        public static Rectangle? ScaleSource(Rectangle? source, float density)
+        {
+            if (source == null || density == 1f)
+            {
+                return source;
+            }
+            Rectangle r = source.Value;
+            return new Rectangle((int)Math.Round(r.X * density), (int)Math.Round(r.Y * density), (int)Math.Round(r.Width * density), (int)Math.Round(r.Height * density));
+        }
+
+        // 按原图的坐标和倍数画，高清图在这里换算
+        private static void DrawTexture(Texture2D tex, float density, Vector2 pos, Rectangle? source, Color color, float rotation, Vector2 origin, Vector2 scale, SpriteEffects effect, float depth)
+        {
+            if (density != 1f)
+            {
+                source = ScaleSource(source, density);
+                origin *= density;
+                scale /= density;
+            }
+            Session.Current.SpriteBatch.Draw(tex, pos, source, color, rotation, origin, scale, effect, depth);
+        }
+
+        private static void DrawTexture(Texture2D tex, float density, Rectangle dest, Rectangle? source, Color color, float rotation, Vector2 origin, SpriteEffects effect, float depth)
+        {
+            if (density != 1f)
+            {
+                source = ScaleSource(source, density);
+                origin *= density;
+            }
+            Session.Current.SpriteBatch.Draw(tex, dest, source, color, rotation, origin, effect, depth);
+        }
+
         public static void Draw(string name, Vector2 pos, Color color)
         {
-            Texture2D tex = LoadTexture(name);
+            Texture2D tex = LoadTextureForDraw(name, out float density);
             if (tex != null && !tex.IsDisposed)
             {
-                Session.Current.SpriteBatch.Draw(tex, pos, color);
+                DrawTexture(tex, density, pos, null, color, 0f, Vector2.Zero, Vector2.One, SpriteEffects.None, 0f);
             }
         }
 
@@ -332,11 +433,11 @@ namespace GameManager
 
         public static Bounds Draw(string name, Vector2 pos, Rectangle? source, Color color, SpriteEffects effect, float scale, float depth = 0f)
         {
-            Texture2D tex = LoadTexture(name);
+            Texture2D tex = LoadTextureForDraw(name, out float density);
 
             if (tex != null && !tex.IsDisposed)
             {
-                Session.Current.SpriteBatch.Draw(tex, pos, source, color, 0f, Vector2.Zero, scale, effect, depth);
+                DrawTexture(tex, density, pos, source, color, 0f, Vector2.Zero, new Vector2(scale, scale), effect, depth);
             }
 
             if (source == null)
@@ -346,10 +447,10 @@ namespace GameManager
 
         public static void Draw(string name, Vector2 pos, Rectangle? source, Color color, SpriteEffects effect, Vector2 scale, float depth = 0f)
         {
-            Texture2D tex = LoadTexture(name);
+            Texture2D tex = LoadTextureForDraw(name, out float density);
             if (tex != null && !tex.IsDisposed)
             {
-                Session.Current.SpriteBatch.Draw(tex, pos, source, color, 0f, Vector2.Zero, scale, effect, depth);
+                DrawTexture(tex, density, pos, source, color, 0f, Vector2.Zero, scale, effect, depth);
             }
             else
             {
@@ -360,10 +461,10 @@ namespace GameManager
 
         public static void Draw(string name, Vector2 pos, Rectangle? source, Color color, float rotation, SpriteEffects effect, Vector2 scale)
         {
-            Texture2D tex = LoadTexture(name);
+            Texture2D tex = LoadTextureForDraw(name, out float density);
             if (tex != null && !tex.IsDisposed)
             {
-                Session.Current.SpriteBatch.Draw(tex, pos, source, color, rotation, Vector2.Zero, scale, effect, 0f);
+                DrawTexture(tex, density, pos, source, color, rotation, Vector2.Zero, scale, effect, 0f);
             }
         }
 
@@ -371,10 +472,10 @@ namespace GameManager
         {
             if (platformTexture != null && !String.IsNullOrEmpty(platformTexture.Name))
             {
-                Texture2D tex = LoadTexture(platformTexture.Name);
+                Texture2D tex = LoadTextureForDraw(platformTexture.Name, out float density);
                 if (tex != null && !tex.IsDisposed)
                 {
-                    Session.Current.SpriteBatch.Draw(tex, pos, source, color, rotation, origin, scale, effect, depth);
+                    DrawTexture(tex, density, pos, source, color, rotation, origin, new Vector2(scale, scale), effect, depth);
                 }
             }
         }
@@ -393,24 +494,24 @@ namespace GameManager
         {
             if (platformTexture != null && !String.IsNullOrEmpty(platformTexture.Name))
             {
-                Texture2D tex = LoadTexture(platformTexture.Name);
+                Texture2D tex = LoadTextureForDraw(platformTexture.Name, out float density);
                 if (tex != null && !tex.IsDisposed)
                 {
                     if (Scale != Vector2.One)
                     {
                         rec = new Rectangle(Convert.ToInt16(rec.X * Scale.X), Convert.ToInt16(rec.Y * Scale.Y), Convert.ToInt16(rec.Width * Scale.X), Convert.ToInt16(rec.Height * Scale.Y));
                     }
-                    Session.Current.SpriteBatch.Draw(tex, rec, source, color, rotation, origin, effect, depth);
+                    DrawTexture(tex, density, rec, source, color, rotation, origin, effect, depth);
                 }
             }
         }
 
         public static void Draw(string name, Rectangle dest, Color color)
         {
-            Texture2D tex = LoadTexture(name);
+            Texture2D tex = LoadTextureForDraw(name, out float density);
             if (tex != null && !tex.IsDisposed)
             {
-                Session.Current.SpriteBatch.Draw(tex, dest, color);
+                DrawTexture(tex, density, dest, null, color, 0f, Vector2.Zero, SpriteEffects.None, 0f);
             }
         }
 
@@ -459,10 +560,11 @@ namespace GameManager
         {
             if (!String.IsNullOrEmpty(name))
             {
-                Texture2D tex = LoadAvatar(name, isUser, isTemp, shape, shapeParams);
+                float density = 1f;
+                Texture2D tex = shape == TextureShape.None ? LoadTextureForDraw(name, isUser, isTemp, out density) : LoadAvatar(name, isUser, isTemp, shape, shapeParams);
                 if (tex != null && !tex.IsDisposed)
                 {
-                    Session.Current.SpriteBatch.Draw(tex, pos, null, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                    DrawTexture(tex, density, pos, null, color, 0f, Vector2.Zero, new Vector2(scale, scale), SpriteEffects.None, 0f);
                 }
             }
         }
@@ -471,24 +573,25 @@ namespace GameManager
         {
             if (!String.IsNullOrEmpty(name))
             {
-                Texture2D tex = LoadAvatar(name, isUser, isTemp, shape, shapeParams);
+                float density = 1f;
+                Texture2D tex = shape == TextureShape.None ? LoadTextureForDraw(name, isUser, isTemp, out density) : LoadAvatar(name, isUser, isTemp, shape, shapeParams);
                 if (tex != null && !tex.IsDisposed)
                 {
                     if (Scale != Vector2.One)
                     {
                         pos = new Rectangle(Convert.ToInt16(pos.X * Scale.X), Convert.ToInt16(pos.Y * Scale.Y), Convert.ToInt16(pos.Width * Scale.X), Convert.ToInt16(pos.Height * Scale.Y));
                     }
-                    Session.Current.SpriteBatch.Draw(tex, pos, null, color, 0f, Vector2.Zero, SpriteEffects.None, depth);
+                    DrawTexture(tex, density, pos, null, color, 0f, Vector2.Zero, SpriteEffects.None, depth);
                 }
             }
         }
 
         public static void DrawAvatar(string name, Vector2 pos, Color color, Vector2 scale, Rectangle? source = null, bool isUser = false, bool isTemp = true)
         {
-            Texture2D tex = LoadAvatar(name, isUser, isTemp, TextureShape.None, null);
+            Texture2D tex = LoadTextureForDraw(name, isUser, isTemp, out float density);
             if (tex != null && !tex.IsDisposed)
             {
-                Session.Current.SpriteBatch.Draw(tex, pos, source, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                DrawTexture(tex, density, pos, source, color, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             }
         }
 
@@ -538,7 +641,7 @@ namespace GameManager
         {
             var path = GetPersonPortraitPath(person, null, size);
 
-            return String.IsNullOrEmpty(path) ? null : LoadAvatar(path, false, true, TextureShape.None, null);
+            return String.IsNullOrEmpty(path) ? null : LoadTextureForDraw(path, false, true, out _);
         }
 
         /// <summary>

@@ -176,6 +176,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         ButtonTexture btnSmallResolution = null;
         ButtonTexture btnLargeResolution = null;
 
+        // 界面缩放百分比，高分辨率下把游戏界面整体放大
+        readonly int[] AvailableUIScales = new int[] { 100, 150, 200 };
+        ButtonTexture btnSmallUIScale = null;
+        ButtonTexture btnLargeUIScale = null;
+        // 界面缩放放在左边一列的最底下，游戏速度的下一行，标签和加减号与上面几行对齐
+        const int UIScaleLeft = 195;
+        const int UIScaleTop = 670;
+
         //public ButtonTexture btnTextureAlpha = null;
 
         List<ButtonTexture> cbAIHardList = null;
@@ -2317,6 +2325,21 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 }
             };
 
+            // 界面缩放的按钮位置在LayoutUIScaleRow里按文字宽度排
+            btnSmallUIScale = new ButtonTexture(@"Content\Textures\Resources\Start\NumberSetS", "Minus", null)
+            {
+                Position = new Vector2(600, 280),
+                Scale = 0.8f
+            };
+            btnSmallUIScale.OnButtonPress += (sender, e) => this.ChangeUIScale(-1);
+
+            btnLargeUIScale = new ButtonTexture(@"Content\Textures\Resources\Start\NumberSetS", "Plus", null)
+            {
+                Position = new Vector2(660, 280),
+                Scale = 0.8f
+            };
+            btnLargeUIScale.OnButtonPress += (sender, e) => this.ChangeUIScale(1);
+
             //btnTextureAlpha = new ButtonTexture(@"Content\Textures\Resources\Start\CheckBox", "CheckBox", new Vector2(50, 120 + 85 * 5f))
             //{
             //    ID = "AutoSave"
@@ -2520,6 +2543,39 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             };
 
             InitSetting();
+        }
+
+        private int GetUIScaleIndex()
+        {
+            int scale = Setting.Current.UIScale ?? 100;
+            int index = Array.IndexOf(AvailableUIScales, scale);
+            return index < 0 ? 0 : index;
+        }
+
+        private const string UIScaleLabel = "界面缩放";
+
+        private static string UIScaleText(int scale)
+        {
+            return scale + "%";
+        }
+
+        // 减号、加号与上面游戏速度的加减号对齐
+        private void LayoutUIScaleRow()
+        {
+            btnSmallUIScale.Position = new Vector2(nstSpeedUp.leftTexture.Position.X, UIScaleTop);
+            btnLargeUIScale.Position = new Vector2(nstSpeedUp.rightTexture.Position.X, UIScaleTop);
+        }
+
+        private void ChangeUIScale(int step)
+        {
+            int index = this.GetUIScaleIndex() + step;
+            if (index < 0 || index >= AvailableUIScales.Length)
+            {
+                return;
+            }
+            Setting.Current.UIScale = AvailableUIScales[index];
+            TextManager.RefreshFontResolution();
+            Session.ChangeDisplay(false);
         }
 
         void UnCheckTextBoxs()
@@ -4315,6 +4371,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     btnSmallResolution.Update();
 
                     btnLargeResolution.Update();
+
+                    this.LayoutUIScaleRow();
+                    int scaleIndex = this.GetUIScaleIndex();
+                    btnSmallUIScale.Enable = scaleIndex > 0;
+                    btnLargeUIScale.Enable = scaleIndex < AvailableUIScales.Length - 1;
+                    btnSmallUIScale.Update();
+                    btnLargeUIScale.Update();
                 }
 
                 //btnTextureAlpha.Update();
@@ -5065,6 +5128,18 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                     btnLargeResolution.Alpha = alpha;
                     btnLargeResolution.Draw();
+
+                    this.LayoutUIScaleRow();
+                    CacheManager.DrawString(Session.Current.Font, UIScaleLabel, new Vector2(UIScaleLeft, UIScaleTop), Color.White * alpha, 0f, Vector2.Zero, 0.7f, SpriteEffects.None, 1f);
+                    btnSmallUIScale.Alpha = alpha;
+                    btnSmallUIScale.Draw();
+                    // 数值放在两个按钮正中间
+                    string scaleText = UIScaleText(AvailableUIScales[this.GetUIScaleIndex()]);
+                    float textLeft = btnSmallUIScale.Position.X + btnSmallUIScale.Width;
+                    float textWidth = TextManager.MeasureText(scaleText, 0.8f).X;
+                    CacheManager.DrawString(Session.Current.Font, scaleText, new Vector2(textLeft + (btnLargeUIScale.Position.X - textLeft - textWidth) / 2, UIScaleTop), Color.White * alpha, 0f, Vector2.Zero, 0.8f, SpriteEffects.None, 1f);
+                    btnLargeUIScale.Alpha = alpha;
+                    btnLargeUIScale.Draw();
                 }
 
 

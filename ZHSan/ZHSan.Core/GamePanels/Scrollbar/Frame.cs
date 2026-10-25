@@ -94,6 +94,10 @@ namespace GamePanels.Scrollbar
         /// 画布的宽高
         /// </summary>
         public float CanvasWidth, CanvasHeight;
+
+        // 画布缩放前的大小，以及画布按多少倍生成。滚动、取可视范围都按缩放前的大小算
+        private int canvasLogicalWidth = 1, canvasLogicalHeight = 1;
+        private Vector2 canvasScale = Vector2.One;
         /// <summary>
         /// 画布的背景图片
         /// </summary>
@@ -250,7 +254,8 @@ namespace GamePanels.Scrollbar
                 RenderTargetBinding[] previousTargets = Platform.GraphicsDevice.GetRenderTargets();
                 Platform.GraphicsDevice.SetRenderTarget(renderTarget2D);//设置Draw到画布上
 
-                batch.Begin();
+                // 画布按缩放后的实际像素大小画，内容坐标不变
+                batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, Matrix.CreateScale(canvasScale.X, canvasScale.Y, 1));
 
                 if (BackgroundPic == null)
                     Platform.GraphicsDevice.Clear(BackgroundColor);//背景填充颜色
@@ -272,8 +277,11 @@ namespace GamePanels.Scrollbar
 
                 //在屏幕上将画布绘制到相应的可视框架内
                 //画布比可视框架小时只取画布内的部分，超出材质范围取样会把边缘像素拉伸出来
-                Rectangle source = Rectangle.Intersect(VisualFrame, Canvas.Bounds);
-                Session.Current.SpriteBatch.Draw(Canvas, Position, source, color * Aplha, 0f, Vector2.Zero, 1f, SpriteEffects.None, Depth);
+                Rectangle source = Rectangle.Intersect(VisualFrame, new Rectangle(0, 0, canvasLogicalWidth, canvasLogicalHeight));
+                // 取画布的那一块要换算成画布的实际像素，画回屏幕时再缩回去，屏幕上的缩放矩阵会把它放大回原样
+                Rectangle pixelSource = new Rectangle((int)Math.Round(source.X * canvasScale.X), (int)Math.Round(source.Y * canvasScale.Y),
+                    Math.Min((int)Math.Round(source.Width * canvasScale.X), Canvas.Width), Math.Min((int)Math.Round(source.Height * canvasScale.Y), Canvas.Height));
+                Session.Current.SpriteBatch.Draw(Canvas, Position, pixelSource, color * Aplha, 0f, Vector2.Zero, new Vector2(1f / canvasScale.X, 1f / canvasScale.Y), SpriteEffects.None, Depth);
             }
 
             //处理Auto类型的滚动条
@@ -331,8 +339,11 @@ namespace GamePanels.Scrollbar
         /// </summary>
         private void EnsureRenderTarget()
         {
-            int width = Math.Max(CanvasWidth.ConvertToIntPlus(), 1);
-            int height = Math.Max(CanvasHeight.ConvertToIntPlus(), 1);
+            canvasLogicalWidth = Math.Max(CanvasWidth.ConvertToIntPlus(), 1);
+            canvasLogicalHeight = Math.Max(CanvasHeight.ConvertToIntPlus(), 1);
+            canvasScale = Session.CurrentDrawScale;
+            int width = Math.Max((int)Math.Ceiling(canvasLogicalWidth * canvasScale.X), 1);
+            int height = Math.Max((int)Math.Ceiling(canvasLogicalHeight * canvasScale.Y), 1);
             if (renderTarget2D == null || renderTarget2D.IsDisposed || renderTarget2D.Width != width || renderTarget2D.Height != height)
             {
                 if (renderTarget2D != null)
@@ -453,9 +464,9 @@ namespace GamePanels.Scrollbar
             {
                 //画布比可视框架小时没有可滚动的距离，不能算出负的偏移
                 if (HasHorizontalScrollbar)
-                    VisualFrame.X = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Horizontal).FirstOrDefault().Value * Math.Max(Canvas.Width - VisualFrame.Width, 0));
+                    VisualFrame.X = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Horizontal).FirstOrDefault().Value * Math.Max(canvasLogicalWidth - VisualFrame.Width, 0));
                 if (HasVerticalScrollbar)
-                    VisualFrame.Y = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Vertical).FirstOrDefault().Value * Math.Max(Canvas.Height - VisualFrame.Height, 0));
+                    VisualFrame.Y = (int)(Scrollbars.Where(sb => sb.scrollbarType == ScrollbarType.Vertical).FirstOrDefault().Value * Math.Max(canvasLogicalHeight - VisualFrame.Height, 0));
             }
 
             ContentContorls.ForEach(cc => cc.UpdateCanvas());

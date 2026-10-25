@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Myra;
 using Myra.Graphics2D.UI;
@@ -28,7 +29,19 @@ namespace GameManager
             {
                 if (desktop == null)
                 {
-                    desktop = new Desktop();
+                    desktop = new Desktop
+                    {
+                        // Myra默认以排版区域的中心为原点缩放，放大后左上角会移出窗口。改成从左上角放大，和游戏画面的缩放一致
+                        TransformOrigin = Vector2.Zero
+                    };
+                    // Myra的Scale只放大绘制，排版仍按窗口的真实像素。这里给出除以缩放倍数后的大小，
+                    // 铺满窗口的遮罩放大后正好盖住整个窗口，居中的弹窗也还在正中
+                    desktop.BoundsFetcher = () =>
+                    {
+                        Viewport viewport = Platform.GraphicsDevice.Viewport;
+                        Vector2 scale = desktop.Scale;
+                        return new Rectangle(0, 0, (int)Math.Round(viewport.Width / scale.X), (int)Math.Round(viewport.Height / scale.Y));
+                    };
                 }
                 return desktop;
             }
@@ -126,7 +139,15 @@ namespace GameManager
             // 电脑上游戏的鼠标指针是自己画的，会被弹窗盖住，这里在最上层补画一次
             if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
             {
-                Session.Current.SpriteBatch.Begin();
+                // 鼠标位置是缩放前的逻辑坐标，要和游戏画面一样乘上缩放倍数
+                if (Session.MainGame.disScale)
+                {
+                    Session.Current.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, Session.MainGame.SpriteScale2);
+                }
+                else
+                {
+                    Session.Current.SpriteBatch.Begin();
+                }
                 CacheManager.Draw(MouseArrowTexture, InputManager.Position, Color.White);
                 Session.Current.SpriteBatch.End();
             }
