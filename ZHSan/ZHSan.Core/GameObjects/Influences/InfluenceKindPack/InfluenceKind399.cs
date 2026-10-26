@@ -9,6 +9,9 @@ public class InfluenceKind399 : InfluenceKind
 {
     public override void ApplyInfluenceKind(Influence influence, Troop troop)
     {
+        // 计略影响只在施计时有效，被特技等其他途径触发时没有当前计略/目标，直接跳过
+        if (troop.CurrentStratagem == null || troop.OrientationTroop == null) return;
+
         var rate = influence.GetFloatParam();
 
         var friendly = troop.OrientationTroop;

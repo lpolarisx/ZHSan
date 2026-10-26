@@ -43,6 +43,14 @@
     <Leaf Property="Name" Color="4286644223"></Leaf>
     <Leaf Text="，我等一定不会辜负他的在天之灵。" Color="4294967295"></Leaf>
   </Branch>
+  <Branch Name="AIMergeAgainstPlayer">
+    <Leaf Property="TextDestinationString" Color="4278255360"></Leaf>
+    <Leaf Text="势大，天下危矣！今" Color="4294967295"></Leaf>
+    <Leaf Property="TextResultString" Color="4278255360"></Leaf>
+    <Leaf Text="军并入我" Color="4294967295"></Leaf>
+    <Leaf Property="Name" Color="4286644223"></Leaf>
+    <Leaf Text="军，两家同心协力，共抗强敌！" Color="4294967295"></Leaf>
+  </Branch>
   <Branch Name="GameEndWithUnite">
     <Leaf Text="终于扫平了一切抵抗势力。" Color="4294967295"></Leaf>
   </Branch>

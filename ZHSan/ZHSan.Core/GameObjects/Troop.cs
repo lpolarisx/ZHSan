@@ -5785,6 +5785,8 @@ namespace GameObjects
 
         public bool GetCurrentStratagemSuccess(Troop troop, bool inevitableSuccess, bool invincible, bool lowerIntelligenceInvincible)
         {
+            if (this.CurrentStratagem == null || troop == null) return false;
+
             int num = 0;
             bool flag = false;
             if (!this.CurrentStratagem.Friendly)

@@ -752,7 +752,7 @@
                         this.BiographyText.AddNewLine();
                         this.BiographyText.AddText("剧本", this.BiographyText.SubTitleColor2);
                         this.BiographyText.AddText("：");
-                        String[] lineBrokenText = ShowingPerson.PersonBiography.InGame.Split('\n');
+                        String[] lineBrokenText = (ShowingPerson.PersonBiography.InGame ?? "").Split('\n');
                         foreach (String s in lineBrokenText)
                         {
                             this.BiographyText.AddText(s);
@@ -944,7 +944,7 @@
                 this.BiographyText.AddNewLine();
                 this.BiographyText.AddText("剧本", this.BiographyText.SubTitleColor2);
                 this.BiographyText.AddText("：");
-                String[] lineBrokenText = ShowingPerson.PersonBiography.InGame.Split('\n');
+                String[] lineBrokenText = (ShowingPerson.PersonBiography.InGame ?? "").Split('\n');
                 foreach (String s in lineBrokenText)
                 {
                     this.BiographyText.AddText(s);

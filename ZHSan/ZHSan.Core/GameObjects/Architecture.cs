@@ -12271,7 +12271,7 @@ namespace GameObjects
             {
                 if (IsRoutewayPossible(point))
                 {
-                    
+                    return true;
                 }
             }
 

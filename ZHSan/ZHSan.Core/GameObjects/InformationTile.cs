@@ -1,4 +1,5 @@
-﻿using GameEnums;
+﻿using Extensions;
+using GameEnums;
 using GameGlobal;
 using System;
 using System.Runtime.InteropServices;
@@ -83,7 +84,7 @@ namespace GameObjects
 
         public static string InformationString(InformationLevel level)
         {
-            return level.ToString();
+            return level.GetDescription();
         }
 
         public override string ToString()
