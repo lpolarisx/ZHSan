@@ -234,12 +234,14 @@ namespace GameObjects
                     damage.DestinationCombativityChange -= 20; 
                     break;
                 case 9: //9、P1武将被说服
+                    if (sourcePerson.IsFactionLeader) break;
                     Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, destinationPerson, sourcePerson, "被说服");
                     destinationPerson.ConvincePersonSuccess(sourcePerson);
                     damage.SourceCombativityChange -= 30;
                     damage.DestinationCombativityChange += 30;
                     break;
                 case 10: //10、P2武将被说服
+                    if (destinationPerson.IsFactionLeader) break;
                     Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, sourcePerson, destinationPerson, "被说服");
                     sourcePerson.ConvincePersonSuccess(destinationPerson);
                     damage.SourceCombativityChange += 30;

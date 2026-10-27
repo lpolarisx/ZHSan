@@ -51,13 +51,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 var gameParameters = Session.parametersTemp;  //.parametersBasic.Clone();
 
-                if (Session.Current.Scenario.GlobalVariables != null)
+                if (Session.Current.Scenario.ScenarioPersonNaturalDeath != null)
                 {
-                    if (Session.Current.Scenario.GlobalVariables.PersonNaturalDeath != null)
-                    {
-                        bool personNatureDeath = (bool)Session.Current.Scenario.GlobalVariables.PersonNaturalDeath;
-                        globalVariables.PersonNaturalDeath = personNatureDeath;
-                    }
+                    globalVariables.PersonNaturalDeath = Session.Current.Scenario.ScenarioPersonNaturalDeath;
                 }
 
                 if (InitializationFactionIDs.Count == 0)

@@ -4307,11 +4307,18 @@ namespace GameObjects
                 {
                     foreach (Person p in this.Persons)
                     {
-                        p.LocationTroop = null;
-                        if (p.LocationArchitecture == null)
+                        var destination = p.LocationArchitecture;
+                        if (destination == null || destination.BelongedFaction != this.BelongedFaction)
                         {
-                            p.LocationArchitecture = this.StartingArchitecture;
+                            destination = this.StartingArchitecture;
+                            if (destination == null || destination.BelongedFaction != this.BelongedFaction)
+                            {
+                                destination = this.BelongedFaction?.Architectures.FirstOrDefault(a => a.BelongedFaction == this.BelongedFaction && a.IsCapital)
+                                    ?? this.BelongedFaction?.Architectures.FirstOrDefault(a => a.BelongedFaction == this.BelongedFaction);
+                            }
                         }
+                        p.LocationTroop = null;
+                        p.LocationArchitecture = destination;
                     }
                     this.Persons.Clear();
                 }

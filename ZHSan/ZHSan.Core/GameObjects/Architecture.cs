@@ -14430,7 +14430,7 @@ namespace GameObjects
 
             foreach (Person person in Persons)
             {
-                if (person.ArrivingDays > 0) continue;
+                if (person.ArrivingDays > 0 || person.IsFactionLeader) continue;
 
                 if (BelongedFaction.Leader.isLegalFeiZi(person, true) || (BelongedFaction.IsAlien && BelongedFaction.Leader.isLegalFeiZiExcludeAge(person)))
                 {
@@ -14442,7 +14442,7 @@ namespace GameObjects
             {
                 var person = captive.CaptivePerson;
 
-                if (person.ArrivingDays > 0) continue;
+                if (person.ArrivingDays > 0 || person.IsFactionLeader) continue;
 
                 if (BelongedFaction.Leader.isLegalFeiZiExcludeAge(person))
                 {

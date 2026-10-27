@@ -975,6 +975,7 @@ namespace GameObjects
 
         public bool IsPersonForHouGong(Person p, bool forced, bool alreadyTaken = false)
         {
+            if (p.IsFactionLeader) return false;
             if (!this.Leader.isLegalFeiZiExcludeAge(p) || !p.isLegalFeiZiExcludeAge(this.Leader)) return false;
 
             if (p.Sex && p.Age >= 45) return false;
@@ -1493,6 +1494,13 @@ namespace GameObjects
                             this.Leader.WaitForFeiZi.WaitForFeiZi = null;
                             this.Leader.WaitForFeiZi = null;
                         }
+                        else if (this.Leader.WaitForFeiZi.Status != PersonStatus.Moving &&
+                            this.Leader.WaitForFeiZi.LocationArchitecture != this.Leader.LocationArchitecture)
+                        {
+                            // 对方没有在前往途中，不会再到达，取消等待（兼容旧存档中已卡住的情况）
+                            leader.WaitForFeiZi.WaitForFeiZi = null;
+                            leader.WaitForFeiZi = null;
+                        }
                     }
                 }
                 else if (this.Leader.Status == PersonStatus.Normal && this.Leader.LocationArchitecture != null &&
@@ -1539,7 +1547,7 @@ namespace GameObjects
                         {
                             var person = captive.CaptivePerson;
 
-                            if (person.ArrivingDays > 0) continue;
+                            if (person.ArrivingDays > 0 || person.IsFactionLeader) continue;
 
                             if (Leader.isLegalFeiZiExcludeAge(person) && person.LocationTroop == null)
                             {
@@ -1580,16 +1588,13 @@ namespace GameObjects
                                 }
                                 else
                                 {
-                                    if (toTake.NvGuan)
+                                    // 女官单独前往，不依赖跟随者（跟随者无法移动时女官不动，君主会一直等待）
+                                    toTake.MoveToArchitecture(dest, null, false, toTake.NvGuan, null);
+                                    if (toTake.LocationArchitecture == dest)
                                     {
-                                        toTake.NvGuanFollower(true, null).MoveToArchitecture(dest);
+                                        toTake.WaitForFeiZi = this.Leader;
+                                        this.Leader.WaitForFeiZi = toTake;
                                     }
-                                    else
-                                    {
-                                        toTake.MoveToArchitecture(dest);
-                                    }
-                                    toTake.WaitForFeiZi = this.Leader;
-                                    this.Leader.WaitForFeiZi = toTake;
                                 }
                             }
                             else
@@ -1603,16 +1608,13 @@ namespace GameObjects
                                 else
                                 {
                                     this.Leader.MoveToArchitecture(dest);
-                                    if (toTake.NvGuan)
+                                    // 女官单独前往，不依赖跟随者（跟随者无法移动时女官不动，君主会一直等待）
+                                    toTake.MoveToArchitecture(dest, null, false, toTake.NvGuan, null);
+                                    if (toTake.LocationArchitecture == dest)
                                     {
-                                        toTake.NvGuanFollower(true, null).MoveToArchitecture(dest);
+                                        toTake.WaitForFeiZi = this.Leader;
+                                        this.Leader.WaitForFeiZi = toTake;
                                     }
-                                    else
-                                    {
-                                        toTake.MoveToArchitecture(dest);
-                                    }
-                                    toTake.WaitForFeiZi = this.Leader;
-                                    this.Leader.WaitForFeiZi = toTake;
                                 }
                             }
                         }
@@ -3351,6 +3353,15 @@ namespace GameObjects
             Session.Current.Scenario.NewFaction(candidates, leaderChange, nonInherited);
         }
 
+        private bool CanInheritLeadership(Person person)
+        {
+            if (person == null || person == Leader || !person.Alive || person.YearBorn > Session.Current.Scenario.Date.Year)
+                return false;
+            if (person.Status == PersonStatus.Princess || person.IsFactionLeader)
+                return false;
+            return person.Available ? person.BelongedFaction == this : person.BelongedFaction == null || person.BelongedFaction == this;
+        }
+
         public Faction ChangeLeaderAfterLeaderDeath()
         {
             var leader = Leader;
@@ -3362,13 +3373,14 @@ namespace GameObjects
             Session.Current.Scenario.AvailablePersons.Remove(leader.ID);
 
             var year = Session.Current.Scenario.Date.Year;
-            var persons = Session.Current.Scenario.AllPersons.Values;
+            var persons = Session.Current.Scenario.AllPersons.Values.Where(CanInheritLeadership).ToList();
+            var factionPersons = Persons.Where(CanInheritLeadership).ToList();
 
             Person person2 = null;
             var list = new List<Person>();
             if (person2 == null)
             {
-                if (Prince != null && Prince != Leader && Prince.BelongedFaction == this)
+                if (CanInheritLeadership(Prince) && Prince.BelongedFaction == this)
                 {
                     person2 = this.Prince;
                 }
@@ -3450,7 +3462,7 @@ namespace GameObjects
                 list.Clear();
                 foreach (Person person3 in Leader.Brothers)
                 {
-                    if (person3 != Leader && person3.BelongedFaction == this)
+                    if (CanInheritLeadership(person3) && person3.BelongedFaction == this)
                     {
                         list.Add(person3);
                     }
@@ -3563,7 +3575,7 @@ namespace GameObjects
             if (person2 == null)
             {
                 list.Clear();
-                foreach (Person person3 in this.Persons)
+                foreach (Person person3 in factionPersons)
                 {
                     if (Leader.Ideal == person3.Ideal && person3.Sex == Leader.Sex && person3 != Leader)
                     {
@@ -3579,7 +3591,7 @@ namespace GameObjects
             if (person2 == null)
             {
                 list.Clear();
-                foreach (Person person3 in this.Persons)
+                foreach (Person person3 in factionPersons)
                 {
                     if (person3.Sex == Leader.Sex && person3 != Leader)
                     {
@@ -3595,7 +3607,7 @@ namespace GameObjects
             if (person2 == null)
             {
                 list.Clear();
-                foreach (Person person3 in this.Persons)
+                foreach (Person person3 in factionPersons)
                 {
                     if (person3 != Leader)
                     {
@@ -3620,6 +3632,7 @@ namespace GameObjects
                     Session.MainGame.mainGameScreen.xianshishijiantupian(person2, this.Capital.Name, TextMessageKind.PersonJoin, "PersonJoin", "", "", this.Name, false);
                     Session.Current.Scenario.YearTable.addGrownBecomeAvailableEntry(Session.Current.Scenario.Date, person2);
                 }
+                person2.PromoteFromNvGuan();
                 this.Leader = person2;
                 if (!((this.Leader.LocationTroop == null) || this.Leader.IsCaptive))
                 {

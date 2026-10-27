@@ -1479,7 +1479,8 @@ namespace GameObjects
             get
             {
                 return NvGuan && (suoshurenwuList.Count == 0 || (suoshurenwuList.Count == 1 && suoshurenwuList[0] == Spouse)) && 
-                    ((Session.Current.Scenario.GlobalVariables.PersonNaturalDeath == true && Age < 16) || (Session.Current.Scenario.GlobalVariables.PersonNaturalDeath != true && DaySinceAvailable < 360));
+                    // 登场一年内可提拔；年龄有效时未满16岁的也可提拔
+                    (DaySinceAvailable < 360 || (Session.Current.Scenario.GlobalVariables.PersonNaturalDeath == true && Age < 16));
             }
         }
 
@@ -3354,6 +3355,8 @@ namespace GameObjects
             }
         }
 
+        public bool IsFactionLeader => Session.Current.Scenario.Factions.Values.Any(f => !f.Destroyed && f.LeaderID == ID);
+
         public bool CanConvince(Person target)
         {
             bool ConvinceSuccess;
@@ -3365,7 +3368,7 @@ namespace GameObjects
 
             if (architectureByPosition == null) return false;
 
-            if (target.BelongedFaction != null && target.BelongedFaction.Leader == target) return false;
+            if (target.IsFactionLeader) return false;
 
             int idealOffset = Person.GetIdealOffset(target, this.BelongedFaction.Leader) - this.ConvinceIdealSkip;
 
@@ -3467,7 +3470,7 @@ namespace GameObjects
         public void ConvincePersonSuccess(Person person)
         {
             //盗贼不能说服武将
-            if (BelongedFaction == null) return;
+            if (BelongedFaction == null || person.IsFactionLeader) return;
 
             GameObjects.Faction belongedFaction = null;
             if (person.BelongedFaction != null && this.BelongedFaction != null)
@@ -6103,7 +6106,7 @@ namespace GameObjects
             var result = new List<Person>();
             foreach (var person in factionPersons)
             {
-                if (person.NvGuan && person.NvGuanFollower(includeFallback, oldFaction) == this)
+                if (person.NvGuan && !person.IsFactionLeader && person.NvGuanFollower(includeFallback, oldFaction) == this)
                 {
                     result.Add(person);
                 }
@@ -8851,6 +8854,8 @@ namespace GameObjects
 
         public bool RecruitableBy(Faction f, int idealLeniency)
         {
+            if (IsFactionLeader) return false;
+
             int idealOffset = Person.GetIdealOffset(this, f.Leader);
             //义兄弟或者配偶直接登用。(当前判断是和所在势力的君主)
             if (this.IsVeryCloseTo(f.Leader))
@@ -10071,6 +10076,8 @@ namespace GameObjects
 
         public Person XuanZeMeiNv(Person nvren)
         {
+            if (nvren == null || nvren.IsFactionLeader) return null;
+
             Person tookSpouse = null;
             Person leader = this.LocationArchitecture.BelongedFaction.Leader;
 

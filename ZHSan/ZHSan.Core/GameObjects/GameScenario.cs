@@ -293,6 +293,11 @@ namespace GameObjects
 
         public GlobalVariables GlobalVariables { get; set; }
 
+        /// <summary>
+        /// 剧本预设的年龄有效开关，null表示剧本未指定
+        /// </summary>
+        public bool? ScenarioPersonNaturalDeath { get; set; }
+
         public GameScenario()
         {
 
@@ -3005,6 +3010,11 @@ namespace GameObjects
             {
                 Parameters = new Parameters(baseData.Parameters);
                 GlobalVariables = new GlobalVariables(baseData.GlobalVariables);
+            }
+            else
+            {
+                // 剧本预设的年龄有效（如280虚构剧本强制关闭），开局时覆盖玩家选项
+                ScenarioPersonNaturalDeath = baseData.GlobalVariables?.PersonNaturalDeath;
             }
         }
 
