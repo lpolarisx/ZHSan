@@ -117,6 +117,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private Widget facilityPage;
         private Widget summaryPage;
 
+        // 传给MyraUI的根控件，用来判断本窗口是否在最上层
+        private Widget root;
         private ScrollViewer dragViewer;
         private int? dragLastY;
         private int dragDistance;
@@ -152,7 +154,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             desktop.TouchDown += dialog.Desktop_TouchDown;
             desktop.TouchMoved += dialog.Desktop_TouchMoved;
             desktop.TouchUp += dialog.Desktop_TouchUp;
-            MyraUI.Show(dialog.Build(), dialog.Close);
+            dialog.root = dialog.Build();
+            MyraUI.Show(dialog.root, dialog.Close);
         }
 
         private void Close()
@@ -945,7 +948,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.dragLastY = null;
             this.dragViewer = null;
             Point? position = MyraUI.Desktop.TouchPosition;
-            if (!position.HasValue)
+            if (!position.HasValue || !MyraUI.IsTop(this.root))
             {
                 return;
             }
@@ -1016,7 +1019,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
         // 按需加载的图片。材质可能被游戏的缓存清理掉，所以每次画之前检查一下，失效了就重新取
-        private class TextureImage : IImage
+        internal class TextureImage : IImage
         {
             private readonly string name;
             // 只画图片的这一块，null时画整张
@@ -1024,11 +1027,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             private Texture2D texture;
             // 材质相对原图的倍数，取到@2x高清图时是2
             private float density = 1f;
+            // null时用Myra默认的取最近像素；圆形等平滑图标缩放时要用线性插值，否则边缘有锯齿
+            private readonly TextureFiltering? filtering;
 
-            public TextureImage(string name, int width, int height, Rectangle? source = null)
+            public TextureImage(string name, int width, int height, Rectangle? source = null, TextureFiltering? filtering = null)
             {
                 this.name = name;
                 this.source = source;
+                this.filtering = filtering;
                 this.Size = new Point(width, height);
             }
 
@@ -1042,7 +1048,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 }
                 if (this.texture != null)
                 {
-                    context.Draw(this.texture, dest, CacheManager.ScaleSource(this.source, this.density), color, 0f, 0f, null);
+                    context.Draw(this.texture, dest, CacheManager.ScaleSource(this.source, this.density), color, 0f, 0f, this.filtering);
                 }
             }
         }

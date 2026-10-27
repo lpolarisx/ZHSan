@@ -35,14 +35,14 @@ namespace GameManager
 
         public static Dictionary<string, Microsoft.Xna.Framework.Graphics.Texture2D> texs = new Dictionary<string, Microsoft.Xna.Framework.Graphics.Texture2D>();
 
-        // 字形按这个倍数生成，与界面缩放倍数一致，放大后文字才清楚
+        // 字形按这个倍数生成，与界面缩放倍数完全一致（不取整），放大后一个字形像素正好对一个屏幕像素，文字才清楚
         private static float fontResolutionFactor = 1f;
 
         public static void Init(string name, int size)
         {
             var bytes = Platform.Current.LoadFile(name);
 
-            fontResolutionFactor = (float)Math.Ceiling(Session.UIScale);
+            fontResolutionFactor = Session.UIScale;
             font = new FontSystem(new FontSystemSettings
             {
                 FontResolutionFactor = fontResolutionFactor
@@ -56,7 +56,7 @@ namespace GameManager
         /// </summary>
         public static void RefreshFontResolution()
         {
-            if (font != null && fontResolutionFactor != (float)Math.Ceiling(Session.UIScale))
+            if (font != null && fontResolutionFactor != Session.UIScale)
             {
                 font.Dispose();
                 font = null;

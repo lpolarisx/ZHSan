@@ -129,6 +129,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         // 对方已经答应了现在的条款，确认按钮变成缔约
         private bool accepted;
 
+        // 传给MyraUI的根控件，用来判断本窗口是否在最上层
+        private Widget root;
         private int? dragLastY;
         private int dragDistance;
 
@@ -202,7 +204,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             desktop.TouchMoved += this.Desktop_TouchMoved;
             desktop.TouchUp += this.Desktop_TouchUp;
             // 右键先关选择窗口，没有选择窗口才关外交面板
-            MyraUI.Show(this.Build(), () =>
+            this.root = this.Build();
+            MyraUI.Show(this.root, () =>
             {
                 if (this.picker != null && this.picker.IsOpen)
                 {
@@ -1443,7 +1446,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             this.dragDistance = 0;
             this.dragLastY = null;
-            if (this.picker != null && this.picker.IsOpen)
+            if ((this.picker != null && this.picker.IsOpen) || !MyraUI.IsTop(this.root))
             {
                 return;
             }

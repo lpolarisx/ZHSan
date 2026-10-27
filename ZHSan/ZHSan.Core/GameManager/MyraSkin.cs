@@ -113,6 +113,7 @@ namespace GameManager
         private static readonly IBrush ButtonSelected = new TextureBackground(TexturePath + "ButtonSelected.png", new Thickness(ButtonCorner), new Color(21, 117, 2));
         private static readonly IBrush ButtonDisabled = new TextureBackground(TexturePath + "ButtonDisabled.png", new Thickness(ButtonCorner), new Color(95, 95, 97));
         private static readonly IBrush Panel = new TextureBackground(TexturePath + "Panel.png", new Thickness(PanelBorder, PanelTitleHeight, PanelBorder, PanelBorder), new Color(38, 54, 64));
+        private static readonly IBrush PlainPanel = new TextureBackground(TexturePath + "Panel.png", new Thickness(PanelBorder, PanelTitleHeight, PanelBorder, PanelBorder), new Color(38, 54, 64), true);
 
         /// <summary>
         /// 小图标的大小，与16号字的行高相配，图片按原大小显示
@@ -150,6 +151,17 @@ namespace GameManager
             get
             {
                 return Panel;
+            }
+        }
+
+        /// <summary>
+        /// 不带标题栏横线的底板，四周花纹与PanelBackground一样，用在不需要标题的分区
+        /// </summary>
+        public static IBrush PlainPanelBackground
+        {
+            get
+            {
+                return PlainPanel;
             }
         }
 
@@ -201,14 +213,17 @@ namespace GameManager
             private readonly string textureName;
             private readonly Thickness border;
             private readonly Color fallbackColor;
+            // 去掉标题栏：上边只取最上面一圈花纹，标题栏那条横线不画
+            private readonly bool withoutTitle;
             private Texture2D texture;
             private NinePatchRegion region;
 
-            public TextureBackground(string textureName, Thickness border, Color fallbackColor)
+            public TextureBackground(string textureName, Thickness border, Color fallbackColor, bool withoutTitle = false)
             {
                 this.textureName = textureName;
                 this.border = border;
                 this.fallbackColor = fallbackColor;
+                this.withoutTitle = withoutTitle;
             }
 
             public void Draw(RenderContext context, Rectangle dest, Color color)
@@ -223,9 +238,45 @@ namespace GameManager
                     // 找不到图片时退回纯色
                     context.FillRectangle(dest, this.fallbackColor);
                 }
+                else if (this.withoutTitle)
+                {
+                    this.DrawWithoutTitle(context, dest, color);
+                }
                 else
                 {
                     this.region.Draw(context, dest, color);
+                }
+            }
+
+            // 自己按九宫格切：上边用图片最上面和左右花纹一样宽的一条，中间和下边与有标题的一样，
+            // 跳过的那一段正好是标题栏和它下沿的横线
+            private void DrawWithoutTitle(RenderContext context, Rectangle dest, Color color)
+            {
+                int w = this.texture.Width;
+                int h = this.texture.Height;
+                int side = this.border.Left;
+                int top = this.border.Left;
+                int bottom = this.border.Bottom;
+                int middleTop = this.border.Top;
+                int[] srcX = { 0, side, w - side, w };
+                int[] srcY = { 0, top, middleTop, h - bottom, h };
+                int[] dstX = { dest.X, dest.X + side, dest.Right - side, dest.Right };
+                int[] dstY = { dest.Y, dest.Y + top, dest.Bottom - bottom, dest.Bottom };
+                // 源图的三行：上边[0,top)，中间[middleTop,h-bottom)，下边[h-bottom,h)
+                int[] srcRowStart = { srcY[0], srcY[2], srcY[3] };
+                int[] srcRowEnd = { srcY[1], srcY[3], srcY[4] };
+                for (int row = 0; row < 3; row++)
+                {
+                    for (int col = 0; col < 3; col++)
+                    {
+                        var target = new Rectangle(dstX[col], dstY[row], dstX[col + 1] - dstX[col], dstY[row + 1] - dstY[row]);
+                        if (target.Width <= 0 || target.Height <= 0)
+                        {
+                            continue;
+                        }
+                        var source = new Rectangle(srcX[col], srcRowStart[row], srcX[col + 1] - srcX[col], srcRowEnd[row] - srcRowStart[row]);
+                        context.Draw(this.texture, target, source, color, 0f, 0f, null);
+                    }
                 }
             }
         }

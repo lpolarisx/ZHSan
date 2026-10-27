@@ -26,6 +26,10 @@ namespace PersonDetailPlugin
         private string pluginName = "PersonDetailPlugin";
         private string version = "1.0.0";
         private const string XMLFilename = "PersonDetailData.xml";
+        // 人物详情改用Myra绘制的PersonDetailDialog，旧界面先保留，改成false就切回旧界面
+        private static readonly bool UseMyraDialog = true;
+        // 列表里点人物时先设置人物、再设置IsShowing，Myra页面在设置IsShowing时才打开
+        private Person pendingPerson;
 
 
         public void Dispose()
@@ -286,6 +290,11 @@ namespace PersonDetailPlugin
 
         public void SetPerson(object person)
         {
+            if (UseMyraDialog)
+            {
+                this.pendingPerson = person as Person;
+                return;
+            }
             this.personDetail.SetPerson(person as Person);
         }
 
@@ -335,6 +344,15 @@ namespace PersonDetailPlugin
             }
             set
             {
+                if (UseMyraDialog)
+                {
+                    if (value && this.pendingPerson != null)
+                    {
+                        PersonDetailDialog.Show(this.pendingPerson, this.personDetail.Switch3 == "on");
+                    }
+                    this.pendingPerson = null;
+                    return;
+                }
                 this.personDetail.IsShowing = value;
             }
         }

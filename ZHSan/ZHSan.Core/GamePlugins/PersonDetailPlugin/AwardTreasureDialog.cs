@@ -47,6 +47,8 @@ namespace PersonDetailPlugin
         private Label okLabel;
         private Treasure selected;
 
+        // 传给MyraUI的根控件，用来判断本窗口是否在最上层
+        private Widget root;
         private int? dragLastX;
         private int dragDistance;
 
@@ -71,7 +73,8 @@ namespace PersonDetailPlugin
             desktop.TouchDown += dialog.Desktop_TouchDown;
             desktop.TouchMoved += dialog.Desktop_TouchMoved;
             desktop.TouchUp += dialog.Desktop_TouchUp;
-            MyraUI.Show(dialog.Build(), dialog.Close);
+            dialog.root = dialog.Build();
+            MyraUI.Show(dialog.root, dialog.Close);
         }
 
         private void Close()
@@ -355,7 +358,7 @@ namespace PersonDetailPlugin
             this.dragDistance = 0;
             this.dragLastX = null;
             Point? position = MyraUI.Desktop.TouchPosition;
-            if (position.HasValue && this.cardsPanel != null && this.scrollViewer.ContainsGlobalPoint(position.Value) && this.cardsPanel.ContainsGlobalPoint(position.Value))
+            if (position.HasValue && MyraUI.IsTop(this.root) && this.cardsPanel != null && this.scrollViewer.ContainsGlobalPoint(position.Value) && this.cardsPanel.ContainsGlobalPoint(position.Value))
             {
                 this.dragLastX = position.Value.X;
             }
