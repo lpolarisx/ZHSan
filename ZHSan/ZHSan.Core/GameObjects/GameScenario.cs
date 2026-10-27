@@ -3393,7 +3393,7 @@ namespace GameObjects
                     }
                     else
                     {
-                        //person.SetBelongedCaptive(captive, PersonStatus.Captive);
+                        person.BelongedCaptive = captive;
                         person.Status = PersonStatus.Captive;
                         captive.CaptivePersonID = person.ID;
                     }

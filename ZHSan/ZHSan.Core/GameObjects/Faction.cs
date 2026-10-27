@@ -403,7 +403,7 @@ namespace GameObjects
                         result.Add(person);
                     }
 
-                    result.AddRange(architecture.GetMoralePersons());
+                    result.AddRange(architecture.GetMovingPersons());
                 }
 
                 foreach (var troop in Troops)
@@ -412,7 +412,7 @@ namespace GameObjects
                         result.Add(person);
                 }
 
-                foreach (var captive in Session.Current.Scenario.captiveData.ToList())
+                foreach (var captive in Session.Current.Scenario.GetCaptives())
                 {
                     if (captive.CaptiveFaction == this)
                     {
@@ -1142,7 +1142,7 @@ namespace GameObjects
                         }
                         p.WaitForFeiZi = null;
                     }
-                    else if (!p.isLegalFeiZiExcludeAge(p.WaitForFeiZi) || p.WaitForFeiZi.isLegalFeiZiExcludeAge(p))
+                    else if (!p.isLegalFeiZiExcludeAge(p.WaitForFeiZi) || !p.WaitForFeiZi.isLegalFeiZiExcludeAge(p))
                     {
                         if (p.WaitForFeiZi != null)
                         {
@@ -1153,6 +1153,7 @@ namespace GameObjects
                     else
                     {
                         if (p.Status == PersonStatus.Normal && p.LocationArchitecture != null
+                            && p.LocationArchitecture == p.WaitForFeiZi.LocationArchitecture
                             && p.LocationTroop == null)
                         {
                             if (p.LocationArchitecture.Fund >= Session.Parameters.MakeMarriageCost)
@@ -3968,11 +3969,11 @@ namespace GameObjects
 
         private void AIAppointMayor()
         {
-            if (Session.Current.Scenario.IsPlayer(this)) return;
+            var isPlayer = Session.Current.Scenario.IsPlayer(this);
 
             foreach (var architecture in Architectures)
             {
-                if (architecture.BelongedSection.AIDetail.AutoRun && architecture.AppointMayorAvail())
+                if ((!isPlayer || architecture.BelongedSection.AIDetail.AutoRun) && architecture.AppointMayorAvail())
                 {
                     var persons = architecture.GetAIMayorCandicates();
                     var targetPerson = persons[0];

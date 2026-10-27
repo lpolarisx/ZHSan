@@ -971,6 +971,8 @@ namespace GameObjects
             if (captivePerson == null) return;
 
             captivePerson.LocationTroop = this;
+            captivePerson.LocationArchitecture = null;
+            Session.Current.Scenario.ClearPersonStatusCache();
             if (BelongedFaction != null)
             {
                 foreach (var treasure in captivePerson.Treasures.ToList())
@@ -2295,7 +2297,7 @@ namespace GameObjects
                     }
                 }
 
-                foreach (var person in persons)
+                foreach (var person in personList)
                 {
                     Point from = Position;
 
@@ -4016,7 +4018,12 @@ namespace GameObjects
                     }
                     else if (this.Tiredness > 60)
                     {
-                        this.DecreaseMorale((this.Tiredness - 30) / 30 + ((GameObject.GetChance(this.Army.Leader.Command) ? 1 : 0)) * moraleRate);
+                        // 己方城池附近士气下降减缓
+                        int moraleDecrease = ((this.Tiredness - 30) / 30 + (GameObject.GetChance(this.Army.Leader.Command) ? 1 : 0)) / moraleRate;
+                        if (moraleDecrease > 0)
+                        {
+                            this.DecreaseMorale(moraleDecrease);
+                        }
                     }
                 }
 
@@ -4294,6 +4301,8 @@ namespace GameObjects
             }
             if (removeReferences)
             {
+                ReleaseCaptiveBeforeBeRouted();
+
                 if (this.Persons.Count > 0)
                 {
                     foreach (Person p in this.Persons)
@@ -8351,6 +8360,7 @@ namespace GameObjects
                 captive.CaptivePerson.LocationArchitecture = des;
                 captive.CaptivePerson.LocationTroop = null;
             }
+            Session.Current.Scenario.ClearPersonStatusCache();
         }
 
         private void MoveContactArea(int XOffset, int YOffset)
@@ -9743,19 +9753,10 @@ namespace GameObjects
             var result = new List<Person>();
             foreach (var captive in Captives)
             {
-                if (captive.CaptivePerson != null 
-                    && captive.CaptiveFaction != null 
-                    && captive.CaptiveFaction.Capital != null)
+                if (captive.CaptivePerson != null)
                 {
-                    // 目标建筑为俘虏所属势力的首都
-                    var targetArchitecture = captive.CaptiveFaction.Capital;
-                    var captivePerson = captive.CaptivePerson;
-                    
-                    captivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
-                    captivePerson.LocationArchitecture = targetArchitecture;
-                    captivePerson.MoveToArchitecture(targetArchitecture);
-
-                    result.Add(captivePerson);
+                    captive.CaptiveDirectEscape();
+                    result.Add(captive.CaptivePerson);
                 }
 
                 ExtensionInterface.call("TroopReleaseCaptive", new Object[] { Session.Current.Scenario, this, captive });

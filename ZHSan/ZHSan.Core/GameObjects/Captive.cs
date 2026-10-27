@@ -109,8 +109,7 @@ namespace GameObjects
         {
             get
             {
-                return this.CaptivePerson.LocationTroop != null? this.CaptivePerson.LocationTroop.Leader.LocationArchitecture
-                        : this.CaptivePerson.LocationArchitecture;
+                return LocationTroop == null ? CaptivePerson.LocationArchitecture : null;
             }
         }
         public Troop LocationTroop => CaptivePerson.LocationTroop;
@@ -181,6 +180,7 @@ namespace GameObjects
             if (this.CaptivePerson.BelongedFaction != null && this.CaptivePerson.BelongedFaction.Capital != null)
             {
                 Faction f = this.CaptivePerson.BelongedFaction;
+                this.CaptivePerson.LocationTroop = null;
                 this.CaptivePerson.LocationArchitecture = f.Capital;
                 //this.CaptivePerson.Status = GameObjects.PersonDetail.PersonStatus.Normal;
                 this.CaptivePerson.SetBelongedCaptive(null, GameObjects.PersonDetail.PersonStatus.Normal);
@@ -300,20 +300,16 @@ namespace GameObjects
         {
             if (CaptivePerson == null) return;
 
-            CaptivePerson.Status = PersonStatus.NoFaction;
-
-            if (LocationTroop != null)
-            {
-                CaptivePerson.LocationArchitecture = StaticMethods.GetRandomItem(Session.Current.Scenario.Architectures.Values.ToList());
-
-                var architecture = CaptivePerson.BelongedFaction != null && BelongedFaction.Capital != null
-                                   ? BelongedFaction.Capital
-                                   : StaticMethods.GetRandomItem(Session.Current.Scenario.Architectures.Values.ToList());
-
-                CaptivePerson.MoveToArchitecture(architecture, CaptivePerson.LocationTroop.Position, false, true, null);
-            }
-            
+            var troop = LocationTroop;
+            CaptivePerson.LocationTroop = null;
             CaptivePerson.SetBelongedCaptive(null, PersonStatus.NoFaction);
+
+            if (troop != null)
+            {
+                var architecture = StaticMethods.GetRandomItem(Session.Current.Scenario.Architectures.Values.ToList());
+                CaptivePerson.LocationArchitecture = architecture;
+                CaptivePerson.MoveToArchitecture(architecture, troop.Position, false, true, null);
+            }
         }
 
         public string BelongedFactionString => BelongedFaction?.Name ?? "----";

@@ -2586,7 +2586,7 @@ namespace GameObjects
             var list = MakeMarryable2(false);
             result.AddRange(list);
 
-            return list;
+            return result;
         }
 
         public void Marry(Person p, Person maker)
