@@ -1784,7 +1784,8 @@ namespace GameObjects
         /// </summary>
         private void AINegotiate()
         {
-            if (this.Capital == null) return;
+            // 无城势力及失效都城不能参与交易，Capital 非空不代表城池仍归该势力。
+            if (this.ArchitectureCount == 0 || this.Capital?.BelongedFaction != this) return;
 
             var scenario = Session.Current.Scenario;
             int month = scenario.Date.MonthIndex;
@@ -1797,14 +1798,14 @@ namespace GameObjects
             // 打乱顺序，同样要紧的提议不总落在同一家
             foreach (var other in StaticMethods.GetRandomList(scenario.Factions.Values.ToList()))
             {
-                if (other == this || other.Capital == null) continue;
+                if (other == this || other.ArchitectureCount == 0 || other.Capital?.BelongedFaction != other) continue;
                 if (!scenario.TryGetDiplomaticRelation(this.ID, other.ID, out var relation)) continue;
                 if (relation.ProposalCooldown > 0) continue;
 
                 if (scenario.IsPlayer(other) && (scenario.HasDiplomacyProposal(this, other) || !scenario.CanReceiveDiplomacyProposal(other))) continue;
 
                 DiplomacyDeal deal = this.CreateProposal(other, relation, out int priority);
-                if (deal == null || priority <= bestPriority || deal.GetInvalidReason(false) != null) continue;
+                if (deal == null || priority <= bestPriority || !DiplomacyEvaluator.IsWithinProposalBudget(deal) || deal.GetInvalidReason(false) != null) continue;
 
                 best = deal;
                 bestRelation = relation;
@@ -1834,7 +1835,8 @@ namespace GameObjects
             if (response.Kind == DiplomacyResponseKind.Counter)
             {
                 // 还价要从余钱余粮里出，不能动用维持城池所需的那部分
-                Architecture capital = this.Capital;
+                Architecture capital = deal.SourceArchitecture;
+                if (capital == null || capital.BelongedFaction != this) return;
                 bool affordable = deal.GiveFund + response.ExtraFund <= Math.Max(0, capital.Fund - capital.EnoughFund)
                     && deal.GiveFood + response.ExtraFood <= Math.Max(0, capital.Food - capital.EnoughFood);
                 if (!affordable) return;
@@ -1848,6 +1850,7 @@ namespace GameObjects
                 return;
             }
 
+            if (!DiplomacyEvaluator.IsWithinProposalBudget(deal) || deal.GetInvalidReason(false) != null) return;
             deal.Execute(false);
             if (deal.Alliance)
             {
@@ -1886,32 +1889,12 @@ namespace GameObjects
 
             if (hostileNeighbor && ratio > 1.5 && this.IsAttackedBy(other))
             {
-                // 停战对强的一方是损失，按对方眼里的损失出价，钱不够就割城
+                // 按付款城的余钱余粮组合报价，危急时才割地；半年停战付不起再尝试三个月。
                 deal.TruceDays = 180;
-                int deficit = -DiplomacyEvaluator.Evaluate(deal);
-                if (deficit > 0)
+                if (!DiplomacyEvaluator.TryBalanceProposal(deal))
                 {
-                    if (deficit <= spareFund)
-                    {
-                        deal.GiveFund = RoundUp(deficit, 1000);
-                    }
-                    else if (ratio > 3 && this.ArchitectureCount >= 3)
-                    {
-                        Architecture ceded = this.GetCedeArchitecture(other, null);
-                        if (ceded != null)
-                        {
-                            deal.GiveArchitectures.Add(ceded);
-                        }
-                        deal.GiveFund = spareFund / 2 / 1000 * 1000;
-                    }
-                    else if (spareFund >= deficit / 2)
-                    {
-                        deal.GiveFund = spareFund / 1000 * 1000;
-                    }
-                    else
-                    {
-                        return null;
-                    }
+                    deal.TruceDays = 90;
+                    if (!DiplomacyEvaluator.TryBalanceProposal(deal)) return null;
                 }
                 priority = 4;
                 return deal;
@@ -1930,7 +1913,7 @@ namespace GameObjects
                 && !this.WouldBreakAfterAlliance(other) && !other.WouldBreakAfterAlliance(this))
             {
                 deal.Alliance = true;
-                deal.GiveFund = Math.Min(spareFund / 4, 30000) / 1000 * 1000;
+                if (!DiplomacyEvaluator.TryBalanceProposal(deal)) return null;
                 priority = 2;
                 return deal;
             }
@@ -2022,11 +2005,6 @@ namespace GameObjects
                     if (troop != null) yield return troop;
                 }
             }
-        }
-
-        private static int RoundUp(int value, int unit)
-        {
-            return (value + unit - 1) / unit * unit;
         }
 
         private int? powerCache = null;
@@ -3974,7 +3952,7 @@ namespace GameObjects
 
         public void ConsiderPromoteNvGuan(Person p)
         {
-            if (p.NvGuanPromotable && (p.Command * 2 + p.Strength) / (p.Politics + p.Glamour * 2) > 0.95f)
+            if (p.NvGuanPromotable && (float)(p.Command * 2 + p.Strength) / (p.Politics + p.Glamour * 2) > 0.95f)
             {
                 p.PromoteFromNvGuan();
             }

@@ -493,5 +493,56 @@ namespace GameObjects.FactionDetail
         {
             return (int)Math.Ceiling(value / unit) * unit;
         }
+
+        /// <summary>
+        /// AI只使用付款城维持运转后的现有余量，先钱后粮补足报价。
+        /// 求和且实力悬殊时才考虑割让一城，割城后重新计算钱粮，避免重复付价。
+        /// </summary>
+        public static bool TryBalanceProposal(DiplomacyDeal deal)
+        {
+            Architecture source = deal.SourceArchitecture;
+            if (source == null || source.BelongedFaction != deal.Source || deal.Target.Capital == null) return false;
+
+            int fundBudget = Math.Max(0, source.Fund - source.EnoughFund);
+            int foodBudget = Math.Max(0, source.Food - source.EnoughFood);
+            deal.GiveFund = 0;
+            deal.GiveFood = 0;
+            FillProposalResources(deal, fundBudget, foodBudget);
+            if (Evaluate(deal) >= 0) return deal.GetInvalidReason(false) == null;
+
+            // 割地仅用于危急求和；保留都城、付款城，且不能交出正在交战的城。
+            if (deal.TruceDays <= 0 || deal.Alliance || deal.GiveArchitectures.Count > 0 ||
+                deal.Source.ArchitectureCount < 3 || (double)deal.Target.Power / Math.Max(1, deal.Source.Power) <= 3)
+                return false;
+
+            foreach (var city in deal.GetGivableArchitectures()
+                .Where(a => !a.HasHostileTroopsInView() && IsLinkedTo(a, deal.Target))
+                .OrderBy(GetArchitectureValue))
+            {
+                deal.GiveArchitectures.Add(city);
+                deal.GiveFund = 0;
+                deal.GiveFood = 0;
+                FillProposalResources(deal, fundBudget, foodBudget);
+                if (Evaluate(deal) >= 0 && deal.GetInvalidReason(false) == null) return true;
+                deal.GiveArchitectures.Remove(city);
+            }
+            return false;
+        }
+
+        private static void FillProposalResources(DiplomacyDeal deal, int fundBudget, int foodBudget)
+        {
+            double deficit = Math.Max(0, -Evaluate(deal));
+            deal.GiveFund = (int)Math.Min(fundBudget, Math.Ceiling(deficit / GetFundFactor(deal.Target.Capital) / 1000) * 1000);
+            deficit = Math.Max(0, -Evaluate(deal));
+            deal.GiveFood = (int)Math.Min(foodBudget, Math.Ceiling(deficit * FoodPerFund / GetFoodFactor(deal.Target.Capital) / 10000) * 10000);
+        }
+
+        public static bool IsWithinProposalBudget(DiplomacyDeal deal)
+        {
+            var source = deal.SourceArchitecture;
+            return source != null && source.BelongedFaction == deal.Source &&
+                deal.GiveFund <= Math.Max(0, source.Fund - source.EnoughFund) &&
+                deal.GiveFood <= Math.Max(0, source.Food - source.EnoughFood);
+        }
     }
 }

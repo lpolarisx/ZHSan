@@ -52,6 +52,8 @@ namespace GameObjects
 
         public Routeway(RoutewayConfig config)
         {
+            ID = config.Id;
+            Name = config.Name;
             HasSupportedLegion = config.HasSupportedLegion;
             RoutePoints = new LinkedList<RoutePoint>(config.RoutePoints.Select(x => new RoutePoint(x)));
             StartArchitectureString = config.StartArchitectureString;
@@ -71,6 +73,8 @@ namespace GameObjects
         {
             return new RoutewayConfig
             {
+                Id = ID,
+                Name = Name,
                 HasSupportedLegion = HasSupportedLegion,
                 RoutePoints = new LinkedList<RoutePointConfig>(RoutePoints.Select(x => x.ToConfig())),
                 StartArchitectureString = StartArchitectureString,

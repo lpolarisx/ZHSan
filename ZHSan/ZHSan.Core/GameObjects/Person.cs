@@ -6846,6 +6846,9 @@ namespace GameObjects
 
         // precomputed values of y = 1.12 / (1+ 69.06e^(-0.428x))
         private static readonly float[] AGE_FACTORS = { 0.0160f, 0.0243f, 0.0369f, 0.0557f, 0.0832f, 0.1227f, 0.1779f, 0.2516f, 0.3446f, 0.4541f, 0.5726f, 0.6900f, 0.7965f, 0.8856f, 0.9552f };
+        // 死亡人物展示能力时忽略伤病折扣，保留原始伤病数据供存档使用。
+        private float AbilityInjuryFactor => Alive ? InjureRate : 1f;
+
         private float AbilityAgeFactor
         {
             get
@@ -7005,7 +7008,7 @@ namespace GameObjects
         {
             get
             {
-                return (int)((this.braveness + this.bravenessIncrease) * this.AbilityAgeFactor * this.InjureRate);
+                return (int)((this.braveness + this.bravenessIncrease) * this.AbilityAgeFactor * this.AbilityInjuryFactor);
             }
             set
             {
@@ -7050,7 +7053,7 @@ namespace GameObjects
         {
             get
             {
-                return (int)((this.calmness + this.calmnessIncrease) * this.AbilityAgeFactor * this.InjureRate);
+                return (int)((this.calmness + this.calmnessIncrease) * this.AbilityAgeFactor * this.AbilityInjuryFactor);
             }
             set
             {
@@ -8003,7 +8006,7 @@ namespace GameObjects
             }
         }
 
-        private double TirednessRate => TirednessFactor * AbilityAgeFactor * RelationAbilityFactor * huaiyunAbilityFactor * InjureRate;
+        private double TirednessRate => TirednessFactor * AbilityAgeFactor * RelationAbilityFactor * huaiyunAbilityFactor * AbilityInjuryFactor;
 
         public int NormalCommand
         {
@@ -8053,7 +8056,7 @@ namespace GameObjects
         {
             get
             {
-                return (int)(Math.Min((int)((this.GlamourIncludingExperience + this.InfluenceIncrementOfGlamour) * this.InfluenceRateOfGlamour), Session.GlobalVariables.MaxAbility) * this.TirednessFactor * this.AbilityAgeFactor * this.RelationAbilityFactor * this.huaiyunAbilityFactor * this.InjureRate);
+                return (int)(Math.Min((int)((this.GlamourIncludingExperience + this.InfluenceIncrementOfGlamour) * this.InfluenceRateOfGlamour), Session.GlobalVariables.MaxAbility) * this.TirednessFactor * this.AbilityAgeFactor * this.RelationAbilityFactor * this.huaiyunAbilityFactor * this.AbilityInjuryFactor);
             }
         }
 
@@ -8069,7 +8072,7 @@ namespace GameObjects
         {
             get
             {
-                return (int)(Math.Min((int)((this.IntelligenceIncludingExperience + this.InfluenceIncrementOfIntelligence) * this.InfluenceRateOfIntelligence), Session.GlobalVariables.MaxAbility) * this.TirednessFactor * this.AbilityAgeFactor * this.RelationAbilityFactor * this.huaiyunAbilityFactor * this.InjureRate);
+                return (int)(Math.Min((int)((this.IntelligenceIncludingExperience + this.InfluenceIncrementOfIntelligence) * this.InfluenceRateOfIntelligence), Session.GlobalVariables.MaxAbility) * this.TirednessFactor * this.AbilityAgeFactor * this.RelationAbilityFactor * this.huaiyunAbilityFactor * this.AbilityInjuryFactor);
             }
         }
 
@@ -8099,7 +8102,7 @@ namespace GameObjects
 
                 politics = Math.Min(politics, Session.GlobalVariables.MaxAbility);
 
-                return (int)(politics * TirednessFactor * AbilityAgeFactor * RelationAbilityFactor * huaiyunAbilityFactor * InjureRate);
+                return (int)(politics * TirednessFactor * AbilityAgeFactor * RelationAbilityFactor * huaiyunAbilityFactor * AbilityInjuryFactor);
             }
         }
 
@@ -8127,7 +8130,7 @@ namespace GameObjects
 
                 strength = Math.Min(strength, Session.GlobalVariables.MaxAbility);
 
-                return (int)(strength * TirednessFactor * AbilityAgeFactor * RelationAbilityFactor * huaiyunStrengthFactor * InjureRate);
+                return (int)(strength * TirednessFactor * AbilityAgeFactor * RelationAbilityFactor * huaiyunStrengthFactor * AbilityInjuryFactor);
             }
         }
 
@@ -8136,7 +8139,7 @@ namespace GameObjects
         {
             get
             {
-                return (int)(Math.Min((int)((this.StrengthIncludingExperience + this.InfluenceIncrementOfStrength) * this.InfluenceRateOfStrength), Session.GlobalVariables.MaxAbility) * this.TirednessFactor * this.AbilityAgeFactor * this.huaiyunStrengthFactor * this.InjureRate);
+                return (int)(Math.Min((int)((this.StrengthIncludingExperience + this.InfluenceIncrementOfStrength) * this.InfluenceRateOfStrength), Session.GlobalVariables.MaxAbility) * this.TirednessFactor * this.AbilityAgeFactor * this.huaiyunStrengthFactor * this.AbilityInjuryFactor);
             }
         }
 

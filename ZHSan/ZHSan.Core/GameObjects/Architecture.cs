@@ -4990,6 +4990,8 @@ namespace GameObjects
             }
             if ((faction != null) && (this.BelongedFaction != null))
             {
+                // 转交城池前解除旧军区归属，避免双方军区同时保留该城。
+                this.BelongedSection?.RemoveArchitecture(this);
                 this.BelongedFaction.Architectures.Remove(this);
                 this.BelongedFaction.RemoveArchitectureKnownData(this);
                 if (!Session.Current.Scenario.IsPlayer(this.BelongedFaction))
@@ -13133,7 +13135,7 @@ namespace GameObjects
             get
             {
                 int num = 0;
-                foreach (var legion in BelongedFaction.Legions)
+                foreach (var legion in BelongedFaction?.Legions ?? Enumerable.Empty<Legion>())
                 {
                     if (legion.Kind == LegionKind.Defensive)
                     {

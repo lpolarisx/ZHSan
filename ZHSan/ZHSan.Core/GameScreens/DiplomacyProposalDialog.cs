@@ -38,6 +38,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 return false;
             }
+            // 排队期间付款城可能花掉钱粮。重新组合求和/结盟报价，仍无法履行就撤回来使。
+            if (!DiplomacyEvaluator.IsWithinProposalBudget(proposal))
+            {
+                if ((proposal.TruceDays <= 0 && !proposal.Alliance) ||
+                    !DiplomacyEvaluator.TryBalanceProposal(proposal)) return false;
+            }
+            if (proposal.GetInvalidReason(false) != null) return false;
             var dialog = new DiplomacyProposalDialog(proposal);
             Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.SubDialog, DialogKind.Diplomacy));
             MyraUI.Show(dialog.Build(), () => dialog.Close(dialog.Reject));
@@ -176,7 +183,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private void Accept()
         {
             // 弹窗期间钱粮可能有变，交割前再查一次
-            if (this.proposal.GetInvalidReason(false) != null)
+            if (!DiplomacyEvaluator.IsWithinProposalBudget(this.proposal) || this.proposal.GetInvalidReason(false) != null)
             {
                 return;
             }
