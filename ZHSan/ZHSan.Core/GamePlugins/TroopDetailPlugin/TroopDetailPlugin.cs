@@ -32,7 +32,12 @@ namespace TroopDetailPlugin
 
 		private TroopDetail troopDetail;
 
-		
+		// 部队详情改用Myra绘制的TroopDetailDialog，旧界面先保留，改成false就切回旧界面
+		private static readonly bool UseMyraDialog = true;
+
+		// 列表里点部队时先设置部队、再设置IsShowing，Myra页面在设置IsShowing时才打开
+		private Troop pendingTroop;
+
 
 		public string Author
 		{
@@ -70,6 +75,15 @@ namespace TroopDetailPlugin
 			}
 			set
 			{
+				if (UseMyraDialog)
+				{
+					if (value && this.pendingTroop != null)
+					{
+						TroopDetailDialog.Show(this.pendingTroop);
+					}
+					this.pendingTroop = null;
+					return;
+				}
 				this.troopDetail.IsShowing = value;
 			}
 		}
@@ -242,6 +256,11 @@ namespace TroopDetailPlugin
 
 		public void SetTroop(object troop)
 		{
+			if (UseMyraDialog)
+			{
+				this.pendingTroop = troop as Troop;
+				return;
+			}
 			this.troopDetail.SetTroop(troop as Troop);
 		}
 

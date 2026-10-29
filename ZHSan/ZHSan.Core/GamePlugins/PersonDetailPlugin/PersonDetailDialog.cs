@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using WorldOfTheThreeKingdoms.GameScreens;
+using static GameManager.MyraWidgets;
 
 namespace PersonDetailPlugin
 {
@@ -83,7 +84,6 @@ namespace PersonDetailPlugin
         // 生平页内容太长时用的小页签
         private const int SubTabHeight = 34;
         private const int SubTabGap = 16;
-        private const int SectionTitleHeight = 30;
         private const int SectionGap = 22;
         private const int ScrollBarWidth = 18;
 
@@ -115,11 +115,6 @@ namespace PersonDetailPlugin
         private const int StuntSlotsPerRow = 2;
         private const int MaxStuntSlotHeight = 46;
 
-        // 说明浮层
-        private const int PopoverWidth = 300;
-        private const int PopoverPadding = 18;
-        private const int PopoverGap = 8;
-
         // 档案页
         private const int ExperienceCellHeight = 60;
         private const int ExperienceColumns = 3;
@@ -136,31 +131,20 @@ namespace PersonDetailPlugin
         private static readonly int[] OtherExperienceGrades = { 1000, 3000, 5000, 8000 };
         private static readonly string[] GradeNames = { "D", "C", "B", "A", "S" };
 
-        // 按住拖动超过这个距离才算滑动列表，否则算点击
-        private const int DragThreshold = 6;
-
         private const string DefaultTreasurePicture = "Content/Textures/Resources/Treasure/9999.png";
 
         // 人物面板上显示的宝物栏位，与旧界面的顺序一致。不在这些种类里的宝物排在后面
         private static readonly int[] TreasureGroups = { 4000, 4100, 3214, 1100, 4700, 3200, 1200, 1300, 1700, 300, 2900, 2001 };
-        // 这几种影响本身不加数值，而是限定后面的效果何时生效：仅君主、仅部队主将、满足条件、限定兵种类型、限定兵种。
-        // 说明里把它们写在“效果”标题后面
-        private static readonly int[] RestrictionInfluenceKinds = { 280, 281, 285, 290, 300 };
         private static readonly Regex InGameLine = new Regex(@"^(\d+年\d+月(\d+日)?)[：:，,]\s*(.*)$");
 
         // 配色沿用MyraSkin，与城池详情一致；性格印章用朱红点缀
-        private static readonly Color CardColor = MyraSkin.ListRowColor;
         private static readonly Color CardSelectedColor = MyraSkin.ListRowSelectedColor;
-        private static readonly Color HoverColor = MyraSkin.ListRowOverColor;
-        private static readonly Color LineColor = new Color(90, 110, 120);
         private static readonly Color DividerColor = new Color(58, 76, 86);
-        private static readonly Color BarTrackColor = new Color(16, 24, 30);
         private static readonly Color TextPrimary = MyraSkin.TextPrimary;
         private static readonly Color TextSecondary = MyraSkin.TextSecondary;
         private static readonly Color TextMuted = MyraSkin.TextDisabled;
         private static readonly Color Gold = MyraSkin.TextHighlight;
         private static readonly Color GoldLight = MyraSkin.TextHighlight;
-        private static readonly Color GoldDim = new Color(0x8A, 0x74, 0x48);
         private static readonly Color Red = new Color(184, 67, 47);
         private static readonly Color Green = MyraSkin.TextFriendly;
         private static readonly Color Warning = MyraSkin.TextWarning;
@@ -179,13 +163,10 @@ namespace PersonDetailPlugin
             new Color(0xA4, 0x7A, 0xBB),
             new Color(0xD9, 0xA0, 0x40)
         };
-        private static readonly Color PopoverColor = new Color(30, 44, 54);
-        private static readonly IBrush Transparent = new SolidBrush(Color.Transparent);
 
         private readonly Person person;
         private readonly bool playVoice;
         private readonly List<Skill> skills;
-        private readonly List<ScrollViewer> dragViewers = new List<ScrollViewer>();
         private readonly List<Tab> tabs = new List<Tab>();
 
         // 随窗口大小算出来的尺寸
@@ -202,18 +183,12 @@ namespace PersonDetailPlugin
         private RadarChart radarChart;
         private Label treasureCountLabel;
 
-        // 最外层的遮罩和弹窗本体，说明浮层按它们定位
         private Panel mask;
-        private Widget dialog;
-        private Panel popover;
-        private VerticalStackPanel popoverContent;
-        private Widget popoverAnchor;
+        private MyraPopover popover;
+        private readonly MyraDragScroll dragScroll = new MyraDragScroll();
 
         // 传给MyraUI的根控件，用来判断本窗口是否在最上层
         private Widget root;
-        private ScrollViewer dragViewer;
-        private int? dragLastY;
-        private int dragDistance;
 
         private PersonDetailDialog(Person person, bool playVoice)
         {
@@ -248,21 +223,15 @@ namespace PersonDetailPlugin
             var dialog = new PersonDetailDialog(person, playVoice);
             // 面板显示期间占住一个未完成工作，地图和工具栏就不会响应鼠标键盘
             Session.MainGame.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.SubDialog, DialogKind.PersonDetail));
-            Desktop desktop = MyraUI.Desktop;
-            desktop.TouchDown += dialog.Desktop_TouchDown;
-            desktop.TouchMoved += dialog.Desktop_TouchMoved;
-            desktop.TouchUp += dialog.Desktop_TouchUp;
             dialog.root = dialog.Build();
+            dialog.dragScroll.Attach(dialog.root, dialog.popover);
             MyraUI.Show(dialog.root, dialog.Close);
             dialog.PlayVoice();
         }
 
         private void Close()
         {
-            Desktop desktop = MyraUI.Desktop;
-            desktop.TouchDown -= this.Desktop_TouchDown;
-            desktop.TouchMoved -= this.Desktop_TouchMoved;
-            desktop.TouchUp -= this.Desktop_TouchUp;
+            this.dragScroll.Detach();
             this.radarChart?.Dispose();
             MyraUI.Close(() =>
             {
@@ -305,7 +274,8 @@ namespace PersonDetailPlugin
                 VerticalAlignment = VerticalAlignment.Center,
                 Background = MyraSkin.PanelBackground
             };
-            this.dialog = dialog;
+            // 说明浮层按弹窗本体定位，盖在内容上面，所以最后加到遮罩里
+            this.popover = new MyraPopover(this.mask, dialog);
             dialog.Widgets.Add(this.BuildTitle());
             var body = new HorizontalStackPanel
             {
@@ -316,7 +286,7 @@ namespace PersonDetailPlugin
             body.Widgets.Add(this.BuildRight());
             dialog.Widgets.Add(body);
             this.mask.Widgets.Add(dialog);
-            this.mask.Widgets.Add(this.BuildPopover());
+            this.mask.Widgets.Add(this.popover.Widget);
             this.SelectTab(this.tabs[0]);
             return this.mask;
         }
@@ -490,24 +460,6 @@ namespace PersonDetailPlugin
             return column;
         }
 
-        // 格子里的小字名称在上、数值在下，两行都居中，整体在格子中间
-        private static Widget CreateCellContent(string title, string value, int valueFontSize, Color valueColor)
-        {
-            var content = new VerticalStackPanel
-            {
-                Spacing = 2,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            Label label = CreateLabel(title, 12, TextSecondary);
-            label.HorizontalAlignment = HorizontalAlignment.Center;
-            content.Widgets.Add(label);
-            Label number = CreateLabel(value, valueFontSize, valueColor);
-            number.HorizontalAlignment = HorizontalAlignment.Center;
-            content.Widgets.Add(number);
-            return content;
-        }
-
         private static Widget CreateTemperCell(string title, string value, int width)
         {
             var cell = new Panel
@@ -638,17 +590,6 @@ namespace PersonDetailPlugin
             return row;
         }
 
-        // 小标签：同色细边框，底色是同色的淡色。游戏按预乘透明度混合，所以淡色用颜色乘系数得到
-        private static Widget CreateTag(string text, Color color)
-        {
-            var tag = new Panel
-            {
-                Padding = new Thickness(8, 1, 8, 1),
-                Background = new FrameBrush(color * 0.16f, color, false)
-            };
-            tag.Widgets.Add(CreateLabel(text, 13, color));
-            return tag;
-        }
 
         #endregion
 
@@ -748,7 +689,7 @@ namespace PersonDetailPlugin
 
         private void SelectTab(Tab selected)
         {
-            this.HidePopover();
+            this.popover.Hide();
             ShowTab(this.tabs, selected);
         }
 
@@ -762,34 +703,6 @@ namespace PersonDetailPlugin
                 tab.Line.Background = new SolidBrush(isSelected ? Gold : Color.Transparent);
                 tab.Page.Visible = isSelected;
             }
-        }
-
-        // 关闭按钮只画一个“×”，鼠标移上去变成金色
-        private static Button CreateCloseButton(Action onClick)
-        {
-            var label = new Label
-            {
-                Text = "×",
-                Font = TextManager.GetFont(28),
-                TextColor = TextSecondary,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            var close = new Button
-            {
-                Content = label,
-                Width = 32,
-                Height = 32,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Background = Transparent,
-                FocusedBackground = Transparent,
-                PressedBackground = Transparent,
-                OverBackground = Transparent
-            };
-            close.MouseEntered += (sender, args) => label.TextColor = Gold;
-            close.MouseLeft += (sender, args) => label.TextColor = TextSecondary;
-            close.Click += (sender, args) => onClick();
-            return close;
         }
 
         // 生平和档案两列等宽
@@ -910,7 +823,7 @@ namespace PersonDetailPlugin
             Widget bar = CreateBar(barWidth, AbilityBarHeight, experience, needExperience, GetGradeColor(grade));
             bar.VerticalAlignment = VerticalAlignment.Center;
             experienceArea.Widgets.Add(bar);
-            this.AttachPopover(experienceArea, (panel, popoverWidth) => ShowAbilityExperience(panel, title, experience, needExperience, GetGradeColor(grade)));
+            this.popover.Attach(experienceArea, (panel, popoverWidth) => ShowAbilityExperience(panel, title, experience, needExperience, GetGradeColor(grade)));
             row.Widgets.Add(experienceArea);
             return row;
         }
@@ -994,12 +907,12 @@ namespace PersonDetailPlugin
             }
             IBrush normal = treasure != null ? new FrameBrush(CardColor, GoldDim, false) : new FrameBrush(Color.Transparent, LineColor, true);
             Button button = CreateFlatButton(content, size, size, normal);
-            this.AttachPopover(button, (panel, textWidth) => this.ShowTreasure(panel, group, textWidth));
+            this.popover.Attach(button, (panel, textWidth) => this.ShowTreasure(panel, group, textWidth));
             if (this.CanAwardTreasure)
             {
                 button.Click += (sender, args) =>
                 {
-                    this.HidePopover();
+                    this.popover.Hide();
                     this.AwardTreasure(group, size);
                 };
             }
@@ -1181,7 +1094,7 @@ namespace PersonDetailPlugin
                 content.Widgets.Add(CreateLabel(title.Name, 15, GetTitleColor(title)));
                 Button slot = CreateFlatButton(content, width, TitleSlotHeight, new FrameBrush(CardColor, GoldDim, false));
                 slot.Padding = new Thickness(12, 0, 8, 0);
-                this.AttachPopover(slot, (panel, textWidth) => this.ShowTitle(panel, title, textWidth));
+                this.popover.Attach(slot, (panel, textWidth) => this.ShowTitle(panel, title, textWidth));
                 row.Widgets.Add(slot);
             }
             return rows;
@@ -1232,7 +1145,7 @@ namespace PersonDetailPlugin
                 cell.VerticalAlignment = VerticalAlignment.Top;
                 cell.Left = skill.DisplayCol * cellWidth;
                 cell.Top = skill.DisplayRow * cellHeight;
-                this.AttachPopover(cell, (panel, textWidth) => this.ShowSkill(panel, skill, textWidth));
+                this.popover.Attach(cell, (panel, textWidth) => this.ShowSkill(panel, skill, textWidth));
                 grid.Widgets.Add(cell);
             }
             return grid;
@@ -1270,7 +1183,7 @@ namespace PersonDetailPlugin
                 IBrush normal = has ? new FrameBrush(CardColor, GoldDim, false) : new FrameBrush(Color.Transparent, LineColor, true);
                 Button slot = CreateFlatButton(content, slotWidth, slotHeight, normal);
                 slot.Padding = new Thickness(12, 0, 8, 0);
-                this.AttachPopover(slot, (panel, textWidth) => this.ShowStunt(panel, stunt, textWidth));
+                this.popover.Attach(slot, (panel, textWidth) => this.ShowStunt(panel, stunt, textWidth));
                 row.Widgets.Add(slot);
             }
             return rows;
@@ -1333,62 +1246,6 @@ namespace PersonDetailPlugin
             AddConditions(panel, "修习条件", skill.Conditions.Select(x => Check(x, x.CheckCondition(this.person))), width);
         }
 
-        private static KeyValuePair<string, bool?> Check(Condition condition, bool satisfied)
-        {
-            return new KeyValuePair<string, bool?>(condition.Name, satisfied);
-        }
-
-        // 限定生效时机的影响写在“效果”标题后面，其余的逐条列出
-        private static void AddInfluences(VerticalStackPanel panel, IEnumerable<Influence> influences, int width)
-        {
-            List<Influence> list = influences.ToList();
-            if (list.Count == 0)
-            {
-                return;
-            }
-            List<string> restrictions = list.Where(x => RestrictionInfluenceKinds.Contains(x.Kind.ID)).Select(x => x.Description).ToList();
-            string title = restrictions.Count == 0 ? "效果" : "效果 · " + string.Join(" · ", restrictions);
-            panel.Widgets.Add(CreateDetailHeader(title, width));
-            foreach (Influence influence in list.Where(x => !RestrictionInfluenceKinds.Contains(x.Kind.ID)))
-            {
-                panel.Widgets.Add(CreateWrappedLabel("· " + influence.Description, 14, TextPrimary, width));
-            }
-        }
-
-        // 条件前面一个菱形，满足的绿色，不满足的红色，无法判断的灰色
-        private static void AddConditions(VerticalStackPanel panel, string title, IEnumerable<KeyValuePair<string, bool?>> conditions, int width)
-        {
-            List<KeyValuePair<string, bool?>> list = conditions.ToList();
-            panel.Widgets.Add(CreateDetailHeader(title, width));
-            if (list.Count == 0)
-            {
-                panel.Widgets.Add(CreateLabel("无", 13, TextSecondary));
-                return;
-            }
-            foreach (var condition in list)
-            {
-                Color color = condition.Value == null ? TextMuted : condition.Value.Value ? Green : Hostile;
-                var row = new HorizontalStackPanel
-                {
-                    Spacing = 6
-                };
-                row.Widgets.Add(CreateLabel("◇", 13, color));
-                row.Widgets.Add(CreateWrappedLabel(condition.Key, 13, condition.Value == false ? TextSecondary : TextPrimary, width - 20));
-                panel.Widgets.Add(row);
-            }
-        }
-
-        // 小标题和上一段之间的空隙放在外层容器的内边距里，固定了宽度的文字自己不带外边距
-        private static Widget CreateDetailHeader(string title, int width)
-        {
-            var holder = new Panel
-            {
-                Padding = new Thickness(0, 10, 0, 0)
-            };
-            holder.Widgets.Add(CreateWrappedLabel(title, 12, TextSecondary, width));
-            return holder;
-        }
-
         private static Widget CreateLegend(string text, Color color)
         {
             var legend = new HorizontalStackPanel
@@ -1407,77 +1264,6 @@ namespace PersonDetailPlugin
             label.VerticalAlignment = VerticalAlignment.Center;
             legend.Widgets.Add(label);
             return legend;
-        }
-
-        #endregion
-
-        #region 说明浮层
-
-        // 鼠标移到某一项上时显示说明，移开就收起。触屏没有悬停，点一下也能显示，点别处收起
-        private void AttachPopover(Widget anchor, Action<VerticalStackPanel, int> fill)
-        {
-            anchor.MouseEntered += (sender, args) => this.ShowPopover(anchor, fill);
-            anchor.MouseLeft += (sender, args) => this.HidePopover(anchor);
-            if (anchor is Button button)
-            {
-                button.Click += (sender, args) => this.ShowPopover(anchor, fill);
-            }
-        }
-
-        private void ShowPopover(Widget anchor, Action<VerticalStackPanel, int> fill)
-        {
-            if (this.popoverAnchor == anchor && this.popover.Visible)
-            {
-                return;
-            }
-            this.popoverAnchor = anchor;
-            this.popoverContent.Widgets.Clear();
-            fill(this.popoverContent, PopoverWidth - 2 * PopoverPadding);
-
-            // 放在这一项的右边，右边放不下就放左边；上下不超出弹窗
-            Point size = this.popover.Measure(new Point(PopoverWidth, int.MaxValue));
-            Point anchorTopLeft = this.mask.ToLocal(anchor.ToGlobal(Point.Zero));
-            Point dialogTopLeft = this.mask.ToLocal(this.dialog.ToGlobal(Point.Zero));
-            var dialogBounds = new Rectangle(dialogTopLeft.X, dialogTopLeft.Y, this.dialogWidth, this.dialogHeight);
-            int x = anchorTopLeft.X + anchor.Bounds.Width + PopoverGap;
-            if (x + size.X > dialogBounds.Right - PopoverGap)
-            {
-                x = anchorTopLeft.X - PopoverGap - size.X;
-            }
-            x = Math.Max(dialogBounds.X + PopoverGap, x);
-            int y = MathHelper.Clamp(anchorTopLeft.Y, dialogBounds.Y + PopoverGap, Math.Max(dialogBounds.Y + PopoverGap, dialogBounds.Bottom - PopoverGap - size.Y));
-            this.popover.Left = x;
-            this.popover.Top = y;
-            this.popover.Visible = true;
-        }
-
-        private void HidePopover(Widget anchor = null)
-        {
-            if (anchor == null || anchor == this.popoverAnchor)
-            {
-                this.popover.Visible = false;
-                this.popoverAnchor = null;
-            }
-        }
-
-        // 浮层放在最外层，盖在弹窗内容上面；位置用Left、Top从左上角算
-        private Widget BuildPopover()
-        {
-            this.popoverContent = new VerticalStackPanel
-            {
-                Spacing = 6
-            };
-            this.popover = new Panel
-            {
-                Width = PopoverWidth,
-                Padding = new Thickness(PopoverPadding),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-                Background = new FrameBrush(PopoverColor, GoldDim, false),
-                Visible = false
-            };
-            this.popover.Widgets.Add(this.popoverContent);
-            return this.popover;
         }
 
         #endregion
@@ -1608,7 +1394,7 @@ namespace PersonDetailPlugin
                 Width = width,
                 Height = height
             };
-            this.dragViewers.Add(viewer);
+            this.dragScroll.Add(viewer);
             return viewer;
         }
 
@@ -1854,7 +1640,7 @@ namespace PersonDetailPlugin
                 text.Widgets.Add(CreateLabel(GradeNames[grade], 24, GetGradeColor(grade)));
                 content.Widgets.Add(text);
                 Button cell = CreateFlatButton(content, cellWidth, ExperienceCellHeight, new FrameBrush(CardColor, LineColor, false));
-                this.AttachPopover(cell, (panel, popoverWidth) => ShowExperience(panel, value, thresholds, grade));
+                this.popover.Attach(cell, (panel, popoverWidth) => ShowExperience(panel, value, thresholds, grade));
                 row.Widgets.Add(cell);
             }
             return grid;
@@ -1880,7 +1666,7 @@ namespace PersonDetailPlugin
             {
                 levels.Add(GradeNames[i + 1] + " " + thresholds[i].ToString("#,0"));
             }
-            panel.Widgets.Add(CreateDetailHeader("分级门槛", PopoverWidth - 2 * PopoverPadding));
+            panel.Widgets.Add(CreateDetailHeader("分级门槛", MyraPopover.TextWidth));
             panel.Widgets.Add(CreateLabel(string.Join(" · ", levels), 13, TextPrimary));
         }
 
@@ -1962,181 +1748,6 @@ namespace PersonDetailPlugin
 
         #endregion
 
-        #region 通用控件
-
-        // 竖向间隔。Myra里固定了高度的控件，外边距算在高度里面，所以分区之间的空隙单独用一个空控件
-        private static Widget CreateSpacer(int height)
-        {
-            return new Panel
-            {
-                Height = height
-            };
-        }
-
-        // 分区标题：大字标题，后面可以跟一个小字的数量
-        private static Widget CreateSectionTitle(string title, string count, out Label countLabel)
-        {
-            var row = new HorizontalStackPanel
-            {
-                Spacing = 8,
-                Height = SectionTitleHeight
-            };
-            Label label = CreateLabel(title, 18, TextPrimary);
-            label.VerticalAlignment = VerticalAlignment.Top;
-            row.Widgets.Add(label);
-            countLabel = null;
-            if (count != null)
-            {
-                countLabel = CreateLabel(count, 13, TextSecondary);
-                countLabel.VerticalAlignment = VerticalAlignment.Top;
-                countLabel.Margin = new Thickness(0, 5, 0, 0);
-                row.Widgets.Add(countLabel);
-            }
-            return row;
-        }
-
-        // 扁平按钮：平时用给定的底，鼠标移上去整块稍微变亮
-        private static Button CreateFlatButton(Widget content, int width, int height, IBrush normal)
-        {
-            var button = new Button
-            {
-                Content = content,
-                Width = width,
-                Height = height
-            };
-            SetFlatBackground(button, normal);
-            return button;
-        }
-
-        private static void SetFlatBackground(Button button, IBrush brush)
-        {
-            button.Background = brush;
-            button.FocusedBackground = brush;
-            IBrush over = brush is FrameBrush frame ? frame.WithFill(HoverColor) : new SolidBrush(HoverColor);
-            button.OverBackground = over;
-            button.PressedBackground = over;
-        }
-
-        private static Widget CreateBar(int width, int height, int value, int max, Color color)
-        {
-            var bar = new Panel
-            {
-                Width = width,
-                Height = height,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidBrush(BarTrackColor)
-            };
-            int filled = max <= 0 ? 0 : (int)Math.Round((double)width * MathHelper.Clamp(value, 0, max) / max);
-            if (filled > 0)
-            {
-                bar.Widgets.Add(new Panel
-                {
-                    Width = filled,
-                    Height = height,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    Background = new SolidBrush(color)
-                });
-            }
-            return bar;
-        }
-
-        private static Label CreateLabel(string text, int fontSize, Color color)
-        {
-            return new Label
-            {
-                Text = text,
-                Font = TextManager.GetFont(fontSize),
-                TextColor = color,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-        }
-
-        private static Label CreateWrappedLabel(string text, int fontSize, Color color, int width)
-        {
-            return new Label
-            {
-                Text = text,
-                Font = TextManager.GetFont(fontSize),
-                TextColor = color,
-                Wrap = true,
-                Width = width
-            };
-        }
-
-        #endregion
-
-        #region 拖动滑动
-
-        // 按住列表上下拖动来滑动，触屏上没有滚轮，主要靠这个
-        private void Desktop_TouchDown(object sender, MyraEventArgs args)
-        {
-            this.dragDistance = 0;
-            this.dragLastY = null;
-            this.dragViewer = null;
-            Point? position = MyraUI.Desktop.TouchPosition;
-            if (!position.HasValue)
-            {
-                return;
-            }
-            if (!MyraUI.IsTop(this.root))
-            {
-                return;
-            }
-            // 触屏上点到说明浮层所属的那一项以外的地方，收起浮层
-            if (this.popoverAnchor != null && !this.popoverAnchor.ContainsGlobalPoint(position.Value))
-            {
-                this.HidePopover();
-            }
-            foreach (ScrollViewer viewer in this.dragViewers)
-            {
-                // 隐藏的页里的列表也在原位置，要跳过
-                if (IsShown(viewer) && viewer.ContainsGlobalPoint(position.Value))
-                {
-                    this.dragViewer = viewer;
-                    this.dragLastY = position.Value.Y;
-                    break;
-                }
-            }
-        }
-
-        private static bool IsShown(Widget widget)
-        {
-            for (; widget != null; widget = widget.Parent)
-            {
-                if (!widget.Visible)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private void Desktop_TouchMoved(object sender, MyraEventArgs args)
-        {
-            Point? position = MyraUI.Desktop.TouchPosition;
-            if (!this.dragLastY.HasValue || !position.HasValue || this.dragViewer == null)
-            {
-                return;
-            }
-            int delta = position.Value.Y - this.dragLastY.Value;
-            this.dragLastY = position.Value.Y;
-            this.dragDistance += Math.Abs(delta);
-            if (this.dragDistance > DragThreshold)
-            {
-                Point scroll = this.dragViewer.ScrollPosition;
-                scroll.Y = MathHelper.Clamp(scroll.Y - delta, 0, this.dragViewer.ScrollMaximum.Y);
-                this.dragViewer.ScrollPosition = scroll;
-            }
-        }
-
-        private void Desktop_TouchUp(object sender, MyraEventArgs args)
-        {
-            this.dragLastY = null;
-            this.dragViewer = null;
-        }
-
-        #endregion
-
         // 一个页签：顶部的按钮和对应的页
         private class Tab
         {
@@ -2150,83 +1761,6 @@ namespace PersonDetailPlugin
             {
                 this.Title = title;
                 this.Page = page;
-            }
-        }
-
-        // 带1像素边框的底，边框可以是虚线
-        private class FrameBrush : IBrush
-        {
-            private const int Dash = 4;
-            private const int Gap = 3;
-
-            private readonly Color fill;
-            private readonly Color line;
-            private readonly bool dashed;
-
-            public FrameBrush(Color fill, Color line, bool dashed)
-            {
-                this.fill = fill;
-                this.line = line;
-                this.dashed = dashed;
-            }
-
-            // 边框不变，换一个底色，用作鼠标移上去的样子
-            public FrameBrush WithFill(Color newFill)
-            {
-                return new FrameBrush(newFill, this.line, this.dashed);
-            }
-
-            public void Draw(RenderContext context, Rectangle dest, Color color)
-            {
-                if (this.fill.A > 0)
-                {
-                    context.FillRectangle(dest, this.fill);
-                }
-                if (this.line.A == 0)
-                {
-                    return;
-                }
-                if (!this.dashed)
-                {
-                    context.FillRectangle(new Rectangle(dest.X, dest.Y, dest.Width, 1), this.line);
-                    context.FillRectangle(new Rectangle(dest.X, dest.Bottom - 1, dest.Width, 1), this.line);
-                    context.FillRectangle(new Rectangle(dest.X, dest.Y, 1, dest.Height), this.line);
-                    context.FillRectangle(new Rectangle(dest.Right - 1, dest.Y, 1, dest.Height), this.line);
-                    return;
-                }
-                for (int x = dest.X; x < dest.Right; x += Dash + Gap)
-                {
-                    int width = Math.Min(Dash, dest.Right - x);
-                    context.FillRectangle(new Rectangle(x, dest.Y, width, 1), this.line);
-                    context.FillRectangle(new Rectangle(x, dest.Bottom - 1, width, 1), this.line);
-                }
-                for (int y = dest.Y; y < dest.Bottom; y += Dash + Gap)
-                {
-                    int height = Math.Min(Dash, dest.Bottom - y);
-                    context.FillRectangle(new Rectangle(dest.X, y, 1, height), this.line);
-                    context.FillRectangle(new Rectangle(dest.Right - 1, y, 1, height), this.line);
-                }
-            }
-        }
-
-        // 横向虚线
-        private class DashLineBrush : IBrush
-        {
-            private const int Dash = 3;
-            private const int Gap = 3;
-            private readonly Color line;
-
-            public DashLineBrush(Color line)
-            {
-                this.line = line;
-            }
-
-            public void Draw(RenderContext context, Rectangle dest, Color color)
-            {
-                for (int x = dest.X; x < dest.Right; x += Dash + Gap)
-                {
-                    context.FillRectangle(new Rectangle(x, dest.Y, Math.Min(Dash, dest.Right - x), 1), this.line);
-                }
             }
         }
 
