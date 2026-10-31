@@ -393,7 +393,20 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             //thread = null;
         }
 
+        /// <summary>
+        /// 读剧本会改Session.Current.Scenario，主菜单后台预读单挑剧本和开始游戏同时读时要排队
+        /// </summary>
+        public static readonly object ScenarioLoadLock = new object();
+
         public static GameScenario LoadScenarioData(string scenarioName, bool fromScenario)
+        {
+            lock (ScenarioLoadLock)
+            {
+                return LoadScenarioDataLocked(scenarioName, fromScenario);
+            }
+        }
+
+        private static GameScenario LoadScenarioDataLocked(string scenarioName, bool fromScenario)
         {
             Session.Current.IsWorking = true;
 

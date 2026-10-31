@@ -220,15 +220,10 @@ namespace GameManager
             // 电脑上游戏的鼠标指针是自己画的，会被弹窗盖住，这里在最上层补画一次
             if (Platform.PlatFormType == PlatFormType.Win || Platform.PlatFormType == PlatFormType.Desktop)
             {
-                // 鼠标位置是缩放前的逻辑坐标，要和游戏画面一样乘上缩放倍数
-                if (Session.MainGame.disScale)
-                {
-                    Session.Current.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, Session.MainGame.SpriteScale2);
-                }
-                else
-                {
-                    Session.Current.SpriteBatch.Begin();
-                }
+                // 鼠标位置是除以InputManager.Scale得到的逻辑坐标，这里乘回同样的倍数。
+                // 开始菜单按1280x720换算，和弹窗的缩放倍数不是一回事，不能用弹窗的
+                Vector2 mouseScale = InputManager.Scale;
+                Session.Current.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, null, null, null, null, Matrix.CreateScale(mouseScale.X, mouseScale.Y, 1));
                 CacheManager.Draw(MouseArrowTexture, InputManager.Position, Color.White);
                 Session.Current.SpriteBatch.End();
             }

@@ -502,6 +502,7 @@ namespace GameObjects
         private int troopIntelligence;
         private int troopStrength;
         public bool troopChallengeCommand = false;
+        public bool ChallengedInThisAttack = false;  //本次攻击已发生过单挑
         private GameArea viewArea = null;
 
         public int ViewingCliffFriendlyTroopCount;
@@ -2110,6 +2111,7 @@ namespace GameObjects
         {
             if (architecture != null)
             {
+                this.ChallengedInThisAttack = false;
                 ArchitectureDamage damage = architecture.ReceiveAttackDamage(this.SendAttackDamage(architecture));
                 this.StartAttackArchitecture(architecture, damage);
                 if ((this.BaseAroundAttackRadius > 0) || (this.AroundAttackRadius > 0))
@@ -2139,6 +2141,7 @@ namespace GameObjects
             //}
             if (troop != null)
             {
+                this.ChallengedInThisAttack = false;
                 TroopDamage damage2;
                 TroopDamage damage = troop.ReceiveAttackDamage(this.SendAttackDamage(troop, false));
                 if ((!damage.Waylay && !damage.AntiCounterAttack) && this.CounterAttackAvail(troop))
@@ -3016,6 +3019,58 @@ namespace GameObjects
                 RefreshWithPersonList(Persons);
             }
         }
+
+        /// <summary>
+        /// 整支部队归降时，不愿跟随而离去的士兵比例
+        /// </summary>
+        const float DefectQuantityLossRate = 0.2f;
+
+        /// <summary>
+        /// 整支部队归降时下降的士气
+        /// </summary>
+        const int DefectMoraleLoss = 20;
+
+        /// <summary>
+        /// 整支部队归降：脱离原军团，出发城池改为starting，加入follow所在军团并沿用它的行动目标，本回合不再行动。部分士兵离去，士气下降
+        /// </summary>
+        /// <param name="follow">说服者所在部队，已不在部队里时为null，归降部队原地待命</param>
+        public void DefectTo(Faction faction, Architecture starting, Troop follow)
+        {
+            this.BelongedLegion?.RemoveTroop(this);  //否则ChangeFaction会把整个军团带过去
+            this.ChangeFaction(faction);
+
+            if (starting != null)
+            {
+                this.StartingArchitecture = starting;
+            }
+
+            if (follow != null)
+            {
+                follow.BelongedLegion?.AddTroop(this);
+                this.WillArchitecture = follow.WillArchitecture;
+                this.TargetArchitecture = follow.TargetArchitecture;
+                this.TargetTroop = follow.TargetTroop == this ? null : follow.TargetTroop;
+                //follow正站着不动或正冲着自己来时原地待命，不去挤它的位置
+                this.RealDestination = follow.RealDestination == follow.Position || follow.TargetTroop == this ? this.Position : follow.RealDestination;
+                this.mingling = follow.mingling;
+                this.ManualControl = follow.ManualControl;
+            }
+            else
+            {
+                this.WillArchitecture = this.StartingArchitecture;
+                this.TargetArchitecture = null;
+                this.TargetTroop = null;
+                this.RealDestination = this.Position;
+                this.ManualControl = false;
+            }
+
+            this.MovabilityLeft = -1;
+            this.OperationDone = true;
+
+            this.DecreaseQuantity((int)(this.Quantity * DefectQuantityLossRate));
+            this.DecreaseMorale(DefectMoraleLoss);
+        }
+
         public void ChangeCombativity(int offset)
         {
             if (offset > 0)
@@ -7338,7 +7393,7 @@ namespace GameObjects
                     */
                     
                     Challenge challeng = new Challenge();
-                    challeng.HandleChallengeResult(damage, damage.ChallengeResult, damage.SourceTroop, damage.ChallengeSourcePerson, damage.DestinationTroop, damage.ChallengeDestinationPerson);
+                    challeng.HandleChallengeResults(damage);
                 }
                 if (damage.OfficerInjury > 0 && damage.DestinationTroop.Persons.Count > 0 && !damage.DestinationTroop.ImmunityOfDieInBattle)
                 {
@@ -9795,6 +9850,7 @@ namespace GameObjects
 
         public void RefreshWithPersonList(List<Person> personList)
         {
+            personList = personList.ToList();  //调用方常传Persons本身，下面清空时不能一起清掉
             Point position = this.Position;
             Point destination = this.Destination;
             Point realDestination = this.RealDestination;

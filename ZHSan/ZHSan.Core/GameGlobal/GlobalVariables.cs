@@ -290,6 +290,18 @@ namespace GameGlobal
         [DataMember]
         public int ShowNumberAddTime = 0;
 
+        /// <summary>
+        /// 主菜单单挑从哪个剧本里挑武将，填剧本名（如Scenarios.json里的Name）；为空或找不到时随机选一个剧本
+        /// </summary>
+        [DataMember]
+        public string DantiaoScenario = "";
+
+        /// <summary>
+        /// 主菜单单挑展示的武将武力下限，不足28人时用武力最高的补齐；0或不填时按70
+        /// </summary>
+        [DataMember]
+        public int DantiaoMinStrength = 70;
+
         public const string cryptKey = "A3g0c3%2";
 
         public GlobalVariables() {}
@@ -406,6 +418,8 @@ namespace GameGlobal
             TroopVoice = config.TroopVoice;
             MaxTupianwenzi = config.MaxTupianwenzi;
             ShowNumberAddTime = config.ShowNumberAddTime;
+            DantiaoScenario = config.DantiaoScenario ?? "";
+            DantiaoMinStrength = config.DantiaoMinStrength;
         }
 
         public GlobalVariablesConfig ToConfig()
@@ -522,6 +536,8 @@ namespace GameGlobal
                 TroopVoice = TroopVoice,
                 MaxTupianwenzi = MaxTupianwenzi,
                 ShowNumberAddTime = ShowNumberAddTime,
+                DantiaoScenario = DantiaoScenario,
+                DantiaoMinStrength = DantiaoMinStrength,
             };
         }
 

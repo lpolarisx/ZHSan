@@ -223,4 +223,8 @@ public class GlobalVariablesConfig
     public int MaxTupianwenzi { get; set; }
 
     public int ShowNumberAddTime { get; set; }
+
+    public string DantiaoScenario { get; set; }
+
+    public int DantiaoMinStrength { get; set; }
 }

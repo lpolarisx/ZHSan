@@ -526,6 +526,9 @@ namespace GameManager
 
         public static void StartScenario(Scenario scenario, bool save)
         {
+            //主菜单为单挑缓存的剧本不再需要
+            WorldOfTheThreeKingdoms.GameScreens.DantiaoSelectDialog.ClearCache();
+
             var players = scenario.Players.Split(',').RemoveNullOrEmpty().Select(id => int.Parse(id)).NullToEmptyList();
 
             Session.MainGame.loadingScreen = new LoadingScreen(save  ? "" : "Start", scenario.Name);

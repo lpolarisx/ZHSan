@@ -334,6 +334,86 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             return Clamp(chance, 0f, 0.6f);
         }
 
+        #region 援救
+
+        /// <summary>
+        /// helper对victim的情分：3 配偶、义兄弟、直系血亲；2 亲密；1 关系较好；0 一般；-1 厌恶
+        /// </summary>
+        public static int Bond(Person helper, Person victim)
+        {
+            if (helper.Hates(victim)) return -1;
+            if (helper.IsVeryCloseTo(victim) || helper.HasCloseStrainTo(victim)) return 3;
+            if (helper.Closes(victim)) return 2;
+            try
+            {
+                if (helper.GetRelation(victim) >= Session.Parameters.CloseThreshold / 2) return 1;
+            }
+            catch
+            {
+            }
+            return 0;
+        }
+
+        /// <summary>
+        /// 出手相救的意愿。danger：0只是败走，1性命攸关。
+        /// 情分越深越肯拼命，勇猛、义理高的更肯出手，主公有难都会来救；对手武力高出太多就不敢上；厌恶落难者的不救
+        /// </summary>
+        public static float RescueWill(Person helper, Person victim, float enemyForce, float danger)
+        {
+            var bond = Bond(helper, victim);
+            if (bond < 0) return 0f;
+
+            var chance = 0.12f + bond * 0.15f + (helper.Braveness - 5) * 0.03f + helper.PersonalLoyalty * 0.02f + danger * 0.15f;
+            if (victim.BelongedFaction != null && victim.BelongedFaction.Leader == victim) chance += 0.3f;
+
+            var gap = enemyForce - helper.ChallengeStrength;
+            if (gap > 10f) chance -= (gap - 10f) * (bond >= 3 ? 0.01f : 0.02f);
+
+            return Clamp(chance, 0f, 0.85f);
+        }
+
+        /// <summary>
+        /// 从候补里挑意愿最强的一个来救，掷不中就没人来。没人来时，bystander是厌恶落难者、冷眼旁观的那个（可能为null）
+        /// </summary>
+        public static Person PickRescuer(IEnumerable<Person> reserves, Person victim, float enemyForce, float danger, Random rng, out Person bystander)
+        {
+            bystander = null;
+            Person best = null;
+            var bestWill = 0f;
+
+            foreach (var r in reserves)
+            {
+                if (Bond(r, victim) < 0)
+                {
+                    bystander = r;
+                    continue;
+                }
+                var will = RescueWill(r, victim, enemyForce, danger);
+                if (will > bestWill)
+                {
+                    best = r;
+                    bestWill = will;
+                }
+            }
+
+            if (best != null && rng.NextDouble() < bestWill)
+            {
+                bystander = null;
+                return best;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 援将是接棒再战，还是救了人一起撤走：自觉打得过（勇猛的胆子大，冷静的更谨慎）就接着打
+        /// </summary>
+        public static bool PrefersRelay(Person helper, float enemyForce)
+        {
+            return helper.ChallengeStrength + (helper.Braveness - 5) * 2 - (helper.Calmness - 5) >= enemyForce - 3;
+        }
+
+        #endregion
+
         #region 台词与评书
 
         //文本都在 Content\Data\Dantiao\DantiaoText.json 里，这里只按情况挑条目、填名字

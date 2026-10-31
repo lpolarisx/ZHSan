@@ -59,6 +59,11 @@ namespace WorldOfTheThreeKingdoms
 
         public bool disScale = false;
 
+        /// <summary>
+        /// 按游戏画面的方式绘制、换算鼠标（按深度排序、逻辑分辨率缩放）：游戏中，或主菜单里正在单挑时
+        /// </summary>
+        public bool UseGameCanvas => loadingScreen == null && (mainGameScreen != null || mainMenuScreen?.IsDantiaoShowing == true);
+
         public Rectangle fullScreenDestination;
 
         public SpriteBatch SpriteBatch;
@@ -455,12 +460,12 @@ namespace WorldOfTheThreeKingdoms
 
             //var spriteMode = mainGameScreen == null ? SpriteSortMode.Deferred : SpriteSortMode.BackToFront;
 
-            var spriteMode = mainGameScreen == null || loadingScreen != null ? SpriteSortMode.Deferred : SpriteSortMode.BackToFront;
+            var spriteMode = !UseGameCanvas ? SpriteSortMode.Deferred : SpriteSortMode.BackToFront;
 
 
             if (disScale) //Platform.PlatFormType == PlatForm.iOS && isRetina)
             {
-                if (mainGameScreen == null || loadingScreen != null)
+                if (!UseGameCanvas)
                 {
                     SpriteBatch.Begin(spriteMode, BlendState.AlphaBlend, null, null, null, null, SpriteScale1);
                 }
@@ -471,7 +476,7 @@ namespace WorldOfTheThreeKingdoms
             }
             else
             {
-                if (mainGameScreen == null || loadingScreen != null)
+                if (!UseGameCanvas)
                 {
                     SpriteBatch.Begin(spriteMode, BlendState.AlphaBlend, null, null, null, null, SpriteScale1);
                 }

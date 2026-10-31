@@ -1538,6 +1538,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         // 不会显示在屏幕上的部队，动画、数字和待结算效果原本要等到下一次绘制才清除，这里直接结算，不用白等一帧绘制
         private void SettleUndisplayedTroops()
         {
+            // 单挑结果要等单挑界面关闭才写入damage，这时结算会把结果丢掉
+            if (this.dantiaoLayer != null)
+            {
+                return;
+            }
             foreach (var troop in Session.Current.Scenario.Troops.Values)
             {
                 if (troop.Destroyed)

@@ -20,6 +20,17 @@ using System.Linq;
 
 namespace GameObjects
 {
+    /// <summary>
+    /// 单挑里的一段1对1交手。Source为发起方（左），Destination为应战方（右），Result同HandleChallengeResult的结果码
+    /// </summary>
+    public class ChallengeBout
+    {
+        public Person Source;
+        public Person Destination;
+        public int Result;
+        public bool Rescued;  //败走的一方是被己方援将救回的
+    }
+
 	public class Challenge
 	{
         private bool ChallengeOftenShow = false;  //暴击必然触发单挑，调试单挑程序用，默认为false
@@ -27,6 +38,12 @@ namespace GameObjects
 
         public void ChallgenEvent(Troop sourceTroop, Troop troop, TroopDamage damage)
         {
+            //攻击被格挡时HandleTroopDamage不处理单挑结果，不发起单挑
+            if (damage.AntiAttack || damage.AntiArrowAttack) return;
+
+            //一次攻击命中多支部队也只单挑一场；演示中的单挑未结束时，再开一场会把它的结果覆盖掉
+            if (sourceTroop.ChallengedInThisAttack || Session.MainGame.mainGameScreen.dantiaoLayer != null) return;
+
             if ((!sourceTroop.IsFriendly(troop.BelongedFaction) && !sourceTroop.AirOffence) && (this.ChallengeOftenShow || GameObject.GetChance(20)))
             {
                 Person maxStrengthPerson = sourceTroop.Persons.MaxBy(x => x.Strength);
@@ -40,25 +57,90 @@ namespace GameObjects
                     int chance = Person.ChanlengeWinningChance(maxStrengthPerson, destination);
                     if (this.ChallengeOftenShow || (maxStrengthPerson.Character.ChallengeChance + chance) >= 60)
                     {
-                        this.challengeHappen(damage, maxStrengthPerson, destination, chance);
+                        var sourceReserves = PickReserves(maxStrengthPerson, sourceTroop.Persons);
+                        var destinationReserves = PickReserves(destination, troop.Persons);
+                        sourceTroop.ChallengedInThisAttack = true;
+                        this.challengeHappen(damage, maxStrengthPerson, destination, chance, sourceReserves, destinationReserves);
                     }
                 }
             }
         }
 
-        private void challengeHappen(TroopDamage damage, Person maxStrengthPerson, Person destination, int chance)
+        /// <summary>
+        /// 候补武将，最多两名：除主将外武力最高的一名，再加一名与主将关系最亲的（没有亲近的就取武力次高的）。文官不上阵
+        /// </summary>
+        public static List<Person> PickReserves(Person main, IEnumerable<Person> pool)
+        {
+            var candidates = pool.Where(p => p != null && p != main && !p.IsCivil()).ToList();
+            var reserves = new List<Person>();
+
+            var strongest = candidates.OrderByDescending(p => p.Strength).FirstOrDefault();
+            if (strongest == null) return reserves;
+            reserves.Add(strongest);
+
+            var rest = candidates.Where(p => p != strongest).ToList();
+            var closest = rest.Where(p => DantiaoRules.Bond(p, main) > 0)
+                .OrderByDescending(p => DantiaoRules.Bond(p, main)).ThenByDescending(p => p.Strength).FirstOrDefault()
+                ?? rest.OrderByDescending(p => p.Strength).FirstOrDefault();
+            if (closest != null) reserves.Add(closest);
+
+            return reserves;
+        }
+
+        static readonly Random rng = new Random();
+
+        /// <summary>
+        /// 不演示时的结算：一段段按胜率判胜负，败将可能被候补救走，援将武力够的接着打
+        /// </summary>
+        static void SimulateBouts(TroopDamage damage, Person source, Person destination, List<Person> sourceReserves, List<Person> destinationReserves)
+        {
+            var reserves = new[] { new List<Person>(sourceReserves), new List<Person>(destinationReserves) };
+            var fighters = new[] { source, destination };
+            var fought = new[] { 0, 0 };  //连战的段数，打得越久越吃亏
+            damage.ChallengeBouts.Clear();
+
+            while (true)
+            {
+                var chance = Person.ChanlengeWinningChance(fighters[0], fighters[1]) + (fought[1] - fought[0]) * 10;
+                var loserSide = GameObject.GetChance(chance) ? 1 : 0;
+                var winner = fighters[1 - loserSide];
+                var loser = fighters[loserSide];
+                var bout = new ChallengeBout() { Source = fighters[0], Destination = fighters[1] };
+                damage.ChallengeBouts.Add(bout);
+
+                //只是被打下马，不像演示里那样性命攸关，来救的少些
+                var enemyForce = winner.ChallengeStrength - fought[1 - loserSide] * 5;
+                var helper = DantiaoRules.PickRescuer(reserves[loserSide], loser, enemyForce, 0.5f, rng, out _);
+                if (helper == null)
+                {
+                    bout.Result = loserSide == 0 ? 2 : 1;
+                    return;
+                }
+
+                reserves[loserSide].Remove(helper);
+                bout.Result = loserSide == 0 ? 5 : 6;
+                bout.Rescued = true;
+                if (!DantiaoRules.PrefersRelay(helper, enemyForce)) return;
+
+                fighters[loserSide] = helper;
+                fought[loserSide] = 0;
+                fought[1 - loserSide]++;
+            }
+        }
+
+        private void challengeHappen(TroopDamage damage, Person maxStrengthPerson, Person destination, int chance, List<Person> sourceReserves, List<Person> destinationReserves)
         {
             int flag = 0;
             //damage.ChallengeHappened = true;  //单挑发生
             if ((Setting.Current.GlobalVariables.ShowChallengeAnimation) &&   //Session.GlobalVariables.ShowChallengeAnimation
                 (Session.Current.Scenario.IsPlayer(maxStrengthPerson.BelongedFaction) || Session.Current.Scenario.IsPlayer(destination.BelongedFaction) || (Session.GlobalVariables.SkyEye && !Session.GlobalVariables.SkyEyeSimpleNotification) || this.ChallengeOftenShow))  //单挑双方有玩家的武将才演示
             {
-                
+
                 try
                 {
                     Session.MainGame.mainGameScreen.EnableUpdate = false;
 
-                    challengeShow(damage, maxStrengthPerson, destination);
+                    challengeShow(damage, maxStrengthPerson, destination, sourceReserves, destinationReserves);
 
                     //int returnValue;
                     //returnValue = this.challengeShow(maxStrengthPerson, destination);
@@ -76,22 +158,23 @@ namespace GameObjects
                 }
                 catch
                 {
-                    flag = (GameObject.GetChance(chance) ? 1 : 2);
+                    SimulateBouts(damage, maxStrengthPerson, destination, sourceReserves, destinationReserves);
                     damage.ChallengeHappened = true;  //单挑发生
                 }
             }
             else
             {
-                flag = (GameObject.GetChance(chance) ? 1 : 2);
+                SimulateBouts(damage, maxStrengthPerson, destination, sourceReserves, destinationReserves);
                 damage.ChallengeHappened = true;  //单挑发生
             }
 
             //flag = -4;
             if (damage.ChallengeHappened)
             {
-                damage.ChallengeResult = flag;
-                damage.ChallengeSourcePerson = maxStrengthPerson;
-                damage.ChallengeDestinationPerson = destination;
+                var last = damage.ChallengeBouts.LastOrDefault();
+                damage.ChallengeResult = last?.Result ?? flag;
+                damage.ChallengeSourcePerson = last?.Source ?? maxStrengthPerson;
+                damage.ChallengeDestinationPerson = last?.Destination ?? destination;
             }
 
         }
@@ -128,21 +211,15 @@ namespace GameObjects
             return para;
         }
 
-        private void challengeShow(TroopDamage damage, Person maxStrengthPerson, Person destination)
+        private void challengeShow(TroopDamage damage, Person maxStrengthPerson, Person destination, List<Person> sourceReserves, List<Person> destinationReserves)
         {
-            DantiaoLayer.Persons = new List<Person>()
-            {
-                maxStrengthPerson,
-                destination
-            };
-
             damage.ChallengeStarted = true;
 
             Session.MainGame.mainGameScreen.cloudLayer.Reverse = true;
 
             Session.MainGame.mainGameScreen.cloudLayer.Start();
 
-            Session.MainGame.mainGameScreen.dantiaoLayer = new DantiaoLayer(DantiaoLayer.Persons[DantiaoLayer.Persons.Count - 2], DantiaoLayer.Persons[DantiaoLayer.Persons.Count - 1]);
+            Session.MainGame.mainGameScreen.dantiaoLayer = new DantiaoLayer(maxStrengthPerson, destination, sourceReserves, destinationReserves);
 
             Session.MainGame.mainGameScreen.dantiaoLayer.damage = damage;
 
@@ -169,7 +246,40 @@ namespace GameObjects
             //return myProcess.ExitCode;
         }
 
-        public void HandleChallengeResult(TroopDamage damage, int result, Troop sourceTroop, Person sourcePerson, Troop destinationTroop, Person destinationPerson)
+        /// <summary>
+        /// 几段交手各自结算后，士气、战意的总变化不超过这个数
+        /// </summary>
+        const int MaxBoutsChange = 40;
+
+        /// <summary>
+        /// 按交手记录逐段结算，没有记录时按damage上的那一对结算
+        /// </summary>
+        public void HandleChallengeResults(TroopDamage damage)
+        {
+            var bouts = damage.ChallengeBouts.Count > 0 ? damage.ChallengeBouts.ToList()
+                : new List<ChallengeBout>() { new ChallengeBout() { Source = damage.ChallengeSourcePerson, Destination = damage.ChallengeDestinationPerson, Result = damage.ChallengeResult } };
+
+            var sourceMorale = damage.SourceMoraleChange;
+            var destinationMorale = damage.DestinationMoraleChange;
+            var sourceCombativity = damage.SourceCombativityChange;
+            var destinationCombativity = damage.DestinationCombativityChange;
+
+            foreach (var bout in bouts)
+            {
+                HandleChallengeResult(damage, bout.Result, damage.SourceTroop, bout.Source, damage.DestinationTroop, bout.Destination, bout.Rescued);
+            }
+
+            if (bouts.Count > 1)
+            {
+                damage.SourceMoraleChange = sourceMorale + Math.Clamp(damage.SourceMoraleChange - sourceMorale, -MaxBoutsChange, MaxBoutsChange);
+                damage.DestinationMoraleChange = destinationMorale + Math.Clamp(damage.DestinationMoraleChange - destinationMorale, -MaxBoutsChange, MaxBoutsChange);
+                damage.SourceCombativityChange = sourceCombativity + Math.Clamp(damage.SourceCombativityChange - sourceCombativity, -MaxBoutsChange, MaxBoutsChange);
+                damage.DestinationCombativityChange = destinationCombativity + Math.Clamp(damage.DestinationCombativityChange - destinationCombativity, -MaxBoutsChange, MaxBoutsChange);
+            }
+        }
+
+        /// <param name="rescued">败走的一方是被己方援将救回的，士气损失减半</param>
+        public void HandleChallengeResult(TroopDamage damage, int result, Troop sourceTroop, Person sourcePerson, Troop destinationTroop, Person destinationPerson, bool rescued = false)
         {
             Session.MainGame.mainGameScreen.TroopPersonChallenge(result, sourceTroop, sourcePerson, destinationTroop, destinationPerson);
 
@@ -206,14 +316,14 @@ namespace GameObjects
                     damage.DestinationCombativityChange -= 30;
                     break;
                 case 5: //5：P1武将逃跑
-                    Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, destinationPerson, sourcePerson, "逃跑");
-                    damage.SourceMoraleChange -= 20;
-                    damage.DestinationMoraleChange += 20;
+                    Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, destinationPerson, sourcePerson, rescued ? "被救回" : "逃跑");
+                    damage.SourceMoraleChange -= rescued ? 10 : 20;
+                    damage.DestinationMoraleChange += rescued ? 10 : 20;
                     break;
                 case 6: //6：P2武将逃跑
-                    Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, sourcePerson, destinationPerson, "逃跑");
-                    damage.SourceMoraleChange += 20;
-                    damage.DestinationMoraleChange -= 20;
+                    Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, sourcePerson, destinationPerson, rescued ? "被救回" : "逃跑");
+                    damage.SourceMoraleChange += rescued ? 10 : 20;
+                    damage.DestinationMoraleChange -= rescued ? 10 : 20;
                     break;
                 case 7: //7、P1武将被俘虏
                     Session.Current.Scenario.YearTable.addChallengeEntry(Session.Current.Scenario.Date, destinationPerson, sourcePerson, "被俘虜");

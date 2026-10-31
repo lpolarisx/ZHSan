@@ -102,8 +102,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                     for (int x = 0; x < w; x++)
                     {
                         var c = src[y * w + x];
-                        //紫红底色(247,0,255)视为透明
-                        if (c.R >= 230 && c.G <= 20 && c.B >= 230) c = Color.Transparent;
+                        //紫红底色(247,0,255)和纯蓝底色(0,0,255)视为透明。纯蓝要完全相等，人物身上有相近的深蓝
+                        if (c.R >= 230 && c.G <= 20 && c.B >= 230 || c.R == 0 && c.G == 0 && c.B == 255) c = Color.Transparent;
                         for (int dy = 0; dy < Zoom; dy++)
                         {
                             for (int dx = 0; dx < Zoom; dx++)
@@ -194,6 +194,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         public bool Fled;
 
+        public bool Reserve;  //在场边待命的候补
+        public bool Out;      //已退场（败走、被救回），头像变灰
+
         public DantiaoGeneral(Person person, int side)
         {
             Person = person;
@@ -281,6 +284,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         public void SetPose(DantiaoPose pose, float hold = 0f)
         {
+            //说话时不用正面举兵器的帧，保持侧身骑马
+            if (IsFrontPose(pose) && SayTime > 0f)
+            {
+                pose = DantiaoPose.Ride;
+            }
+
             Pose = pose;
             poseTime = 0f;
             poseHold = hold;
@@ -297,7 +306,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         {
             SayText = text;
             SayTime = SayTotal = time;
+            if (IsFrontPose(Pose))
+            {
+                SetPose(DantiaoPose.Ride);
+            }
         }
+
+        /// <summary>
+        /// spc图里正面举兵器的两帧：骂阵（第0帧）和举兵器（第4帧）
+        /// </summary>
+        static bool IsFrontPose(DantiaoPose pose) => pose == DantiaoPose.Raise || pose == DantiaoPose.Taunt;
 
         /// <summary>
         /// 落马：被打得往后跌出，人仰马翻
@@ -308,6 +326,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             Moving = false;
             airVelocity = new Vector2(awayDirection * 70f, 0f);
             SetPose(DantiaoPose.Airborne);
+        }
+
+        /// <summary>
+        /// 落马后被援将救起，重新上马
+        /// </summary>
+        public void Remount()
+        {
+            Mounted = true;
+            airVelocity = Vector2.Zero;
+            SetPose(DantiaoPose.Ride);
         }
 
         public void Update(float dt)

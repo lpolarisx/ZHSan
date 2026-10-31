@@ -3542,9 +3542,12 @@ namespace GameObjects
             else
             {
                 person.MoveToArchitecture(this.TargetArchitecture, from.ArchitectureArea.Area[0], false, true, null);
-                
+
             }
-            person.Status = PersonStatus.Moving;
+            if (person.LocationTroop == null)  //随部队归降的仍在部队里，BelongedFaction取自部队
+            {
+                person.Status = PersonStatus.Moving;
+            }
             /*if (!(flag || (person.LocationArchitecture == null)))
             {
                 person.LocationArchitecture.RemovePerson(person);
@@ -3560,33 +3563,47 @@ namespace GameObjects
             eventManager.Publish(new ConvinceSuccessedEvent(this, person, belongedFaction));
         }
 
+        /// <summary>
+        /// 部队不止一人时，被说服者离队前往说服者部队的出发城池，部队另选领队；只有一人时整支部队归降，目标跟随说服者部队
+        /// </summary>
         private void ConvincePersonInTroop(Person person)
         {
-            if (person.LocationTroop.PersonCount >= 2)
-            {
-                if (!person.LocationTroop.Destroyed)
-                {
-                    Troop locationTroop = person.LocationTroop;
+            Troop locationTroop = person.LocationTroop;
+            Architecture destination = this.ConvinceDestination();
 
-                    person.LocationTroop.Persons.Remove(person);
+            if (locationTroop.PersonCount >= 2)
+            {
+                if (!locationTroop.Destroyed)
+                {
+                    locationTroop.Persons.Remove(person);
                     person.LocationTroop = null;
                     locationTroop.RefreshAfterLosePerson();
-                    person.MoveToArchitecture(this.BelongedFaction.Capital, locationTroop.Position);
+                    person.MoveToArchitecture(destination, locationTroop.Position);
 
                 }
                 else
                 {
-                    person.MoveToArchitecture(this.BelongedFaction.Capital, null);
+                    person.LocationTroop = null;
+                    person.MoveToArchitecture(destination, null);
 
                 }
             }
             else
             {
-                if (!person.LocationTroop.Destroyed)
+                if (!locationTroop.Destroyed)
                 {
-                    person.LocationTroop.ChangeFaction(this.BelongedFaction);
+                    locationTroop.DefectTo(this.BelongedFaction, destination, this.LocationTroop);
                 }
             }
+        }
+
+        /// <summary>
+        /// 说服者部队的出发城池；不在部队里或出发城池已失守时取都城
+        /// </summary>
+        private Architecture ConvinceDestination()
+        {
+            Architecture starting = this.LocationTroop?.StartingArchitecture;
+            return starting != null && starting.BelongedFaction == this.BelongedFaction ? starting : this.BelongedFaction.Capital;
         }
 
         public void DoDestroy()

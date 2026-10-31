@@ -31,7 +31,7 @@ namespace GameManager
         {
             get
             {
-                if (Session.MainGame.mainGameScreen == null || Session.MainGame.loadingScreen != null)
+                if (!Session.MainGame.UseGameCanvas)
                 {
                     return Scale1;
                 }

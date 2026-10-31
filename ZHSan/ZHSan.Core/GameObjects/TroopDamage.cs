@@ -43,6 +43,11 @@ namespace GameObjects
         public int StealFood;
 
         public bool ChallengeStarted;
+
+        /// <summary>
+        /// 一场单挑里先后几段1对1交手（有援将接棒时不止一段），为空时按上面那一对处理
+        /// </summary>
+        public List<ChallengeBout> ChallengeBouts = new();
     }
 }
 

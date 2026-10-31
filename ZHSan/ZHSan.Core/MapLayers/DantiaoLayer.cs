@@ -17,8 +17,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
     /// </summary>
     public class DantiaoLayer
     {
-        public static List<Person> Persons = null;
-
         public TroopDamage damage = null;
 
         public int Result = 0;
@@ -30,12 +28,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         const float WorldWidth = 2300f;
         const float GyMin = 50f;
         const float GyMax = 260f;
-        const int LogPageLines = 6;
+        const int LogPageLines = 4;
+        //评书每行的高度；战场往下移的距离就是评书让出来的高度，天空图正好还能盖到窗体顶上
+        const float LogLineHeight = 23f;
+        const float FieldShift = (6 - LogPageLines) * LogLineHeight;
         //双方头像、名字、体力条都排在窗体顶部一条，头像框按这个倍数缩小
         const float PortraitScale = 0.6f;
         const float TopBandHeight = 128f;
         //生命条比体力条短
         const float LifeBarScale = 0.8f;
+        //候补小头像相对头像框原图的大小
+        const float SmallPortraitScale = 0.3f;
+        //退场武将的头像压暗成灰色
+        static readonly Color GreyTint = new Color(105, 105, 105);
         //台词气泡相对原图（319/337×96）的大小，文字和边距跟着缩
         const float BubbleScale = 0.75f;
 
@@ -44,7 +49,24 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         readonly Random rng = new Random();
 
-        readonly DantiaoGeneral left, right;
+        //场上正在交手的两人；援将接棒后换成援将
+        DantiaoGeneral left, right;
+
+        //双方的全部武将：主将在前，候补在后，每方最多三人
+        readonly List<DantiaoGeneral>[] rosters = { new List<DantiaoGeneral>(), new List<DantiaoGeneral>() };
+
+        IEnumerable<DantiaoGeneral> All => rosters[0].Concat(rosters[1]);
+
+        const int MaxReserves = 2;
+
+        /// <summary>
+        /// 已打完的几段交手，最后一段在Close时补上
+        /// </summary>
+        readonly List<ChallengeBout> bouts = new List<ChallengeBout>();
+        bool endRescued;  //最后一段以援将救走败将收场
+
+        //援将入场时镜头跟着他，赶到后把他和对手一起框进来
+        DantiaoGeneral spotlight, spotlightTarget;
 
         float scale = 1f;   //屏幕放不下窗体时才缩小
         Vector2 origin;     //窗体左上角的屏幕坐标
@@ -99,7 +121,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             public float FromX, FromGy, Time;
             public DantiaoGeneral Target;
             public bool Miss;
-            public const float Duration = 0.35f;
+            public float Duration = 0.35f;  //阵前远射时按距离加长
             public bool Done => Time >= Duration;
         }
 
@@ -113,11 +135,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             public bool Chop;
         }
 
-        public DantiaoLayer(Person leftPerson, Person rightPerson)
+        public DantiaoLayer(Person leftPerson, Person rightPerson, IEnumerable<Person> leftReserves = null, IEnumerable<Person> rightReserves = null)
         {
             DantiaoText.Reload();
             left = new DantiaoGeneral(leftPerson, 0);
             right = new DantiaoGeneral(rightPerson, 1);
+            rosters[0].Add(left);
+            rosters[1].Add(right);
+            AddReserves(0, leftReserves);
+            AddReserves(1, rightReserves);
 
             UpdateScale();
 
@@ -130,6 +156,43 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             PlanIntro();
 
             Session.PlayMusic("Battle");
+        }
+
+        /// <summary>
+        /// 不是由部队交战引起、单挑完要回到别处时调用（如主菜单），设了就不再回大地图
+        /// </summary>
+        Action closed;
+
+        /// <summary>
+        /// 直接在主菜单里单挑，不进大地图。双方名单主将在前，其余为候补；单挑结束时调用closed
+        /// </summary>
+        public static DantiaoLayer CreateForMenu(List<Person> left, List<Person> right, Action closed)
+        {
+            return new DantiaoLayer(left[0], right[0], left.Skip(1), right.Skip(1))
+            {
+                closed = closed,
+                startDelay = 0f  //没有云层要等，点开始直接进
+            };
+        }
+
+        //候补靠战场边站成一列，前后相隔约一个半身位
+        const float ReserveX = 90f;
+        const float ReserveGap = 75f;
+
+        /// <summary>
+        /// 候补在战场最左、最右两端列阵观战
+        /// </summary>
+        void AddReserves(int side, IEnumerable<Person> persons)
+        {
+            if (persons == null) return;
+
+            foreach (var p in persons.Where(p => p != null && !All.Any(g => g.Person == p)).Take(MaxReserves))
+            {
+                var i = rosters[side].Count - 1;
+                var g = new DantiaoGeneral(p, side) { Reserve = true };
+                g.Place(side == 0 ? ReserveX : WorldWidth - ReserveX, GyMin + 10 + i * ReserveGap, side == 0 ? 1 : -1);
+                rosters[side].Add(g);
+            }
         }
 
         #region 流程
@@ -709,6 +772,23 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             var killed = RollKilled(loser);
             var beheaded = killed && RollBeheaded(loser);
 
+            //落马后对方正要下手，候补可能赶来相救
+            var rescue = ChooseRescuer(loser, winner, killed ? 1f : 0.5f);
+            if (rescue != null)
+            {
+                //有人来救就不落马，伤重的一方只是伏鞍喘息，对方举兵器正要下手
+                Do(() =>
+                {
+                    winner.Stop();
+                    loser.Stop();
+                    loser.SetPose(DantiaoPose.Pant, 4f);
+                    Log(DantiaoText.PickFor(rng, "救援.落马", winner, "胜", winner.Name, "败", loser.Name));
+                });
+                Wait(0.4f);
+                PlanRescue(loser, winner, rescue.Value.Helper, rescue.Value.Relay, true);
+                return;
+            }
+
             Result = killed ? (loser == left ? 3 : 4) : (loser == left ? 2 : 1);
 
             Do(() =>
@@ -901,6 +981,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 {
                     PlanPursuit(winner, g, dir);
                 }
+                else if (ChooseRescuer(g, winner, 0f) is { } relay)
+                {
+                    //对方不追，候补里有自觉打得过的，出阵接战
+                    PlanRescue(g, winner, relay.Helper, true, false);
+                }
                 else
                 {
                     PlanLetGo(winner, g, dir);
@@ -981,6 +1066,18 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             var chop = rng.NextDouble() < 0.55;
             w.Stop();
             g.Stop();
+
+            //被追上了，候补可能赶来截住追兵
+            if (outcome != PursuitOutcome.Escape)
+            {
+                var rescue = ChooseRescuer(g, w, outcome == PursuitOutcome.Wound ? 0.5f : 1f);
+                if (rescue != null)
+                {
+                    Log(DantiaoText.PickFor(rng, "救援.追上", w, "追", w.Name, "逃", g.Name));
+                    PlanRescue(g, w, rescue.Value.Helper, rescue.Value.Relay, true);
+                    return;
+                }
+            }
 
             if (outcome == PursuitOutcome.Escape)
             {
@@ -1172,6 +1269,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 if (rng.NextDouble() < DantiaoRules.CaptureChance(a, d))
                 {
                     Interrupt();
+
+                    var rescue = ChooseRescuer(d, a, 1f);
+                    if (rescue != null)
+                    {
+                        Log(T("救援.擒拿", "攻", a.Name, "守", d.Name));
+                        PlanRescue(d, a, rescue.Value.Helper, rescue.Value.Relay, true);
+                        return;
+                    }
+
                     Result = d == left ? 7 : 8;
                     d.FallOff(a.X > d.X ? 1 : -1);
                     PlaySound("Fall");
@@ -1232,6 +1338,383 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 }
             });
         }
+
+        #region 援救：接棒、营救
+
+        /// <summary>
+        /// 挑一名候补来救victim。danger为0时victim只是败走，只有自觉打得过、愿意接战的才出阵。
+        /// 没人来救而有人冷眼旁观时，安排一句见死不救的话
+        /// </summary>
+        (DantiaoGeneral Helper, bool Relay)? ChooseRescuer(DantiaoGeneral victim, DantiaoGeneral enemy, float danger)
+        {
+            var reserves = rosters[victim.Side].Where(g => g.Reserve).ToList();
+            if (reserves.Count == 0) return null;
+
+            var enemyForce = DantiaoRules.Effective(enemy);
+            var person = DantiaoRules.PickRescuer(reserves.Select(g => g.Person), victim.Person, enemyForce, danger, rng, out var bystander);
+            var helper = reserves.FirstOrDefault(g => g.Person == person);
+            if (helper == null)
+            {
+                var watcher = reserves.FirstOrDefault(g => g.Person == bystander);
+                if (watcher != null && danger > 0f)
+                {
+                    Do(() =>
+                    {
+                        Log(T("见死不救", "旁", watcher.Name, "败", victim.Name));
+                        Speak(watcher, T("见死不救台词"), 1.8f);
+                    });
+                }
+                return null;
+            }
+
+            var relay = DantiaoRules.PrefersRelay(helper.Person, enemyForce);
+            if (danger <= 0f && !relay) return null;
+            return (helper, relay);
+        }
+
+        static float InterceptX(DantiaoGeneral helper, DantiaoGeneral enemy)
+        {
+            var dir = helper.X < enemy.X ? -1 : 1;
+            return Clamp(enemy.X + dir * 70, 40, WorldWidth - 40);
+        }
+
+        /// <summary>
+        /// 援将拍马赶到，与对手交一招把他逼开，败将趁机退回本阵。
+        /// relay：援将接着与对手交手；否则护着败将一起撤走，单挑结束。rescued：败将是被救回的，否则只是败走后有人接战。
+        /// 调用前须已Interrupt
+        /// </summary>
+        void PlanRescue(DantiaoGeneral victim, DantiaoGeneral enemy, DantiaoGeneral helper, bool relay, bool rescued)
+        {
+            //善射的候补多半先在阵前放一箭把对手逼退，救下人再看要不要上前接战
+            if (rescued && helper.IsArcher && rng.NextDouble() < 0.7)
+            {
+                PlanArrowRescue(victim, enemy, helper, relay);
+                return;
+            }
+
+            var home = victim.Side == 0 ? -500f : WorldWidth + 500f;
+            var chop = rng.NextDouble() < 0.55;
+            var bond = DantiaoRules.Bond(helper.Person, victim.Person);
+            helper.Reserve = false;
+
+            //先喊话：镜头转到援将，等台词看清了再拍马冲出
+            Do(() =>
+            {
+                fleeing = null;
+                spotlight = helper;
+                spotlightTarget = enemy;
+                enemy.Stop();
+                enemy.FaceTo(helper);
+                helper.FaceTo(enemy);
+                if (rescued && victim.Mounted) victim.SetPose(DantiaoPose.Pant, 4f);
+                if (!rescued) victim.MoveTo(home, victim.Gy, 260);
+                PlayVoice(helper, "Ha");
+
+                var vars = new object[] { "自称", DantiaoRules.SelfName(helper.Person), "败", victim.Name, "敌", enemy.Name };
+                Speak(helper, rescued ? DantiaoText.PickAny(rng, new[] { "救援台词", bond >= 3 ? "救援台词.至亲" : null }, vars) : T("接战台词", vars), 2.4f);
+                Log(DantiaoText.PickFor(rng, rescued ? "救援.赶到" : "接战.赶到", helper, "救", helper.Name, "败", victim.Name, "敌", enemy.Name));
+            });
+            Wait(1.3f);
+            Do(() =>
+            {
+                helper.MoveTo(InterceptX(helper, enemy), enemy.Gy + 3, 320);
+                PlaySound("Horse");
+            });
+            WaitUntil(() =>
+            {
+                //对手被撞开或还在动时跟着截
+                helper.MoveTo(InterceptX(helper, enemy), enemy.Gy + 3, 320);
+                return Math.Abs(helper.X - enemy.X) < 90f;
+            }, 8f);
+            Do(() =>
+            {
+                helper.Stop();
+                helper.FaceTo(enemy);
+                enemy.FaceTo(helper);
+            });
+            Wait(0.25f);
+            Do(() => helper.Attack(chop));
+            WaitUntil(() => helper.ImpactReady, 1.5f);
+            Do(() =>
+            {
+                helper.ImpactReady = false;
+                PlaySound(rng.Next(2) == 0 ? "Clash1" : "Clash2");
+                if (!enemy.IsAttacking) enemy.SetPose(DantiaoPose.Guard, 0.3f);
+                enemy.Nudge(enemy.X < helper.X ? -24 : 24);
+                Log(T("救援.架住", "救", helper.Name, "败", victim.Name, "敌", enemy.Name));
+
+                //兵器架开的同时败将趁机脱身，不另停顿
+                victim.Out = true;
+                if (!rescued) return;
+                var onFoot = !victim.Mounted;
+                if (onFoot) victim.Remount(); else victim.SetPose(DantiaoPose.Ride);
+                victim.MoveTo(home, victim.Gy, 220);
+                Log(T(onFoot ? "救援.脱身.落马" : "救援.脱身", "救", helper.Name, "败", victim.Name));
+            });
+            Wait(0.3f);
+
+            if (relay)
+            {
+                PlanTakeOver(victim, enemy, helper, rescued);
+            }
+            else
+            {
+                //援将不恋战，对手也没追：两人就地再斗几合，援将拨马回阵，对手不追
+                PlanSkirmish(helper, enemy, rng.Next(2, 5));
+                Do(() =>
+                {
+                    spotlight = enemy;
+                    spotlightTarget = helper;
+                    helper.MoveTo(home, helper.Gy, 220);
+                    Speak(helper, T("营救.撤走台词"), 1.6f);
+                    Log(T("营救.撤走", "救", helper.Name, "败", victim.Name));
+                });
+                Wait(0.9f);
+
+                //勇猛、体力足的对手可能追两步，见援将已近本阵就勒马回来；否则不追
+                var chase = rng.NextDouble() < Clamp(DantiaoRules.PursueChance(enemy, helper) * 0.6f, 0.1f, 0.5f);
+                if (chase)
+                {
+                    var chaseX = 0f;
+                    Do(() =>
+                    {
+                        var dir = home < enemy.X ? -1 : 1;
+                        chaseX = Clamp(enemy.X + dir * 260, 60, WorldWidth - 60);
+                        //比援将马慢一些，越追越远
+                        enemy.MoveTo(chaseX, helper.Gy + 3, 200);
+                        PlaySound("Horse");
+                        Log(DantiaoRules.PursueText(enemy, rng));
+                        Speak(enemy, DantiaoRules.PursueLine(rng), 1.4f);
+                    });
+                    WaitUntil(() => enemy.Arrived, 2.5f);
+                    Do(() =>
+                    {
+                        enemy.Stop();
+                        enemy.FaceTo(helper);
+                        Log(T("营救.追而复返", "追", enemy.Name, "逃", helper.Name));
+                        Speak(enemy, DantiaoRules.LostLine(rng), 1.8f);
+                    });
+                }
+                else
+                {
+                    Do(() =>
+                    {
+                        enemy.FaceTo(helper);
+                        Log(DantiaoRules.LetGoText(enemy, rng));
+                        Speak(enemy, DantiaoRules.LetGoLine(enemy, rng), 1.8f);
+                    });
+                }
+                WaitUntil(() => Math.Abs(helper.X - enemy.X) > viewWidth * 0.6f, 4f);
+                Do(() =>
+                {
+                    Result = victim == left ? 5 : 6;
+                    endRescued = true;
+                    Log(T("结局.救走", "救", helper.Name, "败", victim.Name, "回合", round));
+                    ShowTitle($"{helper.Name}救走{victim.Name}！");
+                });
+            }
+        }
+
+        /// <summary>
+        /// 援将接棒：记下上一段交手，换他上场，不停顿直接接着厮杀
+        /// </summary>
+        void PlanTakeOver(DantiaoGeneral victim, DantiaoGeneral enemy, DantiaoGeneral helper, bool rescued)
+        {
+            Do(() =>
+            {
+                CommitBout(victim == left ? 5 : 6, rescued);
+                if (victim == left) left = helper; else right = helper;
+                ResetBout();
+                Log(T("接棒", "救", helper.Name, "敌", enemy.Name));
+                //边打边说，不为台词停下
+                Speak(enemy, T("接棒.敌台词"), 1.6f);
+                spotlight = spotlightTarget = null;
+                finished = false;
+            });
+            PlanMelee();
+        }
+
+        /// <summary>
+        /// 两人就地你来我往斗几合，不判落马（营救时援将边打边退用）。生命最多打到1
+        /// </summary>
+        void PlanSkirmish(DantiaoGeneral a, DantiaoGeneral b, int count)
+        {
+            DantiaoGeneral last = null;
+            for (int i = 0; i < count; i++)
+            {
+                var ex = new Exchange();
+                Do(() =>
+                {
+                    round++;
+                    ex.Attacker = last == a ? b : last == b ? a : (rng.Next(2) == 0 ? a : b);
+                    ex.Defender = ex.Attacker == a ? b : a;
+                    ex.Chop = rng.NextDouble() < 0.55;
+                    last = ex.Attacker;
+                    ex.Attacker.FaceTo(ex.Defender);
+                    ex.Attacker.Attack(ex.Chop);
+                    if (rng.NextDouble() < 0.3) PlayVoice(ex.Attacker, "Ha");
+                });
+                WaitUntil(() =>
+                {
+                    if (!ex.Attacker.ImpactReady) return false;
+                    ex.Attacker.ImpactReady = false;
+                    DoStrike(ex.Attacker, ex.Defender, ex.Chop, false);
+                    a.Life = Math.Max(1f, a.Life);
+                    b.Life = Math.Max(1f, b.Life);
+                    return true;
+                }, 1.5f);
+                WaitUntil(() => !ex.Attacker.IsAttacking, 1f);
+                Wait(Range(0.2f, 0.45f));
+            }
+        }
+
+        /// <summary>
+        /// 候补在场边张弓放箭：射偏盔缨示警或擦伤对手，把他逼退，败将趁机逃回。
+        /// relay：射完拍马上前接战；否则单挑就此结束
+        /// </summary>
+        void PlanArrowRescue(DantiaoGeneral victim, DantiaoGeneral enemy, DantiaoGeneral helper, bool relay)
+        {
+            var home = victim.Side == 0 ? -500f : WorldWidth + 500f;
+            var hit = rng.NextDouble() < 0.4;
+            Arrow arrow = null;
+
+            Do(() =>
+            {
+                fleeing = null;
+                spotlight = helper;
+                spotlightTarget = enemy;
+                enemy.Stop();
+                helper.FaceTo(enemy);
+                if (victim.Mounted) victim.SetPose(DantiaoPose.Pant, 4f);
+                Log(T("救援.张弓", "救", helper.Name, "败", victim.Name, "敌", enemy.Name));
+            });
+            Wait(0.7f);  //等镜头转过去
+            Do(() => Speak(helper, T("冷箭台词"), 1.6f));
+            Wait(1.0f);  //台词看清了再放箭
+            Do(() =>
+            {
+                PlaySound($"Swing{helper.WeaponSound}a");
+                //远射时箭飞得久些，镜头跟着转到对手那边
+                var duration = Clamp(Math.Abs(enemy.X - helper.X) / 900f, 0.35f, 1.1f);
+                arrow = new Arrow() { FromX = helper.X, FromGy = helper.Gy, Target = enemy, Miss = !hit, Duration = duration };
+                arrows.Add(arrow);
+                spotlight = enemy;
+                spotlightTarget = victim;
+            });
+            WaitUntil(() => arrow == null || arrow.Done, 2f);
+            Do(() =>
+            {
+                var away = enemy.X < helper.X ? -1 : 1;
+                enemy.SetPose(DantiaoPose.Recoil, 0.45f);
+                enemy.Nudge(away * 30);
+                if (hit)
+                {
+                    enemy.Life = Math.Max(1f, enemy.Life - 8f);
+                    bloods.Add(new Blood() { X = enemy.X, Gy = enemy.Gy });
+                    PlaySound("Hit" + rng.Next(1, 4));
+                    PlayVoice(enemy, "Heng");
+                }
+                Log(T(hit ? "救援.冷箭.射中" : "救援.冷箭.逼退", "救", helper.Name, "敌", enemy.Name));
+            });
+            Wait(0.5f);
+            Do(() =>
+            {
+                victim.Out = true;
+                var onFoot = !victim.Mounted;
+                if (onFoot) victim.Remount(); else victim.SetPose(DantiaoPose.Ride);
+                victim.MoveTo(home, victim.Gy, 220);
+                Log(T(onFoot ? "救援.脱身.落马" : "救援.脱身", "救", helper.Name, "败", victim.Name));
+            });
+            Wait(0.6f);
+
+            if (relay)
+            {
+                //射罢拍马上前，接着与对手交手
+                Do(() =>
+                {
+                    helper.Reserve = false;
+                    spotlight = helper;
+                    spotlightTarget = enemy;
+                    PlayVoice(helper, "Ha");
+                    Speak(helper, T("接战台词", "自称", DantiaoRules.SelfName(helper.Person), "败", victim.Name, "敌", enemy.Name), 2.2f);
+                    Log(DantiaoText.PickFor(rng, "救援.射罢接战", helper, "救", helper.Name, "敌", enemy.Name));
+                });
+                Wait(1.0f);
+                Do(() =>
+                {
+                    helper.MoveTo(InterceptX(helper, enemy), enemy.Gy + 3, 320);
+                    PlaySound("Horse");
+                });
+                WaitUntil(() =>
+                {
+                    helper.MoveTo(InterceptX(helper, enemy), enemy.Gy + 3, 320);
+                    return Math.Abs(helper.X - enemy.X) < 90f;
+                }, 8f);
+                Do(() =>
+                {
+                    helper.Stop();
+                    helper.FaceTo(enemy);
+                    enemy.FaceTo(helper);
+                });
+                Wait(0.3f);
+                PlanTakeOver(victim, enemy, helper, true);
+                return;
+            }
+
+            Wait(0.3f);
+            Do(() =>
+            {
+                enemy.FaceTo(victim);
+                Speak(enemy, DantiaoRules.LostLine(rng), 1.8f);
+            });
+            WaitUntil(() => Math.Abs(victim.X - enemy.X) > viewWidth * 0.6f, 4f);
+            Do(() =>
+            {
+                Result = victim == left ? 5 : 6;
+                endRescued = true;
+                Log(T("结局.救走", "救", helper.Name, "败", victim.Name, "回合", round));
+                ShowTitle($"{helper.Name}一箭救下{victim.Name}！");
+            });
+        }
+
+        void CommitBout(int result, bool rescued)
+        {
+            bouts.Add(new ChallengeBout() { Source = left.Person, Destination = right.Person, Result = result, Rescued = rescued });
+        }
+
+        /// <summary>
+        /// 援将接棒后是新的一段交手，回合数和骂阵、诈败等次数从头算
+        /// </summary>
+        void ResetBout()
+        {
+            round = 0;
+            loggedRound = 0;
+            tauntCount = feintCount = restCount = 0;
+            persuadeAttempts = 0;
+            Result = 0;
+        }
+
+        /// <summary>
+        /// 头像是否变灰：已退场的，以及结局里落败的一方
+        /// </summary>
+        bool IsGreyed(DantiaoGeneral g)
+        {
+            if (g.Out) return true;
+            if (String.IsNullOrEmpty(title) || (g != left && g != right)) return false;
+
+            switch (Result)
+            {
+                case 2: case 3: case 5: case 7: case 9: case -2:
+                    return g == left;
+                case 1: case 4: case 6: case 8: case 10: case -3:
+                    return g == right;
+                case -4:
+                    return true;
+            }
+            return false;
+        }
+
+        #endregion
 
         DantiaoGeneral Other(DantiaoGeneral g) => g == left ? right : left;
 
@@ -1295,8 +1778,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
             RunScript(dt);
 
-            left.Update(dt);
-            right.Update(dt);
+            foreach (var g in All) g.Update(dt);
 
             foreach (var b in bloods) b.Time += dt;
             bloods.RemoveAll(b => b.Time > 0.45f);
@@ -1317,15 +1799,24 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         float TargetHorizon()
         {
-            var gy = (left.Gy + right.Gy) / 2;
-            return Clamp(VirtualHeight * 0.56f - gy, 160f, 290f);
+            return HorizonFor((left.Gy + right.Gy) / 2);
         }
+
+        float HorizonFor(float gy) => Clamp(VirtualHeight * 0.56f + FieldShift - gy, 160f + FieldShift, 290f + FieldShift);
 
         void UpdateCamera(float dt)
         {
             float midX, midGy;
 
-            if (fleeing != null)
+            if (spotlight != null)
+            {
+                //援将离得远时镜头跟着他，近了把他和对手一起框进来
+                var t = spotlightTarget;
+                var both = t != null && Math.Abs(spotlight.X - t.X) < viewWidth * 0.7f;
+                midX = both ? (spotlight.X + t.X) / 2 : spotlight.X;
+                midGy = both ? (spotlight.Gy + t.Gy) / 2 : spotlight.Gy;
+            }
+            else if (fleeing != null)
             {
                 var stay = Other(fleeing);
                 midX = stay.X;
@@ -1348,7 +1839,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             }
 
             var targetX = Clamp(midX - viewWidth / 2, 0f, Math.Max(0f, WorldWidth - viewWidth));
-            var targetH = Clamp(VirtualHeight * 0.56f - midGy, 160f, 290f);
+            var targetH = HorizonFor(midGy);
             var k = Math.Min(1f, dt * 3f);
             camX += (targetX - camX) * k;
             horizonY += (targetH - horizonY) * k;
@@ -1422,29 +1913,29 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
 
         void Close()
         {
+            if (closed != null)
+            {
+                closed();
+                return;
+            }
+
             var screen = Session.MainGame.mainGameScreen;
             screen.dantiaoLayer = null;
 
-            if (damage == null)
-            {
-                screen.ReturnToMainMenu();
-            }
-            else
-            {
-                screen.cloudLayer.IsStart = false;
-                screen.cloudLayer.IsVisible = false;
-                screen.cloudLayer.Reverse = false;
+            screen.cloudLayer.IsStart = false;
+            screen.cloudLayer.IsVisible = false;
+            screen.cloudLayer.Reverse = false;
 
-                damage.ChallengeHappened = true;
-                damage.ChallengeStarted = false;
-                damage.ChallengeResult = Result;
-                damage.ChallengeSourcePerson = left.Person;
-                damage.ChallengeDestinationPerson = right.Person;
+            CommitBout(Result, endRescued);
 
-                screen.EnableUpdate = true;
-            }
+            damage.ChallengeHappened = true;
+            damage.ChallengeStarted = false;
+            damage.ChallengeResult = Result;
+            damage.ChallengeSourcePerson = left.Person;
+            damage.ChallengeDestinationPerson = right.Person;
+            damage.ChallengeBouts = bouts.ToList();
 
-            Persons = null;
+            screen.EnableUpdate = true;
         }
 
         #endregion
@@ -1558,13 +2049,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             DrawWindow();
             DrawBackground();
 
-            left.Draw(ToScreen, DrawSprite);
-            right.Draw(ToScreen, DrawSprite);
+            foreach (var g in All) g.Draw(ToScreen, DrawSprite);
 
             DrawBloods();
             DrawArrows();
-            DrawBubble(left);
-            DrawBubble(right);
+            foreach (var g in All) DrawBubble(g);
             DrawHover();
             DrawPanels();
             DrawLog();
@@ -1627,7 +2116,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             {
                 //射空的从头顶掠过
                 var height = a.Miss ? 125f : 70f;
-                var k = Math.Min(1f, a.Time / Arrow.Duration);
+                var k = Math.Min(1f, a.Time / a.Duration);
                 var from = ToScreen(a.FromX, a.FromGy) - new Vector2(0, 75f);
                 var to = ToScreen(a.Target.X, a.Target.Gy) - new Vector2(0, height);
                 var pos = Vector2.Lerp(from, to, k);
@@ -1678,7 +2167,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         void DrawHover()
         {
             var mouse = MouseVirtual;
-            foreach (var g in new[] { left, right })
+            foreach (var g in All)
             {
                 if (!g.Mounted && g.Fled) continue;
                 var s = ToScreen(g.ScreenX, g.Gy);
@@ -1692,17 +2181,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         void DrawPanels()
         {
             //左：P1，红色，头像在最左，名字和武力在体力条上方，左对齐
-            DrawPortrait(left, LeftPortraitRect);
+            DrawPortrait(left, LeftPortraitRect, PortraitScale);
             var leftBars = new Vector2((float)Math.Round(LeftPortraitRect.Right + 10), 46);
             DrawText($"{left.Name}　武力：{left.Force}", leftBars + new Vector2(6, -28), 20, Color.Red, 0.018f);
             DrawBars(left, leftBars, false);
+            DrawReservePortraits(0, LeftPortraitRect);
 
             //右：P2，蓝色，与P1左右镜像，文字右对齐
-            DrawPortrait(right, RightPortraitRect);
+            DrawPortrait(right, RightPortraitRect, PortraitScale);
             var rightBars = new Vector2((float)Math.Round(RightPortraitRect.X - 10 - 290), 46);
             var rightText = $"{right.Name}　武力：{right.Force}";
             DrawText(rightText, new Vector2(rightBars.X + 290 - 6 - TextWidth(rightText, 20), rightBars.Y - 28), 20, Color.Blue, 0.018f);
             DrawBars(right, rightBars, true);
+            DrawReservePortraits(1, RightPortraitRect);
 
             //回合数放在双方生命条中间，生命条短，这一行空间宽
             if (round > 0)
@@ -1711,16 +2202,38 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             }
         }
 
-        void DrawPortrait(DantiaoGeneral g, Box frame)
+        /// <summary>
+        /// 不在场上交手的武将：小头像在大头像下方排成一行，靠窗体边，下面写名字，已退场的变灰
+        /// </summary>
+        void DrawReservePortraits(int side, Box big)
         {
+            var current = side == 0 ? left : right;
+            var width = 169 * SmallPortraitScale;
+            var height = 188 * SmallPortraitScale;
+            var i = 0;
+
+            foreach (var g in rosters[side].Where(g => g != current))
+            {
+                var x = side == 0 ? big.X + i * (width + 4) : big.Right - width - i * (width + 4);
+                var frame = new Box(x, big.Y + big.Height + 4, width, height);
+                DrawPortrait(g, frame, SmallPortraitScale);
+                var color = IsGreyed(g) ? Color.Gray : side == 0 ? Color.Red : Color.Blue;
+                DrawTextCentered(g.Name, frame.X + width / 2, frame.Y + height + 1, 13, color, 0.018f);
+                i++;
+            }
+        }
+
+        void DrawPortrait(DantiaoGeneral g, Box frame, float portraitScale)
+        {
+            var tint = Fade(IsGreyed(g) ? GreyTint : Color.White);
             var pos = new Vector2((float)Math.Round(frame.X), (float)Math.Round(frame.Y));
-            var topLeft = Screen(pos + new Vector2(8, 8) * PortraitScale);
-            var rect = new Rectangle((int)topLeft.X, (int)topLeft.Y, (int)(154 * PortraitScale * scale), (int)(173 * PortraitScale * scale));
-            CacheManager.DrawZhsanAvatar(g.Person, rect, 0.021f, PortraitSize.Medium, Fade(Color.White));
+            var topLeft = Screen(pos + new Vector2(8, 8) * portraitScale);
+            var rect = new Rectangle((int)topLeft.X, (int)topLeft.Y, (int)(154 * portraitScale * scale), (int)(173 * portraitScale * scale));
+            CacheManager.DrawZhsanAvatar(g.Person, rect, 0.021f, PortraitSize.Medium, tint);
 
             var tex = CacheManager.LoadTexture(Root + @"System\Frame.png");
             if (tex == null || tex.IsDisposed) return;
-            Session.Current.SpriteBatch.Draw(tex, Screen(pos), null, Fade(Color.White), 0f, Vector2.Zero, PortraitScale * scale, SpriteEffects.None, 0.020f);
+            Session.Current.SpriteBatch.Draw(tex, Screen(pos), null, tint, 0f, Vector2.Zero, portraitScale * scale, SpriteEffects.None, 0.020f);
         }
 
         void DrawBars(DantiaoGeneral g, Vector2 pos, bool mirror)
@@ -1796,10 +2309,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
             }
             var page = pages - 1 - back;
 
-            var top = VirtualHeight - 56 - LogPageLines * 23;
+            var top = VirtualHeight - 56 - LogPageLines * LogLineHeight;
             for (int i = 0; i < lines.Count; i++)
             {
-                DrawText(lines[i], new Vector2(20, top + i * 23), 17, Color.Black, 0.017f);
+                DrawText(lines[i], new Vector2(20, top + i * LogLineHeight), 17, Color.Black, 0.017f);
             }
 
             DrawText("上页", new Vector2(PagePrevRect.X, PagePrevRect.Y), 18, page > 0 ? Color.DarkBlue : Color.Gray, 0.017f);

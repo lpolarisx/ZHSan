@@ -54,12 +54,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
         public CloudLayer()
         {
             scale = new Vector2(Convert.ToSingle(Session.ResolutionX) / 800f, Convert.ToSingle(Session.ResolutionY) / 480f);
-
-            if (DantiaoLayer.Persons != null && DantiaoLayer.Persons.Count >= 2)
-            {
-                Reverse = true;
-            }
-
         }
 
         public void Start()
@@ -148,19 +142,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                 if (Reverse && cloudAlpha >= 1)
                 {
                     IsStart = false;
-
-                    if (DantiaoLayer.Persons != null && DantiaoLayer.Persons.Count >= 2 && Session.MainGame.mainGameScreen.dantiaoLayer == null)
-                    {
-                        if (DantiaoLayer.Persons == null)
-                        {
-
-                        }
-                        else
-                        {
-                            Session.MainGame.mainGameScreen.dantiaoLayer = new DantiaoLayer(DantiaoLayer.Persons[DantiaoLayer.Persons.Count - 2], DantiaoLayer.Persons[DantiaoLayer.Persons.Count - 1]);
-                        }
-                    }
-
                 }
                 else if (!Reverse && cloudAlpha <= 0)
                 {
