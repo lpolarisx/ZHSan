@@ -818,7 +818,7 @@ namespace MarshalSectionDialogPlugin
                         break;
 
                     case SectionOrientationKind.Faction:
-                        var list = Session.Current.Scenario.GetDiplomaticRelationListByFactionID(EditingFaction.ID);
+                        var list = Session.Current.Scenario.GetDiplomaticRelationDisplays(EditingFaction.ID);
 
                         if (list.Count == 0)
                         {
@@ -841,15 +841,8 @@ namespace MarshalSectionDialogPlugin
                                 this.EditingSection.OrientationSection = null;
                                 this.EditingSection.OrientationState = null;
                                 this.EditingSection.OrientationArchitecture = null;
-                                var selectedItem = TabListPlugin.SelectedItem as DiplomaticRelation;
-                                if (selectedItem.RelationFaction1 == EditingFaction)
-                                {
-                                    EditingSection.OrientationFaction = selectedItem.RelationFaction2;
-                                }
-                                else if (selectedItem.RelationFaction2 == EditingFaction)
-                                {
-                                    EditingSection.OrientationFaction = selectedItem.RelationFaction1;
-                                }
+                                var selectedItem = TabListPlugin.SelectedItem as DiplomaticRelationDisplay;
+                                EditingSection.OrientationFaction = selectedItem.LinkedDiplomaticRelation.GetDiplomaticFaction(EditingFaction.ID);
                                 this.RefreshOKButton();
                                 this.RefreshLabelTextsDisplay();
                             };

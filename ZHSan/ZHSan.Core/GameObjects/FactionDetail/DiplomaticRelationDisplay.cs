@@ -16,4 +16,6 @@ public class DiplomaticRelationDisplay : GameObject
     public int Relation => LinkedDiplomaticRelation.Relation;
 
     public int Truce => LinkedDiplomaticRelation.Truce;
+
+    public int TruceDays => Truce;
 }

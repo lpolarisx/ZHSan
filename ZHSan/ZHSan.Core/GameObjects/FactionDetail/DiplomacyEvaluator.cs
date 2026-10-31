@@ -537,6 +537,79 @@ namespace GameObjects.FactionDetail
             deal.GiveFood = (int)Math.Min(foodBudget, Math.Ceiling(deficit * FoodPerFund / GetFoodFactor(deal.Target.Capital) / 10000) * 10000);
         }
 
+        /// <summary>
+        /// 劝降的费用，成败与花多少钱无关
+        /// </summary>
+        public const int PersuadeFee = 50000;
+
+        /// <summary>
+        /// 声讨的费用
+        /// </summary>
+        public const int DenounceFee = 120000;
+
+        /// <summary>
+        /// 劝降成功率达到多少算“颇有动摇”
+        /// </summary>
+        public const double PersuadeLikelyChance = 0.1;
+
+        /// <summary>
+        /// 劝降必定失败的原因，界面显示和到达对方都城时的判定都用它。不会必败时返回null
+        /// </summary>
+        public static string GetPersuadeBlocker(Faction source, Faction target, Person envoy)
+        {
+            Person leader = target.Leader;
+            if (Session.Current.Scenario.IsPlayer(target))
+            {
+                return "玩家势力不能被劝降。";
+            }
+            if (source.Reputation <= target.Reputation)
+            {
+                return "本势力声望不高于对方。";
+            }
+            if (source.Army == 0 || source.Army < target.Army * 5)
+            {
+                return "本势力兵力不足对方的五倍。";
+            }
+            if (!source.GetPersuadableFactions().Contains(target))
+            {
+                return "只能劝降与本势力领地相接且有路线相连的势力。";
+            }
+            if (leader.Hates(envoy))
+            {
+                return "对方君主厌恶这名使者。";
+            }
+
+            int closeness = leader.IsCloseTo(envoy) ? 50 : 10;
+            int persuasion = closeness * 10 + envoy.ConvinceAbility + (envoy.Politics + envoy.Intelligence) * envoy.Calmness;
+            int resistance = Person.GetIdealOffset(envoy, leader) * 20 + (leader.Intelligence + leader.Politics) * leader.Calmness;
+            return persuasion > resistance ? null : "使者说服不了对方君主。";
+        }
+
+        /// <summary>
+        /// 不必败时的劝降成功率：基础三成，对方君主野心越高、城池越多越难
+        /// </summary>
+        public static double GetPersuadeChance(Faction target)
+        {
+            int ambition = target.Leader.Ambition;
+            double chance = 0.3 / Math.Max(1, target.ArchitectureCount);
+            return ambition > -1 ? chance * (100 / (ambition + 1)) / 100.0 : chance;
+        }
+
+        /// <summary>
+        /// 对方对劝降的态度，分档与GetAttitudeLevel的配色对应
+        /// </summary>
+        /// <returns>3颇有动摇、2尚存疑虑、0断无可能</returns>
+        public static int GetPersuadeLevel(Faction source, Faction target, Person envoy)
+        {
+            if (GetPersuadeBlocker(source, target, envoy) != null) return 0;
+            return GetPersuadeChance(target) >= PersuadeLikelyChance ? 3 : 2;
+        }
+
+        public static string GetPersuadeText(int level)
+        {
+            return level == 3 ? "颇有动摇" : level == 2 ? "尚存疑虑" : "断无可能";
+        }
+
         public static bool IsWithinProposalBudget(DiplomacyDeal deal)
         {
             var source = deal.SourceArchitecture;

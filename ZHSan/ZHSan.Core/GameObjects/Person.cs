@@ -4064,18 +4064,7 @@ namespace GameObjects
 
             if (targetFaction == sourceFaction) return false;
 
-            //玩家不能被劝降
-            if (Session.Current.Scenario.IsPlayer(targetFaction)) return false;
-
-            if (sourceFaction.Army == 0) return false;
-
-            if (sourceFaction.Reputation <= targetFaction.Reputation) return false;
-
-            if (sourceFaction.Army < targetFaction.Army * 5) return false;
-
-            if (!sourceFaction.adjacentTo(targetFaction)) return false;
-
-            if (targetFaction.Leader.Hates(shizhe)) return false;
+            if (DiplomacyEvaluator.GetPersuadeBlocker(sourceFaction, targetFaction, shizhe) != null) return false;
 
             //提高劝降几率
             if (!GameObject.GetChance(30)) return false;
@@ -4084,13 +4073,7 @@ namespace GameObjects
             if (targetFaction.Leader.Ambition > -1 && !GameObject.GetChance((100 / (targetFaction.Leader.Ambition + 1)))) return false;
 
             //城池数量越多越不容易投降
-            if (GameObject.Random(targetFaction.ArchitectureCount) != 0) return false;
-
-            int c = targetFaction.Leader.IsCloseTo(shizhe) ? 50 : 10;
-
-            int g = (c * 10 + shizhe.ConvinceAbility + (shizhe.Politics + shizhe.Intelligence) * shizhe.Calmness - ((GetIdealOffset(shizhe, targetFaction.Leader) * 20) + (targetFaction.Leader.Intelligence + targetFaction.Leader.Politics) * targetFaction.Leader.Calmness));
-
-            return g > 0;
+            return GameObject.Random(targetFaction.ArchitectureCount) == 0;
         }
 
         private static void QuanXiangSuccess(Faction sourceFaction, Faction targetFaction, Person shizhe)
@@ -6226,6 +6209,18 @@ namespace GameObjects
                     person.MoveToArchitecture(a, startingPoint, removeFromTroop, true, oldFaction);
                 }
             }
+        }
+
+        /// <summary>
+        /// 转移妃子、俘虏：MoveToArchitecture 不移动这两类人，这里直接改所在地，到达天数按路程算
+        /// </summary>
+        public void RelocateToArchitecture(Architecture a)
+        {
+            double distance = Session.Current.Scenario.GetDistance(this.LocationArchitecture.ArchitectureArea, a.ArchitectureArea);
+            this.ArrivingDays = Math.Max(1, (int)Math.Ceiling(distance / 10.0));
+            this.TargetArchitecture = null;
+            this.LocationArchitecture = a;
+            Session.Current.Scenario.ClearPersonStatusCache();
         }
 
         public void RecallFollowingNvGuans()

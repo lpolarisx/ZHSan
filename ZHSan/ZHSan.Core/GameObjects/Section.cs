@@ -161,6 +161,24 @@ public class Section : GameObject
         Name = architecture != null ? $"{architecture.Name}军区" : "----";
     }
 
+    /// <summary>
+    /// 军区目标失效时改回同样委任方式的无目标方针
+    /// </summary>
+    public void ClearOrientation()
+    {
+        var detail = Session.Current.Scenario.GameCommonData.AllSectionAIDetails.Values
+            .FirstOrDefault(x => x.OrientationKind == SectionOrientationKind.None && x.AutoRun == AIDetail?.AutoRun);
+        if (detail != null)
+        {
+            AIDetail = detail;
+        }
+
+        OrientationFaction = null;
+        OrientationSection = null;
+        OrientationState = null;
+        OrientationArchitecture = null;
+    }
+
     public void RemoveArchitecture(Architecture architecture)
     {
         Architectures.Remove(architecture);

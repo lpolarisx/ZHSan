@@ -309,6 +309,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 case DiplomacyKind.QuanXiang:
                     CurrentDiplomaticRelation = relation;
+                    // 外交面板已经选好了使者，不用再选一次
+                    if (deal?.LeadEnvoy != null)
+                    {
+                        this.SendQuanXiangEnvoy(deal.LeadEnvoy);
+                        break;
+                    }
                     Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetQuanXiangDiplomaticRelationPerson, false, true, true, false, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
                     break;
 
@@ -320,7 +326,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case DiplomacyKind.Denounce:
-                    if (CurrentArchitecture.Fund >= 120000)
+                    if (CurrentArchitecture.Fund >= DiplomacyEvaluator.DenounceFee)
                     {
                         var toEncircle = relation.RelationFaction1 == CurrentArchitecture.BelongedFaction ? relation.RelationFaction2 : relation.RelationFaction1;
                         CurrentArchitecture.BelongedFaction.Encircle(CurrentArchitecture, toEncircle);
@@ -375,11 +381,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (person != null)
             {
-                if (CurrentArchitecture.Fund >= 50000 && person.GoToQuanXiangDiplomatic(CurrentDiplomaticRelation))
-                {
-                    CurrentArchitecture.Fund -= 50000;
-                    Session.MainGame.mainGameScreen.ShowDiplomacyDepart([person], "QuanXiangDiplomacyDepart");
-                }
+                this.SendQuanXiangEnvoy(person);
+            }
+        }
+
+        private void SendQuanXiangEnvoy(Person person)
+        {
+            if (CurrentArchitecture.Fund >= DiplomacyEvaluator.PersuadeFee && person.GoToQuanXiangDiplomatic(CurrentDiplomaticRelation))
+            {
+                CurrentArchitecture.Fund -= DiplomacyEvaluator.PersuadeFee;
+                Session.MainGame.mainGameScreen.ShowDiplomacyDepart([person], "QuanXiangDiplomacyDepart");
             }
         }
 

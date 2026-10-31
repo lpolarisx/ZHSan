@@ -322,6 +322,14 @@ namespace GameObjects.FactionDetail
             {
                 this.Target.CedeArchitecture(a, this.Source);
             }
+            // 玩家没有手动军区时，收到的城只能进委任军区，要告诉玩家这座城由电脑运行
+            foreach (var a in this.GiveArchitectures.Concat(this.RequestArchitectures))
+            {
+                if (Session.Current.Scenario.IsPlayer(a.BelongedFaction) && a.BelongedSection?.AIDetail?.AutoRun == true)
+                {
+                    parts.Add(a.Name + "归入委任的" + a.BelongedSection.Name + "，由电脑运行");
+                }
+            }
 
             var relation = this.GetRelation();
             if (relation != null)

@@ -8781,6 +8781,7 @@ namespace GameObjects
                     {
                         this.BelongedFaction.FirstSection.AddArchitecture(currentArchitecture);
                     }
+                    currentArchitecture.BelongedSection?.RefreshSectionName();
                     currentArchitecture.CheckIsFrontLine();
 
                     //this.Controllable = false;
@@ -9718,6 +9719,8 @@ namespace GameObjects
             this.StartingArchitecture = startingArchitecture;
             base.ID = iD;
 
+            // 调用方可能直接传入 Persons，先复制，避免下面 Clear 后列表被清空
+            personList = personList.ToList();
             Persons.Clear();
             if (!personList.Contains(leader) && personList.Count > 0)
             {

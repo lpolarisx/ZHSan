@@ -3684,7 +3684,6 @@ namespace GameObjects
                 var section = new Section
                 {
                     ID = Session.Current.Scenario.Sections.GetNewId(),
-                    Name = Capital.Name + "Section",
                     AIDetail = sectionAIDetails.First(),
                 };
                 
@@ -3692,6 +3691,7 @@ namespace GameObjects
                 {
                     section.AddArchitecture(architecture);
                 }
+                section.RefreshSectionName();
                 AddSection(section);
                 Session.Current.Scenario.Sections.Add(section.ID, section);
 
@@ -4267,6 +4267,17 @@ namespace GameObjects
             foreach (var section in Sections.ToList())
             {
                 RemoveSection(section);
+            }
+            // 势力灭亡后，别的势力以它为目标的军区要改掉
+            foreach (var faction in Session.Current.Scenario.Factions.Values)
+            {
+                foreach (var section in faction.Sections)
+                {
+                    if (section.AIDetail?.OrientationKind == SectionOrientationKind.Faction && section.OrientationFaction == this)
+                    {
+                        section.ClearOrientation();
+                    }
+                }
             }
             Session.Current.Scenario.RemoveDiplomaticRelationByFactionID(ID);
             Session.Current.Scenario.Factions.Remove(ID);
@@ -5111,6 +5122,101 @@ namespace GameObjects
             Session.Current.Scenario.Sections.Remove(section.ID);
         }
 
+        /// <summary>
+        /// 城离开势力时从所有军区摘除：摘空的军区删除，其余军区按剩下的城刷新名字
+        /// </summary>
+        public void RemoveArchitectureFromSections(Architecture architecture)
+        {
+            foreach (var section in Sections.ToList())
+            {
+                if (!section.HasArchitecture(architecture)) continue;
+
+                section.RemoveArchitecture(architecture);
+                if (section.ArchitectureCount == 0)
+                {
+                    RemoveEmptySection(section);
+                }
+                else
+                {
+                    section.RefreshSectionName();
+                }
+            }
+        }
+
+        private void RemoveEmptySection(Section section)
+        {
+            RemoveSection(section);
+            foreach (var other in Sections)
+            {
+                if (other.AIDetail?.OrientationKind == SectionOrientationKind.Section && other.OrientationSection == section)
+                {
+                    other.ClearOrientation();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 城归本势力后，以它为目标的军区不能再指向自己的城
+        /// </summary>
+        public void ClearSectionOrientationTo(Architecture architecture)
+        {
+            foreach (var section in Sections)
+            {
+                if (section.AIDetail?.OrientationKind == SectionOrientationKind.Architecture && section.OrientationArchitecture == architecture)
+                {
+                    section.ClearOrientation();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 修复存档里错乱的军区：摘掉已不属于本势力的城，一座城只留在一个军区，删除空军区
+        /// </summary>
+        public void RepairSections()
+        {
+            var changedSections = new List<Section>();
+            foreach (var section in Sections)
+            {
+                if (section.Architectures.RemoveAll(x => x.BelongedFaction != this) > 0)
+                {
+                    changedSections.Add(section);
+                }
+            }
+
+            foreach (var architecture in Architectures)
+            {
+                var owners = Sections.Where(x => x.HasArchitecture(architecture)).ToList();
+                var keep = owners.Contains(architecture.BelongedSection) ? architecture.BelongedSection : owners.FirstOrDefault();
+                foreach (var other in owners)
+                {
+                    if (other != keep)
+                    {
+                        other.Architectures.Remove(architecture);
+                        changedSections.Add(other);
+                    }
+                }
+
+                architecture.BelongedSection = keep;
+                if (keep == null && SectionCount > 0)
+                {
+                    Sections[0].AddArchitecture(architecture);
+                    changedSections.Add(Sections[0]);
+                }
+            }
+
+            foreach (var section in Sections.ToList())
+            {
+                if (section.ArchitectureCount == 0)
+                {
+                    RemoveEmptySection(section);
+                }
+                else if (changedSections.Contains(section))
+                {
+                    section.RefreshSectionName();
+                }
+            }
+        }
+
         public void RemoveTroop(Troop troop)
         {
             Troops.Remove(troop);
@@ -5196,6 +5302,53 @@ namespace GameObjects
                 }
             }
             return result;
+        }
+
+        /// <summary>
+        /// 地图上领地相接的势力，判定与势力边界线一致。adjacentTo 看的是城池间的AI路线，隔着别的势力也可能算相邻
+        /// </summary>
+        public List<Faction> GetBorderingFactions()
+        {
+            var result = new HashSet<Faction>();
+            var tiles = Session.Current.Scenario.MapTileData;
+            int width = tiles.GetLength(0);
+            int height = tiles.GetLength(1);
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    Faction owner = tiles[x, y].OwnerArchitecture?.BelongedFaction;
+                    if (owner == null) continue;
+
+                    if (x + 1 < width) AddBorderingFaction(result, owner, tiles[x + 1, y].OwnerArchitecture?.BelongedFaction);
+                    if (y + 1 < height) AddBorderingFaction(result, owner, tiles[x, y + 1].OwnerArchitecture?.BelongedFaction);
+                }
+            }
+
+            return result.ToList();
+        }
+
+        /// <summary>
+        /// 可劝降的势力范围：领地相接，并且有城池间的路线相连
+        /// </summary>
+        public List<Faction> GetPersuadableFactions()
+        {
+            return GetBorderingFactions().Where(adjacentTo).ToList();
+        }
+
+        private void AddBorderingFaction(HashSet<Faction> result, Faction a, Faction b)
+        {
+            if (b == null || a == b) return;
+
+            if (a == this)
+            {
+                result.Add(b);
+            }
+            else if (b == this)
+            {
+                result.Add(a);
+            }
         }
 
         public List<Faction> GetAdjecentHostileFactions()
@@ -5300,8 +5453,8 @@ namespace GameObjects
         {
             Session.MainGame.mainGameScreen.xianshishijiantupian(Session.Current.Scenario.NeutralPerson, encircler.BelongedFaction.Leader.Name, "DenounceDiplomaticRelation", "DenounceDiplomaticRelation.jpg", "DenounceDiplomaticRelation", toEncircle.Name, true);
 
-            if (encircler.Fund < 120000) return;
-            encircler.Fund -= 120000;
+            if (encircler.Fund < DiplomacyEvaluator.DenounceFee) return;
+            encircler.Fund -= DiplomacyEvaluator.DenounceFee;
 
             int relation = Session.Current.Scenario.GetDiplomaticRelation(ID, toEncircle.ID);
 
@@ -6766,6 +6919,23 @@ namespace GameObjects
             }
         }
 
+        /// <summary>
+        /// 外交得到的城该进的军区：玩家优先进手动军区，免得城被委任军区的电脑接管
+        /// </summary>
+        public Section GetSectionForReceivedArchitecture()
+        {
+            if (Session.Current.Scenario.IsPlayer(this))
+            {
+                var manual = Sections.FirstOrDefault(x => x.AIDetail != null && !x.AIDetail.AutoRun);
+                if (manual != null)
+                {
+                    return manual;
+                }
+            }
+
+            return FirstSection;
+        }
+
         public long Food
         {
             get
@@ -7180,8 +7350,8 @@ namespace GameObjects
         }
 
         /// <summary>
-        /// 把一座城交给别的势力：城里的武将、在途前往这座城的武将和编队都撤回本势力都城，
-        /// 城里存的钱粮和正运往这座城的钱粮也运回都城，只交出城池本身
+        /// 把一座城交给别的势力：城里的武将、女官、妃子、俘虏，在途前往这座城的武将和编队都撤回本势力都城，
+        /// 城里存的钱粮和正运往这座城的钱粮也运回都城，只交出城池本身。接收方自己的俘虏留在城里，由换主时释放
         /// </summary>
         public void CedeArchitecture(Architecture a, Faction targetFaction)
         {
@@ -7202,14 +7372,34 @@ namespace GameObjects
             a.ClearFundPacks();
             a.ClearFoodPacks();
 
-            foreach (var person in a.GetPersonsExcludeNvGuan())
+            // 女官可能已随前面的武将动身，所在地不再是这座城的不重复移动，否则到达天数会被改成1
+            foreach (var person in a.Persons)
             {
-                person.MoveToArchitecture(this.Capital);
+                if (person.LocationArchitecture == a)
+                {
+                    person.MoveToArchitecture(this.Capital, null, false, true, null);
+                }
             }
 
             foreach (var person in a.GetMovingPersons())
             {
-                person.MoveToArchitecture(this.Capital);
+                if (person.LocationArchitecture == a)
+                {
+                    person.MoveToArchitecture(this.Capital, null, false, true, null);
+                }
+            }
+
+            foreach (var person in a.GetConcubines())
+            {
+                person.RelocateToArchitecture(this.Capital);
+            }
+
+            foreach (var captive in a.GetCaptives())
+            {
+                if (captive.CaptiveFaction != targetFaction)
+                {
+                    captive.CaptivePerson.RelocateToArchitecture(this.Capital);
+                }
             }
 
             foreach (var military in a.movableMilitaries)

@@ -111,6 +111,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private Label targetStockLabel;
         private Label attitudeLabel;
         private Widget negotiationPanel;
+        // 钱粮城池和停战结盟的条款，选了单方面行动时压暗
+        private Widget termsWidget;
+        private Widget mutualWidget;
         private Label hintLabel;
         private Label reasonLabel;
         private Image warningIcon;
@@ -147,8 +150,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
 
             this.options.Add(new ActionOption(DiplomacyKind.Reset, "解除同盟", "立即生效", "背弃与对方的盟约：对方关系降为 " + Highlight(DiplomacyEvaluator.BetrayalRelation) + "，君主声誉受损，其他势力对本势力的关系下降 " + Highlight(DiplomacyEvaluator.BetrayalPenalty) + "，" + DiplomacyEvaluator.AllianceCooldownMonths + "个月内不能再结盟。停战期间仍不可开战。本势力有部队在外时不可解除。"));
-            this.options.Add(new ActionOption(DiplomacyKind.Denounce, "声讨", "立即生效", "花费 " + Highlight(120000) + " 资金声讨目标势力，双方关系大跌，其他势力与其关系也会下降。"));
-            this.options.Add(new ActionOption(DiplomacyKind.QuanXiang, "劝降", "派遣武将", "派一名武将劝说接壤的非同盟势力归降，花费 " + Highlight(50000) + " 资金。"));
+            this.options.Add(new ActionOption(DiplomacyKind.Denounce, "声讨", "立即生效", "花费 " + Highlight(DiplomacyEvaluator.DenounceFee) + " 资金声讨目标势力，双方关系大跌，其他势力与其关系也会下降。"));
+            this.options.Add(new ActionOption(DiplomacyKind.QuanXiang, "劝降", "派遣武将", "派主使一人劝说接壤的非同盟势力归降，花费 " + Highlight(DiplomacyEvaluator.PersuadeFee) + " 资金，成败与花费无关。"));
         }
 
         private DiplomacyDialog(DiplomacyDeal proposal, Action<DiplomacyDeal> onConclude, Action onCancel)
@@ -171,7 +174,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         /// </summary>
         /// <param name="architecture">发起外交的城池，必须有所属势力</param>
         /// <param name="selected">打开时预先选中的势力，没有就传null</param>
-        /// <param name="onConfirm">点确认、面板关闭之后调用，参数为外交方式、与目标势力的关系和谈成的条款（谈判以外为null）</param>
+        /// <param name="onConfirm">点确认、面板关闭之后调用，参数为外交方式、与目标势力的关系和谈成的条款（劝降时只用来带上使者，其他行动为null）</param>
         public static void Show(Architecture architecture, DiplomaticRelation selected, Action<DiplomacyKind, DiplomaticRelation, DiplomacyDeal> onConfirm)
         {
             new DiplomacyDialog(architecture, selected, onConfirm).Open();
@@ -364,8 +367,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 Spacing = 8
             };
             negotiation.Widgets.Add(this.BuildEnvoyRow());
-            negotiation.Widgets.Add(this.BuildTermColumns());
-            negotiation.Widgets.Add(this.BuildMutualRow());
+            this.termsWidget = this.BuildTermColumns();
+            this.mutualWidget = this.BuildMutualRow();
+            negotiation.Widgets.Add(this.termsWidget);
+            negotiation.Widgets.Add(this.mutualWidget);
 
             var attitude = new HorizontalStackPanel
             {
@@ -671,7 +676,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 chosen =>
                 {
                     this.selectedEnvoys = chosen.OrderByDescending(x => x.Politics).ToList();
-                    this.ChangeDeal(() => this.deal.Envoys = new List<Person>(this.selectedEnvoys));
+                    // 换使者不算动条款，选着的劝降还要用这名使者
+                    this.deal.Envoys = new List<Person>(this.selectedEnvoys);
+                    this.response = null;
+                    this.accepted = false;
+                    this.Refresh();
                 },
                 "最得力者为主使，随行的按各自能力添一半情面（最多算两人）；对方君主厌恶的人同去反而坏事。");
         }
@@ -1021,7 +1030,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     }
                     return this.faction.TroopCountExcludeTransport > 0 ? "本势力有部队在外，不能解除同盟。" : null;
                 case DiplomacyKind.Denounce:
-                    return relation.Relation >= threshold ? "不能声讨同盟势力。" : this.GetCostReason(120000);
+                    return relation.Relation >= threshold ? "不能声讨同盟势力。" : this.GetCostReason(DiplomacyEvaluator.DenounceFee);
                 case DiplomacyKind.QuanXiang:
                     if (!Session.GlobalVariables.PermitQuanXiang)
                     {
@@ -1031,11 +1040,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     {
                         return "不能劝降同盟势力。";
                     }
-                    if (!this.faction.GetAdjecentFactions().Contains(relation.GetDiplomaticFaction(this.faction.ID)))
+                    if (!this.faction.GetPersuadableFactions().Contains(relation.GetDiplomaticFaction(this.faction.ID)))
                     {
-                        return "只能劝降与本势力接壤的势力。";
+                        return "只能劝降与本势力领地相接且有路线相连的势力。";
                     }
-                    return this.GetCostReason(50000) ?? GetPersonReason(movablePersons);
+                    return this.GetCostReason(DiplomacyEvaluator.PersuadeFee) ?? GetPersonReason(movablePersons);
                 default:
                     return null;
             }
@@ -1045,6 +1054,22 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private string GetCostReason(int cost)
         {
             return this.architecture.Fund > cost ? null : "资金不足，需要超过 " + cost.ToString("N0") + "，无法执行该行动。";
+        }
+
+        private static string GetOptionHint(ActionOption option)
+        {
+            return option.Name + " · " + option.Method + "：" + option.Description;
+        }
+
+        // 行动能执行、但现在这样去注定办不成的原因。只提醒，不拦着：使者到达要些时日，到时候情况可能已经变了
+        private string GetOptionWarning(ActionOption option)
+        {
+            if (option.Kind != DiplomacyKind.QuanXiang)
+            {
+                return null;
+            }
+            Person lead = this.deal.LeadEnvoy;
+            return lead == null ? "请选择使者。" : DiplomacyEvaluator.GetPersuadeBlocker(this.faction, this.deal.Target, lead);
         }
 
         private static string GetPersonReason(int movablePersons)
@@ -1071,7 +1096,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
         // 关系为正用青绿，为负用赭红，为零用次要文字色。同盟与友好、不睦与敌对靠状态文字区分
-        private static Color GetStatusColor(DiplomaticRelation relation)
+        internal static Color GetStatusColor(DiplomaticRelation relation)
         {
             if (relation.Relation > 0)
             {
@@ -1142,7 +1167,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 return;
             }
-            this.selectedOption = option;
+            // 再点一次取消，回到谈判
+            this.selectedOption = this.selectedOption == option ? null : option;
             this.response = null;
             this.accepted = false;
             this.Refresh();
@@ -1160,7 +1186,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 reason = this.GetUnavailableReason(option.Kind, this.selectedRelation) ?? "目前不满足条件，无法对" + this.GetTargetName() + option.Name + "。";
             }
-            this.ShowHint(option.Name + " · " + option.Method + "：" + option.Description, MyraSkin.TextPrimary, reason);
+            else
+            {
+                reason = this.GetOptionWarning(option);
+            }
+            this.ShowHint(GetOptionHint(option), MyraSkin.TextPrimary, reason);
         }
 
         private string GetTargetName()
@@ -1196,6 +1226,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             bool hasTarget = this.selectedRelation != null;
             this.negotiationPanel.Enabled = hasTarget;
+            // 选了单方面行动时条款不生效，压暗提示；动一下条款就回到谈判，所以不禁用
+            float termsOpacity = this.selectedOption != null ? 0.35f : 1f;
+            this.termsWidget.Opacity = termsOpacity;
+            this.mutualWidget.Opacity = termsOpacity;
             if (!hasTarget)
             {
                 this.targetSide.Visible = false;
@@ -1220,7 +1254,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 this.truceLabel.Text = this.selectedRelation.Truce > 0 ? "停战中，剩余" + this.selectedRelation.Truce + "天" : "";
                 this.sourceStockLabel.Text = FormatStock(this.deal.SourceArchitecture);
                 this.targetStockLabel.Text = FormatStock(this.deal.Target.Capital);
-                if (this.deal.IsEmpty)
+                if (this.selectedOption != null)
+                {
+                    this.RefreshOptionAttitude();
+                }
+                else if (this.deal.IsEmpty)
                 {
                     this.attitudeLabel.Text = "——";
                     this.attitudeLabel.TextColor = MyraSkin.TextSecondary;
@@ -1257,7 +1295,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (this.selectedOption != null)
             {
                 this.okLabel.Text = "执行";
-                canConfirm = true;
+                canConfirm = this.selectedOption.Kind != DiplomacyKind.QuanXiang || this.deal.LeadEnvoy != null;
             }
             else
             {
@@ -1269,6 +1307,21 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.agreeButton.Visible = this.response != null && this.response.Kind == DiplomacyResponseKind.Counter;
 
             this.ShowDefaultHint();
+        }
+
+        // 选了单方面行动时，态度说的是这项行动，不是上面的条款
+        private void RefreshOptionAttitude()
+        {
+            if (this.selectedOption.Kind != DiplomacyKind.QuanXiang)
+            {
+                this.attitudeLabel.Text = "无需对方同意";
+                this.attitudeLabel.TextColor = MyraSkin.TextSecondary;
+                return;
+            }
+            Person lead = this.deal.LeadEnvoy;
+            int level = lead == null ? 0 : DiplomacyEvaluator.GetPersuadeLevel(this.faction, this.deal.Target, lead);
+            this.attitudeLabel.Text = lead == null ? "——" : DiplomacyEvaluator.GetPersuadeText(level);
+            this.attitudeLabel.TextColor = lead == null ? MyraSkin.TextSecondary : GetAttitudeColor(level);
         }
 
         // 城名和现有的钱粮
@@ -1289,7 +1342,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
             else if (this.selectedOption != null)
             {
-                this.ShowHint(this.selectedOption.Name + " · " + this.selectedOption.Method + "：" + this.selectedOption.Description, MyraSkin.TextPrimary);
+                this.ShowHint(GetOptionHint(this.selectedOption) + "上方条款不生效，再点一次按钮取消。", MyraSkin.TextPrimary, this.GetOptionWarning(this.selectedOption));
             }
             else if (this.response != null)
             {
@@ -1331,7 +1384,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (this.selectedOption != null)
             {
                 DiplomacyKind kind = this.selectedOption.Kind;
-                this.Close(() => this.onConfirm(kind, relation, null));
+                // 劝降要带上面板里选的使者，条款本身不生效
+                DiplomacyDeal envoyDeal = kind == DiplomacyKind.QuanXiang ? this.deal : null;
+                this.Close(() => this.onConfirm(kind, relation, envoyDeal));
                 return;
             }
 

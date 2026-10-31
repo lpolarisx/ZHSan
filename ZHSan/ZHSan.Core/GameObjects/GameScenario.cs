@@ -2598,6 +2598,12 @@ namespace GameObjects
                 section.OrientationState = States.GetValueOrDefault(section.OrientationStateID);
                 section.OrientationArchitecture = Architectures.GetValueOrDefault(section.OrientationArchitectureID);
             }
+
+            // 旧存档里外交转交的城可能还留在原势力军区
+            foreach (var faction in Factions.Values)
+            {
+                faction.RepairSections();
+            }
         }
 
         /*
@@ -2639,6 +2645,7 @@ namespace GameObjects
                 {
                     troop.BelongedFaction.RemoveTroop(troop);
                 }
+                troop.BelongedLegion?.RemoveTroop(troop);
                 Troops.Remove(troop.ID);
             }
 
@@ -6227,7 +6234,8 @@ namespace GameObjects
             foreach (var relation in GetDiplomaticRelationListByFactionID(factionId))
             {
                 string displayName = relation.RelationFaction1ID == factionId ? relation.RelationFaction2String : relation.RelationFaction1String;
-                result.Add(new DiplomaticRelationDisplay(relation, displayName));
+                // 列表项按ID比较，用对方势力ID区分每一行
+                result.Add(new DiplomaticRelationDisplay(relation, displayName) { ID = relation.GetTheOtherFactionID(factionId) });
             }
 
             return result;

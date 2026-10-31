@@ -4991,7 +4991,8 @@ namespace GameObjects
             if ((faction != null) && (this.BelongedFaction != null))
             {
                 // 转交城池前解除旧军区归属，避免双方军区同时保留该城。
-                this.BelongedSection?.RemoveArchitecture(this);
+                this.BelongedFaction.RemoveArchitectureFromSections(this);
+                this.BelongedSection = null;
                 this.BelongedFaction.Architectures.Remove(this);
                 this.BelongedFaction.RemoveArchitectureKnownData(this);
                 if (!Session.Current.Scenario.IsPlayer(this.BelongedFaction))
@@ -5031,7 +5032,10 @@ namespace GameObjects
                 {
                     faction.AddRouteway(routeway);
                 }
-                faction.FirstSection.AddArchitecture(this);
+                var section = faction.GetSectionForReceivedArchitecture();
+                section.AddArchitecture(this);
+                section.RefreshSectionName();
+                faction.ClearSectionOrientationTo(this);
                 this.ApplyFactionInfluences();
             }
             if (faction != null)
@@ -8871,7 +8875,7 @@ namespace GameObjects
             if (BelongedFaction == null || !Session.Current.Scenario.IsPlayer(BelongedFaction)) return result;
 
             int relationThreshold = Session.GlobalVariables.FriendlyDiplomacyThreshold;
-            var adjacentFactions = BelongedFaction.GetAdjecentFactions();
+            var adjacentFactions = BelongedFaction.GetPersuadableFactions();
 
             foreach (var diplomaticRelation in GetDiplomaticRelations())
             {
@@ -11939,7 +11943,7 @@ namespace GameObjects
             foreach (var diplomaticRelation in GetDiplomaticRelations())
             {
                 if (diplomaticRelation.Relation < relationThreshold 
-                    && Fund > 50000 
+                    && Fund > DiplomacyEvaluator.PersuadeFee
                     && MovablePersons.Count > 0 
                     && isPlayer 
                     && relations.Count > 0)
@@ -11971,7 +11975,7 @@ namespace GameObjects
 
             foreach (var diplomaticRelation in GetDiplomaticRelations())
             {
-                if (diplomaticRelation.Relation < relationThreshold && Fund > 120000)
+                if (diplomaticRelation.Relation < relationThreshold && Fund > DiplomacyEvaluator.DenounceFee)
                 {
                     return true;
                 }
@@ -12006,10 +12010,8 @@ namespace GameObjects
                 this.ClearRouteways();
                 this.ReleaseAllCaptive();
                 this.PurifyFactionInfluences();
-                if (this.BelongedSection != null)
-                {
-                    this.BelongedSection.RemoveArchitecture(this);
-                }
+                this.BelongedFaction.RemoveArchitectureFromSections(this);
+                this.BelongedSection = null;
                 this.DefensiveLegion = null;
                 if (this == this.BelongedFaction.Capital || this.BelongedFaction.ArchitectureCount <= 1)
                 {
@@ -12145,6 +12147,7 @@ namespace GameObjects
 
             if (faction != null)
             {
+                faction.ClearSectionOrientationTo(this);
                 //this.jianzhuqizi.qizidezi.Text = faction.ToString().Substring(0, 1);
             }
 

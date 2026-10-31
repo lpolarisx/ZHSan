@@ -102,6 +102,19 @@ namespace GameObjects.FactionDetail
             return RelationFaction1ID;
         }
 
+        // 基类按ID比较，而关系对象的ID都是0，不重写的话任意两条关系都算相等，Contains、IndexOf都会出错
+        public override bool Equals(object obj)
+        {
+            return obj is DiplomaticRelation other
+                && RelationFaction1ID == other.RelationFaction1ID
+                && RelationFaction2ID == other.RelationFaction2ID;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(RelationFaction1ID, RelationFaction2ID);
+        }
+
         public Faction RelationFaction1 => Session.Current.Scenario.Factions.GetValueOrDefault(RelationFaction1ID);
 
         public string RelationFaction1String => RelationFaction1?.Name ?? "----";

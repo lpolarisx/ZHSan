@@ -279,7 +279,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case ContextMenuResult.Faction_DiplomaticRelations:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.DiplomaticRelation, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GetDiplomaticRelationDisplays(CurrentArchitecture.BelongedFaction.ID)], null, "", "");
+                        DiplomaticRelationListDialog.Show(this.CurrentArchitecture.BelongedFaction);
                     }
                     break;
 
