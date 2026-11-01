@@ -5047,7 +5047,7 @@ namespace GameObjects
         private void CheckAmbushTroop(Point p)
         {
             Troop troopByPosition = Session.Current.Scenario.GetTroopByPosition(p);
-            if (((troopByPosition != null) && (troopByPosition.Status == TroopStatus.Ambushing)) && !this.IsFriendly(troopByPosition.BelongedFaction))
+            if (((troopByPosition != null) && (troopByPosition.Status == TroopStatus.Ambushing)) && !this.IsFriendlyWithoutTruce(troopByPosition.BelongedFaction))
             {
                 this.DetectAmbush(troopByPosition, this.BelongedFaction.GetKnownAreaData(p));
             }
@@ -5778,169 +5778,177 @@ namespace GameObjects
 
         private void resolveAIQuickBattle()
         {
-
             foreach (var a in AIBattlingArchitectures.ToList())
             {
-                bool aborted = false;
+                // 旧存档可能有重复或失效的目标，前面已结束过的不再处理
+                if (a == null)
+                {
+                    AIBattlingArchitectures.RemoveAll(x => x == null);
+                    continue;
+                }
+                if (!AIBattlingArchitectures.Contains(a)) continue;
 
+                // 目标已归己方，或双方已结盟、停战，交回正常 AI
+                if (BelongedFaction == null || BelongedFaction.IsFriendly(a.BelongedFaction))
+                {
+                    endAIQuickBattle(a);
+                    continue;
+                }
+
+                bool playerKnown = false;
                 foreach (Faction f in Session.Current.Scenario.PlayerFactions)
                 {
                     if (f.IsArchitectureKnown(this) || f.IsArchitectureKnown(a))
                     {
-                        if (this.BelongedFaction.GetLegion(a) == null)
-                        {
-                            aborted = true;
-                        }
-                        else
-                        {
-                            foreach (Troop t in this.BelongedFaction.GetLegion(a).Troops)
-                            {
-                                t.TargetArchitecture = a;
-                                t.WillArchitecture = a;
-                                t.QuickBattling = false;
-                                a.TotalHostileForce -= t.FightingForce;
-                            }
-                            if (a.DefensiveLegion != null)
-                            {
-                                foreach (Troop t in a.DefensiveLegion.Troops)
-                                {
-                                    t.QuickBattling = false;
-                                    this.TotalFriendlyForce -= t.FightingForce;
-                                }
-                            }
-                        }
-                        aborted = true;
+                        playerKnown = true;
+                        break;
                     }
                 }
-
-                if (!aborted)
+                if (playerKnown)
                 {
-                    // offensive troop
-                    int reserve = this.getArmyReserveForOffensive();
-                    if (this.ArmyScale < reserve)
-                    {
-                        this.AIBattlingArchitectures.Remove(a);
-                        break;
-                    }
+                    endAIQuickBattle(a);
+                    continue;
+                }
 
-                    bool built = this.BuildOffensiveTroop(a, LinkKind.Land, true, reserve);
-                    if (!built)
-                    {
-                        this.AIBattlingArchitectures.Remove(a);
-                        break;
-                    }
+                // offensive troop，预备兵力不足时只是不再增兵，已出战的部队继续打
+                int reserve = this.getArmyReserveForOffensive();
+                if (this.ArmyScale >= reserve)
+                {
+                    LinkKind linkKind = AIWaterLinks.Contains(a) && !AILandLinks.Contains(a) ? LinkKind.Water : LinkKind.Land;
+                    this.BuildOffensiveTroop(a, linkKind, true, reserve);
+                }
 
-                    foreach (Troop t in this.BelongedFaction.GetLegion(a).Troops)
-                    {
-                        t.TargetArchitecture = null;
-                        t.WillArchitecture = null;
-                        t.QuickBattling = true;
-                        a.TotalHostileForce += t.FightingForce;
-                    }
+                Legion legion = BelongedFaction.GetLegion(a);
+                if (legion == null || legion.Troops.Count == 0)
+                {
+                    endAIQuickBattle(a);
+                    continue;
+                }
 
-                    if (a.BelongedFaction != null)
-                    {
-                        // defensive troop
-                        a.DefensiveCampaign(BelongedFaction.GetLegion(a).Troops);
+                foreach (Troop t in legion.Troops)
+                {
+                    t.TargetArchitecture = null;
+                    t.WillArchitecture = null;
+                    t.QuickBattling = true;
+                    a.TotalHostileForce += t.FightingForce;
+                }
 
-                        if (a.DefensiveLegion != null)
-                        {
-                            foreach (Troop t in a.DefensiveLegion.Troops)
-                            {
-                                t.QuickBattling = true;
-                                this.TotalFriendlyForce += t.FightingForce;
-                            }
-                        }
-                    }
+                if (a.BelongedFaction != null)
+                {
+                    // defensive troop，新出战部队的战力已在 DefensiveCampaign 里计入
+                    a.DefensiveCampaign(legion.Troops);
 
-                    // fight
                     if (a.DefensiveLegion != null)
                     {
-                        foreach (var troop in a.DefensiveLegion.Troops)
+                        foreach (Troop t in a.DefensiveLegion.Troops)
                         {
-                            if (BelongedFaction.GetLegion(a).Troops.Count > 0)
-                            {
-                                var list = BelongedFaction.GetLegion(a).Troops;
-                                var targetTroop = StaticMethods.GetRandomItem(list);
-                                troop.AttackTroop(targetTroop);
-                                troop.ApplyDamageList();
-                            }
-                            else
-                            {
-                                AIBattlingArchitectures.Remove(a);
-                            }
+                            t.QuickBattling = true;
                         }
-                    }
-
-                    var attackingTroops = BelongedFaction.GetLegion(a).Troops;
-                    foreach (var troop in attackingTroops)
-                    {
-                        if (a.Endurance > 0)
-                        {
-                            troop.AttackArchitecture(a);
-                            troop.ApplyDamageList();
-                            if (a.Endurance <= 0)
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            if (a.DefensiveLegion != null && a.DefensiveLegion.Troops.Count > 0)
-                            {
-                                var targetTroop = StaticMethods.GetRandomItem(a.DefensiveLegion.Troops);
-                                troop.AttackTroop(targetTroop);
-                                troop.ApplyDamageList();
-                            }
-                            else
-                            {
-                                troop.Position = a.ArchitectureArea.Centre;
-                                troop.BelongedFaction = BelongedFaction;
-                                troop.Occupy();
-
-                                foreach (Troop u in attackingTroops)
-                                {
-                                    u.Position = a.ArchitectureArea.Centre;
-                                    u.Enter(a);
-                                }
-                                AIBattlingArchitectures.Remove(a);
-                                break;
-                            }
-
-                        }
-
-                    }
-
-                    int i = 0;
-                    var personCount = GetPersonsExcludeNvGuan().Count;
-                    var militaryCount = Militaries.Count;
-                    float architectureDamageRate = Session.Parameters.ArchitectureDamageRate;
-
-                    foreach (var military in Militaries)
-                    {
-                        if (personCount <= i) break;
-
-                        var kind = military.Kind;
-                        int chance = (kind.OffenceRadius + 1) * (kind.OffenceRadius + 1) * 100 / militaryCount;
-                        
-                        if (GameObject.GetChance(chance))
-                        {
-                            a.Endurance = a.Endurance - Math.Max(1, (int)(military.Offence / 4 * kind.ArchitectureDamageRate * architectureDamageRate));
-
-                            if (a.Endurance <= 0) break;
-                        }
-                        i++;
                     }
                 }
-                else
+
+                // fight，部队溃败或入城都会从军团移除，遍历时要用副本
+                if (a.DefensiveLegion != null)
                 {
-                    foreach (Architecture x in this.AIBattlingArchitectures)
+                    foreach (var troop in a.DefensiveLegion.Troops.ToList())
                     {
-                        x.AIBattlingArchitectures.Remove(this);
+                        if (troop.Destroyed || legion.Troops.Count == 0) continue;
+
+                        troop.AttackTroop(StaticMethods.GetRandomItem(legion.Troops));
+                        troop.ApplyDamageList();
                     }
-                    this.AIBattlingArchitectures.Clear();
+                }
+
+                bool occupied = false;
+                foreach (var troop in legion.Troops.ToList())
+                {
+                    if (troop.Destroyed) continue;
+
+                    if (a.Endurance > 0)
+                    {
+                        troop.AttackArchitecture(a);
+                        troop.ApplyDamageList();
+                        if (a.Endurance <= 0)
+                        {
+                            break;
+                        }
+                    }
+                    else if (a.DefensiveLegion != null && a.DefensiveLegion.Troops.Count > 0)
+                    {
+                        troop.AttackTroop(StaticMethods.GetRandomItem(a.DefensiveLegion.Troops));
+                        troop.ApplyDamageList();
+                    }
+                    else
+                    {
+                        troop.Position = a.ArchitectureArea.Centre;
+                        troop.BelongedFaction = BelongedFaction;
+                        troop.Occupy();
+
+                        foreach (Troop u in legion.Troops.ToList())
+                        {
+                            if (u.Destroyed) continue;
+
+                            u.Position = a.ArchitectureArea.Centre;
+                            u.Enter(a);
+                        }
+                        occupied = true;
+                        break;
+                    }
+                }
+
+                if (occupied || legion.Troops.Count == 0)
+                {
+                    endAIQuickBattle(a);
+                    continue;
+                }
+
+                int i = 0;
+                var personCount = GetPersonsExcludeNvGuan().Count;
+                var militaryCount = Militaries.Count;
+                float architectureDamageRate = Session.Parameters.ArchitectureDamageRate;
+
+                foreach (var military in Militaries)
+                {
+                    if (personCount <= i) break;
+
+                    var kind = military.Kind;
+                    int chance = (kind.OffenceRadius + 1) * (kind.OffenceRadius + 1) * 100 / militaryCount;
+
+                    if (GameObject.GetChance(chance))
+                    {
+                        a.Endurance = Math.Max(0, a.Endurance - Math.Max(1, (int)(military.Offence / 4 * kind.ArchitectureDamageRate * architectureDamageRate)));
+
+                        if (a.Endurance <= 0) break;
+                    }
+                    i++;
                 }
             }
+        }
+
+        /// <summary>
+        /// 结束对目标的简易战斗。QuickBattling 的部队不会执行 AI，结束时必须放开，否则会一直停在原地
+        /// </summary>
+        private void endAIQuickBattle(Architecture a)
+        {
+            Legion legion = BelongedFaction?.GetLegion(a);
+            if (legion != null)
+            {
+                foreach (Troop t in legion.Troops)
+                {
+                    t.TargetArchitecture = a;
+                    t.WillArchitecture = a;
+                    t.QuickBattling = false;
+                    a.TotalHostileForce = Math.Max(0, a.TotalHostileForce - t.FightingForce);
+                }
+            }
+            if (a.DefensiveLegion != null)
+            {
+                foreach (Troop t in a.DefensiveLegion.Troops)
+                {
+                    t.QuickBattling = false;
+                }
+            }
+            AIBattlingArchitectures.RemoveAll(x => x == a);
         }
 
         private void RestEvent()
@@ -11002,7 +11010,10 @@ namespace GameObjects
 
                                         if (Session.GlobalVariables.AIQuickBattle && !playerKnown)
                                         {
-                                            this.AIBattlingArchitectures.Add(wayToTarget.A);
+                                            if (!this.AIBattlingArchitectures.Contains(wayToTarget.A))
+                                            {
+                                                this.AIBattlingArchitectures.Add(wayToTarget.A);
+                                            }
                                             this.PlanArchitecture = null;
                                         }
                                         else
@@ -12809,7 +12820,7 @@ namespace GameObjects
             get
             {
                 int num = 0;
-                foreach (var legion in BelongedFaction.Legions)
+                foreach (var legion in BelongedFaction?.Legions ?? Enumerable.Empty<Legion>())
                 {
                     if (legion.Kind == LegionKind.Defensive)
                     {

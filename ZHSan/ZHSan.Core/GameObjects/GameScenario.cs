@@ -980,6 +980,10 @@ namespace GameObjects
                 Captive.Create(person, muqin.BelongedArchitecture == null ? null : muqin.BelongedArchitecture.BelongedFaction);
             }
 
+            // 人物列表和每日事件都只遍历已登场人物集合，出生即登场也要加入
+            AvailablePersons.TryAdd(person.ID, person);
+            ClearPersonStatusCache();
+
             ExtensionInterface.call("ChildrenJoinFaction", new Object[] { this, person });
 
             Session.MainGame.mainGameScreen.haizizhangdachengren(person, person, true);
@@ -3889,7 +3893,17 @@ namespace GameObjects
 
                                 if (person.Status == PersonStatus.None)
                                 {
-                                    person.Status = PersonStatus.NoFaction;
+                                    // 旧存档里出生即登场的子女没写进建筑人物名单，回到父母所在势力，不要变成在野
+                                    var parentFaction = person.Mother?.BelongedFactionWithPrincess ?? person.Father?.BelongedFactionWithPrincess;
+                                    if (parentFaction?.Capital != null)
+                                    {
+                                        person.LocationArchitecture = parentFaction.Capital;
+                                        person.Status = PersonStatus.Normal;
+                                    }
+                                    else
+                                    {
+                                        person.Status = PersonStatus.NoFaction;
+                                    }
                                 }
                             }
                             else

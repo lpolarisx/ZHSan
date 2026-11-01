@@ -2876,9 +2876,10 @@ namespace GameObjects
 
                                 Session.MainGame.mainGameScreen.xiaohaichusheng(haizi.Father, haizi.Mother, haizi);
 
-                                haizifuqin.childrenList.Add(haizi);
+                                // 列表是首次访问时才统计的，还没统计过就不用加，否则之后统计时会重复，读档后直接加还会空引用
+                                haizifuqin.childrenList?.Add(haizi);
 
-                                childrenList.Add(haizi);
+                                childrenList?.Add(haizi);
 
                                 if (!((bool)Session.GlobalVariables.PersonNaturalDeath) || Session.GlobalVariables.ChildrenAvailableAge <= 0)
                                 {
@@ -8610,14 +8611,21 @@ namespace GameObjects
 
         private int AttrLevelUpNeedExp(int ExperienceNow, int BaseAttribute)
         {
+            // 每级消耗要和ExpAddMthd保持一致，否则显示的升级经验和实际升级对不上
             int num = 0;
-            int num2 = ExperienceNow;
-            while (num2 >= (int)(Math.Pow((BaseAttribute + num -50), 2) + 10 * BaseAttribute + 500))
+            int remaining = ExperienceNow;
+            while (true)
             {
-                num2 -= (int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500);
+                int diff = BaseAttribute + num - 50;
+                int cost = diff * diff + 10 * BaseAttribute + 500;
+
+                if (remaining < cost)
+                    return ExperienceNow - remaining + cost;
+
+                remaining -= cost;
+                BaseAttribute++;
                 num++;
             }
-            return ((int)(Math.Pow((BaseAttribute + num - 50), 2) + 10 * BaseAttribute + 500) - num2 + ExperienceNow);
         }
 
 

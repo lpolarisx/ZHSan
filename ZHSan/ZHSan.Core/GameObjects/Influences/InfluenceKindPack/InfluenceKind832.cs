@@ -9,4 +9,9 @@ public class InfluenceKind832 : InfluenceKind
     {
         troop.OffenceRateOnSubdueQixie = influence.GetFloatParam();
     }
+
+    public override void PurifyInfluenceKind(Influence influence, Troop troop)
+    {
+        troop.OffenceRateOnSubdueQixie = troop.GetArmyKindSubdueRate(influence.KindId);
+    }
 }

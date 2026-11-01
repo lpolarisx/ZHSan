@@ -985,7 +985,7 @@ namespace GameObjects
 
         private string getSoundPath(Animation a)
         {
-            if ((Setting.Current.GlobalVariables.TroopVoice)&&(Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position))))
+            if ((Setting.Current.GlobalVariables.TroopVoice)&&(Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendlyWithoutTruce(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position))))
             {
                 if (Directory.Exists("Content/Sound/Animation/Person/" + this.Leader.ID))
                 {
@@ -6836,7 +6836,7 @@ namespace GameObjects
                 TerrainKind.Mountain => MountainAdaptability,
                 TerrainKind.Water => WaterAdaptability,
                 TerrainKind.Ridge => RidgeAdaptability,
-                TerrainKind.Wasteland => WaterAdaptability,
+                TerrainKind.Wasteland => WastelandAdaptability,
                 TerrainKind.Desert => DesertAdaptability,
                 TerrainKind.Cliff => CliffAdaptability,
                 _ => DefaultAdaptability,
@@ -7988,12 +7988,13 @@ namespace GameObjects
 
         public void InitializePosition(Point p)
         {
+            // 先设坐标：武将影响的兵种前提依赖 Army.Kind，而水上部队的 Kind 由坐标决定
+            PreviousPosition = position = p;
+
             foreach (var person in Persons)
             {
                 person.ApplyInfluence();
             }
-
-            PreviousPosition = position = p;
 
             Initialize();
         }
@@ -8436,7 +8437,7 @@ namespace GameObjects
                     continue;
                 }
                 Troop troopByPositionNoCheck = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
-                if (((troopByPositionNoCheck != null) && !troopByPositionNoCheck.IsFriendly(this.BelongedFaction)) && (troopByPositionNoCheck.Status == TroopStatus.Ambushing))
+                if (((troopByPositionNoCheck != null) && !troopByPositionNoCheck.IsFriendlyWithoutTruce(this.BelongedFaction)) && (troopByPositionNoCheck.Status == TroopStatus.Ambushing))
                 {
                     this.DetectAmbush(troopByPositionNoCheck);
                 }
@@ -8815,12 +8816,55 @@ namespace GameObjects
             return ControlAvail() && Army.Kind.MorphTo != null;
         }
 
-        private void preResetArmyKindData()
+        /// <summary>
+        /// 当前兵种自身提供的克制倍率，兵种没有该影响时为 1
+        /// </summary>
+        public float GetArmyKindSubdueRate(int influenceKindId)
         {
+            float rate = 1f;
             foreach (var influence in Army.Kind.Influences)
+            {
+                if (influence.KindId == influenceKindId)
+                {
+                    rate = influence.GetFloatParam();
+                }
+            }
+            return rate;
+        }
+
+        private void ResetSubdueRates()
+        {
+            OffenceRateOnSubdueBubing = 1f;
+            OffenceRateOnSubdueNubing = 1f;
+            OffenceRateOnSubdueQibing = 1f;
+            OffenceRateOnSubdueShuijun = 1f;
+            OffenceRateOnSubdueQixie = 1f;
+            DefenceRateOnSubdueBubing = 1f;
+            DefenceRateOnSubdueNubing = 1f;
+            DefenceRateOnSubdueQibing = 1f;
+            DefenceRateOnSubdueShuijun = 1f;
+            DefenceRateOnSubdueQixie = 1f;
+        }
+
+        private void preResetArmyKindData(MilitaryKind previousKind)
+        {
+            // 战法和特技在兵种、武将之后施加，赋值式影响靠这个顺序生效，这里先移除，重置后按原顺序补回
+            if (CombatMethodApplied)
+            {
+                CurrentCombatMethod?.SimulatePurify(this);
+            }
+            if (CurrentStunt != null && StuntDayLeft > 0)
+            {
+                CurrentStunt.Purify(this);
+            }
+
+            foreach (var influence in previousKind.Influences)
             {
                 influence.PurifyInfluence(this, Applier.MilitaryKind, 0);
             }
+
+            // 克制倍率移除时恢复的是当前兵种的值，Morph 此时还是旧兵种，这里统一还原，由新兵种重新施加
+            ResetSubdueRates();
 
             PurifyPersonInfluences();
 
@@ -8863,6 +8907,12 @@ namespace GameObjects
                 i.ApplyInfluence(this, Applier.MilitaryKind, 0);
             }
             ApplyPersonInfluences();
+            ApplyStuntInfluences();
+            // 战法已在施放时扣过战意，这里只恢复影响
+            if (CombatMethodApplied)
+            {
+                CurrentCombatMethod?.SimulateApply(this);
+            }
 
             this.RefreshAllData();
             this.InitializeContactArea();
@@ -8885,7 +8935,7 @@ namespace GameObjects
             if (target != null && this.BelongedFaction != null)
             {
                 //this.BelongedFaction.MorphMilitary(this.Army.Kind, target);
-                preResetArmyKindData();
+                preResetArmyKindData(this.Army.Kind);
                 this.Operated = true;
                 this.Army.Kind = target;
                 postResetArmyKindData();
@@ -12382,6 +12432,10 @@ namespace GameObjects
             {
                 if (!this.Destroyed)
                 {
+                    // Army.Kind 随坐标变化，要在更新坐标前取旧兵种
+                    MilitaryKind previousKind = Session.Current.IsWorking ? null : this.army?.Kind;
+                    int previousMovability = previousKind == null ? 0 : this.Movability;
+
                     this.PreviousPosition = this.position;
                     this.position = value;
 
@@ -12403,12 +12457,18 @@ namespace GameObjects
 
                             if (changeArmyKind)
                             {
-                                this.preResetArmyKindData();
+                                this.preResetArmyKindData(previousKind);
                             }
 
                             if (changeArmyKind)
                             {
                                 this.postResetArmyKindData();
+
+                                // 剩余移动力按比例换算到新兵种，负数是本回合不能再动的标记，不参与换算
+                                if (this.MovabilityLeft > 0 && previousMovability > 0)
+                                {
+                                    this.MovabilityLeft = this.MovabilityLeft * this.Movability / previousMovability;
+                                }
                             }
 
                             // position updatd
@@ -12502,7 +12562,7 @@ namespace GameObjects
                 if (this.preAction != TroopPreAction.None && Session.Current.Scenario != null)
                 {
                     if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(Position)
-                        && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(Position)))
+                        && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendlyWithoutTruce(BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(Position)))
                     {
                         if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
                         {
@@ -12714,7 +12774,7 @@ namespace GameObjects
                 }
                 if (this.CurrentTileAnimationKind != TileAnimationKind.无 && Session.Current.Scenario != null)
                 {
-                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position)))
+                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(this.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendlyWithoutTruce(this.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.Position)))
                     {
                         if (Session.Current.Scenario.GameCommonData.AllTileAnimations.TryGetValue((int)CurrentTileAnimationKind, out var animation))
                         {

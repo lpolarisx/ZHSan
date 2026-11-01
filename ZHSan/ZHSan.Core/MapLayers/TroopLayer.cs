@@ -35,7 +35,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                         troop.SetNotShowing();
                         continue;
                     }
-                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(troop.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(troop.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(troop.Position)))
+                    if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(troop.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendlyWithoutTruce(troop.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(troop.Position)))
                     {
                         Color white = Color.White;
                         if (troop.CurrentOutburstKind == OutburstKind.愤怒)
@@ -46,7 +46,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                         {
                             white = Color.Green;
                         }
-                        if (!(Session.GlobalVariables.SkyEye || Session.Current.Scenario.CurrentPlayer == null || troop.Status != TroopStatus.Ambushing || troop.IsFriendly(Session.Current.Scenario.CurrentPlayer)))
+                        if (!(Session.GlobalVariables.SkyEye || Session.Current.Scenario.CurrentPlayer == null || troop.Status != TroopStatus.Ambushing || troop.IsFriendlyWithoutTruce(Session.Current.Scenario.CurrentPlayer)))
                         {
                             troop.SetNotShowing();
                             continue;
@@ -160,7 +160,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens.ScreenLayers
                     if (troop != null && !troop.Destroyed)
                     {
                         troop.SetNotShowing();
-                        if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(troop.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendly(troop.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(troop.Position)))
+                        if (Session.MainGame.mainGameScreen.mainMapLayer.TileInScreen(troop.Position) && (((Session.GlobalVariables.SkyEye || Session.Current.Scenario.NoCurrentPlayer) || Session.Current.Scenario.CurrentPlayer.IsFriendlyWithoutTruce(troop.BelongedFaction)) || Session.Current.Scenario.CurrentPlayer.IsPositionKnown(troop.Position)))
                         {
                             DrawStoppedTroop( viewportSize, troop);
                             Session.MainGame.mainGameScreen.Plugins.TroopTitlePlugin.DrawTroop( troop, playerControlling);

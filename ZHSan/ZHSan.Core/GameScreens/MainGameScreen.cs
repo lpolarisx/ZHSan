@@ -1518,11 +1518,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 return true;
             }
-            if (troop.Status == TroopStatus.Ambushing && !troop.IsFriendly(scenario.CurrentPlayer))
+            if (troop.Status == TroopStatus.Ambushing && !troop.IsFriendlyWithoutTruce(scenario.CurrentPlayer))
             {
                 return false;
             }
-            return scenario.CurrentPlayer.IsFriendly(troop.BelongedFaction) || scenario.CurrentPlayer.IsPositionKnown(troop.Position);
+            return scenario.CurrentPlayer.IsFriendlyWithoutTruce(troop.BelongedFaction) || scenario.CurrentPlayer.IsPositionKnown(troop.Position);
         }
 
         // 不会显示在屏幕上的部队，动画、数字和待结算效果原本要等到下一次绘制才清除，这里直接结算，不用白等一帧绘制

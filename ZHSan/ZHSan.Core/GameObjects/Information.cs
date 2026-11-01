@@ -96,7 +96,7 @@ public class Information : GameObject
         var troop = Session.Current.Scenario.GetTroopByPosition(point);
 
         if (troop != null && troop.Status == TroopStatus.Ambushing
-            && (BelongedArchitecture != null && !BelongedArchitecture.IsFriendly(troop.BelongedFaction) || (BelongedFaction != null && !BelongedArchitecture.IsFriendly(troop.BelongedFaction))))
+            && (BelongedArchitecture != null && !BelongedArchitecture.IsFriendlyWithoutTruce(troop.BelongedFaction) || (BelongedFaction != null && !BelongedArchitecture.IsFriendlyWithoutTruce(troop.BelongedFaction))))
         {
             DetectAmbush(troop);
         }

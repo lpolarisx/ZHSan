@@ -2738,6 +2738,9 @@ namespace GameObjects
                 {
                     if (!p.Trainable) continue;
 
+                    // 子女登场后跟随父亲，父亲还在世且不在本势力时，培育方针不归本势力决定
+                    if (p.Father != null && p.Father.Alive && p.Father.BelongedFactionWithPrincess != this) continue;
+
                     if (Session.Current.Scenario.IsPlayer(this) && (p.Father == Leader || p.Mother == Leader)) continue;
 
                     if (p.Age >= 5 && p.Age < 8)
@@ -4755,6 +4758,7 @@ namespace GameObjects
             return diplomaticRelation.Relation >= Session.GlobalVariables.FriendlyDiplomacyThreshold || diplomaticRelation.Truce > 0;
         }
 
+        // 只有同盟算友方，协议停战不算。部队是否可见、伏兵能否被发现都按这个判断
         public bool IsFriendlyWithoutTruce(Faction faction)
         {
             if (faction == null) return false;
@@ -7549,10 +7553,7 @@ namespace GameObjects
                         || (person.Mother != null && person.Mother.BelongedFactionWithPrincess == this))
                     && (person.ID < 7000 || person.ID > 8000))
                 {
-                    if (person.Father == null || !person.Father.Alive || person.Father.BelongedFactionWithPrincess == this)
-                    {
-                        result.Add(person);
-                    }
+                    result.Add(person);
                 }
             }
             

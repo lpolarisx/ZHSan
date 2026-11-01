@@ -627,7 +627,7 @@ public class MilitaryKind : GameObject
             TerrainKind.Mountain => MountainAdaptability,
             TerrainKind.Water => WaterAdaptability,
             TerrainKind.Ridge => RidgeAdaptability,
-            TerrainKind.Wasteland => WaterAdaptability,
+            TerrainKind.Wasteland => WastelandAdaptability,
             TerrainKind.Desert => DesertAdaptability,
             TerrainKind.Cliff => CliffAdaptability,
             _ => DefaultAdaptability,

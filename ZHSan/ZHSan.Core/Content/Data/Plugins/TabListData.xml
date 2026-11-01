@@ -5486,7 +5486,7 @@
                                         FontColor="4294375158"
                                         Align="Middle">
                                 </Column>
-                                <Column ID="2" Name="shengwangshangxian" CountToDisplay="False"
+                                <Column ID="2" Name="ReputationCap" CountToDisplay="False"
                                         IsNumber="True" DisplayName="聲望上限" MinWidth="80"
                                         DetailLevel="3"
                                         FontName="方正隶变_GBK"
@@ -5495,7 +5495,7 @@
                                         FontColor="4294375158"
                                         Align="Right">
                                 </Column>
-                                <Column ID="3" Name="xuyaogongxiandu" CountToDisplay="False"
+                                <Column ID="3" Name="RequiredContribution" CountToDisplay="False"
                                         IsNumber="True" DisplayName="需要貢獻度" MinWidth="80"
                                         DetailLevel="3"
                                         FontName="方正隶变_GBK"
@@ -5504,7 +5504,7 @@
                                         FontColor="4294375158"
                                         Align="Right">
                                 </Column>
-                                <Column ID="4" Name="xuyaochengchi" CountToDisplay="False"
+                                <Column ID="4" Name="RequiredArchitecture" CountToDisplay="False"
                                         IsNumber="True" DisplayName="需要城池" MinWidth="80"
                                         DetailLevel="3"
                                         FontName="方正隶变_GBK"
