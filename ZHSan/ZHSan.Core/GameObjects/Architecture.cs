@@ -501,6 +501,7 @@ namespace GameObjects
         public int TotalStoredForce;
         public int TotalFriendlyForce;
         public int TotalHostileForce;
+        public bool HasStoredForceCommander;
 
         public Architecture TransferFoodArchitecture;
 
@@ -1761,9 +1762,22 @@ namespace GameObjects
             {
                 if (!HasHostileTroopsInView() && Endurance >= 30) return false;
 
-                if (TotalHostileForce > (TotalFriendlyForce + TotalStoredForce)) return true;
-                
-                return false;
+                // 最后一座城无处可撤，弃城只会白白解散守军（WithdrawPerson 也不会撤人）
+                if (BelongedFaction == null || BelongedFaction.ArchitectureCount <= 1) return false;
+
+                // 城里没有武将时 TotalStoredForce 为 0，视野里出现一支敌军就会把整城兵马解散；城防还在就先守着
+                if (!HasStoredForceCommander && MilitaryCount > 0 && Endurance >= 30) return false;
+
+                if (Endurance >= 30)
+                {
+                    // 已派出守军在城外迎战，就先打着，不在背后把城里的兵解散
+                    if (DefensiveLegion != null && DefensiveLegion.Troops.Count > 0) return false;
+
+                    // 城防还在时，敌军要远强于守军（3 倍）才弃城；否则先出城迎击，城防快破了再按 1 倍判断
+                    return TotalHostileForce > (TotalFriendlyForce + TotalStoredForce) * 3L;
+                }
+
+                return TotalHostileForce > (TotalFriendlyForce + TotalStoredForce);
             }
         }
 
@@ -1808,7 +1822,7 @@ namespace GameObjects
             foreach (var architecture in otherArchitectureList)
             {
                 double distance = Session.Current.Scenario.GetDistance(Position, architecture.Position);
-                if (distance < minDist && !dest.Abandoned)
+                if (distance < minDist && !architecture.Abandoned)
                 {
                     minDist = distance;
                     dest = architecture;
@@ -11342,6 +11356,7 @@ namespace GameObjects
             TotalStoredForce = 0;
 
             var persons = GetPersonsExcludeNvGuan();
+            HasStoredForceCommander = persons.Count > 0;
             if (persons.Count > 0) 
             {
                 int num = 0;
@@ -11358,7 +11373,11 @@ namespace GameObjects
                 int avgFightingMerit = fightingMerit / num;
                 foreach (var military in Militaries)
                 {
-                    TotalStoredForce += (int)(((military.Offence + military.Defence) * military.Morale / 100.0 + military.Combativity / 4) * fightingMerit / 100);
+                    if (military.IsTransport) continue;
+
+                    // 编队攻防只随规模缓慢增长，几乎不看兵数；按兵数加权，2500 人为 1 倍，每多 5000 人多 1 倍
+                    double quantityFactor = 0.5 + military.Quantity / 5000.0;
+                    TotalStoredForce += (int)(((military.Offence + military.Defence) * military.Morale / 100.0 + military.Combativity / 4) * fightingMerit / 100 * quantityFactor);
                 }
             }
         }

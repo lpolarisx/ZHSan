@@ -3199,8 +3199,8 @@ namespace GameObjects
                         this.ConvincingPerson.InjureRate -= diff / 1000.0f;
                         if (this.ConvincingPerson.InjureRate < 0.05 && Session.GlobalVariables.OfficerDieInBattleRate > 0 && !this.ConvincingPerson.ImmunityOfDieInBattle)
                         {
-                            architectureByPosition.BelongedFaction.Leader.AdjustRelation(this, -60f, -20);
-                            architectureByPosition.BelongedFaction.Leader.AdjustRelation(this.BelongedFaction.Leader, -15f, -5);
+                            architectureByPosition.BelongedFaction?.Leader.AdjustRelation(this, -60f, -20);
+                            architectureByPosition.BelongedFaction?.Leader.AdjustRelation(this.BelongedFaction.Leader, -15f, -5);
 
                             this.AddStrengthExperience(30);
                             this.AddIntelligenceExperience(30);
@@ -3214,7 +3214,8 @@ namespace GameObjects
                             ExtensionInterface.call("Assassinated", new Object[] { Session.Current.Scenario, this, this.ConvincingPerson });
 
                             Session.Current.Scenario.YearTable.addAssassinateEntry(Session.Current.Scenario.Date, this, this.ConvincingPerson);
-                            this.ConvincingPerson.ToDeath(this, this.ConvincingPerson.BelongedFaction);
+                            // 刺杀已有专门的记录文本，不传 killer，避免再显示“被XX突击，战死了”
+                            this.ConvincingPerson.ToDeath(null, this.ConvincingPerson.BelongedFaction);
                         }
                         else if (this.ConvincingPerson.InjureRate < 0.009 * this.Strength && 
                             GameObject.GetChance(this.Strength + this.Intelligence - this.ConvincingPerson.Strength - this.ConvincingPerson.Intelligence) && 
@@ -3270,12 +3271,12 @@ namespace GameObjects
                             this.InjureRate -= (-diff - 200) / 1000.0f;
                             if (this.InjureRate < 0.05 && Session.GlobalVariables.OfficerDieInBattleRate > 0)
                             {
-                                architectureByPosition.BelongedFaction.Leader.AdjustRelation(this.BelongedFaction.Leader, -15f, -5);
+                                architectureByPosition.BelongedFaction?.Leader.AdjustRelation(this.BelongedFaction.Leader, -15f, -5);
 
                                 ExtensionInterface.call("Assassinated", new Object[] { Session.Current.Scenario, this, this.ConvincingPerson });
 
                                 Session.Current.Scenario.YearTable.addReverseAssassinateEntry(Session.Current.Scenario.Date, this, this.ConvincingPerson);
-                                this.ToDeath(this, this.BelongedFaction);
+                                this.ToDeath(null, this.BelongedFaction);
 
                                 Session.MainGame.mainGameScreen.PersonAssassinateFailedKilled(this, this.ConvincingPerson, architectureByPosition);
                             }
