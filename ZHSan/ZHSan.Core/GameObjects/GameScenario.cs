@@ -5492,14 +5492,18 @@ namespace GameObjects
             if (this.MapTileData[troop.PreviousPosition.X, troop.PreviousPosition.Y].TileTroop == troop)
             {
                 this.MapTileData[troop.PreviousPosition.X, troop.PreviousPosition.Y].TileTroop = null;
-                /*foreach (Troop t in this.Troops)
+                // 格子上还有停在半路的友军时交给它，否则那支部队既不显示也选不中
+                if (this.MapTileData[troop.PreviousPosition.X, troop.PreviousPosition.Y].TroopCount > 0)
                 {
-                    if (!t.Destroyed && t.Position == troop.PreviousPosition)
+                    foreach (var t in this.Troops.Values)
                     {
-                        this.MapTileData[troop.PreviousPosition.X, troop.PreviousPosition.Y].TileTroop = t;
-                        break;
+                        if (t != troop && !t.Destroyed && t.Position == troop.PreviousPosition)
+                        {
+                            this.MapTileData[troop.PreviousPosition.X, troop.PreviousPosition.Y].TileTroop = t;
+                            break;
+                        }
                     }
-                }*/
+                }
             }
             TileData data2 = this.MapTileData[troop.Position.X, troop.Position.Y];
             data2.TroopCount++;

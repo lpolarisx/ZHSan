@@ -3207,7 +3207,7 @@ namespace GameObjects
                             this.AddTacticsExperience(180);
                             this.BelongedFaction.IncreaseTechniquePoint(30 * this.MultipleOfTacticsTechniquePoint * 100);
 
-                            this.ConvincingPerson.illegallyKilled(this.BelongedFaction, this);
+                            this.ConvincingPerson.illegallyKilled(this.BelongedFaction, this, this.ConvincingPerson.BelongedCaptive?.CaptiveFaction);
 
                             Session.MainGame.mainGameScreen.PersonAssassinateSuccessKilled(this, this.ConvincingPerson, architectureByPosition);
 
@@ -5448,26 +5448,27 @@ namespace GameObjects
             this.execute(Session.Current.Scenario.CurrentPlayer);
         }
 
-        private void illegallyKilled(Faction executingFaction, Person killer)
+        private void illegallyKilled(Faction executingFaction, Person killer, Faction captiveFaction)
         {
             killer.ExecuteCount++;
 
-            if (this.BelongedCaptive != null && this.BelongedCaptive.CaptiveFaction != null && this.BelongedCaptive.CaptiveFaction != executingFaction) // 斩有势力的俘虏
+            // 俘虏状态在调用前已被清除，原势力需由调用方传入
+            if (captiveFaction != null && captiveFaction != executingFaction && captiveFaction.Leader != null) // 斩有势力的俘虏
             {
-                Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedCaptive.CaptiveFaction.ID, executingFaction.ID, -10);
-                if (this.BelongedFaction.Leader.HasStrainTo(this))
+                Session.Current.Scenario.ChangeDiplomaticRelation(captiveFaction.ID, executingFaction.ID, -10);
+                if (captiveFaction.Leader.HasStrainTo(this))
                 {
-                    Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedCaptive.CaptiveFaction.ID, executingFaction.ID, -10);
+                    Session.Current.Scenario.ChangeDiplomaticRelation(captiveFaction.ID, executingFaction.ID, -10);
                 }
-                if (this.BelongedFaction.Leader.HasCloseStrainTo(this))
+                if (captiveFaction.Leader.HasCloseStrainTo(this))
                 {
-                    Session.Current.Scenario.ChangeDiplomaticRelation(this.BelongedCaptive.CaptiveFaction.ID, executingFaction.ID, -10);
-                    Session.Current.Scenario.SetDiplomaticRelationIfHigher(this.BelongedCaptive.CaptiveFaction.ID, executingFaction.ID, 0);
+                    Session.Current.Scenario.ChangeDiplomaticRelation(captiveFaction.ID, executingFaction.ID, -10);
+                    Session.Current.Scenario.SetDiplomaticRelationIfHigher(captiveFaction.ID, executingFaction.ID, 0);
                 }
-                if (this == this.BelongedFaction.Leader)
+                if (this == captiveFaction.Leader)
                 {
-                    Session.Current.Scenario.ChangeDiplomaticRelation(BelongedCaptive.CaptiveFaction.ID, executingFaction.ID, -1000);
-                    Session.Current.Scenario.SetDiplomaticRelationIfHigher(BelongedCaptive.CaptiveFaction.ID, executingFaction.ID, -1000);
+                    Session.Current.Scenario.ChangeDiplomaticRelation(captiveFaction.ID, executingFaction.ID, -1000);
+                    Session.Current.Scenario.SetDiplomaticRelationIfHigher(captiveFaction.ID, executingFaction.ID, -1000);
                 }
             }
 
@@ -5519,7 +5520,7 @@ namespace GameObjects
 
             Person executor = executingFaction.Leader;
 
-            this.illegallyKilled(executingFaction, executor);
+            this.illegallyKilled(executingFaction, executor, old);
 
             ExtensionInterface.call("Executed", new Object[] { Session.Current.Scenario, this, executingFaction });
 

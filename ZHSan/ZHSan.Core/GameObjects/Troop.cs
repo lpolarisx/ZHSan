@@ -11077,7 +11077,8 @@ namespace GameObjects
             bool path = false;
             MilitaryKind kind = this.Army.Kind;
 
-            if (this.StepNotFinished)
+            // 穿越友军时会把 StepNotFinished 置 false 沿原路径继续走，路径被清掉后（换目的地、存读档）必须重新寻路，否则永远不动
+            if (this.StepNotFinished || this.FirstTierPath == null)
             {
                 path = this.GetPath(kind);
                 if (this.Destroyed)
