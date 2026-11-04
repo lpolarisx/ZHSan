@@ -22,8 +22,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         Config,
         Save,
         Setting,
-        About,
-        Start
+        About
     }
 
     public class MOD
@@ -177,46 +176,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         string[] aboutLines = null;
 
-        int currentStartVersion = 2;
-        string[] startLines = null;
-
         string message = "";
 
 
         public MainMenuScreen()
         {
-            var startLineFile = @"Content\StartLines.txt";
-            if (Platform.Current.UserFileExist(startLineFile))
-            {
-                startLines = Platform.Current.LoadTexts(startLineFile);
-            }
-            else
-            {
-                startLines = new string[] {};
-            }
-
-            var startReadFile = "startRead.txt";
-
-            if (Platform.Current.UserFileExist(startReadFile))
-            {
-                string content = Platform.Current.GetUserText(startReadFile);
-                int version;
-                int.TryParse(content, out version);
-                if (version >= currentStartVersion)
-                {
-                    MenuType = MenuType.None;
-                }
-                else
-                {
-                    MenuType = MenuType.Start;
-                }
-            }
-            else
-            {
-                MenuType = MenuType.Start;
-            }
-            Platform.Current.SaveUserFile(startReadFile, currentStartVersion.ToString());
-
             // 不存在其他mod时，默认原版
             var originalMod = new MOD { ID = "", Name = "原版", Desc = "", Mode = "" };
             mods.Add(originalMod);
@@ -4251,10 +4215,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 frame_about.Update();
                 btAboutList.ForEach(bt => bt.Update());
             }
-            else if (MenuType == MenuType.Start)
-            {
-                btAboutList.ForEach(bt => bt.Update());
-            }
 
             btPre.Enable = pageIndex > 1;
             btNext.Enable = pageIndex < pageCount;
@@ -4914,14 +4874,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 btAboutList.ForEach(bt => bt.Draw(null, Color.White * alpha));
 
                 frame_about.Draw();
-            }
-            else if (MenuType == MenuType.Start)
-            {
-                CacheManager.DrawAvatar(@"Content\Textures\Resources\Start\Common.jpg", Vector2.Zero, Color.White * alpha, 1f);
-
-                CacheManager.DrawString(Session.Current.Font, String.Join(System.Environment.NewLine, startLines), new Vector2(40, 40), Color.Black * alpha, 0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0f);
-
-                btAboutList.ForEach(bt => bt.Draw(null, Color.White * alpha));
             }
 
             btPre.Draw(null, Color.White * alpha);

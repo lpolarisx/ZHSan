@@ -3543,7 +3543,7 @@ namespace GameObjects
                     var rebelCandidates = Persons.ToList();
 
                     ChangeFaction(diplomaticFaction);
-                    foreach (var treasure in leader.Treasures)
+                    foreach (var treasure in leader.Treasures.ToList())
                     {
                         treasure.HidePlace = locationArchitecture;
                         leader.LoseTreasure(treasure);
@@ -3630,13 +3630,13 @@ namespace GameObjects
                 return this;
             }
 
-            foreach (var treasure in leader.Treasures)
+            foreach (var treasure in leader.Treasures.ToList())
             {
                 treasure.HidePlace = locationArchitecture;
                 leader.LoseTreasure(treasure);
                 treasure.Available = false;
             }
-            
+
             return null;
         }
 

@@ -4094,7 +4094,7 @@ namespace GameObjects
             
             targetFaction.AfterChangeLeader(sourceFaction, rebelCandidates, targetFaction.Leader, sourceFaction.Leader);
                 
-            foreach (var treasure in targetFaction.Leader.Treasures)
+            foreach (var treasure in targetFaction.Leader.Treasures.ToList())
             {
                 targetFaction.Leader.LoseTreasure(treasure);
                 sourceFaction.Leader.ReceiveTreasure(treasure);

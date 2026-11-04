@@ -38,6 +38,9 @@ namespace GameManager
         // 字形按这个倍数生成，与界面缩放倍数完全一致（不取整），放大后一个字形像素正好对一个屏幕像素，文字才清楚
         private static float fontResolutionFactor = 1f;
 
+        // 不随界面缩放生成字形的字体，给画的时候不再放大的地方用（主菜单上的Myra弹窗）
+        private static FontSystem unscaledFont;
+
         public static void Init(string name, int size)
         {
             var bytes = Platform.Current.LoadFile(name);
@@ -258,6 +261,21 @@ namespace GameManager
                 Init(CacheManager.FontPair.Name, CacheManager.FontPair.Size);
 
             return font.GetFont(size);
+        }
+
+        /// <summary>
+        /// 字形按字号原样生成、不乘界面缩放倍数的字体。画的时候不会再放大的文字用这个，
+        /// 否则字形按界面缩放倍数生成后又缩小回来，最近邻取样会丢掉像素，字发虚
+        /// </summary>
+        public static SpriteFontBase GetUnscaledFont(float size)
+        {
+            if (unscaledFont == null)
+            {
+                unscaledFont = new FontSystem();
+                unscaledFont.AddFont(Platform.Current.LoadFile(CacheManager.FontPair.Name));
+            }
+
+            return unscaledFont.GetFont(size);
         }
 
         /// <summary>

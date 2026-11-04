@@ -83,6 +83,9 @@ namespace WorldOfTheThreeKingdoms
         // 上一次绘制的耗时（毫秒），不含垂直同步等待
         public double LastDrawMs;
 
+        // 是否已检查过要不要弹更新说明，每次启动只检查一次
+        private bool updateNotesChecked = false;
+
         public bool isDebug = false;
         public bool loaded2 = false;
         public MainGame()
@@ -156,12 +159,7 @@ namespace WorldOfTheThreeKingdoms
             {
                 DateTime buildDate = new FileInfo(Platform.Current.Location).LastWriteTime;
                 //版本号从程序目录下的version.txt读取，改版本号不需要改代码
-                string version = "";
-                string versionFile = Path.Combine(AppContext.BaseDirectory, "version.txt");
-                if (File.Exists(versionFile))
-                {
-                    version = File.ReadAllText(versionFile).Trim();
-                }
+                string version = UpdateNotesDialog.ReadVersion();
                 string title = "中华三国志" + (version == "" ? "" : "(" + version + ")") + " - build-" + buildDate.Year + "-" + buildDate.Month + "-" + buildDate.Day;
                 try
                 {
@@ -362,7 +360,16 @@ namespace WorldOfTheThreeKingdoms
                         }
                         else
                         {
-                            mainMenuScreen.Update(gameTime);
+                            if (!updateNotesChecked)
+                            {
+                                updateNotesChecked = true;
+                                UpdateNotesDialog.ShowIfNewVersion();
+                            }
+                            // 主菜单不认Myra弹窗，弹窗显示期间不更新，免得点穿到后面的按钮
+                            if (!MyraUI.IsBlockingInput)
+                            {
+                                mainMenuScreen.Update(gameTime);
+                            }
                         }
                     }
                     else

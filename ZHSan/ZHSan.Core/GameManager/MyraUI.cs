@@ -81,6 +81,11 @@ namespace GameManager
         // 手机上游戏画面整体缩放过，弹窗跟着用同样的倍数
         private static Vector2 GetScale()
         {
+            // 主菜单上Desktop不缩放，Desktop.Scale是把画好的图拉伸，字会发虚；弹窗自己按MenuScale放大字号和尺寸
+            if (IsMenuScreen)
+            {
+                return Vector2.One;
+            }
             Matrix scale = Session.MainGame.SpriteScale2;
             return Session.MainGame.disScale ? new Vector2(scale.M11, scale.M22) : Vector2.One;
         }
@@ -104,6 +109,20 @@ namespace GameManager
             get
             {
                 return layers.Count > 0;
+            }
+        }
+
+        private static bool IsMenuScreen => Session.MainGame.mainGameScreen == null || Session.MainGame.loadingScreen != null;
+
+        /// <summary>
+        /// 主菜单上弹窗应放大的倍数。主菜单按1280*720设计后整体缩放到窗口，弹窗的字号和尺寸乘上这个倍数才跟主菜单一样大
+        /// </summary>
+        public static float MenuScale
+        {
+            get
+            {
+                Matrix scale = Session.MainGame.SpriteScale1;
+                return Math.Max(0.5f, Math.Min(scale.M11, scale.M22));
             }
         }
 
