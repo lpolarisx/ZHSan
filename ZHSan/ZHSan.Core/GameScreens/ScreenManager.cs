@@ -1039,10 +1039,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetStudyStunt() // 修习特技
         {
-            this.CurrentGameObjects = this.CurrentPerson.StudyStuntList.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var selected = this.CurrentPerson.GetStudyStuntList().Where(x => x.Selected).ToList();
+            if (selected.Count == 1)
             {
-                this.CurrentPerson.GoForStudyStunt(this.CurrentGameObjects[0] as Stunt);
+                this.CurrentPerson.GoForStudyStunt(selected[0]);
                 this.CurrentPerson.ManualStudy = true;
                 Session.MainGame.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
             }
@@ -1058,16 +1058,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Stunt, FrameFunction.GetStudyStunt, false, true, true, false, person.GetStudyStuntList(), null, "研习", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Stunt, FrameFunction.GetStudyStunt, false, true, true, false, [.. person.GetStudyStuntList()], null, "研习", "");
             }
         }
 
         private void FrameFunction_Architecture_AfterGetStudyTitle() // 修习称号
         {
-            this.CurrentGameObjects = this.CurrentPerson.StudyTitleList.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var selected = this.CurrentPerson.GetStudyTitleList().Where(x => x.Selected).ToList();
+            if (selected.Count == 1)
             {
-                this.CurrentPerson.GoForStudyTitle(this.CurrentGameObjects[0] as Title);
+                this.CurrentPerson.GoForStudyTitle(selected[0]);
                 this.CurrentPerson.ManualStudy = true;
                 Session.MainGame.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
             }
@@ -1082,16 +1082,16 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetStudyTitle, false, true, true, false, person.GetStudyTitleList(), null, "研习", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetStudyTitle, false, true, true, false, [.. person.GetStudyTitleList()], null, "研习", "");
             }
         }
 
         private void FrameFunction_Architecture_AfterGetAppointableTitle() // 任命官职
         {
-            this.CurrentGameObjects = this.CurrentPerson.AppointableTitleList.GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count == 1))
+            var selected = this.CurrentPerson.GetAppointableTitleList().Where(x => x.Selected).ToList();
+            if (selected.Count == 1)
             {
-                this.CurrentPerson.AwardTitle(this.CurrentGameObjects[0] as Title);
+                this.CurrentPerson.AwardTitle(selected[0]);
                 
                // this.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
             }
@@ -1109,7 +1109,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetAppointableTitle, false, true, true, false, person.GetAppointableTitleList(), null, "任命官职", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetAppointableTitle, false, true, true, false, [.. person.GetAppointableTitleList()], null, "任命官职", "");
             }
         }
 
@@ -1123,23 +1123,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetRecallableTitle, false, true, true, true, person.RecallableTitleList(), null, "免除职位", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetRecallableTitle, false, true, true, true, [.. person.RecallableTitleList()], null, "免除职位", "");
             }
         }
 
         private void FrameFunction_Architecture_AfterGetRecallableTitle() // 免除职位
         {
-            this.CurrentGameObjects = this.CurrentPerson.RecallableTitleList().GetSelectedList();
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count > 0))
+            foreach (var title in this.CurrentPerson.RecallableTitleList().Where(x => x.Selected).ToList())
             {
-                foreach (Title t in this.CurrentGameObjects)
-                {
-                    this.CurrentPerson.RemoveTitle(t);
-                }
-
-
-                // this.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
+                this.CurrentPerson.RemoveTitle(title);
             }
+
+
+            // this.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
         }
 
         private void FrameFunction_Architecture_AfterGetTrainingMilitary()  //修改后未用

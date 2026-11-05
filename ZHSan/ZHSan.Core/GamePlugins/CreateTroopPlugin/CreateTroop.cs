@@ -816,10 +816,11 @@ namespace CreateTroopPlugin
 
         private void SelectLeader()
         {
-            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, false, [.. CreatingPersons], this.CreatingLeader.GetGameObjectList(), "出征人物", "");
-            this.GameFramePlugin.SetOKFunction(delegate {
-                this.CreatingLeader = this.TabListPlugin.SelectedItem as Person;
-                this.RefreshDetailDisplay();
+            ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, false, [.. CreatingPersons], CreatingLeader.GetGameObjectList(), "出征人物", "");
+            
+            GameFramePlugin.SetOKFunction(delegate {
+                CreatingLeader = TabListPlugin.SelectedItem as Person;
+                RefreshDetailDisplay();
             });
         }
 

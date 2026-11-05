@@ -80,14 +80,6 @@ namespace GameObjects
                 ProhibitedFactionID = new Dictionary<int, int>();
             }
 
-            StudySkillList = new GameObjectList();
-
-            StudyStuntList = new GameObjectList();
-
-            StudyTitleList = new GameObjectList();
-
-            AppointableTitleList = new GameObjectList();
-
             Treasures = new();
 
             RealTitles = new List<Title>();
@@ -534,14 +526,6 @@ namespace GameObjects
         public Stunt StudyingStunt;
         
         public Title StudyingTitle;
-        
-        public GameObjectList StudySkillList = new GameObjectList();
-        
-        public GameObjectList StudyStuntList = new GameObjectList();
-        
-        public GameObjectList StudyTitleList = new GameObjectList();
-
-        public GameObjectList AppointableTitleList = new GameObjectList();//封官列表
         
         public Person marriageGranter;
 
@@ -5017,80 +5001,33 @@ namespace GameObjects
 
         }
 
-        public GameObjectList GetStudySkillList()
-        {
-            this.StudySkillList.Clear();
-            foreach (var skill in Session.Current.Scenario.GameCommonData.AllSkills.Values)
-            {
-                if (!HasSkill(skill.ID) && skill.CanLearn(this))
-                {
-                    this.StudySkillList.Add(skill);
-                }
-            }
-            return StudySkillList;
-        }
+        public List<Skill> GetStudySkillList() =>
+            Session.Current.Scenario.GameCommonData.AllSkills.Values
+                .Where(skill => !HasSkill(skill.ID) && skill.CanLearn(this))
+                .ToList();
 
-        public GameObjectList GetStudyStuntList()
-        {
-            StudyStuntList.Clear();
-            foreach (var stunt in Session.Current.Scenario.GameCommonData.AllStunts.Values)
-            {
-                if (!HasStunt(stunt.ID)&& stunt.IsLearnable(this))
-                {
-                    StudyStuntList.Add(stunt);
-                }
-            }
-            return StudyStuntList;
-        }
+        public List<Stunt> GetStudyStuntList() =>
+            Session.Current.Scenario.GameCommonData.AllStunts.Values
+                .Where(stunt => !HasStunt(stunt.ID) && stunt.IsLearnable(this))
+                .ToList();
 
-        public GameObjectList GetTitleList()
-        {
-            GameObjectList result = new GameObjectList();
-            foreach (Title t in this.Titles)
-            {
-                result.Add(t);
-            }
-            return result;
-        }
+        public List<Title> GetTitleList() => Titles.ToList();
 
-        public GameObjectList GetStudyTitleList()
-        {
-            this.StudyTitleList.Clear();
-            foreach (var title in Session.Current.Scenario.GameCommonData.AllTitles.Values)
-            {
-                if (!this.RealTitles.Contains(title) && title.CanLearn(this))
-                {
-                    this.StudyTitleList.Add(title);
-                }
-            }
-            return StudyTitleList;
-        }
+        public List<Title> GetStudyTitleList() =>
+            Session.Current.Scenario.GameCommonData.AllTitles.Values
+                .Where(title => !RealTitles.Contains(title) && title.CanLearn(this))
+                .ToList();
 
-        public GameObjectList GetAppointableTitleList()
-        {
-            this.AppointableTitleList.Clear();
-            foreach (var title in Session.Current.Scenario.GameCommonData.AllTitles.Values)
-            {
-                if (!this.RealTitles.Contains(title) && !this.HasHigherLevelTitle(title) && title.ManualAward && title.CanLearn(this,true))        
-                {
-                    this.AppointableTitleList.Add(title);
-                }
-            }
-            return AppointableTitleList;
-        }
+        /// <summary>
+        /// 可封官列表
+        /// </summary>
+        public List<Title> GetAppointableTitleList() =>
+            Session.Current.Scenario.GameCommonData.AllTitles.Values
+                .Where(title => !RealTitles.Contains(title) && !HasHigherLevelTitle(title) && title.ManualAward && title.CanLearn(this, true))
+                .ToList();
 
-        public GameObjectList RecallableTitleList()
-        {
-            GameObjectList list = new GameObjectList();
-            foreach (Title title in this.Titles)
-            {
-                if (title.Kind.Recallable && title.AutoLearn > 0)
-                {
-                    list.Add(title);
-                }
-            }
-            return list;
-        }
+        public List<Title> RecallableTitleList() =>
+            Titles.Where(title => title.Kind.Recallable && title.AutoLearn > 0).ToList();
 
         public List<PersonRelationValue> GetPersonRelationList()
         {
@@ -7548,12 +7485,8 @@ namespace GameObjects
         {
             get
             {
-                String result = this.GetStudySkillList().Count + "个：";
-                foreach (Skill s in this.StudySkillList)
-                {
-                    result += s.Name + "、";
-                }
-                return result;
+                var skills = GetStudySkillList();
+                return skills.Count + "个：" + string.Join("、", skills.Select(s => s.Name));
             }
         }
 
@@ -7561,12 +7494,8 @@ namespace GameObjects
         {
             get
             {
-                String result = this.GetStudyStuntList().Count + "个：";
-                foreach (Stunt s in this.StudyStuntList)
-                {
-                    result += s.Name + "、 ";
-                }
-                return result;
+                var stunts = GetStudyStuntList();
+                return stunts.Count + "个：" + string.Join("、", stunts.Select(s => s.Name));
             }
         }
 

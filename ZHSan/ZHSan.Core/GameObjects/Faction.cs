@@ -3822,34 +3822,6 @@ namespace GameObjects
         //     return errorMsg;
         // }
 
-        public List<string> LoadMilitariesFromString(MilitaryList militaries, string dataString)
-        {
-            List<string> errorMsg = new List<string>();
-            char[] separator = new char[] { ' ', '\n', '\r', '\t' };
-            string[] strArray = dataString.Split(separator, StringSplitOptions.RemoveEmptyEntries);
-            this.Militaries.Clear();
-            try
-            {
-                foreach (string str in strArray)
-                {
-                    Military gameObject = militaries.GetGameObject(int.Parse(str)) as Military;
-                    if (gameObject != null)
-                    {
-                        this.Militaries.Add(gameObject);
-                    }
-                    else
-                    {
-                        errorMsg.Add("编队ID" + str + "不存在");
-                    }
-                }
-            }
-            catch
-            {
-                errorMsg.Add("编队列表一栏应为半型空格分隔的编队ID");
-            }
-            return errorMsg;
-        }
-
         private void HandleMilitary(Military military)
         {
             if (military.ArrivingDays != 0)

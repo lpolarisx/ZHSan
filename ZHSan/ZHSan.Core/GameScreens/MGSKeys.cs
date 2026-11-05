@@ -208,7 +208,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.currentKey = Keys.C;
                     if (!this.editMode)
                     {
-                        changeFaction();
+                        ChangeFaction();
                     }
                 }
                 else if (InputManager.KeyBoardState.IsKeyDown(Keys.LeftAlt) && InputManager.KeyBoardState.IsKeyDown(Keys.E) && Session.GlobalVariables.EnableCheat)

@@ -7466,17 +7466,18 @@ namespace GameObjects
             return AILandLinks.Concat(AIWaterLinks).DistinctBy(architecture => architecture.ID).ToList();
         }
 
-        public GameObjectList GetAILinks(int level)
+        public List<Architecture> GetAILinks(int level)
         {
-            GameObjectList list = new GameObjectList();
-            foreach (LinkNode node in this.AIAllLinkNodes.Values)
+            var result = new List<Architecture>();
+            foreach (LinkNode node in AIAllLinkNodes.Values)
             {
                 if (node.Level <= level)
                 {
-                    list.Add(node.A);
+                    result.Add(node.A);
                 }
             }
-            return list;
+
+            return result;
         }
 
         public GameArea GetAIRoutewayEndPoints(Architecture a, bool nowater)

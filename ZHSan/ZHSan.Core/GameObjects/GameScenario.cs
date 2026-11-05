@@ -5530,15 +5530,12 @@ namespace GameObjects
             this.PenalizedMapData[position.X, position.Y] = cost;
         }
 
-        public void SetPlayerFactionList(GameObjectList factions)
+        public void SetPlayerFactionList(IEnumerable<Faction> factions)
         {
             PlayerFactions.Clear();
             if (factions != null)
             {
-                foreach (Faction faction in factions)
-                {
-                    PlayerFactions.Add(faction);
-                }
+                PlayerFactions.AddRange(factions);
             }
         }
 

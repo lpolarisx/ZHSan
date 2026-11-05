@@ -590,61 +590,67 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public void changeFaction()
+        /// <summary>
+        /// 弹出势力列表，让玩家重新选择要控制的势力
+        /// </summary>
+        public void ChangeFaction()
         {
-            GameDelegates.VoidFunction function = null;
-            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, true, true, true, true, [.. Session.Current.Scenario.Factions.Values], [.. Session.Current.Scenario.PlayerFactions], "变更控制", "");
-            if (function == null)
-            {
-                function = delegate
-                {
-                    var list = new List<Faction>(Session.Current.Scenario.PlayerFactions);
+            var scenario = Session.Current.Scenario;
+            ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, true, true, true, true, [.. scenario.Factions.Values], [.. scenario.PlayerFactions], "变更控制", "");
+            Plugins.GameFramePlugin.SetOKFunction(ApplyFactionControlChange);
+        }
 
-                    Session.Current.Scenario.SetPlayerFactionList(Plugins.TabListPlugin.SelectedItemList as GameObjectList);
-                    foreach (var faction in list)
-                    {
-                        if (!Session.Current.Scenario.IsPlayer(faction))
-                        {
-                            faction.EndControl();
-                        }
-                    }
-                    foreach (Faction faction in Session.Current.Scenario.PlayerFactions)
-                    {
-                        if (!list.Contains(faction))
-                        {
-                            foreach (var routeway in faction.Routeways)
-                            {
-                                if (!routeway.IsInUsing)
-                                {
-                                    Session.Current.Scenario.RemoveRouteway(routeway);
-                                }
-                            }
-                        }
-                    }
-                    if (!Session.Current.Scenario.IsPlayer(Session.Current.Scenario.CurrentPlayer))
-                    {
-                        if (Session.Current.Scenario.CurrentPlayer != null)
-                        {
-                            Session.Current.Scenario.CurrentPlayer.Passed = true;
-                            Session.Current.Scenario.CurrentPlayer.Controlling = false;
-                        }
-                        if (!Session.Current.Scenario.FactionsQueue.HasFactionInQueue(Session.Current.Scenario.PlayerFactions))
-                        {
-                            this.Plugins.DateRunnerPlugin.Reset();
-                            this.Plugins.DateRunnerPlugin.RunDays(1);
-                        }
-                    }
-                    if (Session.Current.Scenario.PlayerFactions.Count == 0)
-                    {
-                        this.StartAutoplayMode();
-                    }
-                    else
-                    {
-                        this.StopAutoplayMode();
-                    }
-                };
+        private void ApplyFactionControlChange()
+        {
+            var scenario = Session.Current.Scenario;
+            var oldPlayerFactions = new List<Faction>(scenario.PlayerFactions);
+
+            scenario.SetPlayerFactionList((Plugins.TabListPlugin.SelectedItemList as System.Collections.IEnumerable)?.OfType<Faction>());
+
+            // 交给 AI 的势力结束玩家控制
+            foreach (var faction in oldPlayerFactions)
+            {
+                if (!scenario.IsPlayer(faction))
+                {
+                    faction.EndControl();
+                }
             }
-            this.Plugins.GameFramePlugin.SetOKFunction(function);
+
+            // 新接手的势力清掉 AI 留下的闲置粮道
+            foreach (Faction faction in scenario.PlayerFactions)
+            {
+                if (oldPlayerFactions.Contains(faction)) continue;
+
+                foreach (var routeway in faction.Routeways.Where(r => !r.IsInUsing).ToList())
+                {
+                    scenario.RemoveRouteway(routeway);
+                }
+            }
+
+            // 当前行动的势力不再归玩家，结束它的回合
+            var currentPlayer = scenario.CurrentPlayer;
+            if (!scenario.IsPlayer(currentPlayer))
+            {
+                if (currentPlayer != null)
+                {
+                    currentPlayer.Passed = true;
+                    currentPlayer.Controlling = false;
+                }
+                if (!scenario.FactionsQueue.HasFactionInQueue(scenario.PlayerFactions))
+                {
+                    Plugins.DateRunnerPlugin.Reset();
+                    Plugins.DateRunnerPlugin.RunDays(1);
+                }
+            }
+
+            if (scenario.PlayerFactions.Count == 0)
+            {
+                StartAutoplayMode();
+            }
+            else
+            {
+                StopAutoplayMode();
+            }
         }
 
         private void HandlePushSelectingUndoneWork(Enum kind)

@@ -501,11 +501,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Routeway_ArchitectureShortestNormal:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.SimpleArchitecture, FrameFunction.GetShortestRouteway, false, true, true, true, this.CurrentArchitecture.GetAILinks(2), null, "粮道", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.SimpleArchitecture, FrameFunction.GetShortestRouteway, false, true, true, true, [.. CurrentArchitecture.GetAILinks(2)], null, "粮道", "");
                     break;
 
                 case ContextMenuResult.Routeway_ArchitectureShortestNoWater:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.SimpleArchitecture, FrameFunction.GetShortestNoWaterRouteway, false, true, true, true, this.CurrentArchitecture.GetAILinks(2), null, "粮道", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.SimpleArchitecture, FrameFunction.GetShortestNoWaterRouteway, false, true, true, true, [.. CurrentArchitecture.GetAILinks(2)], null, "粮道", "");
                     break;
 
                 case ContextMenuResult.Routeway_CloseAll:
@@ -1364,7 +1364,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.YearTable, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.YearTable.GetFactionYearTable(Session.Current.Scenario.CurrentPlayer)], null, "年表", "");
                     break;
                 case ContextMenuResult.ChangeFaction:
-                    this.changeFaction();
+                    this.ChangeFaction();
                     break;
 
             }
