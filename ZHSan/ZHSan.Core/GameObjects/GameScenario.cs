@@ -1786,38 +1786,32 @@ namespace GameObjects
             }
         }
 
-        public RoutewayList GetActiveRoutewayListByPosition(Point position)
+        /// <summary>
+        /// 根据位置获取可用粮道
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public List<Routeway> GetActiveRoutewayListByPosition(Point position)
         {
-            RoutewayList list = new RoutewayList();
-            if (!this.PositionOutOfRange(position))
-            {
-                if (this.MapTileData[position.X, position.Y].TileRouteways == null)
-                {
-                    return list;
-                }
-                foreach (Routeway routeway in this.MapTileData[position.X, position.Y].TileRouteways)
-                {
-                    if (routeway.IsActive || routeway.IsPointActive(position))
-                    {
-                        list.Add(routeway);
-                    }
-                }
-            }
-            return list;
+            var tileRouteways = MapTileData[position.X, position.Y].TileRouteways;
+
+            if (PositionOutOfRange(position) || tileRouteways == null) return new List<Routeway>();
+
+            var result = tileRouteways.Where(x => x.IsActive || x.IsPointActive(position)).ToList();
+
+            return result;
         }
 
         public Architecture GetArchitectureByPosition(Point position)
         {
-            if (this.PositionOutOfRange(position))
-            {
-                return null;
-            }
-            return this.MapTileData[position.X, position.Y].TileArchitecture;
+            if (PositionOutOfRange(position)) return null;
+
+            return MapTileData[position.X, position.Y].TileArchitecture;
         }
 
         public Architecture GetArchitectureByPositionNoCheck(Point position)
         {
-            return this.MapTileData[position.X, position.Y].TileArchitecture;
+            return MapTileData[position.X, position.Y].TileArchitecture;
         }
 
         public GameArea GetAreaWithinDistance(Point centre, int distance, bool includingCentre)

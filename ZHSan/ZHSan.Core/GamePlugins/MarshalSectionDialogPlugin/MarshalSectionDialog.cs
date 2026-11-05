@@ -144,9 +144,9 @@ namespace MarshalSectionDialogPlugin
                 {
                     foreach (Architecture architecture in this.EditingSection.Architectures)
                     {
-                        foreach (Routeway routeway in architecture.Routeways.GetList())
+                        foreach (Routeway routeway in architecture.Routeways.ToList())
                         {
-                            if (!(routeway.Building && (routeway.LastActivePointIndex >= 0)))
+                            if (!routeway.Building || routeway.LastActivePointIndex < 0)
                             {
                                 Session.Current.Scenario.RemoveRouteway(routeway);
                             }
@@ -580,11 +580,11 @@ namespace MarshalSectionDialogPlugin
 
         private void HandleAutoRunChange()
         {
-            foreach (Architecture architecture in this.EditingSection.Architectures)
+            foreach (Architecture architecture in EditingSection.Architectures)
             {
-                foreach (Routeway routeway in architecture.Routeways.GetList())
+                foreach (Routeway routeway in architecture.Routeways.ToList())
                 {
-                    if (!(routeway.Building && routeway.LastActivePointIndex >= 0))
+                    if (!routeway.Building || routeway.LastActivePointIndex < 0)
                     {
                         Session.Current.Scenario.RemoveRouteway(routeway);
                     }

@@ -75,7 +75,7 @@ namespace GameObjects
             RoutewayDestinationArchitectures = new Dictionary<int, Architecture>();
             RoutewayProcedures = new Queue<RoutewayProcedureDetail>();
 
-            Routeways = new RoutewayList();
+            Routeways = new();
 
             linkNodeRouteway = new Dictionary<LinkNode, Routeway>();
 
@@ -490,7 +490,7 @@ namespace GameObjects
         private Dictionary<int, Architecture> RoutewayDestinationArchitectures = new Dictionary<int, Architecture>();
         private Queue<RoutewayProcedureDetail> RoutewayProcedures = new Queue<RoutewayProcedureDetail>();
 
-        public RoutewayList Routeways = new RoutewayList();
+        public List<Routeway> Routeways = new();
 
         private bool showNumber;
        // public List<SpyPack> SpyPacks = new List<SpyPack>();
@@ -1305,20 +1305,20 @@ namespace GameObjects
 
         private void RoutewayAI()
         {
-            if (GameObject.Random(10) == 0)
+            if (GameObject.Random(10) != 0) return;
+
+            var toRemove = new List<Routeway>();
+            foreach (Routeway routeway in Routeways)
             {
-                RoutewayList toRemove = new RoutewayList();
-                foreach (Routeway r in this.Routeways)
+                if (!routeway.IsInUsing)
                 {
-                    if (!r.IsInUsing)
-                    {
-                        toRemove.Add(r);
-                    }
+                    toRemove.Add(routeway);
                 }
-                foreach (Routeway r in toRemove)
-                {
-                    this.RemoveRoutewayToArchitecture(r.DestinationArchitecture);
-                }
+            }
+
+            foreach (Routeway routeway in toRemove)
+            {
+                RemoveRoutewayToArchitecture(routeway.DestinationArchitecture);
             }
         }
 
@@ -5015,9 +5015,9 @@ namespace GameObjects
                 }
                 else
                 {
-                    foreach (Routeway routeway in this.Routeways)
+                    foreach (Routeway routeway in Routeways)
                     {
-                        this.BelongedFaction.RemoveRouteway(routeway);
+                        BelongedFaction.RemoveRouteway(routeway);
                     }
                 }
 
@@ -5042,7 +5042,7 @@ namespace GameObjects
                 {
                     faction.AddMilitary(military);
                 }
-                foreach (Routeway routeway in this.Routeways)
+                foreach (Routeway routeway in Routeways)
                 {
                     faction.AddRouteway(routeway);
                 }
@@ -5290,26 +5290,29 @@ namespace GameObjects
             PopulationPacks.Clear();
         }
 
+        /// <summary>
+        /// 清除粮道
+        /// </summary>
         public void ClearRouteways()
         {
-            if (this.BelongedFaction != null)
+            if (BelongedFaction != null)
             {
-                foreach (Architecture architecture in this.BelongedFaction.Architectures)
+                foreach (Architecture architecture in BelongedFaction.Architectures)
                 {
-                    if (architecture != this)
+                    if (architecture == this) continue;
+                    
+                    foreach (Routeway routeway in architecture.HasRoutewayList(this))
                     {
-                        foreach (Routeway routeway in architecture.HasRoutewayList(this))
-                        {
-                            routeway.RemoveAfterClose = true;
-                        }
+                        routeway.RemoveAfterClose = true;
                     }
                 }
             }
-            foreach (Routeway routeway in this.Routeways.GetList())
+
+            foreach (Routeway routeway in Routeways.ToList())
             {
                 Session.Current.Scenario.RemoveRouteway(routeway);
             }
-            this.Routeways.Clear();
+            Routeways.Clear();
         }
 
         /*
@@ -5399,9 +5402,12 @@ namespace GameObjects
             return JunduiDouYijingXunlianHao;
         }
 
+        /// <summary>
+        /// 关闭所有粮道
+        /// </summary>
         public void CloseAllRouteways()
         {
-            foreach (Routeway routeway in this.Routeways.GetList())
+            foreach (Routeway routeway in Routeways.ToList())
             {
                 routeway.Close();
             }
@@ -5617,6 +5623,11 @@ namespace GameObjects
             }
         }
 
+        /// <summary>
+        /// 创建粮道
+        /// </summary>
+        /// <param name="p"></param>
+        /// <returns></returns>
         public Routeway CreateRouteway(Point p)
         {
             if (Session.Current.Scenario.GetTerrainDetailByPosition(p) != null)
@@ -5624,9 +5635,9 @@ namespace GameObjects
                 Routeway routeway = new Routeway();
                 routeway.ID = Session.Current.Scenario.Routeways.GetNewId();
                 
-                this.BelongedFaction.AddRouteway(routeway);
+                BelongedFaction.AddRouteway(routeway);
                 routeway.StartArchitecture = this;
-                this.Routeways.Add(routeway);
+                Routeways.Add(routeway);
                 Session.Current.Scenario.Routeways.Add(routeway.ID, routeway);
                 routeway.Extend(p);
 
@@ -5643,6 +5654,11 @@ namespace GameObjects
             return null;
         }
 
+        /// <summary>
+        /// 创建粮道
+        /// </summary>
+        /// <param name="pointlist"></param>
+        /// <returns></returns>
         public Routeway CreateRouteway(List<Point> pointlist)
         {
             int num2;
@@ -5651,14 +5667,14 @@ namespace GameObjects
             if (Session.GlobalVariables.LiangdaoXitong)
             {
                 Session.Current.Scenario.Routeways.Add(routeway.ID, routeway);
-                this.BelongedFaction.AddRouteway(routeway);
+                BelongedFaction.AddRouteway(routeway);
             }
             else
             {
                 routeway.BelongedFaction = this.BelongedFaction;
             }
             routeway.StartArchitecture = this;
-            this.Routeways.Add(routeway);
+            Routeways.Add(routeway);
             GameArea routewayStartPoints = this.GetRoutewayStartPoints();
             int num = 0;
             for (num2 = 0; num2 < pointlist.Count; num2++)
@@ -6723,9 +6739,12 @@ namespace GameObjects
                 ((targetNode.Kind == LinkKind.Land && military.Kind.Type != MilitaryType.Navy) || (targetNode.Kind == LinkKind.Water && military.Kind.Type == MilitaryType.Navy) || targetNode.Kind == LinkKind.Both);
         }
 
+        /// <summary>
+        /// 拆除所有粮道
+        /// </summary>
         public void DemolishAllRouteways()
         {
-            foreach (Routeway routeway in this.Routeways.GetList())
+            foreach (Routeway routeway in Routeways.ToList())
             {
                 Session.Current.Scenario.RemoveRouteway(routeway);
             }
@@ -7753,13 +7772,14 @@ namespace GameObjects
 
         public Routeway GetConnectedRouteway(Architecture end)
         {
-            foreach (Routeway routeway in this.Routeways)
+            foreach (Routeway routeway in Routeways)
             {
-                if ((routeway.EndArchitecture == end) && routeway.IsActive)
+                if (routeway.EndArchitecture == end && routeway.IsActive)
                 {
                     return routeway;
                 }
             }
+
             return null;
         }
         
@@ -8090,13 +8110,14 @@ namespace GameObjects
 
         public Routeway GetExistingRouteway(Architecture destination)
         {
-            foreach (Routeway routeway in this.Routeways)
+            foreach (Routeway routeway in Routeways)
             {
                 if (routeway.DestinationArchitecture == destination)
                 {
                     return routeway;
                 }
             }
+
             return null;
         }
 
@@ -8983,14 +9004,16 @@ namespace GameObjects
 
         public Routeway GetRouteway(LinkNode node, bool hasEnd)
         {
-            foreach (Routeway routeway in this.Routeways)
+            Architecture architecture = node.A;
+
+            foreach (Routeway routeway in Routeways)
             {
-                if ((routeway.DestinationArchitecture == node.A) && (!hasEnd || (routeway.EndArchitecture == node.A)))
+                if (routeway.DestinationArchitecture == architecture && (!hasEnd || routeway.EndArchitecture == architecture))
                 {
                     return routeway;
                 }
             }
-            return this.BuildRouteway(node, hasEnd);
+            return BuildRouteway(node, hasEnd);
         }
 
         public List<Architecture> GetRoutewayDestinationArchitectureList()
@@ -9512,54 +9535,51 @@ namespace GameObjects
 
         public bool HasRouteway(Architecture destination)
         {
-            foreach (Routeway routeway in this.Routeways)
+            foreach (Routeway routeway in Routeways)
             {
                 if (routeway.DestinationArchitecture == destination)
                 {
                     return true;
                 }
             }
+
             return false;
         }
 
         public bool HasRouteway(LinkNode node, bool hasEnd)
         {
             float rate = 1f;
-            foreach (Routeway routeway in this.Routeways)
+            Architecture architecture = node.A;
+
+            foreach (Routeway routeway in Routeways)
             {
-                if (((routeway.DestinationArchitecture == node.A) && (!hasEnd || (routeway.EndArchitecture == node.A))) && (routeway.LastPoint.ConsumptionRate <= this.BelongedFaction.RoutewayPathBuilder.ConsumptionMax))
+                if ((routeway.DestinationArchitecture == architecture && (!hasEnd || routeway.EndArchitecture == architecture)) && routeway.LastPoint.ConsumptionRate <= BelongedFaction.RoutewayPathBuilder.ConsumptionMax)
                 {
                     return true;
                 }
             }
-            return this.FindRouteway(node, hasEnd, out rate);
+
+            return FindRouteway(node, hasEnd, out rate);
         }
 
         public bool HasRouteway(LinkNode node, bool hasEnd, out float rate)
         {
-            foreach (Routeway routeway in this.Routeways)
+            Architecture architecture = node.A;
+
+            foreach (Routeway routeway in Routeways)
             {
-                if (((routeway.DestinationArchitecture == node.A) && (!hasEnd || (routeway.EndArchitecture == node.A))) && (routeway.LastPoint.ConsumptionRate <= this.BelongedFaction.RoutewayPathBuilder.ConsumptionMax))
+                if ((routeway.DestinationArchitecture == architecture && (!hasEnd || routeway.EndArchitecture == architecture)) && routeway.LastPoint.ConsumptionRate <= BelongedFaction.RoutewayPathBuilder.ConsumptionMax)
                 {
                     rate = routeway.LastPoint.ConsumptionRate;
                     return true;
                 }
             }
-            return this.FindRouteway(node, hasEnd, out rate);
+
+            return FindRouteway(node, hasEnd, out rate);
         }
 
-        public RoutewayList HasRoutewayList(Architecture destination)
-        {
-            RoutewayList list = new RoutewayList();
-            foreach (Routeway routeway in this.Routeways)
-            {
-                if (routeway.DestinationArchitecture == destination)
-                {
-                    list.Add(routeway);
-                }
-            }
-            return list;
-        }
+        public List<Routeway> HasRoutewayList(Architecture destination)
+            => Routeways.Where(x => x.DestinationArchitecture == destination).ToList();
 
         public bool HasInformation() => Informations.Count > 0;
 
@@ -10724,22 +10744,14 @@ namespace GameObjects
             return reserve;
         }
 
-        public void RemoveRoutewayToArchitecture(Architecture a)
+        public void RemoveRoutewayToArchitecture(Architecture architecture)
         {
-            Routeway toRemove = null;
-            foreach (Routeway r in this.Routeways)
-            {
-                if (r.DestinationArchitecture == a)
-                {
-                    toRemove = r;
-                    break;
-                }
-            }
-            if (toRemove != null)
-            {
-                toRemove.RemoveAfterClose = true;
-                toRemove.Close();
-            }
+            Routeway toRemove = Routeways.FirstOrDefault(x => x.DestinationArchitecture == architecture);
+
+            if (toRemove == null) return;
+            
+            toRemove.RemoveAfterClose = true;
+            toRemove.Close();
         }
 
         private bool ignoreReserve = false;
@@ -11846,7 +11858,7 @@ namespace GameObjects
 
         public void RemoveInactiveRouteways()
         {
-            foreach (Routeway routeway in Routeways.GetList())
+            foreach (Routeway routeway in Routeways.ToList())
             {
                 if (!routeway.Building && routeway.LastActivePointIndex < 0)
                 {
@@ -13618,20 +13630,7 @@ namespace GameObjects
             }
         }
 
-        public bool HasBuildingRouteway
-        {
-            get
-            {
-                foreach (Routeway routeway in this.Routeways)
-                {
-                    if (routeway.Building)
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
+        public bool HasBuildingRouteway => Routeways.Any(x => x.Building);
 
         public bool HasDefensiveLegion => DefensiveLegion != null;
 
@@ -13994,22 +13993,7 @@ namespace GameObjects
             }
         }
 
-        public int RoutewayActiveCost
-        {
-            get
-            {
-                int num = 0;
-                foreach (Routeway routeway in Routeways)
-                {
-                    if (routeway.LastActivePoint != null)
-                    {
-                        num += routeway.LastActivePoint.ActiveFundCost;
-                    }
-                }
-
-                return num;
-            }
-        }
+        public int RoutewayActiveCost => Routeways.Sum(x => x.LastActivePoint?.ActiveFundCost ?? 0);
 
         public string RoutewayActiveCostString => $"{RoutewayActiveCost * 30}/月";
 
