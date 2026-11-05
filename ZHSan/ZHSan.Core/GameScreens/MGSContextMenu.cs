@@ -1010,7 +1010,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Information_AllFacilities:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllFacilityKinds.Values], null, "设施种类", "");
+                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.Values], null, "设施种类", "");
                     break;
 
                 case ContextMenuResult.Information_AllTerrainDetails:

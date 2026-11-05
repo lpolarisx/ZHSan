@@ -370,6 +370,8 @@ namespace WorldOfTheThreeKingdoms
                             {
                                 mainMenuScreen.Update(gameTime);
                             }
+                            // 单挑弹窗读剧本、抽签要每帧推进，主菜单停了也得单独更新
+                            DantiaoSelectDialog.Current?.Update(Convert.ToSingle(gameTime.ElapsedGameTime.TotalSeconds));
                         }
                     }
                     else

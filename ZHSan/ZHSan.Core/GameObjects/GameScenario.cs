@@ -1793,9 +1793,11 @@ namespace GameObjects
         /// <returns></returns>
         public List<Routeway> GetActiveRoutewayListByPosition(Point position)
         {
+            if (PositionOutOfRange(position)) return new List<Routeway>();
+
             var tileRouteways = MapTileData[position.X, position.Y].TileRouteways;
 
-            if (PositionOutOfRange(position) || tileRouteways == null) return new List<Routeway>();
+            if (tileRouteways == null) return new List<Routeway>();
 
             var result = tileRouteways.Where(x => x.IsActive || x.IsPointActive(position)).ToList();
 

@@ -5349,10 +5349,7 @@ namespace GameObjects
         {
             if (CombatMethods.TryGetValue(id, out var combatMethod))
             {
-                // 前面的序号就是数字快捷键
-                int number = GetOrderedCombatMethods().IndexOf(combatMethod) + 1;
-                string prefix = number >= 1 && number <= 9 ? number + "." : "";
-                return $"{prefix}{combatMethod.Name}({combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming})";
+                return $"{combatMethod.Name}({combatMethod.Combativity - DecrementOfCombatMethodCombativityConsuming})";
             }
 
             return "----";

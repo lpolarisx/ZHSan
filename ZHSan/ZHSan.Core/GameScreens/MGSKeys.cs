@@ -359,7 +359,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
         /// <summary>
-        /// 部队菜单打开时的快捷键：Tab/Shift+Tab换到下一支/上一支部队，1~9用第N个战法，R用该部队上次的战法
+        /// 部队菜单打开时的快捷键：Tab/Shift+Tab换到下一支/上一支部队
         /// </summary>
         private void HandleContextMenuKey()
         {
@@ -382,59 +382,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 bool shift = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
                 this.Plugins.ContextMenuPlugin.Close(ContextMenuResult.None, 0);
                 this.JumpToAdjacentUnoperatedTroop(!shift, true);
-                return;
             }
-            if (keyboard.IsKeyDown(Keys.R))
-            {
-                this.currentKey = Keys.R;
-                if (this.CurrentTroop.LastCombatMethodID == -1)
-                {
-                    this.ShowTroopHint(this.CurrentTroop, "部队还没有用过战法");
-                }
-                else
-                {
-                    this.UseCombatMethodByKey(this.CurrentTroop.LastCombatMethodID);
-                }
-                return;
-            }
-            for (int i = 1; i <= 9; i++)
-            {
-                Keys digit = Keys.D0 + i;
-                Keys numPad = Keys.NumPad0 + i;
-                if (keyboard.IsKeyDown(digit) || keyboard.IsKeyDown(numPad))
-                {
-                    this.currentKey = keyboard.IsKeyDown(digit) ? digit : numPad;
-                    List<CombatMethod> combatMethods = this.CurrentTroop.GetOrderedCombatMethods();
-                    if (i > combatMethods.Count)
-                    {
-                        this.ShowTroopHint(this.CurrentTroop, "部队没有第" + i + "个战法");
-                    }
-                    else
-                    {
-                        this.UseCombatMethodByKey(combatMethods[i - 1].ID);
-                    }
-                    return;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 能用就关闭菜单，与点击菜单里的战法效果相同；不能用就提示原因，菜单保持打开
-        /// </summary>
-        private void UseCombatMethodByKey(int id)
-        {
-            string failReason = this.CurrentTroop.GetCombatMethodFailReason(id);
-            if (failReason != null)
-            {
-                this.ShowTroopHint(this.CurrentTroop, failReason);
-                return;
-            }
-            this.Plugins.ContextMenuPlugin.Close(ContextMenuResult.TroopCombatMethod, id);
-        }
-
-        private void ShowTroopHint(Troop troop, string text)
-        {
-            this.Plugins.PersonBubblePlugin.AddPersonText(troop.Leader, troop.Position, text);
         }
 
 

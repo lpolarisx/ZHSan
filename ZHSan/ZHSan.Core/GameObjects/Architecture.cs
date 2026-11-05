@@ -5659,18 +5659,24 @@ namespace GameObjects
         /// </summary>
         /// <param name="pointlist"></param>
         /// <returns></returns>
+        // 不登记到剧本的粮道用的ID，从-2往下取，-1留作“没有粮道”
+        private static int unregisteredRoutewayId = -1;
+
         public Routeway CreateRouteway(List<Point> pointlist)
         {
             int num2;
             Routeway routeway = new Routeway();
-            routeway.ID = Session.Current.Scenario.Routeways.GetNewId();
             if (Session.GlobalVariables.LiangdaoXitong)
             {
+                routeway.ID = Session.Current.Scenario.Routeways.GetNewId();
                 Session.Current.Scenario.Routeways.Add(routeway.ID, routeway);
                 BelongedFaction.AddRouteway(routeway);
             }
             else
             {
+                // 粮道系统关闭时粮道不登记到剧本，GetNewId每次都取到同一个ID。GameObject按ID判断相等，
+                // 同ID的粮道从列表里删一条会删成另一条，留下点已清空的粮道，AI出征取LastPoint时空引用。这里用负数ID各不相同
+                routeway.ID = --unregisteredRoutewayId;
                 routeway.BelongedFaction = this.BelongedFaction;
             }
             routeway.StartArchitecture = this;

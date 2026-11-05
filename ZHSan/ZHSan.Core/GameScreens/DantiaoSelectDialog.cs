@@ -1,3 +1,4 @@
+using FontStashSharp;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -81,6 +82,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private bool loadFailed;
         private bool built;
 
+        // 主菜单按1280*720整体缩放到窗口，弹窗的尺寸和字号都乘上这个倍数，打开时取一次
+        private readonly float scale = MyraUI.MenuScale;
+
         private bool rolling;
         private int cursor = -1;
         private int hopsLeft;
@@ -124,13 +128,33 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         #region 界面
 
+        private int Scaled(int size) => (int)Math.Round(size * this.scale);
+
+        // 主菜单上Desktop不放大，直接用放大后的字号生成字形，不能按界面缩放生成
+        private SpriteFontBase Font(float size) => TextManager.GetUnscaledFont(size * this.scale);
+
+        private Label CreateScaledLabel(string text, int fontSize, Color color)
+        {
+            Label label = CreateLabel(text, fontSize, color);
+            label.Font = this.Font(fontSize);
+            return label;
+        }
+
+        private Button CreateScaledButton(string text, int width, out Label label)
+        {
+            Button button = MyraSkin.CreateButton(text, this.Scaled(width), out label);
+            button.Height = this.Scaled(MyraSkin.ButtonHeight);
+            label.Font = this.Font(16);
+            return button;
+        }
+
         private Widget Build()
         {
             var dialog = new VerticalStackPanel
             {
-                Spacing = 10,
+                Spacing = this.Scaled(10),
                 // 上边留得少，让标题落在底板那条横线的上面
-                Padding = new Thickness(DialogPadding, 7, DialogPadding, DialogPadding),
+                Padding = new Thickness(this.Scaled(DialogPadding), this.Scaled(7), this.Scaled(DialogPadding), this.Scaled(DialogPadding)),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 Background = MyraSkin.PanelBackground
@@ -138,22 +162,25 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             var titleRow = new Panel
             {
-                Height = MyraSkin.PanelTitleHeight - 7
+                Height = this.Scaled(MyraSkin.PanelTitleHeight - 7)
             };
             titleRow.Widgets.Add(new Label
             {
                 Text = "单　挑",
-                Font = TextManager.GetFont(24),
+                Font = this.Font(24),
                 TextColor = MyraSkin.TextTitle,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             });
-            titleRow.Widgets.Add(CreateCloseButton(() => this.Close(null)));
+            Button close = CreateCloseButton(() => this.Close(null));
+            close.Width = close.Height = this.Scaled(32);
+            ((Label)close.Content).Font = this.Font(28);
+            titleRow.Widgets.Add(close);
             dialog.Widgets.Add(titleRow);
 
             var body = new HorizontalStackPanel
             {
-                Spacing = BodySpacing
+                Spacing = this.Scaled(BodySpacing)
             };
             body.Widgets.Add(this.BuildSide(0));
             body.Widgets.Add(this.BuildCenter());
@@ -162,7 +189,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             this.hintLabel = new Label
             {
-                Font = TextManager.GetFont(15),
+                Font = this.Font(15),
                 TextColor = MyraSkin.TextSecondary,
                 HorizontalAlignment = HorizontalAlignment.Center
             };
@@ -170,12 +197,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             var buttons = new HorizontalStackPanel
             {
-                Spacing = 40,
+                Spacing = this.Scaled(40),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-            this.randomButton = MyraSkin.CreateButton("随机", 110, out this.randomLabel);
+            this.randomButton = this.CreateScaledButton("随机", 110, out this.randomLabel);
             this.randomButton.Click += (sender, args) => this.Roll();
-            this.startButton = MyraSkin.CreateButton("开始", 110, out _);
+            this.startButton = this.CreateScaledButton("开始", 110, out _);
             this.startButton.Click += (sender, args) => this.Start();
             this.startButton.Visible = false;
             buttons.Widgets.Add(this.randomButton);
@@ -199,23 +226,23 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             Color color = SideColors[side];
             var panel = new VerticalStackPanel
             {
-                Width = SideWidth,
-                Height = BodyHeight,
-                Spacing = 12,
-                Padding = new Thickness(12),
+                Width = this.Scaled(SideWidth),
+                Height = this.Scaled(BodyHeight),
+                Spacing = this.Scaled(12),
+                Padding = new Thickness(this.Scaled(12)),
                 Background = new FrameBrush(color * 0.16f, color, false)
             };
             panel.Widgets.Add(new Label
             {
                 Text = SideNames[side],
-                Font = TextManager.GetFont(20),
+                Font = this.Font(20),
                 TextColor = color,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
 
             this.slotPanels[side] = new VerticalStackPanel
             {
-                Spacing = 10
+                Spacing = this.Scaled(10)
             };
             panel.Widgets.Add(this.slotPanels[side]);
             this.RefreshSlots(side);
@@ -226,13 +253,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             var center = new VerticalStackPanel
             {
-                Width = GridWidth
+                Width = this.Scaled(GridWidth)
             };
             this.scenarioLabel = new Label
             {
-                Font = TextManager.GetFont(17),
+                Font = this.Font(17),
                 TextColor = MyraSkin.TextTitle,
-                Height = CenterHeaderHeight,
+                Height = this.Scaled(CenterHeaderHeight),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Top
             };
@@ -240,26 +267,28 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             this.gridHost = new VerticalStackPanel
             {
-                Spacing = CellSpacing,
-                Width = GridWidth,
-                Height = GridHeight
+                Spacing = this.Scaled(CellSpacing),
+                Width = this.Scaled(GridWidth),
+                Height = this.Scaled(GridHeight)
             };
             center.Widgets.Add(this.gridHost);
             return center;
         }
 
-        private static Widget CreatePortrait(Person person)
+        private Widget CreatePortrait(Person person)
         {
+            int width = this.Scaled(PortraitWidth);
+            int height = this.Scaled(PortraitHeight);
             var frame = new Panel
             {
-                Width = PortraitWidth,
-                Height = PortraitHeight,
+                Width = width,
+                Height = height,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Background = new SolidBrush(CardColor)
             };
             frame.Widgets.Add(new Image
             {
-                Renderable = new DiplomacyDialog.PortraitImage(person, PortraitSize.Medium, PortraitWidth, PortraitHeight)
+                Renderable = new DiplomacyDialog.PortraitImage(person, PortraitSize.Medium, width, height)
             });
             return frame;
         }
@@ -274,7 +303,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 var line = new HorizontalStackPanel
                 {
-                    Spacing = CellSpacing
+                    Spacing = this.Scaled(CellSpacing)
                 };
                 for (int col = 0; col < Columns; col++)
                 {
@@ -299,23 +328,23 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             var frame = new Panel
             {
-                Width = CellWidth,
-                Height = CellHeight,
+                Width = this.Scaled(CellWidth),
+                Height = this.Scaled(CellHeight),
                 Background = new SolidBrush(CardColor),
                 Border = new SolidBrush(LineColor),
-                BorderThickness = new Thickness(2)
+                BorderThickness = new Thickness(this.Scaled(2))
             };
             var content = new VerticalStackPanel
             {
-                Spacing = 2,
-                Padding = new Thickness(0, 4, 0, 0),
+                Spacing = this.Scaled(2),
+                Padding = new Thickness(0, this.Scaled(4), 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
-            content.Widgets.Add(CreatePortrait(person));
+            content.Widgets.Add(this.CreatePortrait(person));
             content.Widgets.Add(new Label
             {
                 Text = person.Name,
-                Font = TextManager.GetFont(14),
+                Font = this.Font(14),
                 TextColor = MyraSkin.TextPrimary,
                 HorizontalAlignment = HorizontalAlignment.Center
             });
@@ -357,8 +386,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 Person person = i < this.teams[side].Count ? this.teams[side][i] : null;
                 var slot = new Panel
                 {
-                    Height = SlotHeight,
-                    Padding = new Thickness(8),
+                    Height = this.Scaled(SlotHeight),
+                    Padding = new Thickness(this.Scaled(8)),
                     Background = new FrameBrush(person == null ? Color.Transparent : CardColor, person == null ? LineColor : color, person == null)
                 };
 
@@ -367,7 +396,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     slot.Widgets.Add(new Label
                     {
                         Text = "？",
-                        Font = TextManager.GetFont(24),
+                        Font = this.Font(24),
                         TextColor = MyraSkin.TextDisabled,
                         HorizontalAlignment = HorizontalAlignment.Center,
                         VerticalAlignment = VerticalAlignment.Center
@@ -378,23 +407,26 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 var row = new HorizontalStackPanel
                 {
-                    Spacing = 10,
+                    Spacing = this.Scaled(10),
                     VerticalAlignment = VerticalAlignment.Center
                 };
-                Widget portrait = CreatePortrait(person);
+                Widget portrait = this.CreatePortrait(person);
                 portrait.VerticalAlignment = VerticalAlignment.Center;
                 row.Widgets.Add(portrait);
 
                 var info = new VerticalStackPanel
                 {
-                    Spacing = 4,
+                    Spacing = this.Scaled(4),
                     VerticalAlignment = VerticalAlignment.Center
                 };
-                info.Widgets.Add(CreateLabel(person.Name, 18, MyraSkin.TextPrimary));
-                info.Widgets.Add(CreateLabel("武力 " + person.NormalStrength, 14, MyraSkin.TextSecondary));
+                info.Widgets.Add(this.CreateScaledLabel(person.Name, 18, MyraSkin.TextPrimary));
+                info.Widgets.Add(this.CreateScaledLabel("武力 " + person.NormalStrength, 14, MyraSkin.TextSecondary));
                 if (i == 0 && !this.rolling)
                 {
-                    info.Widgets.Add(CreateTag("主将", MyraSkin.TextHighlight));
+                    var tag = (Panel)CreateTag("主将", MyraSkin.TextHighlight);
+                    tag.Padding = new Thickness(this.Scaled(8), this.Scaled(1), this.Scaled(8), this.Scaled(1));
+                    ((Label)tag.Widgets[0]).Font = this.Font(13);
+                    info.Widgets.Add(tag);
                 }
                 row.Widgets.Add(info);
                 slot.Widgets.Add(row);

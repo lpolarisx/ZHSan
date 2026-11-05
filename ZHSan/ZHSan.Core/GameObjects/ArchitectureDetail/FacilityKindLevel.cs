@@ -87,7 +87,7 @@ public class FacilityKindLevel : GameObject
         Endurance = config.Endurance;
         InfluencesString = config.InfluencesString;
         ConditionTableString = config.ConditionTableString;
-        ConcubineCapacity = ConcubineCapacity;
+        ConcubineCapacity = config.ConcubineCapacity;
     }
 
     public new string Name => facilityKind.Name;

@@ -3430,13 +3430,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 textLevel = Convert.ToInt32(textGameElapsed / 2f);
 
-                if (DantiaoSelectDialog.Current != null)
+                //停在主菜单首页时后台预读单挑剧本，点单挑就不用等。弹窗打开后由MainGame每帧更新它
+                if (DantiaoSelectDialog.Current == null)
                 {
-                    DantiaoSelectDialog.Current.Update(seconds);
-                }
-                else
-                {
-                    //停在主菜单首页时后台预读单挑剧本，点单挑就不用等
                     DantiaoSelectDialog.Preload();
                 }
 
