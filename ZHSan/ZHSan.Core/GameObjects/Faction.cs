@@ -1983,7 +1983,7 @@ namespace GameObjects
         }
 
         // 有城池视野内有这个势力的部队
-        private bool IsAttackedBy(Faction faction)
+        public bool IsAttackedBy(Faction faction)
         {
             return this.GetTroopsInView().Any(x => x.BelongedFaction == faction);
         }

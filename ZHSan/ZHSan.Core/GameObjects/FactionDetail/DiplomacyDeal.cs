@@ -39,6 +39,12 @@ namespace GameObjects.FactionDetail
         public int TruceDays;
         public bool Alliance;
 
+        /// <summary>
+        /// 回复来使时，对方为促成自己的提议肯多让的价值：按对方自己的估值，原提议差多少就肯让多少，
+        /// 自己提的条件原样还回去必定答应。不是回复来使时为null
+        /// </summary>
+        public int? ReplyEagerness;
+
         public DiplomacyDeal(Faction source, Faction target, Architecture sourceArchitecture)
         {
             this.Source = source;
@@ -123,14 +129,14 @@ namespace GameObjects.FactionDetail
         }
 
         /// <summary>
-        /// 提议方能割让的城池：除都城和出钱粮的城以外的城。出钱粮的城是使者的归处，不能割
+        /// 提议方能割让的城池：与对方接壤的城，都城和出钱粮的城除外。出钱粮的城是使者的归处，不能割
         /// </summary>
         public List<Architecture> GetGivableArchitectures()
         {
             var result = new List<Architecture>();
             foreach (var a in this.Source.Architectures)
             {
-                if (a != this.Source.Capital && a != this.SourceArchitecture)
+                if (a != this.Source.Capital && a != this.SourceArchitecture && DiplomacyEvaluator.IsLinkedTo(a, this.Target))
                 {
                     result.Add(a);
                 }
@@ -139,14 +145,14 @@ namespace GameObjects.FactionDetail
         }
 
         /// <summary>
-        /// 能向对方索要的城池：对方都城以外的城
+        /// 能向对方索要的城池：与我方接壤的城，对方都城除外
         /// </summary>
         public List<Architecture> GetRequestableArchitectures()
         {
             var result = new List<Architecture>();
             foreach (var a in this.Target.Architectures)
             {
-                if (a != this.Target.Capital)
+                if (a != this.Target.Capital && DiplomacyEvaluator.IsLinkedTo(a, this.Source))
                 {
                     result.Add(a);
                 }
@@ -184,7 +190,7 @@ namespace GameObjects.FactionDetail
             {
                 if (!givable.Contains(a))
                 {
-                    return a.Name + "已无法割让。";
+                    return a.Name + (a.BelongedFaction == this.Source && a != this.Source.Capital && a != this.SourceArchitecture ? "不与对方接壤，无法割让。" : "已无法割让。");
                 }
             }
             var requestable = this.GetRequestableArchitectures();
@@ -192,7 +198,7 @@ namespace GameObjects.FactionDetail
             {
                 if (!requestable.Contains(a))
                 {
-                    return a.Name + "已不在对方手中。";
+                    return a.Name + (a.BelongedFaction == this.Target && a != this.Target.Capital ? "不与我方接壤，无法索要。" : "已不在对方手中。");
                 }
             }
             if (this.RequestFund > this.Target.Capital.Fund)

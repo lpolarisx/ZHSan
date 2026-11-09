@@ -169,6 +169,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.selectedRelation = relation;
             // 从来使的条款开始改：对方给的变成我方索要的
             this.deal = proposal.Reverse(this.architecture);
+            // 对方拟提议时看的是我方肯不肯，还价时看的是它自己肯不肯，两边估值不对称。
+            // 按它自己的估值，原提议亏多少就算它肯多让多少，免得自己提的条件原样还回去反而不认
+            this.deal.ReplyEagerness = Math.Max(0, -DiplomacyEvaluator.Evaluate(this.deal));
         }
 
         /// <summary>
@@ -688,21 +691,22 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 "最得力者为主使，随行的按各自能力添一半情面（最多算两人）；对方君主厌恶的人同去反而坏事。");
         }
 
-        // 我方给出的城看与对方是否相连（对方得了好不好守），索要的城看与我方是否相连
+        // 只列双方交界的城：我方给出的城与对方相连，索要的城与我方相连
         private void PickArchitectures(bool giving)
         {
             List<Architecture> candidates = giving ? this.deal.GetGivableArchitectures() : this.deal.GetRequestableArchitectures();
             List<Architecture> current = giving ? this.deal.GiveArchitectures : this.deal.RequestArchitectures;
-            Faction linkedTo = giving ? this.deal.Target : this.deal.Source;
             string title = giving ? "选择割让的城池" : "选择索要的城池";
-            string linkHeader = giving ? "连对方" : "连我方";
             var columns = new[]
             {
                 new MyraPickerColumn<Architecture>("城池", 100, a => a.Name),
                 new MyraPickerColumn<Architecture>("规模", 50, a => a.JianzhuGuimo.ToString()),
                 new MyraPickerColumn<Architecture>("人口", 90, a => a.Population.ToString("N0")),
-                new MyraPickerColumn<Architecture>(linkHeader, 60, a => DiplomacyEvaluator.IsLinkedTo(a, linkedTo) ? "是" : "否"),
-                new MyraPickerColumn<Architecture>("估值", 100, a => DiplomacyEvaluator.GetArchitectureValue(a).ToString("N0"))
+                new MyraPickerColumn<Architecture>("重镇", 60, a => a.IsImportant ? "是" : "否"),
+                // 给出的城按对方收下后的处境估值，正被围攻的是负数
+                giving
+                    ? new MyraPickerColumn<Architecture>("对方估值", 100, a => ((int)DiplomacyEvaluator.GetReceivedArchitectureValue(a, this.deal.Target)).ToString("N0"))
+                    : new MyraPickerColumn<Architecture>("估值", 100, a => DiplomacyEvaluator.GetArchitectureValue(a).ToString("N0"))
             };
             this.picker = MyraPicker.Show(this.mask, title, columns, candidates, current,
                 chosen => this.ChangeDeal(() =>
@@ -716,7 +720,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         this.deal.RequestArchitectures = chosen;
                     }
                 }),
-                giving ? "都城和发起外交的本城不能割让。估值是城池本身的价值，不相连的城对方只算一半。" : "对方都城不能索要。对方割城时按估值的一倍半算作损失。");
+                giving ? "只能割让与对方接壤的城池，都城和发起外交的本城除外。城下有对方的敌军时，对方视之为负担；与远强于对方的势力接壤时，对方自忖难守，估值打折。" : "只能索要与我方接壤的城池，对方都城除外。对方按估值的一倍半算作损失，钱粮最多抵其中两成半，其余须以城池相换；对方正受我军攻打且弱于我方时，停战也能抵价。");
         }
 
         // 箭头用ASCII的<和>：游戏字体只有GBK字符，‹›«»这类符号显示不出来

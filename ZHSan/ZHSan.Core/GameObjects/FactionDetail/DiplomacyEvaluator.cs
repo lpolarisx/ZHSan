@@ -127,7 +127,7 @@ namespace GameObjects.FactionDetail
         {
             GetMaterialBalance(deal, out double gain, out double cost);
             required = Math.Max(0, cost - GetAidValue(deal)) * (1 - GetConcessionRate(deal));
-            return gain;
+            return gain + (deal.ReplyEagerness ?? 0);
         }
 
         /// <summary>
@@ -193,18 +193,23 @@ namespace GameObjects.FactionDetail
             Architecture capital = deal.Target.Capital;
             gain = 0;
             cost = 0;
-            gain += deal.GiveFund * GetFundFactor(capital);
-            gain += deal.GiveFood / FoodPerFund * GetFoodFactor(capital);
+            double resourceGain = deal.GiveFund * GetFundFactor(capital) + deal.GiveFood / FoodPerFund * GetFoodFactor(capital);
             cost += deal.RequestFund * GetFundLossFactor(capital);
             cost += deal.RequestFood / FoodPerFund * GetFoodLossFactor(capital);
+            // 送来的城按接受方收下后的处境估值，危城是负担，记作付出
             foreach (var a in deal.GiveArchitectures)
             {
-                gain += GetArchitectureValue(a) * (IsLinkedTo(a, deal.Target) ? 1.0 : 0.5);
+                double value = GetReceivedArchitectureValue(a, deal.Target);
+                if (value > 0)
+                {
+                    gain += value;
+                }
+                else
+                {
+                    cost -= value;
+                }
             }
-            foreach (var a in deal.RequestArchitectures)
-            {
-                cost += GetArchitectureValue(a) * 1.5;
-            }
+            double architectureCost = deal.RequestArchitectures.Sum(a => GetArchitectureValue(a) * 1.5);
             foreach (double value in new[] { GetTruceValue(deal), GetAllianceValue(deal) })
             {
                 if (value > 0)
@@ -216,6 +221,13 @@ namespace GameObjects.FactionDetail
                     cost -= value;
                 }
             }
+            // 钱粮先抵索要的钱粮和停战结盟的代价，抵城池最多只算几成，其余要拿城池相换，或靠求和的停战来补
+            if (architectureCost > 0)
+            {
+                resourceGain = Math.Min(resourceGain, cost + architectureCost * MaxResourceShareOfArchitecture);
+            }
+            gain += resourceGain;
+            cost += architectureCost;
         }
 
         /// <summary>
@@ -287,11 +299,83 @@ namespace GameObjects.FactionDetail
         }
 
         /// <summary>
+        /// 城池估值相对规模、人口、开发度放大的倍数，免得后期钱粮充裕时随手就能买城
+        /// </summary>
+        public const int ArchitectureValueMultiple = 3;
+
+        /// <summary>
+        /// 索要城池时，钱粮最多抵城池损失的几成
+        /// </summary>
+        public const double MaxResourceShareOfArchitecture = 0.25;
+
+        /// <summary>
+        /// 被提议方攻打的弱方求和时，每月停战额外值自家城池总估值的几成（再乘实力差距），割地求和由此而来
+        /// </summary>
+        public const double SurvivalValuePerMonth = 0.04;
+
+        /// <summary>
         /// 城池的价值：规模、人口、开发度，重镇另加
         /// </summary>
         public static int GetArchitectureValue(Architecture a)
         {
-            return 30000 * a.JianzhuGuimo + a.Population / 2 + (a.Agriculture + a.Commerce + a.Technology) * 30 + (a.IsImportant ? 100000 : 0);
+            return (30000 * a.JianzhuGuimo + a.Population / 2 + (a.Agriculture + a.Commerce + a.Technology) * 30 + (a.IsImportant ? 100000 : 0)) * ArchitectureValueMultiple;
+        }
+
+        /// <summary>
+        /// 送来的城正被围攻时，估值按这个倍数算，负数表示收下反成负担
+        /// </summary>
+        public const double ThreatenedArchitectureValueRate = -0.5;
+
+        /// <summary>
+        /// 城池周边最强的敌邻比接受方强出这么多倍时，接受方自忖守不住，估值打折
+        /// </summary>
+        public const double OverpoweredNeighborRatio = 2;
+
+        /// <summary>
+        /// 守不住的城估值最低打到几成
+        /// </summary>
+        public const double MinOverpoweredValueRate = 0.3;
+
+        /// <summary>
+        /// 接受方收下这座城值多少：城下正有敌军时是负担；与远强于自己的敌邻接壤时守不住，打折
+        /// </summary>
+        public static double GetReceivedArchitectureValue(Architecture a, Faction receiver)
+        {
+            double value = GetArchitectureValue(a);
+            if (IsThreatenedFor(a, receiver))
+            {
+                return value * ThreatenedArchitectureValueRate;
+            }
+
+            // 送城方自己不算，收下后它就是送城的那家，不至于马上来打
+            int strongest = 0;
+            foreach (var linked in a.AILandLinks.Concat(a.AIWaterLinks))
+            {
+                Faction f = linked.BelongedFaction;
+                if (f != null && f != receiver && f != a.BelongedFaction && !receiver.IsFriendly(f))
+                {
+                    strongest = Math.Max(strongest, f.Power);
+                }
+            }
+            double ratio = strongest / (double)Math.Max(1, receiver.Power);
+            if (ratio > OverpoweredNeighborRatio)
+            {
+                value *= Math.Max(MinOverpoweredValueRate, OverpoweredNeighborRatio / ratio);
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// 城池视野内有对接受方不友好的部队（送城方的也算），收下就得接着打
+        /// </summary>
+        public static bool IsThreatenedFor(Architecture a, Faction receiver)
+        {
+            foreach (var point in a.ViewArea.Area)
+            {
+                Faction f = Session.Current.Scenario.GetTroopByPosition(point)?.BelongedFaction;
+                if (f != null && f != receiver && !receiver.IsFriendly(f)) return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -334,7 +418,8 @@ namespace GameObjects.FactionDetail
         }
 
         /// <summary>
-        /// 停战对接受方的利弊：比提议方弱就乐意停，比提议方强就等于放弃进攻的机会。不接壤的停战无关紧要
+        /// 停战对接受方的利弊：比提议方弱就乐意停，比提议方强就等于放弃进攻的机会。不接壤的停战无关紧要。
+        /// 正被提议方攻打又比它弱时，停战关乎存亡，按自家城池的总估值另加一笔，肯割地求和
         /// </summary>
         private static double GetTruceValue(DiplomacyDeal deal)
         {
@@ -346,6 +431,10 @@ namespace GameObjects.FactionDetail
 
             double ratio = Math.Clamp((double)deal.Target.Power / Math.Max(1, deal.Source.Power), 0.2, 5);
             double perMonth = 20000 * (1 - ratio) - 10000;
+            if (ratio < 1 && deal.Target.IsAttackedBy(deal.Source))
+            {
+                perMonth += (1 - ratio) * SurvivalValuePerMonth * deal.Target.Architectures.Sum(GetArchitectureValue);
+            }
             if (!deal.Source.adjacentTo(deal.Target))
             {
                 perMonth *= 0.3;
@@ -366,11 +455,17 @@ namespace GameObjects.FactionDetail
         }
 
         /// <summary>
-        /// 只送不取，没有任何要对方付出的条款
+        /// 只送钱粮不取，没有任何要对方付出的条款。送城不算，城池对方要掂量守不守得住
         /// </summary>
         public static bool IsPureGift(DiplomacyDeal deal)
         {
-            return deal.RequestFund == 0 && deal.RequestFood == 0 && deal.RequestArchitectures.Count == 0 && deal.TruceDays == 0 && !deal.Alliance && !deal.IsEmpty;
+            return IsOnlyGiving(deal) && deal.GiveArchitectures.Count == 0 && !deal.IsEmpty;
+        }
+
+        // 只有给出的条款，没有索要、停战、结盟
+        private static bool IsOnlyGiving(DiplomacyDeal deal)
+        {
+            return deal.RequestFund == 0 && deal.RequestFood == 0 && deal.RequestArchitectures.Count == 0 && deal.TruceDays == 0 && !deal.Alliance;
         }
 
         /// <summary>
@@ -429,7 +524,8 @@ namespace GameObjects.FactionDetail
             }
 
             var relation = deal.GetRelation();
-            if (relation.NegotiationCount >= MaxNegotiationsPerMonth)
+            // 回复来使是对方找上门来，不受每月谈判次数的限制
+            if (deal.ReplyEagerness == null && relation.NegotiationCount >= MaxNegotiationsPerMonth)
             {
                 return new DiplomacyResponse { Kind = DiplomacyResponseKind.Refuse, Text = "此事已议过多次，改日再谈吧。" };
             }
@@ -447,12 +543,23 @@ namespace GameObjects.FactionDetail
                 return new DiplomacyResponse { Kind = DiplomacyResponseKind.Accept, Text = aided ? "两家素来交好，些许钱粮，权当相助。" : "此议甚合我意，便依此缔约。" };
             }
 
+            // 白送的城不肯收，不必还价，说明原因
+            if (IsOnlyGiving(deal) && deal.GiveArchitectures.Count > 0)
+            {
+                Architecture threatened = deal.GiveArchitectures.FirstOrDefault(a => IsThreatenedFor(a, deal.Target));
+                return new DiplomacyResponse
+                {
+                    Kind = DiplomacyResponseKind.Reject,
+                    Text = threatened != null ? threatened.Name + "城下敌军压境，危在旦夕，恕不敢受。" : "此城强邻环伺，我军难以久守，恕不敢受。"
+                };
+            }
+
             // 差多少就要求再加多少，优先要钱，钱不够再要粮
             int deficit = -score;
             Architecture source = deal.SourceArchitecture;
             Architecture capital = deal.Target.Capital;
             int extraFund = RoundUp(deficit / GetFundFactor(capital), 1000);
-            if (source != null && extraFund <= source.Fund - deal.GiveFund)
+            if (source != null && extraFund <= source.Fund - deal.GiveFund && IsEnoughWith(deal, extraFund, 0))
             {
                 return new DiplomacyResponse
                 {
@@ -462,7 +569,7 @@ namespace GameObjects.FactionDetail
                 };
             }
             int extraFood = RoundUp(deficit * FoodPerFund / GetFoodFactor(capital), 10000);
-            if (source != null && extraFood <= source.Food - deal.GiveFood)
+            if (source != null && extraFood <= source.Food - deal.GiveFood && IsEnoughWith(deal, 0, extraFood))
             {
                 return new DiplomacyResponse
                 {
@@ -471,7 +578,23 @@ namespace GameObjects.FactionDetail
                     Text = "若再添粮草 " + extraFood.ToString("N0") + "，此事可成。"
                 };
             }
+            // 钱粮抵城池有上限，加多少钱粮都不够时说明要拿城来换
+            if (deal.RequestArchitectures.Count > 0)
+            {
+                return new DiplomacyResponse { Kind = DiplomacyResponseKind.Reject, Text = "城池乃立国之本，非钱粮所能易，须以城池相换。" };
+            }
             return new DiplomacyResponse { Kind = DiplomacyResponseKind.Reject, Text = "条件相差太远，恕难从命。" };
+        }
+
+        // 再添这些钱粮后对方肯不肯接受。钱粮抵城池有上限，按差额算出的还价不一定够
+        private static bool IsEnoughWith(DiplomacyDeal deal, int extraFund, int extraFood)
+        {
+            deal.GiveFund += extraFund;
+            deal.GiveFood += extraFood;
+            bool enough = Evaluate(deal) >= 0;
+            deal.GiveFund -= extraFund;
+            deal.GiveFood -= extraFood;
+            return enough;
         }
 
         /// <summary>
