@@ -3009,8 +3009,8 @@ namespace GameObjects
                 {
                     if (captive.CaptiveFaction == faction)
                     {
-                        captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital, Position, true, false, oldFaction);
                         captive.CaptivePerson.SetBelongedCaptive(null, PersonStatus.Normal);
+                        captive.CaptivePerson.MoveToArchitecture(captive.CaptiveFaction.Capital, Position, true, false, oldFaction);
                         // Session.Current.Scenario.Captives.Remove(captive);
                     }
                 }

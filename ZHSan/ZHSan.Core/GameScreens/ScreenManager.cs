@@ -715,7 +715,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 foreach (var person in CurrentPersons)
                 {
-                    person.MoveToArchitecture(architecture);
+                    person.RelocateToArchitecture(architecture);
                 }
                 Session.MainGame.mainGameScreen.PlayNormalSound("Content/Sound/Tactics/Outside");
             }
