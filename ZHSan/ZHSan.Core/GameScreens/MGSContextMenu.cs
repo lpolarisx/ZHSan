@@ -151,15 +151,15 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Architecture_Persons:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.GetAllPersons()], null, "", "");
+                    InformationLists.ShowPersons("人物 · " + this.CurrentArchitecture.Name, this.CurrentArchitecture.GetAllPersons(), false);
                     break;
 
                 case ContextMenuResult.Architecture_Militaries:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.Militaries], null, "", "");
+                    InformationLists.ShowMilitaries("编队 · " + this.CurrentArchitecture.Name, this.CurrentArchitecture.Militaries, false);
                     break;
 
                 case ContextMenuResult.Architecture_NoFactionPersons:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.GetNoFactionPersons()], null, "在野人物", "");
+                    InformationLists.ShowPersons("在野人物 · " + this.CurrentArchitecture.Name, this.CurrentArchitecture.GetNoFactionPersons(), false);
                     break;
 
                 case ContextMenuResult.Architecture_Facilities:
@@ -171,12 +171,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Architecture_Treasure:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Treasure, FrameFunction.Browse, true, true, false, false, [.. CurrentArchitecture.GetAllTreasureInArchitecture()], null, "", "");
+                    InformationLists.ShowTreasures("宝物 · " + this.CurrentArchitecture.Name, this.CurrentArchitecture.GetAllTreasureInArchitecture());
                     break;
                 //case ContextMenuResult.Architecture_xiangxixinxi:
                 //    break;
                 case ContextMenuResult.Architecture_Princesses:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.GetConcubines()], null, "", "");
+                    InformationLists.ShowPersons("妃子 · " + this.CurrentArchitecture.Name, this.CurrentArchitecture.GetConcubines(), false);
                     break;
                 case ContextMenuResult.Architecture_Informations:
                     this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Information, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.Informations], null, "", "");
@@ -216,49 +216,49 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case ContextMenuResult.Faction_Architectures:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Architecture, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.Architectures], null, "", "");
+                        InformationLists.ShowArchitectures("城池 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.Architectures);
                     }
                     break;
 
                 case ContextMenuResult.Faction_Troops:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Troop, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.Troops], null, "", "");
+                        InformationLists.ShowTroops("部队 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.Troops);
                     }
                     break;
 
                 case ContextMenuResult.Faction_Persons:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.Persons], null, "", "");
+                        InformationLists.ShowPersons("人物 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.Persons);
                     }
                     break;
 
                 case ContextMenuResult.Faction_Children:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.GetChildrens()], null, "", "");
+                        InformationLists.ShowPersons("子女 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.GetChildrens());
                     }
                     break;
 
                 case ContextMenuResult.Faction_Militaries:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.Militaries], null, "", "");
+                        InformationLists.ShowMilitaries("编队 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.Militaries);
                     }
                     break;
 
                 case ContextMenuResult.Faction_TransferingMilitaries:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.TransferingMilitaries], null, "", "");
+                        InformationLists.ShowTransferingMilitaries("运输中的编队 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.TransferingMilitaries);
                     }
                     break;
 
                 case ContextMenuResult.Faction_AvailableMilitaryKinds:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.MilitaryKind, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.AvailableMilitaryKinds.Values], null, "", "");
+                        InformationLists.ShowMilitaryKinds("兵种 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.AvailableMilitaryKinds.Values);
                     }
                     break;
 
@@ -293,7 +293,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case ContextMenuResult.Faction_Sections:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Section, FrameFunction.Browse, false, true, false, false, [.. CurrentArchitecture.BelongedFaction.Sections], null, "", "");
+                        InformationLists.ShowSections("军区 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.BelongedFaction.Sections);
                     }
                     break;
 
@@ -788,7 +788,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case ContextMenuResult.Faction_Treasure:
                     if (this.CurrentArchitecture.BelongedFaction != null)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Treasure, FrameFunction.Browse, true, true, false, false, [.. CurrentArchitecture.GetAllTreasureInFaction()], null, "", "");
+                        InformationLists.ShowTreasures("宝物 · " + this.CurrentArchitecture.BelongedFaction.Name + "军", this.CurrentArchitecture.GetAllTreasureInFaction());
                     }
                     break;
                 case ContextMenuResult.Faction_Treasure_Confiscate:
@@ -970,55 +970,55 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Information_AllSkills:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Skill, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllSkills.Values], null, "", "");
+                    InformationLists.ShowSkills();
                     break;
 
                 case ContextMenuResult.Information_AllTitles:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllTitles.Values], null, "", "");
+                    InformationLists.ShowTitles();
                     break;
 
                 case ContextMenuResult.Information_AllMilitaryKinds:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.MilitaryKind, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllMilitaryKinds.Values], null, "", "");
+                    InformationLists.ShowMilitaryKinds();
                     break;
 
                 case ContextMenuResult.Information_AllStunts:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Stunt, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllStunts.Values], null, "", "");
+                    InformationLists.ShowStunts();
                     break;
 
                 case ContextMenuResult.Information_AllFactions:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.Factions.Values], null, "", "");
+                    InformationLists.ShowFactions();
                     break;
 
                 case ContextMenuResult.Information_AllArchitectures:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Architecture, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.Architectures.Values], null, "", "");
+                    InformationLists.ShowArchitectures();
                     break;
 
                 case ContextMenuResult.Information_AllTroops:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Troop, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.Troops.Values], null, "", "");
+                    InformationLists.ShowTroops();
                     break;
 
                 case ContextMenuResult.Information_AllPersons:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.AvailablePersons.Values], null, "", "");
+                    InformationLists.ShowPersons();
                     break;
 
                 case ContextMenuResult.Information_AllDeadPersons:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GetDeadPersons()], null, "", "");
+                    InformationLists.ShowDeadPersons();
                     break;
 
                 case ContextMenuResult.Information_AllMilitaries:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.Militaries.Values], null, "", "");
+                    InformationLists.ShowMilitaries();
                     break;
 
                 case ContextMenuResult.Information_AllFacilities:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Facility, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllFacilityKindLevels.Values], null, "设施种类", "");
+                    InformationLists.ShowFacilities();
                     break;
 
                 case ContextMenuResult.Information_AllTerrainDetails:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.TerrainDetail, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllTerrainDetails.Values], null, "", "");
+                    InformationLists.ShowTerrainDetails();
                     break;
 
                 case ContextMenuResult.Information_AllSections:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Section, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.Sections.Values], null, "", "");
+                    InformationLists.ShowSections();
                     break;
 
                 case ContextMenuResult.Information_AllRegions:
@@ -1030,11 +1030,11 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.Information_AllTreasures:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Treasure, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.Treasures.Values], null, "", "");
+                    InformationLists.ShowTreasures();
                     break;
 
                 case ContextMenuResult.Information_AllGuanjues:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Guanjue, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.GameCommonData.AllOfficialTitleKinds.Values], null, "", "");
+                    InformationLists.ShowGuanjues();
                     break;
 
                 case ContextMenuResult.Load:
@@ -1358,10 +1358,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     }
                     break;
                 case ContextMenuResult.YearTable_Year5:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.YearTable, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.YearTable.GetFactionYearTableRecentYears(Session.Current.Scenario.CurrentPlayer, Session.Current.Scenario.Date.Year - 5)], null, "年表", "");
+                    InformationLists.ShowRecentYearTable();
                     break;
                 case ContextMenuResult.YearTable_OwnFaction:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.YearTable, FrameFunction.Browse, false, true, false, false, [.. Session.Current.Scenario.YearTable.GetFactionYearTable(Session.Current.Scenario.CurrentPlayer)], null, "年表", "");
+                    InformationLists.ShowOwnFactionYearTable();
                     break;
                 case ContextMenuResult.ChangeFaction:
                     this.ChangeFaction();

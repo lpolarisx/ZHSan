@@ -18,7 +18,8 @@ namespace GameGlobal
         CreateTroop,
         tupianwenzi,
         liangdaobianji,
-        Diplomacy
+        Diplomacy,
+        InfoList
     }
 }
 

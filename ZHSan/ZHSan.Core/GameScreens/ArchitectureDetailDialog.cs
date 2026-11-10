@@ -13,6 +13,7 @@ using Platforms;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace WorldOfTheThreeKingdoms.GameScreens
 {
@@ -84,7 +85,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private const int DragThreshold = 6;
 
         private const string KindPicturePath = "Content/Textures/GameComponents/ArchitectureDetail/Data/TheInformationPage/ArchitectureKindPicture/";
-        private const string FacilityPicturePath = "Content/Textures/GameComponents/ArchitectureDetail/Data/TheFacilityPage/Facility/";
+        internal const string FacilityPicturePath = "Content/Textures/GameComponents/ArchitectureDetail/Data/TheFacilityPage/Facility/";
 
         private static readonly Color LineColor = new Color(90, 110, 120);
         private static readonly Color BarBackColor = new Color(16, 24, 30);
@@ -757,7 +758,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        private static string GetTypeName(FacilityType type)
+        internal static string GetTypeName(FacilityType type)
         {
             switch (type)
             {
@@ -778,7 +779,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             {
                 return new Image
                 {
-                    Renderable = new TextureImage(picture, width, height),
+                    Renderable = new TextureImage(picture, width, height, premultiply: true),
                     Width = width,
                     Height = height,
                     HorizontalAlignment = HorizontalAlignment.Center
@@ -1029,12 +1030,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             private float density = 1f;
             // null时用Myra默认的取最近像素；圆形等平滑图标缩放时要用线性插值，否则边缘有锯齿
             private readonly TextureFiltering? filtering;
+            // 游戏按预乘透明度混合，读进来的PNG却没有预乘。半透明边缘多的图（例如设施图）直接画，边上会有一圈杂色，
+            // 要先预乘一份再画。预乘的是副本，缓存里的原图不动
+            private readonly bool premultiply;
 
-            public TextureImage(string name, int width, int height, Rectangle? source = null, TextureFiltering? filtering = null)
+            // 预乘过的副本，按原图对应，同一张图只算一次
+            private static readonly ConditionalWeakTable<Texture2D, Texture2D> Premultiplied = new ConditionalWeakTable<Texture2D, Texture2D>();
+
+            public TextureImage(string name, int width, int height, Rectangle? source = null, TextureFiltering? filtering = null, bool premultiply = false)
             {
                 this.name = name;
                 this.source = source;
                 this.filtering = filtering;
+                this.premultiply = premultiply;
                 this.Size = new Point(width, height);
             }
 
@@ -1046,10 +1054,26 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     this.texture = CacheManager.LoadTextureForDraw(this.name, out this.density);
                 }
-                if (this.texture != null)
+                if (this.texture == null)
                 {
-                    context.Draw(this.texture, dest, CacheManager.ScaleSource(this.source, this.density), color, 0f, 0f, this.filtering);
+                    return;
                 }
+                Texture2D drawn = this.premultiply ? Premultiplied.GetValue(this.texture, CreatePremultiplied) : this.texture;
+                context.Draw(drawn, dest, CacheManager.ScaleSource(this.source, this.density), color, 0f, 0f, this.filtering);
+            }
+
+            private static Texture2D CreatePremultiplied(Texture2D texture)
+            {
+                var data = new Color[texture.Width * texture.Height];
+                texture.GetData(data);
+                for (int i = 0; i < data.Length; i++)
+                {
+                    Color c = data[i];
+                    data[i] = Color.FromNonPremultiplied(c.R, c.G, c.B, c.A);
+                }
+                var copy = new Texture2D(texture.GraphicsDevice, texture.Width, texture.Height);
+                copy.SetData(data);
+                return copy;
             }
         }
     }

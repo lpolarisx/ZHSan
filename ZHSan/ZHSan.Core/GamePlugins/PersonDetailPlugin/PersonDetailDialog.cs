@@ -919,7 +919,7 @@ namespace PersonDetailPlugin
             return button;
         }
 
-        private static string GetTreasurePicture(Treasure treasure)
+        internal static string GetTreasurePicture(Treasure treasure)
         {
             string name = treasure.Picture?.Name;
             return !string.IsNullOrEmpty(name) && Platform.Current.FileExists(name) ? name : DefaultTreasurePicture;
@@ -1101,7 +1101,7 @@ namespace PersonDetailPlugin
         }
 
         // 称号等级的分档：4级以下普通，4起绿，7起蓝，10起紫，13起橙，与旧界面一致
-        private static Color GetTitleColor(Title title)
+        internal static Color GetTitleColor(Title title)
         {
             if (title.Level >= 13)
             {
@@ -1191,7 +1191,7 @@ namespace PersonDetailPlugin
 
         private void ShowTitle(VerticalStackPanel panel, Title title, int width)
         {
-            panel.Widgets.Add(CreateLabel(title.Level + "级" + title.KindName, 12, TextSecondary));
+            panel.Widgets.Add(CreateLabel(title.Level + "级" + title.KindName, 13, CaptionColor));
             panel.Widgets.Add(CreateWrappedLabel(title.Name, 22, GetTitleColor(title), width));
             if (title.FundForHolder > 0)
             {
@@ -1210,7 +1210,7 @@ namespace PersonDetailPlugin
         private void ShowStunt(VerticalStackPanel panel, Stunt stunt, int width)
         {
             bool has = this.person.Stunts.ContainsKey(stunt.ID);
-            panel.Widgets.Add(CreateLabel(has ? "战斗特技 · 已掌握" : "战斗特技 · 未掌握", 12, has ? Gold : TextSecondary));
+            panel.Widgets.Add(CreateLabel(has ? "战斗特技 · 已掌握" : "战斗特技 · 未掌握", 13, has ? Gold : CaptionColor));
             panel.Widgets.Add(CreateWrappedLabel(stunt.Name, 22, TextPrimary, width));
             panel.Widgets.Add(CreateLabel("战意消耗 " + stunt.Combativity + " · 持续 " + stunt.Period * Session.Parameters.DayInTurn + " 天", 13, Gold));
             AddInfluences(panel, stunt.Influences.Values, width);
@@ -1238,9 +1238,9 @@ namespace PersonDetailPlugin
             else
             {
                 state = "未掌握";
-                color = TextSecondary;
+                color = CaptionColor;
             }
-            panel.Widgets.Add(CreateLabel("技能 · " + state, 12, color));
+            panel.Widgets.Add(CreateLabel("技能 · " + state, 13, color));
             panel.Widgets.Add(CreateWrappedLabel(skill.Name, 22, TextPrimary, width));
             AddInfluences(panel, skill.Influences.Values, width);
             AddConditions(panel, "修习条件", skill.Conditions.Select(x => Check(x, x.CheckCondition(this.person))), width);

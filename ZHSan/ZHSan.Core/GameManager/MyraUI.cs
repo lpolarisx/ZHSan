@@ -99,6 +99,15 @@ namespace GameManager
             // 字形已经按缩放倍数生成，放大后和屏幕像素一一对应。缩放1.5倍时文字常落在半个像素上，
             // 线性插值会把每个字形像素和旁边的混在一起，字发虚；取最近的像素就清楚
             MyraEnvironment.TextTextureFiltering = Myra.Graphics2D.TextureFiltering.Nearest;
+            // 游戏里右键是返回：Draw里右键松开时关闭最上层弹窗。Myra默认把右键也当成点击，
+            // 右键点在按钮或列表行上会先点下去再关掉，所以不让Myra看到右键和中键
+            MyraEnvironment.MouseInfoGetter = () =>
+            {
+                MouseInfo info = MyraEnvironment.DefaultMouseInfoGetter();
+                info.IsRightButtonDown = false;
+                info.IsMiddleButtonDown = false;
+                return info;
+            };
         }
 
         /// <summary>

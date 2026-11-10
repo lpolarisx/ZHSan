@@ -8,6 +8,7 @@ using Myra.Graphics2D.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace GameManager
 {
@@ -29,9 +30,13 @@ namespace GameManager
         public static readonly Color GoldDim = new Color(0x8A, 0x74, 0x48);
         public static readonly Color PopoverColor = new Color(30, 44, 54);
         public static readonly IBrush Transparent = new SolidBrush(Color.Transparent);
+        // 弹窗深底上的小字说明（类别、等级、分段条件），比TextSecondary亮一些
+        public static readonly Color CaptionColor = new Color(0xC0, 0xCA, 0xC8);
+        // 效果里『』括起来的战法名
+        public static readonly Color SkillNameColor = new Color(0x86, 0xC0, 0xE8);
 
         // 这几种影响本身不加数值，而是限定后面的效果何时生效：仅君主、仅部队主将、满足条件、限定兵种类型、限定兵种。
-        // 说明里把它们写在“效果”标题后面
+        // 说明里按它们把效果分段
         private static readonly int[] RestrictionInfluenceKinds = { 280, 281, 285, 290, 300 };
 
         // 竖向间隔。Myra里固定了高度的控件，外边距算在高度里面，所以分区之间的空隙单独用一个空控件
@@ -198,25 +203,220 @@ namespace GameManager
             {
                 Padding = new Thickness(0, 10, 0, 0)
             };
-            holder.Widgets.Add(CreateWrappedLabel(title, 12, MyraSkin.TextSecondary, width));
+            holder.Widgets.Add(CreateWrappedLabel(title, 13, MyraSkin.TextTitle, width));
             return holder;
         }
 
-        // 限定生效时机的影响写在“效果”标题后面，其余的逐条列出
+        /// <summary>
+        /// 这条影响不加数值，只限定后面的效果何时生效
+        /// </summary>
+        public static bool IsRestriction(Influence influence)
+        {
+            return RestrictionInfluenceKinds.Contains(influence.Kind.ID);
+        }
+
+        /// <summary>
+        /// 按影响顺序切出来的一段：Restriction是到这段为止要满足的全部限定（含前面段的），比如“主将 · 步兵/骑兵”，第一个限定之前的那段为null
+        /// </summary>
+        public class InfluenceSection
+        {
+            public string Restriction;
+            public List<Influence> Effects = new List<Influence>();
+        }
+
+        /// <summary>
+        /// 影响按顺序生效，限定条目对它下面的所有效果有效，多个限定叠加。
+        /// 这里按限定条目把效果切成几段，每段的限定写全，只有限定没有效果的不成段
+        /// </summary>
+        public static List<InfluenceSection> SplitInfluenceSections(IEnumerable<Influence> influences)
+        {
+            var sections = new List<InfluenceSection>();
+            var current = new InfluenceSection();
+            var pending = new List<Influence>();
+            var parts = new List<string>();
+            foreach (Influence influence in influences)
+            {
+                if (IsRestriction(influence))
+                {
+                    pending.Add(influence);
+                    continue;
+                }
+                if (pending.Count > 0)
+                {
+                    if (current.Effects.Count > 0)
+                    {
+                        sections.Add(current);
+                    }
+                    parts.AddRange(JoinRestrictions(pending));
+                    current = new InfluenceSection
+                    {
+                        Restriction = string.Join(" · ", parts)
+                    };
+                    pending.Clear();
+                }
+                current.Effects.Add(influence);
+            }
+            if (current.Effects.Count > 0)
+            {
+                sections.Add(current);
+            }
+            return sections;
+        }
+
+        /// <summary>
+        /// 段标题：有限定的写“需：主将 · 步兵/骑兵”，第一个限定之前的那段写“无条件”
+        /// </summary>
+        public static string GetSectionTitle(InfluenceSection section)
+        {
+            return section.Restriction == null ? "无条件" : "需：" + section.Restriction;
+        }
+
+        // 前提类的限定都要满足，各算一项；多选一的限定（如兵种类型）连着的几条满足一条就行，合成一项用“/”连起来
+        private static List<string> JoinRestrictions(List<Influence> restrictions)
+        {
+            var parts = new List<string>();
+            var exclusive = new List<string>();
+            foreach (Influence influence in restrictions)
+            {
+                if (influence.Type == GameEnums.InfluenceType.Exclusive)
+                {
+                    exclusive.Add(GetRestrictionName(influence));
+                    continue;
+                }
+                if (exclusive.Count > 0)
+                {
+                    parts.Add(string.Join("/", exclusive));
+                    exclusive.Clear();
+                }
+                parts.Add(GetRestrictionName(influence));
+            }
+            if (exclusive.Count > 0)
+            {
+                parts.Add(string.Join("/", exclusive));
+            }
+            return parts;
+        }
+
+        // “仅对主将有效（本条以下）”只留“主将”，“白耳兵有效（本条以下）”只留“白耳兵”，分段已经表达了“本条以下”
+        public static string GetRestrictionName(Influence influence)
+        {
+            string text = (influence.Description ?? "").Replace("（本条以下）", "").Replace("(本条以下)", "").Trim();
+            if (text.StartsWith("仅对"))
+            {
+                text = text.Substring(2);
+            }
+            if (text.EndsWith("有效"))
+            {
+                text = text.Substring(0, text.Length - 2);
+            }
+            return text.Length == 0 ? influence.Description : text;
+        }
+
+        /// <summary>
+        /// 有限定分段时效果统一缩进的宽度
+        /// </summary>
+        public const int EffectIndent = 12;
+
+        // 数值：“10%”“+400”“1天”“三倍”这类
+        private static readonly Regex EffectValue = new Regex(@"[+\-]?\d+(?:\.\d+)?(?:%|点|天|个月|倍|格|级|成)?|[一二两三四五六七八九十]+倍");
+        private static readonly Regex SkillName = new Regex(@"『[^』]+』");
+
+        /// <summary>
+        /// 效果说明转成带颜色的文字：数值金色、两边各空一格，『』括起来的战法名蓝色，其余用textColor。“/”是Myra的格式符，换成全角
+        /// </summary>
+        public static string HighlightEffect(string text, Color textColor)
+        {
+            text = (text ?? "").Replace("/", "／");
+            string normal = ColorCode(textColor);
+            var result = new System.Text.StringBuilder(normal);
+            int last = 0;
+            foreach (Match skill in SkillName.Matches(text))
+            {
+                result.Append(HighlightValues(text, last, skill.Index, normal));
+                result.Append(ColorCode(SkillNameColor)).Append(skill.Value).Append(normal);
+                last = skill.Index + skill.Length;
+            }
+            result.Append(HighlightValues(text, last, text.Length, normal));
+            return result.Append("/cd").ToString();
+        }
+
+        // 只处理text里[start, end)这段；数值在整句开头、结尾或旁边本来就有空格的，那一边不再加空格
+        private static string HighlightValues(string text, int start, int end, string normal)
+        {
+            return EffectValue.Replace(text.Substring(start, end - start), m =>
+            {
+                int index = start + m.Index;
+                int after = index + m.Length;
+                string before = index > 0 && text[index - 1] != ' ' ? " " : "";
+                string behind = after < text.Length && text[after] != ' ' ? " " : "";
+                return before + ColorCode(MyraSkin.TextHighlight) + m.Value + normal + behind;
+            });
+        }
+
+        private static string ColorCode(Color color)
+        {
+            return "/c[#" + color.R.ToString("X2") + color.G.ToString("X2") + color.B.ToString("X2") + "]";
+        }
+
+        /// <summary>
+        /// 效果分段之间的细分割线，上下留点空
+        /// </summary>
+        public static Widget CreateSectionDivider()
+        {
+            var holder = new Panel
+            {
+                Padding = new Thickness(0, 6, 0, 4)
+            };
+            holder.Widgets.Add(new Panel
+            {
+                Height = 1,
+                Background = new SolidBrush(LineColor * 0.45f)
+            });
+            return holder;
+        }
+
+        // 两级：段标题（要满足的全部限定）→ 效果。有限定段时所有效果统一缩进一级，段之间加细分割线
         public static void AddInfluences(VerticalStackPanel panel, IEnumerable<Influence> influences, int width)
         {
-            List<Influence> list = influences.ToList();
-            if (list.Count == 0)
+            List<InfluenceSection> sections = SplitInfluenceSections(influences);
+            if (sections.Count == 0)
             {
                 return;
             }
-            List<string> restrictions = list.Where(x => RestrictionInfluenceKinds.Contains(x.Kind.ID)).Select(x => x.Description).ToList();
-            string title = restrictions.Count == 0 ? "效果" : "效果 · " + string.Join(" · ", restrictions);
-            panel.Widgets.Add(CreateDetailHeader(title, width));
-            foreach (Influence influence in list.Where(x => !RestrictionInfluenceKinds.Contains(x.Kind.ID)))
+            panel.Widgets.Add(CreateDetailHeader("效果", width));
+            bool grouped = sections.Any(x => x.Restriction != null);
+            int indent = grouped ? EffectIndent : 0;
+            for (int i = 0; i < sections.Count; i++)
             {
-                panel.Widgets.Add(CreateWrappedLabel("· " + influence.Description, 14, MyraSkin.TextPrimary, width));
+                if (grouped)
+                {
+                    if (i > 0)
+                    {
+                        panel.Widgets.Add(CreateSectionDivider());
+                    }
+                    panel.Widgets.Add(CreateWrappedLabel(GetSectionTitle(sections[i]), 13, CaptionColor, width));
+                }
+                foreach (Influence influence in sections[i].Effects)
+                {
+                    string text = "· " + HighlightEffect(influence.Description, MyraSkin.TextPrimary);
+                    panel.Widgets.Add(Indent(CreateWrappedLabel(text, 14, MyraSkin.TextPrimary, width - indent), indent));
+                }
             }
+        }
+
+        // 固定宽度的控件外边距算在宽度里，所以缩进放在外层容器的内边距里
+        public static Widget Indent(Widget widget, int indent)
+        {
+            if (indent <= 0)
+            {
+                return widget;
+            }
+            var holder = new Panel
+            {
+                Padding = new Thickness(indent, 0, 0, 0)
+            };
+            holder.Widgets.Add(widget);
+            return holder;
         }
 
         public static KeyValuePair<string, bool?> Check(Condition condition, bool satisfied)
@@ -224,7 +424,7 @@ namespace GameManager
             return new KeyValuePair<string, bool?>(condition.Name, satisfied);
         }
 
-        // 条件前面一个菱形，满足的绿色，不满足的红色，无法判断的灰色
+        // 条件前面一个状态标记：满足的绿色“√”，不满足的红色“×”，无法判断的灰色“－”
         public static void AddConditions(VerticalStackPanel panel, string title, IEnumerable<KeyValuePair<string, bool?>> conditions, int width)
         {
             List<KeyValuePair<string, bool?>> list = conditions.ToList();
@@ -241,7 +441,9 @@ namespace GameManager
                 {
                     Spacing = 6
                 };
-                row.Widgets.Add(CreateLabel("◇", 13, color));
+                var mark = CreateLabel(condition.Value == null ? "－" : condition.Value.Value ? "√" : "×", 14, color);
+                mark.Width = 14;
+                row.Widgets.Add(mark);
                 row.Widgets.Add(CreateWrappedLabel(condition.Key, 13, condition.Value == false ? MyraSkin.TextSecondary : MyraSkin.TextPrimary, width - 20));
                 panel.Widgets.Add(row);
             }
