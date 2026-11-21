@@ -69,7 +69,7 @@ namespace MarshalSectionDialogPlugin
 #pragma warning restore CS0169 // The field 'MarshalSectionDialog.OrientationState' is never used
         private Section OriginalSection;
         
-        private GameObjectList SectionArchitectureList;
+        private List<GameObject> SectionArchitectureList;
         internal ITabList TabListPlugin;
 
         internal void Draw()
@@ -769,7 +769,7 @@ namespace MarshalSectionDialogPlugin
             this.GameFramePlugin.OKButtonEnabled = false;
             this.GameFramePlugin.CancelButtonEnabled = true;
             this.GameFramePlugin.SetOKFunction(delegate {
-                this.SectionArchitectureList = this.TabListPlugin.SelectedItemList as GameObjectList;
+                this.SectionArchitectureList = this.TabListPlugin.SelectedItemList as List<GameObject>;
                 this.EditingSection.Architectures.Clear();
                 foreach (Architecture architecture in this.SectionArchitectureList)
                 {

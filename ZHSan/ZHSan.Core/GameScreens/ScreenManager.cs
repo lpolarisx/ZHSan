@@ -24,13 +24,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         public ArchitectureWorkKind CurrentArchitectureWorkKind;
         public Faction CurrentFaction;
         public GameObject CurrentGameObject;
-        public GameObjectList CurrentGameObjects;
+        public List<Person> CurrentGameObjects;
         public Military CurrentMilitary;
         public int CurrentNumber;
         public int Currentzijin;
         public Person CurrentPerson;
         public List<Person> CurrentPersons;
-        public GameObjectList CurrentMilitaries; 
+        public List<Military> CurrentMilitaries; 
         public Routeway CurrentRouteway;
         public Troop CurrentTroop;
 
@@ -159,7 +159,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 Treasure currentGameObject = this.CurrentGameObject as Treasure;
                 if (currentGameObject.BelongedPerson != null)
                 {
-                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAwardTreasurePerson, false, true, true, false, [.. CurrentArchitecture.BelongedFaction.GetPersonsInArchitectureExceptLeader()], null, "", "");
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAwardTreasurePerson, false, true, true, false, CurrentArchitecture.BelongedFaction.GetPersonsInArchitectureExceptLeader(), null, "", "");
                 }
             }
         }
@@ -292,19 +292,19 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 case DiplomacyKind.Enhance:
                     CurrentDiplomaticRelation = relation;
-                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetEnhanceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetEnhanceDiplomaticRelationPerson, true, true, true, true, CurrentArchitecture.GetPersonsExcludeNvGuan(), null, "外交人员", "Ability");
                     break;
 
                 case DiplomacyKind.Ally:
                     CurrentDiplomaticRelation = relation;
                     //this.CurrentDiplomaticRelation.Relation = 301;
                     //this.mainGameScreen.xianshishijiantupian(this.CurrentArchitecture.BelongedFaction.Leader, this.CurrentArchitecture.BelongedFaction.Leader.Name, "AllyDiplomaticRelation", "AllyDiplomaticRelation.jpg", "AllyDiplomaticRelation", this.CurrentDiplomaticRelation.FactionName, true);
-                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAllyDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.Persons], null, "外交人员", "Ability");
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAllyDiplomaticRelationPerson, true, true, true, true, CurrentArchitecture.Persons, null, "外交人员", "Ability");
                     break;
 
                 case DiplomacyKind.Truce:
                     CurrentDiplomaticRelation = relation;
-                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetTruceDiplomaticRelationPerson, true, true, true, true, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetTruceDiplomaticRelationPerson, true, true, true, true, CurrentArchitecture.GetPersonsExcludeNvGuan(), null, "外交人员", "Ability");
                     break;
 
                 case DiplomacyKind.QuanXiang:
@@ -315,7 +315,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                         this.SendQuanXiangEnvoy(deal.LeadEnvoy);
                         break;
                     }
-                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetQuanXiangDiplomaticRelationPerson, false, true, true, false, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "外交人员", "Ability");
+                    Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetQuanXiangDiplomaticRelationPerson, false, true, true, false, CurrentArchitecture.GetPersonsExcludeNvGuan(), null, "外交人员", "Ability");
                     break;
 
                 case DiplomacyKind.Reset:
@@ -539,7 +539,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetInformationKind()
         {
-            Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Work, FrameFunction.GetInformationPerson, false, true, true, false, [.. CurrentArchitecture.MovablePersons], null, "情报", "情报");
+            Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Work, FrameFunction.GetInformationPerson, false, true, true, false, CurrentArchitecture.MovablePersons, null, "情报", "情报");
         }
 
         /// <summary>
@@ -590,7 +590,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (military != null)
             {
                 CurrentMilitary = military;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.MilitaryKind, FrameFunction.GetLevelUpMiliaryKind, true, true, true, false, [.. CurrentArchitecture.GetUpgradableMilitaryKinds(CurrentMilitary)], null, "编队升级", "编队升级");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.MilitaryKind, FrameFunction.GetLevelUpMiliaryKind, true, true, true, false, CurrentArchitecture.GetUpgradableMilitaryKinds(CurrentMilitary), null, "编队升级", "编队升级");
             }
         }
 
@@ -601,7 +601,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (military != null)
             {
                 CurrentMilitary = military;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetBeMergedMilitaries, false, true, true, false, [.. CurrentArchitecture.GetBeMergedMilitaryList(CurrentMilitary)], null, "选择编队", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetBeMergedMilitaries, false, true, true, false, CurrentArchitecture.GetBeMergedMilitaryList(CurrentMilitary), null, "选择编队", "");
             }
         }
 
@@ -611,7 +611,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectMarryTo, false, true, true, false, [.. CurrentPerson.MakeMarryable()], null, "选择对象", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectMarryTo, false, true, true, false, CurrentPerson.MakeMarryable(), null, "选择对象", "");
             }
         }
 
@@ -621,7 +621,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectMarryTo, false, true, true, false, [.. CurrentPerson.MakeMarryable2()], null, "选择纳妾对象", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.SelectMarryTo, false, true, true, false, CurrentPerson.MakeMarryable2(), null, "选择纳妾对象", "");
             }
         }
         private void FrameFunction_Architecture_AfterSelectMarryTo()
@@ -641,7 +641,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (childrens != null && childrens.Count >= 1)
             {
                 CurrentPersons = childrens;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.TrainPolicy, FrameFunction.SelectTrainPolicy, false, true, true, false, [.. Session.Current.Scenario.GameCommonData.AllTrainPolicies.Values], null, "选择培育方针", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.TrainPolicy, FrameFunction.SelectTrainPolicy, false, true, true, false, Session.Current.Scenario.GameCommonData.AllTrainPolicies.Values, null, "选择培育方针", "");
             }
             ClearSelected();
         }
@@ -802,7 +802,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (military != null)
             {
                 CurrentMilitary = military;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Work, FrameFunction.GetRecruitmentPerson, false, true, true, false, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "补充", "补充");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Work, FrameFunction.GetRecruitmentPerson, false, true, true, false, CurrentArchitecture.GetPersonsExcludeNvGuan(), null, "补充", "补充");
             }
         }
 
@@ -840,7 +840,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (militaries.Count > 0)
             {
                 CurrentMilitary = militaries.FirstOrDefault();
-                CurrentMilitaries = [.. militaries];
+                CurrentMilitaries = militaries;
                 // 清空手动出征残留的武将选择，避免选点后误走手动出征分支
                 CurrentPerson = null;
                 CurrentGameObjects = null;
@@ -857,8 +857,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (militaries != null)
             {
                 //this.CurrentArchitecture.RemoveMilitary(m);
-                CurrentMilitaries = [.. militaries];
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Architecture, FrameFunction.GetTransferArchitecture, false, true, true, false, [.. CurrentArchitecture.BelongedFaction .ArchitecturesExcluding(CurrentArchitecture)], null, "运兵", "运兵");
+                CurrentMilitaries = militaries;
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Architecture, FrameFunction.GetTransferArchitecture, false, true, true, false, CurrentArchitecture.BelongedFaction .ArchitecturesExcluding(CurrentArchitecture), null, "运兵", "运兵");
                 //this.mainGameScreen.PushUndoneWork(new UndoneWorkItem(UndoneWorkKind.Selecting, SelectingUndoneWorkKind.MilitaryTransfer));
             }
         }
@@ -975,10 +975,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetShortestNoWaterRouteway()
         {
-            this.CurrentGameObjects = Session.MainGame.mainGameScreen.Plugins.TabListPlugin.SelectedItemList as GameObjectList;
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count > 0))
+            var selectedArchitectures = Session.MainGame.mainGameScreen.Plugins.TabListPlugin.SelectedItemList as List<GameObject>;
+            if ((selectedArchitectures != null) && (selectedArchitectures.Count > 0))
             {
-                foreach (Architecture architecture in this.CurrentGameObjects)
+                foreach (Architecture architecture in selectedArchitectures)
                 {
                     Routeway routeway = this.CurrentArchitecture.BuildShortestRouteway(architecture, true);
                     if (routeway != null)
@@ -992,10 +992,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         private void FrameFunction_Architecture_AfterGetShortestRouteway()   //粮道最短
         {
-            this.CurrentGameObjects = Session.MainGame.mainGameScreen.Plugins.TabListPlugin.SelectedItemList as GameObjectList;
-            if ((this.CurrentGameObjects != null) && (this.CurrentGameObjects.Count > 0))
+            var selectedArchitectures = Session.MainGame.mainGameScreen.Plugins.TabListPlugin.SelectedItemList as List<GameObject>;
+            if ((selectedArchitectures != null) && (selectedArchitectures.Count > 0))
             {
-                foreach (Architecture architecture in this.CurrentGameObjects)
+                foreach (Architecture architecture in selectedArchitectures)
                 {
                     Routeway routeway = this.CurrentArchitecture.BuildShortestRouteway(architecture, false);
                     if (routeway != null)
@@ -1058,7 +1058,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Stunt, FrameFunction.GetStudyStunt, false, true, true, false, [.. person.GetStudyStuntList()], null, "研习", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Stunt, FrameFunction.GetStudyStunt, false, true, true, false, person.GetStudyStuntList(), null, "研习", "");
             }
         }
 
@@ -1082,7 +1082,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetStudyTitle, false, true, true, false, [.. person.GetStudyTitleList()], null, "研习", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetStudyTitle, false, true, true, false, person.GetStudyTitleList(), null, "研习", "");
             }
         }
 
@@ -1109,7 +1109,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetAppointableTitle, false, true, true, false, [.. person.GetAppointableTitleList()], null, "任命官职", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetAppointableTitle, false, true, true, false, person.GetAppointableTitleList(), null, "任命官职", "");
             }
         }
 
@@ -1123,7 +1123,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (person != null)
             {
                 CurrentPerson = person;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetRecallableTitle, false, true, true, true, [.. person.RecallableTitleList()], null, "免除职位", "");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Title, FrameFunction.GetRecallableTitle, false, true, true, true, person.RecallableTitleList(), null, "免除职位", "");
             }
         }
 
@@ -1145,7 +1145,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             if (military != null)
             {
                 CurrentMilitary = military;
-                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Work, FrameFunction.GetTrainingPerson, false, true, true, false, [.. CurrentArchitecture.GetPersonsExcludeNvGuan()], null, "训练", "训练");
+                Session.MainGame.mainGameScreen.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Work, FrameFunction.GetTrainingPerson, false, true, true, false, CurrentArchitecture.GetPersonsExcludeNvGuan(), null, "训练", "训练");
             }
         }
 
@@ -1827,11 +1827,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
         public void SetCreatingTroopPosition(Point position)
         {
-            var persons = new List<Person>();
-            foreach (Person item in CurrentGameObjects)
-            {
-                persons.Add(item);
-            }
+            var persons = new List<Person>(CurrentGameObjects);
 
             this.CurrentTroop = this.CurrentArchitecture.CreateTroop(persons, this.CurrentPerson, this.CurrentMilitary, this.CurrentNumber, position);
             this.CurrentTroop.zijin = this.Currentzijin;

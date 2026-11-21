@@ -36,7 +36,7 @@ namespace GameObjects
         public bool LoadScenarioInInitialization;
         protected PlatformTexture MouseArrowTexture;
         //protected Microsoft.Xna.Framework.Input.MouseState mouseState;
-        public GameObjectList PluginList;
+        public List<GameObject> PluginList;
         //protected Microsoft.Xna.Framework.Input.MouseState previousMouseState;
 
         public List<Rectangle> ScrollDisableRects;
@@ -59,7 +59,7 @@ namespace GameObjects
 
         public Screen() // : base(game)
         {
-            this.PluginList = new GameObjectList();
+            this.PluginList = new List<GameObject>();
             this.EnableUpdate = true;
             this.EnableMouseEvent = true;
             this.EnableScroll = true;

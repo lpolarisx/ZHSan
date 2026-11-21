@@ -6,7 +6,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PluginInterface;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 //using System.Runtime.InteropServices;
 using System.Xml;
 
@@ -36,7 +38,7 @@ namespace TabListPlugin
         internal GameObject FocusedObject;
         internal PlatformTexture focusTrackTexture;
         internal Rectangle FullLowerClient;
-        internal GameObjectList gameObjectList;
+        internal List<GameObject> gameObjectList;
         private bool HeightCanShrink = true;
         internal IArchitectureDetail iArchitectureDetail;
         internal IFactionTechniques iFactionTechniques;
@@ -68,7 +70,7 @@ namespace TabListPlugin
         internal PlatformTexture scrolltrackTexture;
         internal int scrolltrackWidth;
         internal GameObject SelectedItem;
-        internal GameObjectList SelectedItemList;
+        internal List<GameObject> SelectedItemList;
         internal int SelectedItemMaxCount;
         internal bool SelectingBool = false;
         internal bool SelectingRows = false;
@@ -292,7 +294,56 @@ namespace TabListPlugin
             }
         }
 
-        public void InitialValues(GameObjectList gameObjectList, GameObjectList selectedObjectList, int scrollValue, string title)
+        internal static List<GameObject> ToGameObjectList(object value)
+        {
+            if (value is GameObject gameObject)
+            {
+                return new List<GameObject> { gameObject };
+            }
+
+            if (value is IEnumerable items)
+            {
+                var result = new List<GameObject>();
+                foreach (var item in items)
+                {
+                    if (item is GameObject obj)
+                    {
+                        result.Add(obj);
+                    }
+                }
+                return result;
+            }
+
+            return null;
+        }
+
+        private bool HasSelectedItem()
+        {
+            return this.gameObjectList.Any(g => g.Selected);
+        }
+
+        private List<GameObject> GetSelectedList()
+        {
+            return this.gameObjectList.Where(g => g.Selected).ToList();
+        }
+
+        private int GetSelectedCount()
+        {
+            return this.gameObjectList.Count(g => g.Selected);
+        }
+
+        private void SetOtherUnSelected(GameObject selectedObject)
+        {
+            foreach (GameObject obj in this.gameObjectList)
+            {
+                if (obj != selectedObject)
+                {
+                    obj.Selected = false;
+                }
+            }
+        }
+
+        public void InitialValues(List<GameObject> gameObjectList, List<GameObject> selectedObjectList, int scrollValue, string title)
         {
             this.SubKinds.Clear();
             this.SetObjectList(gameObjectList);
@@ -352,7 +403,7 @@ namespace TabListPlugin
             }
         }
 
-        internal void PushSubKindByName(string name, GameObjectList list)
+        internal void PushSubKindByName(string name, List<GameObject> list)
         {
             if ((list != null) && (list.Count != 0))
             {
@@ -388,14 +439,14 @@ namespace TabListPlugin
         internal void RefreshEditable()
         {
             this.ResetEditableTextures();
-            base.OKButtonEnabled = this.gameObjectList.HasSelectedItem();
+            base.OKButtonEnabled = this.HasSelectedItem();
             if (this.MultiSelecting)
             {
-                this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                this.SelectedItemList = this.GetSelectedList();
             }
             else if (base.OKButtonEnabled)
             {
-                this.SelectedItem = this.gameObjectList.GetSelectedList()[0];
+                this.SelectedItem = this.gameObjectList.First(g => g.Selected);
             }
         }
 
@@ -429,7 +480,7 @@ namespace TabListPlugin
                         {
                             if (this.listKindToDisplay.IsInEditableColumn(position))
                             {
-                                if ((gameObjectByPosition.Selected || (this.SelectedItemMaxCount <= 0)) || (this.gameObjectList.GetSelectedList().Count < this.SelectedItemMaxCount))
+                                if ((gameObjectByPosition.Selected || (this.SelectedItemMaxCount <= 0)) || (this.GetSelectedCount() < this.SelectedItemMaxCount))
                                 {
                                     if (this.MultiSelecting)
                                     {
@@ -441,7 +492,7 @@ namespace TabListPlugin
                                             this.SelectingBool = gameObjectByPosition.Selected;
                                         }
 
-                                        this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                                        this.SelectedItemList = this.GetSelectedList();
                                         if (Session.MainGame.mainGameScreen.KeyState.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl))
                                         {
                                             foreach (GameObject g in this.gameObjectList)
@@ -453,7 +504,7 @@ namespace TabListPlugin
                                     else
                                     {
                                     }
-                                    base.OKButtonEnabled = this.gameObjectList.HasSelectedItem() || (gameObjectByPosition is Faction);
+                                    base.OKButtonEnabled = this.HasSelectedItem() || (gameObjectByPosition is Faction);
                                     this.ResetEditableTextures();
                                     if (gameObjectByPosition.Selected)
                                     {
@@ -531,7 +582,7 @@ namespace TabListPlugin
                     if (columnByPosition != null)
                     {
                         PropertyComparer comparer = new PropertyComparer(columnByPosition.Name, columnByPosition.IsNumber, columnByPosition.SmallToBig, columnByPosition.ItemID);
-                        this.gameObjectList.StableSort(comparer);
+                        this.gameObjectList = this.gameObjectList.OrderBy(x => x, comparer).ToList();
                         this.listKindToDisplay.ResetAllTextures();
                         columnByPosition.SmallToBig = !columnByPosition.SmallToBig;
                     }
@@ -546,14 +597,14 @@ namespace TabListPlugin
                         {
                             if (this.listKindToDisplay.IsInEditableColumn(position))
                             {
-                                if ((gameObjectByPosition.Selected || (this.SelectedItemMaxCount <= 0)) || (this.gameObjectList.GetSelectedList().Count < this.SelectedItemMaxCount))
+                                if ((gameObjectByPosition.Selected || (this.SelectedItemMaxCount <= 0)) || (this.GetSelectedCount() < this.SelectedItemMaxCount))
                                 {
                                     if (this.MultiSelecting)
                                     {
                                         /*
                                         this.SelectingRows = true;
                                         this.SelectingBool = gameObjectByPosition.Selected;
-                                        this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                                        this.SelectedItemList = this.GetSelectedList();
                                          */
 
                                     }
@@ -561,9 +612,9 @@ namespace TabListPlugin
                                     {
                                         gameObjectByPosition.Selected = !gameObjectByPosition.Selected;
 
-                                        this.gameObjectList.SetOtherUnSelected(gameObjectByPosition);
+                                        this.SetOtherUnSelected(gameObjectByPosition);
                                     }
-                                    base.OKButtonEnabled = this.gameObjectList.HasSelectedItem() || (gameObjectByPosition is Faction);
+                                    base.OKButtonEnabled = this.HasSelectedItem() || (gameObjectByPosition is Faction);
                                     this.ResetEditableTextures();
                                     if (gameObjectByPosition.Selected)
                                     {
@@ -676,7 +727,7 @@ namespace TabListPlugin
                                 }
                                 else if (this.listKindToDisplay.SelectedTab.ListMethod != null)
                                 {
-                                    this.PushSubKindByName(this.listKindToDisplay.SelectedTab.ListKind, StaticMethods.GetListMethodValue(gameObjectByPosition, this.listKindToDisplay.SelectedTab.ListMethod) as GameObjectList);
+                                    this.PushSubKindByName(this.listKindToDisplay.SelectedTab.ListKind, ToGameObjectList(StaticMethods.GetListMethodValue(gameObjectByPosition, this.listKindToDisplay.SelectedTab.ListMethod)));
                                 }
                                 if (gameObjectByPosition != null)
                                 {
@@ -692,7 +743,7 @@ namespace TabListPlugin
                         {
                             if (this.listKindToDisplay.SelectedTab.ListMethod != null)
                             {
-                                this.PushSubKindByName(this.listKindToDisplay.SelectedTab.ListKind, StaticMethods.GetListMethodValue(gameObjectByPosition, this.listKindToDisplay.SelectedTab.ListMethod) as GameObjectList);
+                                this.PushSubKindByName(this.listKindToDisplay.SelectedTab.ListKind, ToGameObjectList(StaticMethods.GetListMethodValue(gameObjectByPosition, this.listKindToDisplay.SelectedTab.ListMethod)));
                             }
                             else
                             {
@@ -813,7 +864,7 @@ namespace TabListPlugin
                             {
                                 if (this.SelectingBool)
                                 {
-                                    if ((this.SelectedItemMaxCount <= 0) || (this.gameObjectList.GetSelectedList().Count < this.SelectedItemMaxCount))
+                                    if ((this.SelectedItemMaxCount <= 0) || (this.GetSelectedCount() < this.SelectedItemMaxCount))
                                     {
                                         gameObjectByPosition.Selected = this.SelectingBool;
                                         this.ResetEditableTextures();
@@ -825,8 +876,8 @@ namespace TabListPlugin
                                     this.ResetEditableTextures();
                                 }
                             }
-                            base.OKButtonEnabled = this.gameObjectList.HasSelectedItem();
-                            this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                            base.OKButtonEnabled = this.HasSelectedItem();
+                            this.SelectedItemList = this.GetSelectedList();
                         }
                     }
                     if (this.ShowHorizontalScrollBar && (this.MovingHorizontalScrollBar || StaticMethods.PointInRectangle(position, this.listKindToDisplay.HorizontalScrollBar)))
@@ -910,21 +961,21 @@ namespace TabListPlugin
             }
         }
 
-        public void SetObjectList(GameObjectList gameObjectList)
+        public void SetObjectList(List<GameObject> gameObjectList)
         {
             this.ClearData();
-            this.gameObjectList = gameObjectList;
-            foreach (GameObject obj2 in gameObjectList)
+            this.gameObjectList = gameObjectList ?? new List<GameObject>();
+            foreach (GameObject obj2 in this.gameObjectList)
             {
                 obj2.Selected = false;
             }
             // 换了列表后所有对象都未选中，全选按钮也要恢复，否则下次打开还显示“取消全选”
             this.SellectAllTexture = CacheManager.GetTempTexture(@"Content\Textures\GameComponents\TabList\Data\CheckBox.png");
             this.selectallstring = " 全 选 ";
-            this.FullLowerClient.Height = (gameObjectList.Count * this.rowHeight) + this.columnheaderHeight;
+            this.FullLowerClient.Height = (this.gameObjectList.Count * this.rowHeight) + this.columnheaderHeight;
         }
 
-        private void SetSelectedObjectList(GameObjectList selectedObjectList)
+        private void SetSelectedObjectList(List<GameObject> selectedObjectList)
         {
             if (selectedObjectList != null)
             {
@@ -1061,7 +1112,7 @@ namespace TabListPlugin
         internal struct SubKind
         {
             internal ListKind Kind;
-            internal GameObjectList List;
+            internal List<GameObject> List;
         }
     }
 }

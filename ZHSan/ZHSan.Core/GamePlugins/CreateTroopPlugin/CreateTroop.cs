@@ -2,9 +2,7 @@
 using GameGlobal;
 using GameManager;
 using GameObjects;
-using GameObjects.FactionDetail;
 using GameObjects.Influences;
-using GameObjects.PersonDetail;
 using GameObjects.TroopDetail;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -276,7 +274,7 @@ namespace CreateTroopPlugin
 
             if (CreatingArchitecture.GetCampaignMilitaryList().Count == 1)
             {
-                CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, [.. CreatingPersons], CreatingLeader, CreatingMilitary, RationDays, CreatingArchitecture.Position);
+                CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, CreatingPersons, CreatingLeader, CreatingMilitary, RationDays, CreatingArchitecture.Position);
                 MoveCandidatesToPersons();
                 CreatingMilitary = CreatingArchitecture.GetCampaignMilitaryList()[0];
                 AfterSelectMilitary();
@@ -367,7 +365,7 @@ namespace CreateTroopPlugin
                         }
                     }
                 }
-                this.CreatingTroop = Troop.CreateSimulateTroop(this.CreatingArchitecture, [.. CreatingPersons], this.CreatingLeader, this.CreatingMilitary, this.RationDays, this.CreatingArchitecture.Position);
+                CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, CreatingPersons, CreatingLeader, CreatingMilitary, RationDays, CreatingArchitecture.Position);
                 this.MoveCandidatesToPersons();
                 if ((!this.shezhizijin && !this.setttingRation && (this.CreatingMilitary != null)) && (this.CreatingPersons != null))
                 {
@@ -816,7 +814,7 @@ namespace CreateTroopPlugin
 
         private void SelectLeader()
         {
-            ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, false, [.. CreatingPersons], CreatingLeader.GetGameObjectList(), "出征人物", "");
+            ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, false, CreatingPersons, CreatingLeader == null ? null : [CreatingLeader], "出征人物", "");
             
             GameFramePlugin.SetOKFunction(delegate {
                 CreatingLeader = TabListPlugin.SelectedItem as Person;
@@ -835,11 +833,11 @@ namespace CreateTroopPlugin
             }
             if (this.ShellMilitaryKind == null)
             {
-                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, [.. CreatingArchitecture.GetCampaignMilitaryList()], (this.CreatingMilitary == null) ? null : this.CreatingMilitary.GetGameObjectList(), "选择编队", "");
+                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, CreatingArchitecture.GetCampaignMilitaryList(), this.CreatingMilitary == null ? null : [this.CreatingMilitary], "选择编队", "");
             }
             else
             {
-                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, [.. CreatingArchitecture.GetShelledMilitaryList(ShellMilitaryKind.Type)], (this.CreatingMilitary.ShelledMilitary == null) ? null : this.CreatingMilitary.ShelledMilitary.GetGameObjectList(), "选择编队", "");
+                this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Military, FrameFunction.GetCampaignMilitary, false, true, true, false, CreatingArchitecture.GetShelledMilitaryList(ShellMilitaryKind.Type), this.CreatingMilitary.ShelledMilitary == null ? null : [this.CreatingMilitary.ShelledMilitary], "选择编队", "");
             }
             this.GameFramePlugin.SetOKFunction(delegate {
                 if (this.ShellMilitaryKind == null)
@@ -857,7 +855,7 @@ namespace CreateTroopPlugin
 
         private void SelectPersons()
         {
-            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, true, [.. CreatingArchitecture.GetPersonsExcludeNvGuan()], [.. CreatingPersons], "出征人物", "");
+            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.Architecture_PersonToTroop, false, true, true, true, CreatingArchitecture.GetPersonsExcludeNvGuan(), CreatingPersons, "出征人物", "");
             this.GameFramePlugin.SetOKFunction(delegate {
                 if (this.CreatingPersons != null)
                 {
@@ -870,7 +868,7 @@ namespace CreateTroopPlugin
                 // new System.Collections.Generic.ICollectionDebugView<GameObjects.GameObject>(((GameObjects.GameObjectList)TabListPlugin.SelectedItemList).GameObjects).Items[0]
 
                 var persons = new List<Person>();
-                foreach (var item in (GameObjects.GameObjectList)TabListPlugin.SelectedItemList)
+                foreach (var item in (List<GameObject>)TabListPlugin.SelectedItemList)
                 {
                     persons.Add((Person)item);
                 }
@@ -884,7 +882,7 @@ namespace CreateTroopPlugin
                         int maxFightingAbility = 0;
                         foreach (var person in CreatingPersons)
                         {
-                            CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, [.. CreatingPersons], person, CreatingMilitary, RationDays, CreatingArchitecture.Position);
+                            CreatingTroop = Troop.CreateSimulateTroop(CreatingArchitecture, CreatingPersons, person, CreatingMilitary, RationDays, CreatingArchitecture.Position);
                             MoveCandidatesToPersons();
 
                             if (CreatingTroop.FightingForce > maxFightingAbility)
@@ -1030,7 +1028,7 @@ namespace CreateTroopPlugin
             this.NumberInputerPlugin.IsShowing = true;
         }
 
-        private void ShowTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, GameObjectList gameObjectList, GameObjectList selectedObjectList, string title, string tabName)
+        private void ShowTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, IReadOnlyList<GameObject> gameObjectList, IReadOnlyList<GameObject> selectedObjectList, string title, string tabName)
         {
             this.GameFramePlugin.Kind = kind;
             this.GameFramePlugin.Function = function;

@@ -6,7 +6,9 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PluginInterface;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 //using System.Runtime.InteropServices;
 using System.Xml;
 
@@ -51,7 +53,7 @@ namespace youcelanPlugin
         internal GameObject FocusedObject;
         internal PlatformTexture focusTrackTexture;
         internal Rectangle FullLowerClient;
-        internal GameObjectList gameObjectList;
+        internal List<GameObject> gameObjectList;
         private bool HeightCanShrink = true;
         internal IArchitectureDetail iArchitectureDetail;
         internal IFactionTechniques iFactionTechniques;
@@ -83,7 +85,7 @@ namespace youcelanPlugin
         internal PlatformTexture scrolltrackTexture;
         internal int scrolltrackWidth;
         internal GameObject SelectedItem;
-        internal GameObjectList SelectedItemList;
+        internal List<GameObject> SelectedItemList;
         internal int SelectedItemMaxCount;
         internal bool SelectingBool = false;
         internal bool SelectingRows = false;
@@ -450,7 +452,56 @@ namespace youcelanPlugin
             }
         }
 
-        public void InitialValues(GameObjectList gameObjectList, GameObjectList selectedObjectList, int scrollValue, string title)
+        internal static List<GameObject> ToGameObjectList(object value)
+        {
+            if (value is GameObject gameObject)
+            {
+                return new List<GameObject> { gameObject };
+            }
+
+            if (value is IEnumerable items)
+            {
+                var result = new List<GameObject>();
+                foreach (var item in items)
+                {
+                    if (item is GameObject obj)
+                    {
+                        result.Add(obj);
+                    }
+                }
+                return result;
+            }
+
+            return null;
+        }
+
+        private bool HasSelectedItem()
+        {
+            return this.gameObjectList.Any(g => g.Selected);
+        }
+
+        private List<GameObject> GetSelectedList()
+        {
+            return this.gameObjectList.Where(g => g.Selected).ToList();
+        }
+
+        private int GetSelectedCount()
+        {
+            return this.gameObjectList.Count(g => g.Selected);
+        }
+
+        private void SetOtherUnSelected(GameObject selectedObject)
+        {
+            foreach (GameObject obj in this.gameObjectList)
+            {
+                if (obj != selectedObject)
+                {
+                    obj.Selected = false;
+                }
+            }
+        }
+
+        public void InitialValues(List<GameObject> gameObjectList, List<GameObject> selectedObjectList, int scrollValue, string title)
         {
             this.SubKinds.Clear();
             this.SetObjectList(gameObjectList);
@@ -511,7 +562,7 @@ namespace youcelanPlugin
             }
         }
 
-        internal void PushSubKindByName(string name, GameObjectList list)
+        internal void PushSubKindByName(string name, List<GameObject> list)
         {
             if ((list != null) && (list.Count != 0))
             {
@@ -548,14 +599,14 @@ namespace youcelanPlugin
         internal void RefreshEditable()
         {
             this.ResetEditableTextures();
-            this.OKButtonEnabled = this.gameObjectList.HasSelectedItem();
+            this.OKButtonEnabled = this.HasSelectedItem();
             if (this.MultiSelecting)
             {
-                this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                this.SelectedItemList = this.GetSelectedList();
             }
             else if (this.OKButtonEnabled)
             {
-                this.SelectedItem = this.gameObjectList.GetSelectedList()[0];
+                this.SelectedItem = this.gameObjectList.First(g => g.Selected);
             }
         }
 
@@ -616,20 +667,20 @@ namespace youcelanPlugin
                         {
                             if (this.listKindToDisplay.IsInEditableColumn(position))
                             {
-                                if ((gameObjectByPosition.Selected || (this.SelectedItemMaxCount <= 0)) || (this.gameObjectList.GetSelectedList().Count < this.SelectedItemMaxCount))
+                                if ((gameObjectByPosition.Selected || (this.SelectedItemMaxCount <= 0)) || (this.GetSelectedCount() < this.SelectedItemMaxCount))
                                 {
                                     gameObjectByPosition.Selected = !gameObjectByPosition.Selected;
                                     if (this.MultiSelecting)
                                     {
                                         this.SelectingRows = true;
                                         this.SelectingBool = gameObjectByPosition.Selected;
-                                        this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                                        this.SelectedItemList = this.GetSelectedList();
                                     }
                                     else
                                     {
-                                        this.gameObjectList.SetOtherUnSelected(gameObjectByPosition);
+                                        this.SetOtherUnSelected(gameObjectByPosition);
                                     }
-                                    this.OKButtonEnabled = this.gameObjectList.HasSelectedItem() || (gameObjectByPosition is Faction);
+                                    this.OKButtonEnabled = this.HasSelectedItem() || (gameObjectByPosition is Faction);
                                     this.ResetEditableTextures();
                                     if (gameObjectByPosition.Selected)
                                     {
@@ -735,7 +786,7 @@ namespace youcelanPlugin
                         {
                             if (this.listKindToDisplay.SelectedTab.ListMethod != null)
                             {
-                                this.PushSubKindByName(this.listKindToDisplay.SelectedTab.ListKind, StaticMethods.GetListMethodValue(gameObjectByPosition, this.listKindToDisplay.SelectedTab.ListMethod) as GameObjectList);
+                                this.PushSubKindByName(this.listKindToDisplay.SelectedTab.ListKind, ToGameObjectList(StaticMethods.GetListMethodValue(gameObjectByPosition, this.listKindToDisplay.SelectedTab.ListMethod)));
                             }
                             else
                             {
@@ -852,7 +903,7 @@ namespace youcelanPlugin
                             {
                                 if (this.SelectingBool)
                                 {
-                                    if ((this.SelectedItemMaxCount <= 0) || (this.gameObjectList.GetSelectedList().Count < this.SelectedItemMaxCount))
+                                    if ((this.SelectedItemMaxCount <= 0) || (this.GetSelectedCount() < this.SelectedItemMaxCount))
                                     {
                                         gameObjectByPosition.Selected = this.SelectingBool;
                                         this.ResetEditableTextures();
@@ -864,8 +915,8 @@ namespace youcelanPlugin
                                     this.ResetEditableTextures();
                                 }
                             }
-                            this.OKButtonEnabled = this.gameObjectList.HasSelectedItem();
-                            this.SelectedItemList = this.gameObjectList.GetSelectedList();
+                            this.OKButtonEnabled = this.HasSelectedItem();
+                            this.SelectedItemList = this.GetSelectedList();
                         }
                     }
                     if (this.ShowHorizontalScrollBar && (this.MovingHorizontalScrollBar || StaticMethods.PointInRectangle(position, this.listKindToDisplay.HorizontalScrollBar)))
@@ -949,18 +1000,18 @@ namespace youcelanPlugin
             }
         }
 
-        public void SetObjectList(GameObjectList gameObjectList)
+        public void SetObjectList(List<GameObject> gameObjectList)
         {
             this.ClearData();
-            this.gameObjectList = gameObjectList;
-            foreach (GameObject obj2 in gameObjectList)
+            this.gameObjectList = gameObjectList ?? new List<GameObject>();
+            foreach (GameObject obj2 in this.gameObjectList)
             {
                 //obj2.Selected = false;  不能影响建筑连接的改动，建筑列表插件和建筑是否被选中无关
             }
-            this.FullLowerClient.Height = (gameObjectList.Count * this.rowHeight) + this.columnheaderHeight;
+            this.FullLowerClient.Height = (this.gameObjectList.Count * this.rowHeight) + this.columnheaderHeight;
         }
 
-        private void SetSelectedObjectList(GameObjectList selectedObjectList)
+        private void SetSelectedObjectList(List<GameObject> selectedObjectList)
         {
             if (selectedObjectList != null)
             {
@@ -1103,7 +1154,7 @@ namespace youcelanPlugin
         internal struct SubKind
         {
             internal ListKind Kind;
-            internal GameObjectList List;
+            internal List<GameObject> List;
         }
     }
 }

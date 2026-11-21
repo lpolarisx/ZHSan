@@ -600,7 +600,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         public void ChangeFaction()
         {
             var scenario = Session.Current.Scenario;
-            ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, true, true, true, true, [.. scenario.Factions.Values], [.. scenario.PlayerFactions], "变更控制", "");
+            ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Faction, FrameFunction.Browse, true, true, true, true, scenario.Factions.Values, scenario.PlayerFactions, "变更控制", "");
             Plugins.GameFramePlugin.SetOKFunction(ApplyFactionControlChange);
         }
 
@@ -932,7 +932,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             {
                                 person.OutsideDestination = new Point?(this.selectingLayer.SelectedPoint);
                             }
-                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetConvinceDestinationPerson, false, true, true, false, [.. architectureByPosition.GetConvinceDestinationPersons(CurrentPersons[0].BelongedFaction)], null, "说服", "Personal");
+                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetConvinceDestinationPerson, false, true, true, false, architectureByPosition.GetConvinceDestinationPersons(CurrentPersons[0].BelongedFaction), null, "说服", "Personal");
                         }
                     }
                     return;
@@ -948,7 +948,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                             {
                                 person.OutsideDestination = new Point?(this.selectingLayer.SelectedPoint);
                             }
-                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAssassinatePersonTarget, false, true, true, false, [.. architectureByPosition.GetAssassinatePersonTarget(CurrentPersons[0].BelongedFaction)], null, "暗杀", "Personal");
+                            this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Person, FrameFunction.GetAssassinatePersonTarget, false, true, true, false, architectureByPosition.GetAssassinatePersonTarget(CurrentPersons[0].BelongedFaction), null, "暗杀", "Personal");
                         }
                     }
                     return;
@@ -2152,7 +2152,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             this.idleAction = action;
         }
 
-        public void ShowTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, GameObjectList gameObjectList, GameObjectList selectedObjectList, string title, string tabName)
+        public void ShowTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, IReadOnlyCollection<GameObject> gameObjectList, IEnumerable<GameObject> selectedObjectList, string title, string tabName)
         {
             if ((gameObjectList != null) && (gameObjectList.Count != 0))
             {
@@ -2169,7 +2169,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public void SetTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, GameObjectList gameObjectList, GameObjectList selectedObjectList, string title, string tabName)
+        public void SetTabListInFrame(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, IReadOnlyCollection<GameObject> gameObjectList, IEnumerable<GameObject> selectedObjectList, string title, string tabName)
         {
             if ((gameObjectList != null) && (gameObjectList.Count != 0))
             {
@@ -2186,7 +2186,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public void ShowMapViewSelector(bool multiSelecting, GameObjectList gameObjectList, GameDelegates.VoidFunction function, MapViewSelectorKind mapViewSelectorKind)
+        public void ShowMapViewSelector(bool multiSelecting, IEnumerable<GameObject> gameObjectList, GameDelegates.VoidFunction function, MapViewSelectorKind mapViewSelectorKind)
         {
                         this.Plugins.MapViewSelectorPlugin.SetMultiSelecting(multiSelecting);
                         this.Plugins.MapViewSelectorPlugin.SetGameObjectList(gameObjectList);
@@ -2206,13 +2206,13 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             if ((Session.Current.Scenario.CurrentPlayer != null) && (Session.Current.Scenario.CurrentPlayer.FirstSection != null))
             {
-                this.Showyoucelan(UndoneWorkKind.None,FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, [.. Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures], null, "", "");
+                this.Showyoucelan(UndoneWorkKind.None,FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures, null, "", "");
             }
         }
 
 
 
-        public void Showyoucelan(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, GameObjectList gameObjectList, GameObjectList selectedObjectList, string title, string tabName)
+        public void Showyoucelan(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, IReadOnlyCollection<GameObject> gameObjectList, IEnumerable<GameObject> selectedObjectList, string title, string tabName)
         {
             if ((gameObjectList != null) && (gameObjectList.Count != 0))
             {
@@ -2234,7 +2234,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public void ShowBianduiLiebiao(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, GameObjectList gameObjectList, GameObjectList selectedObjectList, string title, string tabName,int bingyi)
+        public void ShowBianduiLiebiao(UndoneWorkKind undoneWork, FrameKind kind, FrameFunction function, bool OKEnabled, bool CancelEnabled, bool showCheckBox, bool multiselecting, IEnumerable<GameObject> gameObjectList, IEnumerable<GameObject> selectedObjectList, string title, string tabName,int bingyi)
         {
             //if ((gameObjectList != null) && (gameObjectList.Count != 0))
             {
@@ -3530,7 +3530,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public GameObjectList CurrentGameObjects
+        public List<Person> CurrentGameObjects
         {
             get
             {
@@ -3674,7 +3674,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
         }
 
-        public GameObjectList CurrentMilitaries
+        public List<Military> CurrentMilitaries
         {
             get
             {
@@ -3823,7 +3823,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
                 this.bianduiLiebiaoBiaoji = "ArchitectureLeftClick";
                 this.ShowBianduiLiebiao(UndoneWorkKind.None, FrameKind.Military, FrameFunction.Browse, false, true, false, true, 
-                [.. CurrentArchitecture.Militaries], [.. CurrentArchitecture.ZhengzaiBuchongDeBiandui()], "", "", this.CurrentArchitecture.MilitaryPopulation);
+                CurrentArchitecture.Militaries, CurrentArchitecture.ZhengzaiBuchongDeBiandui(), "", "", this.CurrentArchitecture.MilitaryPopulation);
                 this.ShowArchitectureSurveyPlugin(this.CurrentArchitecture);
             }
         }

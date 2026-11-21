@@ -251,7 +251,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
 
             if (Session.Current.Scenario.CurrentPlayer != null)
             {
-                this.Showyoucelan(UndoneWorkKind.None, FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, [.. Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures], null, "", "");
+                this.Showyoucelan(UndoneWorkKind.None, FrameKind.Architecture, FrameFunction.Jump, false, true, false, false, Session.Current.Scenario.CurrentPlayer.FirstSection.Architectures, null, "", "");
                 //this.Plugins.youcelanPlugin.IsShowing = true;
                 ((this.Plugins.youcelanPlugin as youcelanPlugin.TabListPlugin).TabList as TabListInFrame).SetMouseEvent(this, true);
             }

@@ -5,6 +5,8 @@ using GameObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using WorldOfTheThreeKingdoms.GameScreens;
 
 namespace MapLayerPlugin
@@ -71,26 +73,15 @@ namespace MapLayerPlugin
             screen.OnMouseLeftDown += new Screen.MouseLeftDown(this.screen_OnMouseLeftDown);
             screen.OnMouseLeftUp += new Screen.MouseLeftUp(this.screen_OnMouseLeftUP);
         }
-        private bool over = false;
-        private GameObjectList list;
+
         private bool Hastroops()
         {
-            Faction p = Session.Current.Scenario.CurrentPlayer;
-            list = new GameObjectList();
-            bool b = false;
-            if (p != null && p.Troops.Count >= 1)
-            {
-                foreach (Troop t in p.Troops)
-                {
-                    if (!t.Operated)
-                    {
-                        list.Add(t);
-                        b= true;
-                    }
-                }
-            }
-            return b;
+            var player = Session.Current.Scenario.CurrentPlayer;
+            var troops = player?.Troops.Where(t => !t.Operated).ToList() ?? new List<Troop>();
+            
+            return troops.Count > 0;
         }
+
         private void screen_OnMouseLeftUP(Point position)
         {
             if (base.Enabled)

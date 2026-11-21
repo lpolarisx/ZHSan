@@ -258,7 +258,7 @@ namespace GameObjects
                 {//修复雷霆战法攻击方式
                     foreach (Troop troop2 in troop.GetAllOtherTroopsInView())
                     {
-                        if ((!troop.AttackedTroopList.HasGameObject(troop2)) && troop.CanAttack(troop2) && (!troop.TroopNoAccidentalInjury || !troop.IsFriendly(troop2.BelongedFaction)))
+                        if ((!troop.AttackedTroopList.Contains(troop2)) && troop.CanAttack(troop2) && (!troop.TroopNoAccidentalInjury || !troop.IsFriendly(troop2.BelongedFaction)))
                         {
                             troop.AttackTroop(troop2);
                         }

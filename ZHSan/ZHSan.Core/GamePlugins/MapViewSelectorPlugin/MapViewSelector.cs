@@ -6,6 +6,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PluginInterface;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MapViewSelectorPlugin
 {
@@ -32,7 +34,7 @@ namespace MapViewSelectorPlugin
         internal bool ReturnToListButtonSelected;
         internal FreeText ReturnToListButtonText;
         
-        internal GameObjectList SelectingGameObjectList;
+        internal List<GameObject> SelectingGameObjectList;
         internal Point TitleSize;
         internal PlatformTexture TitleTexture;
 
@@ -147,12 +149,18 @@ namespace MapViewSelectorPlugin
                     if (Session.MainGame.mainGameScreen.TileInScreen(positionByPoint) && (this.Kind == MapViewSelectorKind.建筑))
                     {
                         Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(positionByPoint);
-                        if ((architectureByPosition != null) && this.SelectingGameObjectList.HasGameObject(architectureByPosition.ID))
+                        if ((architectureByPosition != null) && (this.SelectingGameObjectList != null) && this.SelectingGameObjectList.Any(g => g.ID == architectureByPosition.ID))
                         {
                             architectureByPosition.Selected = !architectureByPosition.Selected;
                             if (!this.MultiSelecting && architectureByPosition.Selected)
                             {
-                                this.SelectingGameObjectList.SetOtherUnSelected(architectureByPosition);
+                                foreach (GameObject obj in this.SelectingGameObjectList)
+                                {
+                                    if (obj != architectureByPosition)
+                                    {
+                                        obj.Selected = false;
+                                    }
+                                }
                                 if (Setting.Current.GlobalVariables.SingleSelectionOneClick)
                                 {
                                     this.iTabList.RefreshEditable();

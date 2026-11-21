@@ -8,6 +8,9 @@ using Platforms;
 using PluginInterface;
 using PluginInterface.BaseInterface;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 //using System.Drawing;
 using System.Xml;
 using WorldOfTheThreeKingdoms;
@@ -102,7 +105,18 @@ namespace MapViewSelectorPlugin
 
         public void SetGameObjectList(object gameObjectList)
         {
-            this.mapViewSelector.SelectingGameObjectList = gameObjectList as GameObjectList;
+            if (gameObjectList is List<GameObject> list)
+            {
+                this.mapViewSelector.SelectingGameObjectList = list;
+            }
+            else if (gameObjectList is IEnumerable items)
+            {
+                this.mapViewSelector.SelectingGameObjectList = items.OfType<GameObject>().ToList();
+            }
+            else
+            {
+                this.mapViewSelector.SelectingGameObjectList = null;
+            }
         }
 
         public void SetGraphicsDevice()

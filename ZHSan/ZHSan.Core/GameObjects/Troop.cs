@@ -41,8 +41,6 @@ namespace GameObjects
 
             AreaStratagemTroops = new();
 
-            AttackedTroopList = new GameObjectList();
-
             EnterList = new();
 
             EventInfluences = new();
@@ -142,7 +140,7 @@ namespace GameObjects
         public bool AttackAllOffenceArea;
         public int AttackDecrementOfCombativity;
 
-        public GameObjectList AttackedTroopList = new GameObjectList();
+        public List<Troop> AttackedTroopList = new();
 
         public bool AttackEveryAround;
         public bool AttackStarted;
@@ -2119,7 +2117,7 @@ namespace GameObjects
                     int radius = Math.Max(this.BaseAroundAttackRadius, this.AroundAttackRadius);
                     foreach (Troop troop in this.GetAreaAttackTroops(this.Position, radius, true))
                     {
-                         if ((troop != this) && (!this.TroopNoAccidentalInjury || !this.IsFriendly(troop.BelongedFaction))&& !this.AttackedTroopList.HasGameObject(troop))//修正攻击所有相邻部队和AttackEveryAround同时存在会无限攻击城池上的部队
+                         if ((troop != this) && (!this.TroopNoAccidentalInjury || !this.IsFriendly(troop.BelongedFaction))&& !AttackedTroopList.Contains(troop))//修正攻击所有相邻部队和AttackEveryAround同时存在会无限攻击城池上的部队
                         {
                             TroopDamage damage2 = troop.ReceiveAttackDamage(this.SendAttackDamage(troop, false));
                             this.StartAttackTroop(troop, damage2, true);
@@ -2345,7 +2343,7 @@ namespace GameObjects
                     this.OrientationTroop.OperationDone = !this.OrientationTroop.CanAttackAfterRout && !this.OrientationTroop.StuntCanAttackAfterRout;
                     if (!(this.OrientationTroop.OperationDone || this.OrientationTroop.QueueEnded))
                     {
-                        this.OrientationTroop.AttackedTroopList.Clear();
+                        OrientationTroop.AttackedTroopList.Clear();
                     }
                 }
             }
@@ -3804,7 +3802,7 @@ namespace GameObjects
             return troop;
         }
 
-        public static Troop CreateSimulateTroop(Architecture architecture, GameObjectList persons, Person Leader, Military military, int rationdays, Point startPosition)
+        public static Troop CreateSimulateTroop(Architecture architecture, List<Person> persons, Person Leader, Military military, int rationdays, Point startPosition)
         {
             var candidates = new List<Person>();
             foreach (Person person in persons)
@@ -5061,7 +5059,7 @@ namespace GameObjects
                     var troop = Session.Current.Scenario.GetTroopByPositionNoCheck(point);
                     if (troop == null || troop == this) continue;
                     
-                    if (AttackedTroopList.HasGameObject(troop) || IsFriendly(troop.BelongedFaction) || troop.Status == TroopStatus.Ambushing || !(AirOffence || !troop.IsInArchitecture))
+                    if (AttackedTroopList.Contains(troop) || IsFriendly(troop.BelongedFaction) || troop.Status == TroopStatus.Ambushing || !(AirOffence || !troop.IsInArchitecture))
                     {
                         continue;
                     }
@@ -8016,7 +8014,8 @@ namespace GameObjects
             this.QueueEnded = false;
             this.WaitOnce = false;
             this.OperationDone = false;
-            this.AttackedTroopList.Clear();
+            AttackedTroopList.Clear();
+
             if (!this.OperationDone)
             {
                 this.MovabilityLeft = this.Movability;
@@ -10928,7 +10927,7 @@ namespace GameObjects
             }
             if (this.BaseAttackEveryAround || this.AttackEveryAround)
             {
-                this.AttackedTroopList.Add(troop);
+                AttackedTroopList.Add(troop);
                 this.OperationDone = false;
             }
             this.TroopDamageList.Add(damage);

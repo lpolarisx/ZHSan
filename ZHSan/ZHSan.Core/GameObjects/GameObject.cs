@@ -49,13 +49,6 @@ namespace GameObjects
             return ((chance >= root) || (Random(root) < chance));
         }
 
-        public GameObjectList GetGameObjectList()
-        {
-            GameObjectList list = new GameObjectList();
-            list.Add(this);
-            return list;
-        }
-
         public static int Random(int maxValue)
         {
             return StaticMethods.Random(maxValue);

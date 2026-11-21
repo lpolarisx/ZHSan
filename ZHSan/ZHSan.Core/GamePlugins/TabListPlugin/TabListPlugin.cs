@@ -8,7 +8,7 @@ using Platforms;
 using PluginInterface;
 using PluginInterface.BaseInterface;
 using System;
-using System.Collections;
+using System.Collections.Generic;
 //using System.Drawing;
 using System.Xml;
 using WorldOfTheThreeKingdoms;
@@ -42,37 +42,7 @@ namespace TabListPlugin
 
         public void InitialValues(object gameObjectList, object selectedObjectList, int scrollValue, string title)
         {
-            this.tabList.InitialValues(ToGameObjectList(gameObjectList) ?? new GameObjectList(), ToGameObjectList(selectedObjectList), scrollValue, title);
-        }
-
-        private static GameObjectList ToGameObjectList(object value)
-        {
-            if (value is GameObjectList gameObjectList)
-            {
-                return gameObjectList;
-            }
-
-            if (value is GameObject gameObject)
-            {
-                var result = new GameObjectList();
-                result.Add(gameObject);
-                return result;
-            }
-
-            if (value is IEnumerable items)
-            {
-                var result = new GameObjectList();
-                foreach (var item in items)
-                {
-                    if (item is GameObject obj)
-                    {
-                        result.Add(obj);
-                    }
-                }
-                return result;
-            }
-
-            return null;
+            this.tabList.InitialValues(TabListInFrame.ToGameObjectList(gameObjectList) ?? new List<GameObject>(), TabListInFrame.ToGameObjectList(selectedObjectList), scrollValue, title);
         }
 
         public void LoadDataFromXMLDocument(string filename)

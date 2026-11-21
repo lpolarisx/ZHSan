@@ -8,6 +8,7 @@ using Platforms;
 using PluginInterface;
 using PluginInterface.BaseInterface;
 using System;
+using System.Collections.Generic;
 //using System.Drawing;
 using System.Xml;
 using WorldOfTheThreeKingdoms;
@@ -84,7 +85,7 @@ namespace BianduiLiebiaoChajian
 
         public void InitialValues(object gameObjectList, object selectedObjectList, int scrollValue, string title)
         {
-            this.tabList.InitialValues(gameObjectList as GameObjectList, selectedObjectList as GameObjectList, scrollValue, title);
+            this.tabList.InitialValues(TabListInFrame.ToGameObjectList(gameObjectList) ?? new List<GameObject>(), TabListInFrame.ToGameObjectList(selectedObjectList), scrollValue, title);
         }
 
         public void LoadDataFromXMLDocument(string filename)

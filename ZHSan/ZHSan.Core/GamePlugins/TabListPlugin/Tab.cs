@@ -202,7 +202,7 @@ namespace TabListPlugin
                 if (columnByID != null)
                 {
                     PropertyComparer comparer = new PropertyComparer(columnByID.Name, columnByID.IsNumber, this.SmallToBig);
-                    this.tabList.gameObjectList.GameObjects.Sort(comparer);
+                    this.tabList.gameObjectList.Sort(comparer);
                 }
             }
         }
