@@ -4284,7 +4284,7 @@ namespace GameObjects
 
             SortedBoundedSet<Troop> list = new SortedBoundedSet<Troop>(Session.Parameters.MaxAITroopCountCandidates, new SimulatingFightingForceComparer());
 
-            // this.PersonsExcludeNvGuan.ClearSelected();
+            ClearPersonsSelected();
 
             var militaries = Militaries;
             militaries.Sort((a, b) => b.Merit.CompareTo(a.Merit));
@@ -4461,6 +4461,14 @@ namespace GameObjects
                 }
 
             }
+            foreach (CreateTroopInfo info in willCreate)
+            {
+                foreach (var person in info.candidates)
+                {
+                    person.Selected = false;
+                }
+            }
+            ClearPersonsSelected();
             foreach (Troop t in list)
             {
                 t.Destroy(true, false);
@@ -6398,6 +6406,14 @@ namespace GameObjects
             }
         }
 
+        private void ClearPersonsSelected()
+        {
+            foreach (var person in Persons)
+            {
+                person.Selected = false;
+            }
+        }
+
         private List<Person> AISelectPersonIntoTroop_inner(Person leader, bool markSelected = true)
         {
             if (markSelected)
@@ -6437,7 +6453,7 @@ namespace GameObjects
             if (followedLeader != null 
                 && allPersons.Contains(followedLeader) 
                 && followedLeader.LocationTroop == null
-                && isPersonAllowedIntoTroop(followedLeader, military, offensive))
+                && from.isPersonAllowedIntoTroop(followedLeader, military, offensive))
             {
                 var persons = AISelectPersonIntoTroop_inner(followedLeader);
                 result.Add(Troop.CreateSimulateTroop(persons, military, from.Position));
@@ -6447,7 +6463,7 @@ namespace GameObjects
                      && (leader.Strength >= 80 || leader.Command >= 80 || leader.HasLeaderValidTitle)
                      && allPersons.Contains(leader) 
                      && leader.LocationTroop == null 
-                     && isPersonAllowedIntoTroop(leader, military, offensive))
+                     && from.isPersonAllowedIntoTroop(leader, military, offensive))
             {
                 var persons = AISelectPersonIntoTroop_inner(leader);
                 result.Add(Troop.CreateSimulateTroop(persons, military, from.Position));
@@ -6459,16 +6475,16 @@ namespace GameObjects
                
                 foreach (var person in persons)
                 {
-                    if (!person.Selected && (!offensive || isPersonAllowedIntoTroop(person, military, offensive)))
+                    if (!person.Selected && (!offensive || from.isPersonAllowedIntoTroop(person, military, offensive)))
                     {
                         var selectedPersons = AISelectPersonIntoTroop_inner(person, false);
 
                         if (person.HasMilitaryKindTitle(military.Kind) 
                             || person.HasMilitaryTypeTitle(military.Kind.Type)
-                            || (BelongedFaction.AvailableMilitaryKinds.ContainsKey(military.KindID) 
+                            || (from.BelongedFaction.AvailableMilitaryKinds.ContainsKey(military.KindID) 
                                 && military.Kind.RecruitLimit > 10) 
                                 || person.FightingForce >= Session.Parameters.AIUniqueTroopFightingForceThreshold
-                                || (this.Endurance < 30 && !offensive))
+                                || (from.Endurance < 30 && !offensive))
                         {
                             result.Add(Troop.CreateSimulateTroop(selectedPersons, military, from.Position));
                         }
@@ -6523,6 +6539,8 @@ namespace GameObjects
                         Troop troop2;
                         SortedBoundedSet<Troop> list4 = new SortedBoundedSet<Troop>(Session.Parameters.MaxAITroopCountCandidates, new FightingForceComparer());
                         bool isBesideWater = this.IsBesideWater;
+
+                        ClearPersonsSelected();
 
                         foreach (var military in StaticMethods.GetRandomList(Militaries))
                         {
@@ -6591,9 +6609,14 @@ namespace GameObjects
                                 }
 
                                 Person leader = troop.Candidates[0] as Person;
+                                leader.Selected = true;
                                 var candidates = SelectSubOfficersToTroop(troop);
 
                                 troop2 = this.CreateTroop(candidates, leader, troop.Army, -1, nullable.Value);
+                                foreach (var person in candidates)
+                                {
+                                    person.Selected = false;
+                                }
                                 troop2.WillArchitecture = this;
                                 if (this.DefensiveLegion == null)
                                 {
@@ -6615,6 +6638,8 @@ namespace GameObjects
                                 t.Destroy(true, false);
                             }
                         }
+
+                        ClearPersonsSelected();
                     }
                 }
             }
@@ -6658,13 +6683,15 @@ namespace GameObjects
                         SortedBoundedSet<Troop> supportList = new SortedBoundedSet<Troop>(Session.Parameters.MaxAITroopCountCandidates, new FightingForceComparer());
                         Troop troop2;
 
+                        architecture.ClearPersonsSelected();
+
                         foreach (var military in StaticMethods.GetRandomList(architecture.Militaries))
                         {
                             if (military.IsFewScaleNeedRetreat || military.IsTransport) continue;
 
                             if (this.isArmyNavigableTo(i, military) && (military.Morale > 90) && (military.InjuryQuantity < military.Kind.MinScale))
                             {
-                                var candidates = AISelectPersonIntoTroop(this, military, true);
+                                var candidates = architecture.AISelectPersonIntoTroop(architecture, military, true);
                                 foreach (var t in candidates)
                                 {
                                     if ((t.FightingForce < 10000) && (t.Army.Scales < 10))
@@ -6712,8 +6739,13 @@ namespace GameObjects
                                 if (!nullable.HasValue) continue;
 
                                 var leader = troop.Candidates[0];
+                                leader.Selected = true;
                                 var candidates = architecture.SelectSubOfficersToTroop(troop);
                                 troop2 = architecture.CreateTroop(candidates, leader, troop.Army, -1, nullable.Value);
+                                foreach (var person in candidates)
+                                {
+                                    person.Selected = false;
+                                }
                                 troop2.WillArchitecture = this;
                                 if (this.DefensiveLegion == null)
                                 {
@@ -6728,6 +6760,8 @@ namespace GameObjects
                                 t.Destroy(true, false);
                             }
                         }
+
+                        architecture.ClearPersonsSelected();
                     }
 
                 }
