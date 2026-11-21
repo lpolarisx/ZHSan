@@ -129,7 +129,9 @@ namespace GameObjects
     {
         public Facility Create(FacilityKindLevel facilityLevel)
         {
-            var id = Session.Current.Scenario.Facilities.Keys.Max() + 1;
+            var facilities = Session.Current.Scenario.Facilities;
+            // 剧本可能没有任何初始设施
+            var id = facilities.Count > 0 ? facilities.Keys.Max() + 1 : 0;
 
             var facility = new Facility(id, facilityLevel);
 

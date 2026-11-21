@@ -5749,7 +5749,7 @@ namespace GameObjects
 
             foreach (var person in AllPersons.Values)
             {
-                if (person.Available && person.Alive && person.ID >= 25000)
+                if (person.Available && person.Alive && person.ID >= Person.GeneratedPersonIDStart)
                 {
                     result.Add(person);
                 }
@@ -5761,7 +5761,22 @@ namespace GameObjects
         /// <summary>
         /// 野武将总数
         /// </summary>
-        public int OfficerCount => Officers().Count;
+        public int OfficerCount
+        {
+            get
+            {
+                // 招贤循环里会反复调用，这里不建 List
+                int count = 0;
+                foreach (var person in AllPersons.Values)
+                {
+                    if (person.Available && person.Alive && person.ID >= Person.GeneratedPersonIDStart)
+                    {
+                        count++;
+                    }
+                }
+                return count;
+            }
+        }
 
         public int OfficerLimit => Session.GlobalVariables.zhaoxianOfficerMax;
 

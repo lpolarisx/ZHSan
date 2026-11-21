@@ -9058,6 +9058,30 @@ namespace GameObjects
             }
         }
 
+        /// <summary>
+        /// 生成武将的ID，从 GeneratedPersonIDStart 开始找第一个空位。
+        /// 野武将的判定依据是 ID >= GeneratedPersonIDStart，所以生成出来的人物必须落在这个区间，
+        /// 否则招贤上限（OfficerLimit）统计不到，会变成无上限生成。
+        /// </summary>
+        public const int GeneratedPersonIDStart = 25000;
+
+        private static int GeneratePersonID()
+        {
+            var used = new HashSet<int>();
+            foreach (var person in Session.Current.Scenario.AllPersons.Values)
+            {
+                used.Add(person.ID);
+            }
+
+            int id = GeneratedPersonIDStart;
+            while (used.Contains(id))
+            {
+                id++;
+            }
+
+            return id;
+        }
+
         public static Person createPerson(Architecture foundLocation, Person finder, bool inGame, bool autoJoin)
         {
             return createPerson(foundLocation, finder, inGame, generatePersonType(), autoJoin);
@@ -9073,7 +9097,7 @@ namespace GameObjects
 
             Person r = new Person
             {
-                ID = Session.Current.Scenario.AllPersons.Keys.Max() + 1,
+                ID = GeneratePersonID(),
             };
 
             PersonGeneratorSetting options = HandlePersonRelation(foundLocation, ref finder, r);

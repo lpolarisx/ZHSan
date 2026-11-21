@@ -387,7 +387,7 @@ namespace GameObjects
         public int IncrementOfTechnologyPerDay;
         public int IncrementOfViewRadius;
         public int IncrementOfFundCeiling = 0;
-        public int IncrementOfFoodCeiling = 0;
+        public long IncrementOfFoodCeiling = 0;
 
         [DataMember]
         public string InformationsString { get; set; }
@@ -4772,12 +4772,13 @@ namespace GameObjects
 
         public bool CanZhaoXian()
         {
-            if (BelongedFaction != null 
-                && Session.GlobalVariables.ZhaoXianSuccessRate > 0 
+            if (BelongedFaction != null
+                && Session.GlobalVariables.ZhaoXianSuccessRate > 0
                 && Session.Current.Scenario.Date.Month == 3
-                && BelongedFaction.ZhaoxianFailureCount < 1 
-                && BelongedFaction != null 
-                && BelongedFaction.Leader.Status != PersonStatus.Captive)
+                && BelongedFaction.ZhaoxianFailureCount < 1
+                && BelongedFaction != null
+                && BelongedFaction.Leader.Status != PersonStatus.Captive
+                && Session.Current.Scenario.OfficerCount < Session.Current.Scenario.OfficerLimit)
             {
                 if (AvailGeneratorTypeList().Count > 0 ) return true;
             }
@@ -9758,11 +9759,9 @@ namespace GameObjects
 
         public void IncreaseFood(int increment)
         {
-            if ((increment + Food) > this.FoodCeiling)
-            {
-                increment = this.FoodCeiling - Food;
-            }
-            Food += increment;
+            var original = Food;
+            Food = (int)Math.Clamp((long)Food + increment, 0L, FoodCeiling);
+            increment = Food - original;
             this.IncrementNumberList.AddNumber(increment, CombatNumberKind.粮草, this.Position);
             this.ShowNumber = true;
         }
@@ -13429,7 +13428,8 @@ namespace GameObjects
         /// <summary>
         /// 粮草最大值
         /// </summary>
-        public int FoodCeiling => _architectureKind.FoodMaxUnit * JianzhuGuimo + IncrementOfFoodCeiling;
+        // 增筑可重复叠加，先用 long 计算，避免粮仓上限溢出为负数。
+        public int FoodCeiling => (int)Math.Clamp((long)_architectureKind.FoodMaxUnit * JianzhuGuimo + IncrementOfFoodCeiling, 0L, int.MaxValue);
 
         public int FoodCostPerDayOfAllMilitaries
         {
