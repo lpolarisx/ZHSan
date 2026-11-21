@@ -5899,7 +5899,7 @@ namespace GameObjects
             bool flag = false;
             if (!this.CurrentStratagem.Friendly)
             {
-                num = ((((this.TroopIntelligence + this.StratagemChanceIncrement) + this.Leader.Calmness) - troop.TroopIntelligence) - troop.ChanceDecrementOfStratagem) - troop.Leader.Calmness;
+                num = ((((this.TroopIntelligence + this.StratagemChanceIncrement) + this.Leader.Calmness) - troop.TroopIntelligence) - troop.AntiStratagemChanceIncrement) - troop.Leader.Calmness;
                 if (invincible)
                 {
                     flag = false;
@@ -6792,7 +6792,7 @@ namespace GameObjects
                 }
                 else
                 {
-                    num = ((((this.TroopIntelligence + this.StratagemChanceIncrement) + this.Leader.Calmness) - troop.TroopIntelligence) - troop.ChanceDecrementOfStratagem) - troop.Leader.Calmness;
+                    num = ((((this.TroopIntelligence + this.StratagemChanceIncrement) + this.Leader.Calmness) - troop.TroopIntelligence) - troop.AntiStratagemChanceIncrement) - troop.Leader.Calmness;
                     num2 = this.CurrentStratagem.Chance + num;
                 }
             }
@@ -11655,7 +11655,8 @@ namespace GameObjects
 
         public int AntiCriticalStrikeChance => (int)(antiCriticalStrikeChance - (1 - TirednessFactor) * 100);
 
-        public int AntiStratagemChanceIncrement => (int)(antiStratagemChanceIncrement - (1 - TirednessFactor) * 100);
+        // 部队谋略（TroopIntelligence）已按武将疲劳折算，这里不再重复扣除疲劳
+        public int AntiStratagemChanceIncrement => antiStratagemChanceIncrement;
 
         public float ArchitectureCounterDamageRate => Army.Kind.ArchitectureCounterDamageRate;
 
@@ -12925,7 +12926,8 @@ namespace GameObjects
             }
         }
 
-        public int StratagemChanceIncrement => (int)(stratagemChanceIncrement - (1 - TirednessFactor) * 100);
+        // 部队谋略（TroopIntelligence）已按武将疲劳折算，这里不再重复扣除疲劳
+        public int StratagemChanceIncrement => stratagemChanceIncrement;
 
         public int StratagemRadius => Army.Kind.StratagemRadius + IncrementOfStratagemRadius;
 

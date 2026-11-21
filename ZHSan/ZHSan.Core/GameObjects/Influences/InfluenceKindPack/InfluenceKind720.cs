@@ -37,7 +37,7 @@ public class InfluenceKind720 : InfluenceKind
         int pureFightingForce = source.PureFightingForce;
         foreach (var troop in source.GetAreaStratagemTroops(destination))
         {
-            int num3 = source.GetStratagemSuccessChanceCredit(troop, inevitableSuccess, troop.InvincibleAttract, troop.InvincibleStratagemFromLowerIntelligence);
+            int num3 = source.GetStratagemSuccessChanceCredit(troop, inevitableSuccess, troop.NeverBeIntoChaos || troop.OutburstNeverBeIntoChaos || troop.InvincibleRumour, troop.InvincibleStratagemFromLowerIntelligence);
             if (num3 > 0)
             {
                 num3 = (num3 + (troop.Army.Scales - 5) * 10) * troop.PureFightingForce / pureFightingForce;

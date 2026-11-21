@@ -20,7 +20,7 @@ public class InfluenceKind396 : InfluenceKind
         if (source.BelongedLegion == null || Session.Current.Scenario.PositionIsOnFireNoCheck(source.Position) || Random(source.BelongedLegion.Troops.Count) <= 0)
         {
             int pureFightingForce = source.PureFightingForce;
-            int num3 = source.TroopIntelligence + source.ChanceIncrementOfStratagem;
+            int num3 = source.TroopIntelligence + source.StratagemChanceIncrement;
             
             num3 = Math.Min(num3, 100);
             num3 = Square(num3) / 60;

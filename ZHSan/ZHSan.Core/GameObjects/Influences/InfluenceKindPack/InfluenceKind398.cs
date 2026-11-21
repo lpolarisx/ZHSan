@@ -50,7 +50,7 @@ public class InfluenceKind398 : InfluenceKind
             orientations.Add(troop.Position);
             num += troop.FightingForce;
         }
-        int num4 = source.TroopIntelligence + source.ChanceIncrementOfStratagem;
+        int num4 = source.TroopIntelligence + source.StratagemChanceIncrement;
         num4 = Math.Min(num4, 100);
        
         int num2 = Square(num4) / 60 * num / source.FightingForce / 100;

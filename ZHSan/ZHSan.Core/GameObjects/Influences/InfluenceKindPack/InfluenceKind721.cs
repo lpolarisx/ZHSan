@@ -13,7 +13,7 @@ public class InfluenceKind721 : InfluenceKind
         var maxDays = influence.GetIntParam();
 
         var enemy = troop.OrientationTroop;
-        var inevitableSuccess = troop.InevitableRumourOnLowerIntelligence || troop.InevitableStratagemOnLowerIntelligence;
+        var inevitableSuccess = troop.InevitableAttractOnLowerIntelligence || troop.InevitableStratagemOnLowerIntelligence;
 
         if (troop.GetCurrentStratagemSuccess(enemy, inevitableSuccess, enemy.InvincibleAttract, enemy.InvincibleStratagemFromLowerIntelligence))
         {
