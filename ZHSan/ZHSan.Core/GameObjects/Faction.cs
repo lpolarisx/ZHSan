@@ -3838,15 +3838,34 @@ namespace GameObjects
         {
             foreach (var military in TransferingMilitaries.ToList())
             {
+                if (military == null)
+                {
+                    TransferingMilitaries.Remove(null);
+                    continue;
+                }
+
                 military.ArrivingDays--;
 
                 var targetArchitecture = military.TargetArchitecture;
+                if (targetArchitecture == null)
+                {
+                    // 目标城池缺失或编队已重复清理时，有效则退回出发城池，否则直接移出运输列表
+                    if (military.StartingArchitecture != null
+                        && military.StartingArchitecture.BelongedFaction == this
+                        && military.BelongedArchitecture == null)
+                    {
+                        military.StartingArchitecture.AddMilitary(military);
+                    }
+
+                    HandleMilitary(military);
+                    continue;
+                }
+
                 var belongedFaction = targetArchitecture.BelongedFaction;
 
                 if (military.ArrivingDays <= 0)
                 {
                     if (military.StartingArchitecture != null 
-                        && targetArchitecture != null 
                         && belongedFaction != null 
                         && belongedFaction == this 
                         && military.BelongedArchitecture == null)                                            
@@ -3860,7 +3879,6 @@ namespace GameObjects
                 else 
                 {
                     if (military.StartingArchitecture != null 
-                        && targetArchitecture != null 
                         && belongedFaction != null 
                         && belongedFaction != this) //运兵过程中目标建筑被占领，停止运输，编队返回出发建筑
                     {
@@ -3872,7 +3890,6 @@ namespace GameObjects
                         HandleMilitary(military);
                     }
                     else if (military.StartingArchitecture != null 
-                            && targetArchitecture != null 
                             && military.StartingArchitecture.BelongedFaction != null
                             && belongedFaction != null 
                             && targetArchitecture.IsSurrounded())   //运兵过程中目标建筑被围城，停止运兵,编队返回出发建筑
@@ -7387,9 +7404,16 @@ namespace GameObjects
             {
                 if (m.TargetArchitecture == a)
                 {
-                    double distance = Session.Current.Scenario.GetDistance(a.ArchitectureArea, this.Capital.ArchitectureArea);
-                    m.TargetArchitecture = this.Capital;
-                    m.ArrivingDays += Math.Max(1, (int)(m.TransferDays(distance) * (1 - a.TroopTransportDayRate)));
+                    if (this.Capital != null)
+                    {
+                        double distance = Session.Current.Scenario.GetDistance(a.ArchitectureArea, this.Capital.ArchitectureArea);
+                        m.TargetArchitecture = this.Capital;
+                        m.ArrivingDays += Math.Max(1, (int)(m.TransferDays(distance) * (1 - a.TroopTransportDayRate)));
+                    }
+                    else
+                    {
+                        m.TargetArchitecture = null;
+                    }
                 }
             }
             a.ChangeFaction(targetFaction);

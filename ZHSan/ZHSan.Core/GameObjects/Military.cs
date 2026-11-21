@@ -1149,7 +1149,7 @@ namespace GameObjects
             }
             set
             {
-                if (this.targetArchitecture == null && value == null) return;
+                if (this.targetArchitecture == null && value == null && TargetArchitectureID == -1) return;
                 this.targetArchitecture = value;
                 
                 if (value != null)
@@ -1168,7 +1168,7 @@ namespace GameObjects
         /// </summary>
         public int TargetArchitectureID { get; set; } = -1;
 
-        public string TargetArchitectureString => TargetArchitectureID > 0 ? TargetArchitecture.Name : "----";
+        public string TargetArchitectureString => TargetArchitecture?.Name ?? "----";
 
         public Architecture StartingArchitecture
         {
@@ -1184,7 +1184,7 @@ namespace GameObjects
             }
             set
             {
-                if (this.startingArchitecture == null && value == null) return;
+                if (this.startingArchitecture == null && value == null && StartingArchitectureID == -1) return;
                 this.startingArchitecture = value;
                 StartingArchitectureID = value?.ID ?? -1;
             }
@@ -1195,7 +1195,7 @@ namespace GameObjects
         /// </summary>
         public int StartingArchitectureID { get; set; }
 
-        public string StartingArchitectureString => StartingArchitectureID > 0 ? StartingArchitecture.Name : "----";
+        public string StartingArchitectureString => StartingArchitecture?.Name ?? "----";
         
         /// <summary>
         /// 到达时间
