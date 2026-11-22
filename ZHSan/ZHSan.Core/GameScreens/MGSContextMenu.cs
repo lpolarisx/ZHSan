@@ -23,6 +23,7 @@ using WorldOfTheThreeKingdoms.Resources;
 using GameManager;
 using GameEnums;
 using GameEvents;
+using TroopDetailPlugin;
 
 //using GameObjects.PersonDetail.PersonMessages;
 
@@ -1235,7 +1236,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     break;
 
                 case ContextMenuResult.TroopDetail:
-                    this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Troop, FrameFunction.Browse, true, true, false, false, [this.CurrentTroop], null, "", "");
+                    TroopDetailDialog.Show(this.CurrentTroop);
                     break;
 
                 case ContextMenuResult.TroopPersons:
@@ -1257,13 +1258,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 case ContextMenuResult.TroopInfo_TroopDetail:
                     if (!Session.LargeContextMenu)
                     {
-                        this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Troop, FrameFunction.Browse, true, true, false, false, [this.CurrentTroop], null, "", "");
+                        TroopDetailDialog.Show(this.CurrentTroop);
                     }
                     else
                     {
                         this.ContextMenuRightClick();
                     }
-                    //this.ShowTabListInFrame(UndoneWorkKind.Frame, FrameKind.Troop, FrameFunction.Browse, true, true, false, false, this.CurrentTroop.GetGameObjectList(), null, "", "");
                     break;
 
                 case ContextMenuResult.TroopInfo_TroopPersons:

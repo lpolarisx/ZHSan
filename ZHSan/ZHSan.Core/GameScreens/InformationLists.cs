@@ -74,11 +74,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             { 300, "兵种" }
         };
 
-        // 效果说明拆成名称和数值，只认两种写法：“【农业】+400上限”和“……增加10%”这类结尾是增减数值的
-        private static readonly Regex BracketValue = new Regex(@"^【(?<name>[^】]+)】(?<value>[+\-].+)$");
-        private static readonly Regex TrailingValue = new Regex(@"^(?<name>.+?)(?<verb>增加|提高|增长|加成|上升|减少|降低|下降|加|减)(?<num>\d+(?:\.\d+)?)(?<unit>%|点|天|个月|单位)?$");
-        private static readonly string[] DecreaseVerbs = { "减少", "降低", "下降", "减" };
-
         private static IEnumerable<Person> AvailablePersons => Session.Current.Scenario.AvailablePersons.Values;
 
         #region 称号
@@ -1136,26 +1131,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 Background = new SolidBrush(DividerColor)
             });
             return holder;
-        }
-
-        /// <summary>
-        /// 效果说明拆成名称和数值，例如“论战胜利几率增加10%”拆成“论战胜利几率”和“+10%”。拆不出来时数值为null
-        /// </summary>
-        private static (string Name, string Value) SplitInfluence(string text)
-        {
-            text = text ?? "";
-            Match bracket = BracketValue.Match(text);
-            if (bracket.Success)
-            {
-                return (bracket.Groups["name"].Value, bracket.Groups["value"].Value);
-            }
-            Match trailing = TrailingValue.Match(text);
-            if (trailing.Success)
-            {
-                string sign = DecreaseVerbs.Contains(trailing.Groups["verb"].Value) ? "-" : "+";
-                return (trailing.Groups["name"].Value.TrimEnd('的'), sign + trailing.Groups["num"].Value + trailing.Groups["unit"].Value);
-            }
-            return (text, null);
         }
 
         #endregion

@@ -1,3 +1,5 @@
+using FontStashSharp;
+using GameEnums;
 using GameGlobal;
 using GameManager;
 using GameObjects;
@@ -18,39 +20,46 @@ using static GameManager.MyraWidgets;
 namespace TroopDetailPlugin
 {
     /// <summary>
-    /// 部队详情，单页两栏。左栏是部队的身份和状态：主将头像、称号势力兵种、攻击防御、兵力士气战意疲劳、移动补给等两列信息、战斗几率；
-    /// 右栏分两列，左列战斗能力、战法、特技，最下面随行人物；右列兵种特性。
-    /// 战法、特技悬停在下方浮出说明，头像点击看人物详情。底板、配色与人物详情一致
+    /// 部队详情。左栏固定显示部队的身份和状态：主将头像、称号势力兵种、攻击防御、兵力士气战意疲劳、移动补给、战斗几率；
+    /// 右侧参考人物详情的页签设计，切换作战、地形行军、属性与目标三页：作战页保留原版双栏（左列战斗能力、战法、特技、随行人物，右列兵种特性），
+    /// 其余两页补充部队列表中的地形适性/乘数、范围特色与行动目标。
+    /// 战法、特技悬停在下方浮出说明，头像及目标建筑/部队点击可跳转查看详情。底板、配色与人物详情一致
     /// </summary>
     internal class TroopDetailDialog
     {
         // 弹窗离窗口边缘至少留这么多
         private const int ScreenMarginX = 40;
         private const int ScreenMarginY = 30;
-        private const int MinDialogWidth = 860;
-        private const int MaxDialogWidth = 920;
+        private const int MinDialogWidth = 900;
+        private const int MaxDialogWidth = 980;
         // 左栏内容是固定的，再矮就放不下战斗几率表
-        private const int MinDialogHeight = 560;
-        private const int MaxDialogHeight = 580;
+        private const int MinDialogHeight = 572;
+        private const int MaxDialogHeight = 610;
 
         // 底板，与人物详情一致
         private const int DialogPadding = 28;
         private const int DialogPaddingTop = 7;
         private const int TitleRowHeight = 34;
         private const int BodySpacing = 10;
-        // 分区底板右边的花纹比别的边宽，右边多留一些，右对齐的数值才不会压到花纹上
+        // 左栏分区底板右边的花纹比别的边宽，右边多留一些，右对齐的数值才不会压到花纹上
         private const int ColumnPadding = 16;
         private const int ColumnPaddingRight = 22;
-        private const int SectionGap = 10;
+        // 右侧带标题线的底板，页签落在横线上面，与人物详情一致
+        private const int PanelPadding = 14;
+        private const int PanelTitleTop = 12;
+        private const int PanelTitleHeight = 28;
+        private const int PanelTitleGap = 6;
+        private const int SectionGap = 8;
+        private const int PageSectionGap = 12;
         // 分区标题：大字标题，后面跟一个小字的说明
         private const int TitleHeight = 26;
         private const int ScrollBarWidth = 18;
 
         // 左栏
-        private const int LeftWidth = 270;
+        private const int LeftWidth = 280;
         private const int LeftInnerWidth = LeftWidth - ColumnPadding - ColumnPaddingRight;
         // 头像随弹窗高度变大，剩下的空留在左栏最下面
-        private const int MinPortraitSize = 72;
+        private const int MinPortraitSize = 70;
         private const int MaxPortraitSize = 104;
         private const int PortraitGap = 12;
         private const int NameFontSize = 24;
@@ -73,13 +82,13 @@ namespace TroopDetailPlugin
         private const int ChanceNameWidth = 44;
         private const int ChanceRowCount = 4;
         // 进度条和下面两列信息之间、两列信息和战斗几率之间的空隙
-        private const int StatusInfoGap = 8;
-        private const int InfoChanceGap = 12;
+        private const int StatusInfoGap = 6;
+        private const int InfoChanceGap = 10;
         // 左栏除头像和行动那一行以外占的高度
         private const int LeftFixedHeight = SectionGap + CoreHeight + SectionGap + 4 * StatusRowHeight + 3 * StatusRowSpacing
             + StatusInfoGap + 3 * InfoRowHeight + InfoChanceGap + TitleHeight + ChanceRowCount * ChanceRowHeight;
 
-        // 右栏分两列，左列占这么多
+        // 作战页：保留原版双栏，左列占这么多
         private const float CombatColumnRatio = 0.6f;
         private const int ColumnGap = 20;
         private const int AbilityCellHeight = 34;
@@ -103,9 +112,20 @@ namespace TroopDetailPlugin
         private const int PersonSpacing = 10;
         // 展开全部时最多显示两行，再多就上下滚动
         private const int MaxPersonRows = 2;
-
         // 兵种特性每条上下留的空
-        private const int KindRowPadding = 6;
+        private const int KindRowPadding = 5;
+
+        // 地形行军页
+        private const int TerrainSummaryHeight = 46;
+        private const int TerrainSummarySpacing = 8;
+        private const int TerrainGroupHeaderHeight = 24;
+        private const int TerrainCardsPerRow = 4;
+        private const int TerrainCardHeight = 68;
+        private const int TerrainCardSpacing = 8;
+
+        // 属性与目标页
+        private const int RangeCardHeight = 52;
+        private const int RangeCardSpacing = 10;
 
         // 疲劳超过这个数，部队的几率开始下降；到这个上限时降到最低，与Troop.TirednessFactor一致
         private const int TirednessFree = 30;
@@ -126,16 +146,23 @@ namespace TroopDetailPlugin
         private static readonly Color DividerColor = new Color(58, 76, 86);
         // 正在使用的战法、特技：蓝底蓝边
         private static readonly Color CurrentColor = new Color(0x5E, 0x9C, 0xC8);
+        // 地形卡片按优劣染淡底色，与信息列表里的地形页一致
+        private static readonly Color TerrainGoodFill = new Color(46, 38, 22);
+        private static readonly Color TerrainBadFill = new Color(44, 24, 24);
+        private static readonly Color LinkHoverColor = new Color(44, 64, 76, 120);
 
         private readonly Troop troop;
         private readonly List<Person> persons;
+        private readonly List<Tab> tabs = new List<Tab>();
 
         // 随窗口大小算出来的尺寸
         private readonly int dialogWidth;
         private readonly int dialogHeight;
         private readonly int bodyHeight;
-        private readonly int innerHeight;
+        private readonly int leftInnerHeight;
         private readonly int rightWidth;
+        private readonly int rightInnerWidth;
+        private readonly int contentHeight;
         private readonly int combatWidth;
         private readonly int kindWidth;
         private readonly int portraitSize;
@@ -159,12 +186,13 @@ namespace TroopDetailPlugin
             this.dialogWidth = MathHelper.Clamp(size.X - 2 * ScreenMarginX, MinDialogWidth, MaxDialogWidth);
             this.dialogHeight = MathHelper.Clamp(size.Y - 2 * ScreenMarginY, MinDialogHeight, MaxDialogHeight);
             this.bodyHeight = this.dialogHeight - DialogPaddingTop - TitleRowHeight - BodySpacing - DialogPadding;
-            this.innerHeight = this.bodyHeight - 2 * ColumnPadding;
+            this.leftInnerHeight = this.bodyHeight - 2 * ColumnPadding;
             this.rightWidth = this.dialogWidth - 2 * DialogPadding - LeftWidth - BodySpacing;
-            int rightInnerWidth = this.rightWidth - ColumnPadding - ColumnPaddingRight;
-            this.combatWidth = (int)((rightInnerWidth - ColumnGap) * CombatColumnRatio);
-            this.kindWidth = rightInnerWidth - ColumnGap - this.combatWidth;
-            int spare = this.innerHeight - LeftFixedHeight - (this.HasCurrentAction ? InfoRowHeight : 0);
+            this.rightInnerWidth = this.rightWidth - 2 * PanelPadding;
+            this.contentHeight = this.bodyHeight - PanelTitleTop - PanelTitleHeight - PanelTitleGap - PanelPadding;
+            this.combatWidth = (int)((this.rightInnerWidth - ColumnGap) * CombatColumnRatio);
+            this.kindWidth = this.rightInnerWidth - ColumnGap - this.combatWidth;
+            int spare = this.leftInnerHeight - LeftFixedHeight - (this.HasCurrentAction ? InfoRowHeight : 0);
             this.portraitSize = MathHelper.Clamp(spare, MinPortraitSize, MaxPortraitSize);
         }
 
@@ -173,7 +201,7 @@ namespace TroopDetailPlugin
         /// </summary>
         public static void Show(Troop troop)
         {
-            if (troop == null || troop.Army == null)
+            if (troop == null || troop.Army == null || troop.Army.Kind == null)
             {
                 return;
             }
@@ -234,6 +262,7 @@ namespace TroopDetailPlugin
             dialog.Widgets.Add(body);
             this.mask.Widgets.Add(dialog);
             this.mask.Widgets.Add(this.popover.Widget);
+            this.SelectTab(this.tabs[0]);
             return this.mask;
         }
 
@@ -254,7 +283,7 @@ namespace TroopDetailPlugin
             return row;
         }
 
-        private VerticalStackPanel CreateColumn(int width)
+        private VerticalStackPanel CreateLeftColumn(int width)
         {
             return new VerticalStackPanel
             {
@@ -312,12 +341,27 @@ namespace TroopDetailPlugin
             };
         }
 
+        private static string FormatRate(float rate)
+        {
+            return rate.ToString("0.##");
+        }
+
+        private static string FormatPosition(Point position)
+        {
+            var scenario = Session.Current?.Scenario;
+            if (scenario == null || scenario.PositionOutOfRange(position))
+            {
+                return "----";
+            }
+            return scenario.PositionString(position);
+        }
+
         #region 左栏
 
         private Widget BuildLeft()
         {
             Troop t = this.troop;
-            VerticalStackPanel column = this.CreateColumn(LeftWidth);
+            VerticalStackPanel column = this.CreateLeftColumn(LeftWidth);
             column.Widgets.Add(this.BuildHeader());
             column.Widgets.Add(CreateSpacer(SectionGap));
 
@@ -350,17 +394,17 @@ namespace TroopDetailPlugin
             Color rationColor = t.RationDaysLeft <= 1 ? Hostile : lowFood ? Warning : Green;
             Color foodColor = t.RationDaysLeft <= 1 ? Hostile : lowFood ? Warning : TextPrimary;
             var info = new VerticalStackPanel();
-            info.Widgets.Add(CreateInfoPair("移动", t.Speed.ToString(), TextPrimary, "地形乘数", t.CurrentRate.ToString("0.##"), TextPrimary));
-            info.Widgets.Add(CreateInfoPair("伤兵", t.InjuryQuantity.ToString("#,0"), t.InjuryQuantity > 0 ? Warning : TextPrimary,
+            info.Widgets.Add(CreateInfoPair(LeftInnerWidth, "移动", t.Speed.ToString(), TextPrimary, "地形乘数", FormatRate(t.CurrentRate), TextPrimary));
+            info.Widgets.Add(CreateInfoPair(LeftInnerWidth, "伤兵", t.InjuryQuantity.ToString("#,0"), t.InjuryQuantity > 0 ? Warning : TextPrimary,
                 "伤兵几率", t.InjuryChance.ToString(), TextPrimary));
-            info.Widgets.Add(CreateInfoPair("粮草", t.Food.ToString("#,0"), foodColor,
+            info.Widgets.Add(CreateInfoPair(LeftInnerWidth, "粮草", t.Food.ToString("#,0"), foodColor,
                 "口粮", t.RationDaysLeft + " / " + t.RationDays + " 天", rationColor));
             // 行动、特技只在有值时显示这一行
             if (this.HasCurrentAction)
             {
                 string action = t.CurrentCombatAction;
                 string stunt = t.CurrentStunt == null ? "----" : t.CurrentStunt.Name + "(" + t.StuntDayLeft + "天)";
-                info.Widgets.Add(CreateInfoPair("行动", action, action == "----" ? TextMuted : TextPrimary,
+                info.Widgets.Add(CreateInfoPair(LeftInnerWidth, "行动", action, action == "----" ? TextMuted : TextPrimary,
                     "特技", stunt, t.CurrentStunt == null ? TextMuted : Gold));
             }
             column.Widgets.Add(info);
@@ -496,15 +540,29 @@ namespace TroopDetailPlugin
         }
 
         // 一行两项，中间隔开一点
-        private static Widget CreateInfoPair(string title1, string value1, Color color1, string title2, string value2, Color color2)
+        private static Widget CreateInfoPair(int totalWidth, string title1, string value1, Color color1, string title2, string value2, Color color2)
         {
-            int width = (LeftInnerWidth - InfoPairGap) / 2;
+            int width = (totalWidth - InfoPairGap) / 2;
             var row = new HorizontalStackPanel
             {
                 Spacing = InfoPairGap
             };
             row.Widgets.Add(CreateInfoCell(title1, value1, color1, width));
-            row.Widgets.Add(CreateInfoCell(title2, value2, color2, LeftInnerWidth - InfoPairGap - width));
+            row.Widgets.Add(CreateInfoCell(title2, value2, color2, totalWidth - InfoPairGap - width));
+            return row;
+        }
+
+        private static Widget CreateInfoPair(Widget leftCell, Widget rightCell)
+        {
+            var row = new HorizontalStackPanel
+            {
+                Spacing = InfoPairGap
+            };
+            row.Widgets.Add(leftCell);
+            if (rightCell != null)
+            {
+                row.Widgets.Add(rightCell);
+            }
             return row;
         }
 
@@ -523,6 +581,41 @@ namespace TroopDetailPlugin
             text.HorizontalAlignment = HorizontalAlignment.Right;
             text.VerticalAlignment = VerticalAlignment.Center;
             cell.Widgets.Add(text);
+            cell.Widgets.Add(CreateDivider(DividerColor));
+            return cell;
+        }
+
+        // 名称靠左、可点击跳转的值靠右；没有目标时按普通暗色文字显示
+        private static Widget CreateInfoLinkCell(string title, string value, Action onClick, int width)
+        {
+            if (onClick == null)
+            {
+                return CreateInfoCell(title, value, value == "----" ? TextMuted : TextPrimary, width);
+            }
+            var cell = new Panel
+            {
+                Width = width,
+                Height = InfoRowHeight
+            };
+            Label label = CreateLabel(title, 13, TextSecondary);
+            label.VerticalAlignment = VerticalAlignment.Center;
+            cell.Widgets.Add(label);
+            Label linkLabel = CreateLabel(value + " ›", 14, Gold);
+            linkLabel.VerticalAlignment = VerticalAlignment.Center;
+            var button = new Button
+            {
+                Content = linkLabel,
+                Height = InfoRowHeight - 2,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center,
+                Padding = new Thickness(4, 0, 2, 0),
+                Background = Transparent,
+                FocusedBackground = Transparent,
+                PressedBackground = new SolidBrush(LinkHoverColor),
+                OverBackground = new SolidBrush(LinkHoverColor)
+            };
+            button.Click += (sender, args) => onClick();
+            cell.Widgets.Add(button);
             cell.Widgets.Add(CreateDivider(DividerColor));
             return cell;
         }
@@ -587,21 +680,127 @@ namespace TroopDetailPlugin
 
         #endregion
 
-        #region 右栏
+        #region 右侧和页签
 
-        // 两列：左列战斗能力、战法、特技、随行人物，右列兵种特性
         private Widget BuildRight()
         {
-            VerticalStackPanel right = this.CreateColumn(this.rightWidth);
+            var right = new VerticalStackPanel
+            {
+                Width = this.rightWidth,
+                Height = this.bodyHeight,
+                Padding = new Thickness(PanelPadding, PanelTitleTop, PanelPadding, PanelPadding),
+                Background = MyraSkin.PanelBackground
+            };
+            this.tabs.Add(new Tab("作战", this.BuildCombatPage()));
+            this.tabs.Add(new Tab("地形行军", this.BuildTerrainPage()));
+            this.tabs.Add(new Tab("属性与目标", this.BuildAttributeTargetPage()));
+            right.Widgets.Add(this.BuildTabBar());
+            right.Widgets.Add(CreateSpacer(PanelTitleGap));
+
+            var pages = new Panel
+            {
+                Height = this.contentHeight
+            };
+            foreach (Tab tab in this.tabs)
+            {
+                pages.Widgets.Add(tab.Page);
+            }
+            right.Widgets.Add(pages);
+            return right;
+        }
+
+        // 页签写在右侧分区的标题位置，落在底板横线上面，与人物详情的页签一样
+        private Widget BuildTabBar()
+        {
+            var bar = new Panel
+            {
+                Height = PanelTitleHeight
+            };
+            var row = new HorizontalStackPanel
+            {
+                Spacing = 4,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+            foreach (Tab tab in this.tabs)
+            {
+                row.Widgets.Add(this.CreateTabButton(tab));
+            }
+            bar.Widgets.Add(row);
+            return bar;
+        }
+
+        private Button CreateTabButton(Tab tab)
+        {
+            SpriteFontBase font = TextManager.GetFont(17);
+            int width = (int)Math.Ceiling(font.MeasureString(tab.Title).X) + 28;
+            tab.Label = CreateLabel(tab.Title, 17, TextSecondary);
+            tab.Label.HorizontalAlignment = HorizontalAlignment.Center;
+            tab.Label.VerticalAlignment = VerticalAlignment.Center;
+            tab.Line = new Panel
+            {
+                Height = 2,
+                Margin = new Thickness(6, 0, 6, 0),
+                VerticalAlignment = VerticalAlignment.Bottom
+            };
+            var content = new Panel();
+            content.Widgets.Add(tab.Label);
+            content.Widgets.Add(tab.Line);
+            tab.Button = new Button
+            {
+                Content = content,
+                Width = width,
+                Height = PanelTitleHeight,
+                Background = Transparent,
+                FocusedBackground = Transparent,
+                PressedBackground = Transparent,
+                OverBackground = Transparent
+            };
+            tab.Button.MouseEntered += (sender, args) =>
+            {
+                if (!tab.Page.Visible)
+                {
+                    tab.Label.TextColor = TextPrimary;
+                }
+            };
+            tab.Button.MouseLeft += (sender, args) =>
+            {
+                if (!tab.Page.Visible)
+                {
+                    tab.Label.TextColor = TextSecondary;
+                }
+            };
+            tab.Button.Click += (sender, args) => this.SelectTab(tab);
+            return tab.Button;
+        }
+
+        private void SelectTab(Tab selected)
+        {
+            this.popover.Hide();
+            foreach (Tab tab in this.tabs)
+            {
+                bool isSelected = tab == selected;
+                tab.Label.TextColor = isSelected ? MyraSkin.TextTitle : TextSecondary;
+                tab.Line.Background = new SolidBrush(isSelected ? Gold : Color.Transparent);
+                tab.Page.Visible = isSelected;
+            }
+        }
+
+        #endregion
+
+        #region 作战页（保留原版双栏）
+
+        // 两列：左列战斗能力、战法、特技、随行人物，右列兵种特性
+        private Widget BuildCombatPage()
+        {
             var columns = new HorizontalStackPanel
             {
                 Spacing = ColumnGap,
-                Height = this.innerHeight
+                Width = this.rightInnerWidth,
+                Height = this.contentHeight
             };
             columns.Widgets.Add(this.BuildCombat());
             columns.Widgets.Add(this.BuildKind());
-            right.Widgets.Add(columns);
-            return right;
+            return columns;
         }
 
         // 上面战斗能力，中间战法、特技，太多时滚动；最下面随行人物，没有就不显示
@@ -611,7 +810,7 @@ namespace TroopDetailPlugin
             var column = new VerticalStackPanel
             {
                 Width = width,
-                Height = this.innerHeight
+                Height = this.contentHeight
             };
             column.Widgets.Add(CreateTitle("战斗能力", null, width));
             column.Widgets.Add(this.BuildAbilities(width));
@@ -742,7 +941,7 @@ namespace TroopDetailPlugin
                 this.personsViewer.ScrollPosition = Point.Zero;
                 personsHeight = SectionGap + TitleHeight + rowHeight;
             }
-            this.listViewer.Height = Math.Max(SlotHeight, this.innerHeight - fixedHeight - personsHeight);
+            this.listViewer.Height = Math.Max(SlotHeight, this.contentHeight - fixedHeight - personsHeight);
         }
 
         private static Widget CreateTileGrid(List<Widget> tiles, int perRow)
@@ -857,25 +1056,6 @@ namespace TroopDetailPlugin
         private bool CanCast(int cost, bool castable)
         {
             return castable && this.troop.Combativity >= cost;
-        }
-
-        // 一个战法或特技格子要显示的东西
-        private class Slot
-        {
-            public readonly string Name;
-            public readonly int Cost;
-            public readonly bool Castable;
-            public readonly bool Current;
-            public readonly Action<VerticalStackPanel, int> Fill;
-
-            public Slot(string name, int cost, bool castable, bool current, Action<VerticalStackPanel, int> fill)
-            {
-                this.Name = name;
-                this.Cost = cost;
-                this.Castable = castable;
-                this.Current = current;
-                this.Fill = fill;
-            }
         }
 
         // 名称靠左、战意靠右。能发动的深色底，不能发动的暗色虚线框，正在用的蓝底蓝边；鼠标移上去边框变金色
@@ -1017,46 +1197,390 @@ namespace TroopDetailPlugin
             var column = new VerticalStackPanel
             {
                 Width = width,
-                Height = this.innerHeight
+                Height = this.contentHeight
             };
             column.Widgets.Add(CreateTitle("兵种特性", kind.Name + " · " + kind.TypeName, width));
             column.Widgets.Add(CreateSpacer(4));
-            int height = Math.Max(0, this.innerHeight - TitleHeight - 4);
+            int height = Math.Max(0, this.contentHeight - TitleHeight - 4);
             column.Widgets.Add(this.CreateViewer(BuildKindRows(kind, width - ScrollBarWidth), width, height));
             return column;
         }
 
-        // 每条特性名称一行、说明一行，下面一条分隔线
+        // 每条特性保留名称和说明，拆出的增减数值右对齐金色突出显示；拆不出时整句高亮数字和『战法名』
         private static Widget BuildKindRows(MilitaryKind kind, int width)
         {
             var panel = new VerticalStackPanel();
-            if (kind.Influences.Count == 0)
+            List<InfluenceSection> sections = SplitInfluenceSections(kind.Influences);
+            if (sections.Count == 0)
             {
                 panel.Widgets.Add(CreateLabel("无", 13, TextSecondary));
                 return panel;
             }
-            foreach (Influence influence in kind.Influences)
+            bool grouped = sections.Any(x => x.Restriction != null);
+            int indent = grouped ? EffectIndent : 0;
+            for (int i = 0; i < sections.Count; i++)
             {
-                var item = new VerticalStackPanel
+                if (grouped)
                 {
-                    Width = width,
-                    Spacing = 2,
-                    Padding = new Thickness(0, KindRowPadding, 0, KindRowPadding)
-                };
-                item.Widgets.Add(CreateWrappedLabel(influence.Name, 14, TextPrimary, width));
-                if (!string.IsNullOrWhiteSpace(influence.Description))
-                {
-                    item.Widgets.Add(CreateWrappedLabel(influence.Description, 12, TextSecondary, width));
+                    if (i > 0)
+                    {
+                        panel.Widgets.Add(CreateSpacer(8));
+                    }
+                    panel.Widgets.Add(CreateWrappedLabel(GetSectionTitle(sections[i]), 12, CaptionColor, width));
                 }
-                panel.Widgets.Add(item);
-                panel.Widgets.Add(new Panel
+                foreach (Influence influence in sections[i].Effects)
                 {
-                    Width = width,
-                    Height = 1,
-                    Background = new SolidBrush(DividerColor)
-                });
+                    panel.Widgets.Add(Indent(CreateKindEffectRow(influence, width - indent), indent));
+                }
             }
             return panel;
+        }
+
+        private static Widget CreateKindEffectRow(Influence influence, int width)
+        {
+            bool hasDesc = !string.IsNullOrWhiteSpace(influence.Description);
+            var (descText, value) = hasDesc ? SplitInfluence(influence.Description) : (null, null);
+            var row = new Panel
+            {
+                Width = width,
+                Padding = new Thickness(0, KindRowPadding, 0, KindRowPadding)
+            };
+            int valueWidth = 0;
+            if (value != null)
+            {
+                Label valueLabel = CreateLabel(value, 15, Gold);
+                valueLabel.HorizontalAlignment = HorizontalAlignment.Right;
+                valueLabel.VerticalAlignment = VerticalAlignment.Center;
+                valueWidth = MeasureWidth(value, 15) + 8;
+                row.Widgets.Add(valueLabel);
+            }
+            int textWidth = Math.Max(40, width - valueWidth);
+            var left = new VerticalStackPanel
+            {
+                Width = textWidth,
+                Spacing = 2,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            left.Widgets.Add(CreateWrappedLabel(HighlightEffect(influence.Name, TextPrimary), 14, TextPrimary, textWidth));
+            if (hasDesc)
+            {
+                left.Widgets.Add(CreateWrappedLabel(HighlightEffect(descText, TextSecondary), 12, TextSecondary, textWidth));
+            }
+            row.Widgets.Add(left);
+
+            var holder = new VerticalStackPanel();
+            holder.Widgets.Add(row);
+            holder.Widgets.Add(new Panel
+            {
+                Width = width,
+                Height = 1,
+                Background = new SolidBrush(DividerColor)
+            });
+            return holder;
+        }
+
+        #endregion
+
+        #region 地形行军页
+
+        // 顶部行军概览，下面按优势/适应/劣势分组展示全部10种地形的乘数和适性，并标出当前所在地形
+        private Widget BuildTerrainPage()
+        {
+            Troop t = this.troop;
+            int width = this.rightInnerWidth - ScrollBarWidth;
+            var content = new VerticalStackPanel
+            {
+                Width = width
+            };
+
+            var scenario = Session.Current?.Scenario;
+            TerrainKind currentTerrain = scenario != null && !scenario.PositionOutOfRange(t.Position)
+                ? scenario.GetTerrainKindByPosition(t.Position)
+                : TerrainKind.None;
+            string currentTerrainName = scenario != null && !scenario.PositionOutOfRange(t.Position)
+                ? scenario.GetTerrainNameByPosition(t.Position)
+                : "----";
+            if (string.IsNullOrEmpty(currentTerrainName))
+            {
+                currentTerrainName = "----";
+            }
+
+            Color currentRateColor = t.CurrentRate > 1.001f ? Gold : t.CurrentRate < 0.999f ? Hostile : TextPrimary;
+            content.Widgets.Add(BuildTerrainSummary(width, new[]
+            {
+                ("行动力", t.RealMovability.ToString(), TextPrimary),
+                ("行动速率", t.Speed.ToString(), TextPrimary),
+                ("当前地形", currentTerrainName, Gold),
+                ("当前乘数", "×" + FormatRate(t.CurrentRate), currentRateColor)
+            }));
+            content.Widgets.Add(CreateSpacer(PageSectionGap));
+
+            var terrains = new List<TerrainEntry>
+            {
+                new TerrainEntry(TerrainKind.Plain, "平原", t.PlainAdaptability, t.PlainRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Grassland, "草原", t.GrasslandAdaptability, t.GrasslandRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Forrest, "森林", t.ForrestAdaptability, t.ForrestRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Marsh, "湿地", t.MarshAdaptability, t.MarshRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Mountain, "山地", t.MountainAdaptability, t.MountainRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Water, "水域", t.WaterAdaptability, t.WaterRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Ridge, "峻岭", t.RidgeAdaptability, t.RidgeRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Wasteland, "荒地", t.WastelandAdaptability, t.WastelandRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Desert, "栈道", t.DesertAdaptability, t.DesertRate, t.RealMovability, currentTerrain),
+                new TerrainEntry(TerrainKind.Cliff, "瘴气林", t.CliffAdaptability, t.CliffRate, t.RealMovability, currentTerrain)
+            };
+
+            var groups = new[]
+            {
+                ("优势地形", "乘数 > 1", Gold, terrains.Where(x => !x.Blocked && x.Rate > 1.001f).OrderByDescending(x => x.Rate).ThenBy(x => x.Adaptability)),
+                ("适应地形", "乘数 = 1", TextPrimary, terrains.Where(x => !x.Blocked && Math.Abs(x.Rate - 1f) <= 0.001f).OrderBy(x => x.Adaptability)),
+                ("劣势地形", "乘数 < 1 或不可通行", Hostile, terrains.Where(x => x.Blocked || x.Rate < 0.999f).OrderBy(x => x.Blocked).ThenByDescending(x => x.Rate).ThenBy(x => x.Adaptability))
+            };
+            foreach (var (title, note, color, items) in groups)
+            {
+                var list = items.ToList();
+                if (list.Count == 0)
+                {
+                    continue;
+                }
+                var header = new HorizontalStackPanel
+                {
+                    Spacing = 8,
+                    Height = TerrainGroupHeaderHeight
+                };
+                Label titleLabel = CreateLabel(title, 14, color);
+                titleLabel.VerticalAlignment = VerticalAlignment.Center;
+                header.Widgets.Add(titleLabel);
+                Label noteLabel = CreateLabel(note, 12, TextSecondary);
+                noteLabel.VerticalAlignment = VerticalAlignment.Center;
+                header.Widgets.Add(noteLabel);
+                content.Widgets.Add(header);
+                content.Widgets.Add(CreateTerrainCards(list, width));
+                content.Widgets.Add(CreateSpacer(8));
+            }
+
+            content.Widgets.Add(CreateWrappedLabel("乘数影响战力；适性越小消耗行动力越少，大于行动力则无法进入。", 12, TextMuted, width));
+            return this.CreateViewer(content, this.rightInnerWidth, this.contentHeight);
+        }
+
+        private static Widget BuildTerrainSummary(int width, (string Title, string Value, Color Color)[] items)
+        {
+            int cardWidth = (width - (items.Length - 1) * TerrainSummarySpacing) / items.Length;
+            var row = new HorizontalStackPanel
+            {
+                Spacing = TerrainSummarySpacing
+            };
+            for (int i = 0; i < items.Length; i++)
+            {
+                int w = i == items.Length - 1 ? width - i * (cardWidth + TerrainSummarySpacing) : cardWidth;
+                var card = new Panel
+                {
+                    Width = w,
+                    Height = TerrainSummaryHeight,
+                    Padding = new Thickness(6, 0, 6, 0),
+                    Background = new FrameBrush(DeepCardColor, DividerColor, false)
+                };
+                card.Widgets.Add(CreateCellContent(items[i].Title, items[i].Value, 16, items[i].Color));
+                row.Widgets.Add(card);
+            }
+            return row;
+        }
+
+        private static Widget CreateTerrainCards(List<TerrainEntry> terrains, int width)
+        {
+            int cardWidth = (width - (TerrainCardsPerRow - 1) * TerrainCardSpacing) / TerrainCardsPerRow;
+            var rows = new VerticalStackPanel
+            {
+                Spacing = TerrainCardSpacing
+            };
+            HorizontalStackPanel row = null;
+            foreach (TerrainEntry terrain in terrains)
+            {
+                if (row == null || row.Widgets.Count >= TerrainCardsPerRow)
+                {
+                    row = new HorizontalStackPanel
+                    {
+                        Spacing = TerrainCardSpacing
+                    };
+                    rows.Widgets.Add(row);
+                }
+                row.Widgets.Add(CreateTerrainCard(terrain, cardWidth));
+            }
+            return rows;
+        }
+
+        private static Widget CreateTerrainCard(TerrainEntry terrain, int width)
+        {
+            Color rateColor;
+            Color fill;
+            Color border;
+            bool dashed = false;
+            if (terrain.Blocked)
+            {
+                rateColor = Hostile;
+                fill = TerrainBadFill;
+                border = Hostile * 0.45f;
+                dashed = true;
+            }
+            else if (terrain.Rate > 1.001f)
+            {
+                rateColor = Gold;
+                fill = TerrainGoodFill;
+                border = GoldDim;
+            }
+            else if (terrain.Rate < 0.999f)
+            {
+                rateColor = Hostile;
+                fill = TerrainBadFill;
+                border = Hostile * 0.35f;
+            }
+            else
+            {
+                rateColor = TextPrimary;
+                fill = DeepCardColor;
+                border = DividerColor;
+            }
+            if (terrain.IsCurrent)
+            {
+                border = Gold;
+                dashed = false;
+            }
+
+            var inner = new VerticalStackPanel
+            {
+                Spacing = 2,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            string nameText = terrain.IsCurrent ? terrain.Name + " · 当前" : terrain.Name;
+            Label name = CreateLabel(nameText, 13, terrain.IsCurrent ? Gold : TextPrimary);
+            name.HorizontalAlignment = HorizontalAlignment.Center;
+            inner.Widgets.Add(name);
+
+            Label rate = CreateLabel("×" + FormatRate(terrain.Rate), 20, rateColor);
+            rate.HorizontalAlignment = HorizontalAlignment.Center;
+            inner.Widgets.Add(rate);
+
+            string adaptText = terrain.Blocked ? "适性 " + terrain.Adaptability + " · 不可" : "适性 " + terrain.Adaptability;
+            Label adapt = CreateLabel(adaptText, 12, terrain.Blocked ? Hostile : TextSecondary);
+            adapt.HorizontalAlignment = HorizontalAlignment.Center;
+            inner.Widgets.Add(adapt);
+
+            var card = new Panel
+            {
+                Width = width,
+                Height = TerrainCardHeight,
+                Background = new FrameBrush(fill, border, dashed)
+            };
+            card.Widgets.Add(inner);
+            return card;
+        }
+
+        #endregion
+
+        #region 属性与目标页
+
+        // 范围与视野、部队属性与编制、行动指令与目标对象（建筑和部队可点击跳转查看详情）
+        private Widget BuildAttributeTargetPage()
+        {
+            Troop t = this.troop;
+            int width = this.rightInnerWidth - ScrollBarWidth;
+            int halfLeft = (width - InfoPairGap) / 2;
+            int halfRight = width - InfoPairGap - halfLeft;
+            var content = new VerticalStackPanel
+            {
+                Width = width
+            };
+
+            content.Widgets.Add(CreateTitle("范围与视野", null, width));
+            int cardWidth = (width - 2 * RangeCardSpacing) / 3;
+            int lastCardWidth = width - 2 * cardWidth - 2 * RangeCardSpacing;
+            var ranges = new HorizontalStackPanel
+            {
+                Spacing = RangeCardSpacing
+            };
+            ranges.Widgets.Add(CreateRangeCard("攻击范围", t.OffenceRadius, t.ObliqueOffence, AttackColor, cardWidth));
+            ranges.Widgets.Add(CreateRangeCard("计略范围", t.StratagemRadius, t.ObliqueStratagem, CurrentColor, cardWidth));
+            ranges.Widgets.Add(CreateRangeCard("视野范围", t.ViewRadius, t.ObliqueView, Gold, lastCardWidth));
+            content.Widgets.Add(ranges);
+            content.Widgets.Add(CreateSpacer(PageSectionGap));
+
+            int fightingForce = t.Leader != null ? t.FightingForce : 0;
+            Color expColor = t.Army.CanLevelUp && t.Experience >= t.Army.LevelUpExperience ? Green : TextPrimary;
+            Color fireColor = t.FireDamageRate > 1.001f ? Warning : t.FireDamageRate < 0.999f ? Green : TextPrimary;
+            string armyName = string.IsNullOrWhiteSpace(t.Army.Name) ? "----" : t.Army.Name;
+
+            content.Widgets.Add(CreateTitle("属性与编制", null, width));
+            content.Widgets.Add(CreateInfoPair(width, "战斗力", fightingForce.ToString("#,0"), Gold,
+                "军队经验", t.Army.ExperienceWithLimit, expColor));
+            content.Widgets.Add(CreateInfoPair(width, "所属军区", t.SectionString, t.SectionString == "----" ? TextMuted : TextPrimary,
+                "人物数量", t.PersonCount + "人", TextPrimary));
+            content.Widgets.Add(CreateInfoPair(width, "编队名称", armyName, armyName == "----" ? TextMuted : TextPrimary,
+                "编队上限", t.RecruitLimit.ToString(), TextPrimary));
+            content.Widgets.Add(CreateInfoPair(width, "建筑伤害率", FormatRate(t.ArchitectureDamageRate), TextPrimary,
+                "建筑反击率", FormatRate(t.ArchitectureCounterDamageRate), TextPrimary));
+            content.Widgets.Add(CreateInfoPair(width, "受火伤率", FormatRate(t.FireDamageRate), fireColor,
+                "防误伤", t.TroopNoAccidentalInjury ? "是" : "否", t.TroopNoAccidentalInjury ? Green : TextSecondary));
+            content.Widgets.Add(CreateInfoPair(width, "每日耗粮", t.FoodCostPerDay.ToString("#,0"), TextPrimary,
+                "携带资金", t.zijin.ToString("#,0"), t.zijin > 0 ? Gold : TextSecondary));
+            content.Widgets.Add(CreateSpacer(PageSectionGap));
+
+            string action = t.CurrentCombatAction;
+            string stunt = t.CurrentStunt == null ? "----" : t.CurrentStunt.Name + "(" + t.StuntDayLeft + "天)";
+            string order = string.IsNullOrWhiteSpace(t.mingling) ? "----" : t.mingling;
+            string currentPos = FormatPosition(t.Position);
+            string destPos = FormatPosition(t.RealDestination);
+
+            Architecture startArch = t.StartingArchitecture;
+            Architecture targetArch = t.TargetArchitecture;
+            Troop targetTroop = t.TargetTroop;
+            Troop willTroop = t.WillTroop;
+            Architecture willArch = t.WillArchitecture;
+
+            content.Widgets.Add(CreateTitle("行动与目标", null, width));
+            content.Widgets.Add(CreateInfoPair(width, "当前行动", action, action == "----" ? TextMuted : TextPrimary,
+                "当前特技", stunt, t.CurrentStunt == null ? TextMuted : Gold));
+            content.Widgets.Add(CreateInfoPair(width, "命令", order, order == "----" ? TextMuted : TextPrimary,
+                "意愿", t.Will.ToString(), TextPrimary));
+            content.Widgets.Add(CreateInfoPair(width, "当前位置", currentPos, currentPos == "----" ? TextMuted : TextPrimary,
+                "目标位置", destPos, destPos == "----" ? TextMuted : TextPrimary));
+            content.Widgets.Add(CreateInfoPair(
+                CreateInfoLinkCell("出发建筑", startArch?.Name ?? "----", startArch != null ? () => ArchitectureDetailDialog.Show(startArch) : (Action)null, halfLeft),
+                CreateInfoLinkCell("目标建筑", targetArch?.Name ?? "----", targetArch != null ? () => ArchitectureDetailDialog.Show(targetArch) : (Action)null, halfRight)));
+            content.Widgets.Add(CreateInfoPair(
+                CreateInfoLinkCell("目标部队", targetTroop?.DisplayName ?? "----",
+                    targetTroop != null && !targetTroop.Destroyed && targetTroop != t ? () => Show(targetTroop) : (Action)null, halfLeft),
+                CreateInfoLinkCell("意愿部队", willTroop?.DisplayName ?? "----",
+                    willTroop != null && !willTroop.Destroyed && willTroop != t ? () => Show(willTroop) : (Action)null, halfRight)));
+            content.Widgets.Add(CreateInfoPair(
+                CreateInfoLinkCell("意愿建筑", willArch?.Name ?? "----", willArch != null ? () => ArchitectureDetailDialog.Show(willArch) : (Action)null, halfLeft),
+                null));
+
+            return this.CreateViewer(content, this.rightInnerWidth, this.contentHeight);
+        }
+
+        // 攻击/计略/视野范围卡片：左上方名称、左下方格数，右下角标斜向是否可用
+        private static Widget CreateRangeCard(string title, int radius, bool oblique, Color accent, int width)
+        {
+            var card = new Panel
+            {
+                Width = width,
+                Height = RangeCardHeight,
+                Padding = new Thickness(12, 7, 10, 6),
+                Background = new AccentBrush(DeepCardColor, DividerColor, accent)
+            };
+            Label label = CreateLabel(title, 12, TextSecondary);
+            label.VerticalAlignment = VerticalAlignment.Top;
+            card.Widgets.Add(label);
+
+            Label value = CreateLabel(radius + " 格", 20, TextPrimary);
+            value.VerticalAlignment = VerticalAlignment.Bottom;
+            card.Widgets.Add(value);
+
+            Label obliqueLabel = CreateLabel("斜向 " + (oblique ? "○" : "×"), 12, oblique ? Green : TextMuted);
+            obliqueLabel.HorizontalAlignment = HorizontalAlignment.Right;
+            obliqueLabel.VerticalAlignment = VerticalAlignment.Bottom;
+            card.Widgets.Add(obliqueLabel);
+            return card;
         }
 
         #endregion
@@ -1072,6 +1596,60 @@ namespace TroopDetailPlugin
             };
             this.dragScroll.Add(viewer);
             return viewer;
+        }
+
+        private class Tab
+        {
+            public readonly string Title;
+            public readonly Widget Page;
+            public Button Button;
+            public Label Label;
+            public Panel Line;
+
+            public Tab(string title, Widget page)
+            {
+                this.Title = title;
+                this.Page = page;
+            }
+        }
+
+        // 一个战法或特技格子要显示的东西
+        private class Slot
+        {
+            public readonly string Name;
+            public readonly int Cost;
+            public readonly bool Castable;
+            public readonly bool Current;
+            public readonly Action<VerticalStackPanel, int> Fill;
+
+            public Slot(string name, int cost, bool castable, bool current, Action<VerticalStackPanel, int> fill)
+            {
+                this.Name = name;
+                this.Cost = cost;
+                this.Castable = castable;
+                this.Current = current;
+                this.Fill = fill;
+            }
+        }
+
+        private readonly struct TerrainEntry
+        {
+            public readonly TerrainKind Kind;
+            public readonly string Name;
+            public readonly int Adaptability;
+            public readonly float Rate;
+            public readonly bool Blocked;
+            public readonly bool IsCurrent;
+
+            public TerrainEntry(TerrainKind kind, string name, int adaptability, float rate, int movability, TerrainKind currentTerrain)
+            {
+                this.Kind = kind;
+                this.Name = name;
+                this.Adaptability = adaptability;
+                this.Rate = rate;
+                this.Blocked = adaptability > movability;
+                this.IsCurrent = kind == currentTerrain;
+            }
         }
 
         // 深色底、1像素边框，顶上一条2像素的彩色线
