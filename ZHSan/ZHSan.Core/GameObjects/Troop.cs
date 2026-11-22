@@ -1367,10 +1367,15 @@ namespace GameObjects
                 }
                 if (this.Army.KindID == 29 || (!this.ViewingWillArchitecture && !this.HasHostileTroopInView()))
                 {
+                    this.TargetTroop = null;
+                    if (this.TargetArchitecture != null && this.TargetArchitecture.BelongedFaction != this.BelongedFaction)
+                    {
+                        this.TargetArchitecture = null;
+                    }
                     Point newRealDestination = Session.Current.Scenario.GetClosestPoint(this.WillArchitecture.ArchitectureArea, this.Position);
                     int oldDistance = Session.Current.Scenario.GetSimpleDistance(this.position, this.RealDestination);
                     int newDistance = Session.Current.Scenario.GetSimpleDistance(this.position, newRealDestination);
-                    if (oldDistance - newDistance >= 1 || oldDistance == 0)
+                    if (!this.WillArchitecture.ArchitectureArea.HasPoint(this.RealDestination) || oldDistance - newDistance >= 1 || oldDistance == 0)
                         this.RealDestination = newRealDestination;
                     return true; // 运输队或者没看到敌人就不需要计算后面的一大堆东西了
                 }
@@ -1775,7 +1780,7 @@ namespace GameObjects
                 Point newRealDestination = Session.Current.Scenario.GetClosestPoint(this.WillArchitecture.ArchitectureArea, this.Position);
                 int oldDistance = Session.Current.Scenario.GetSimpleDistance(this.position, this.RealDestination);
                 int newDistance = Session.Current.Scenario.GetSimpleDistance(this.position, newRealDestination);
-                if (oldDistance - newDistance >= 1 || oldDistance == 0)
+                if (!this.WillArchitecture.ArchitectureArea.HasPoint(this.RealDestination) || oldDistance - newDistance >= 1 || oldDistance == 0)
                     this.RealDestination = newRealDestination;
             }
             else
@@ -8397,13 +8402,20 @@ namespace GameObjects
             else if (this.Position != this.RealDestination && !(this.TargetArchitecture != null && this.CanAttack(this.TargetArchitecture)
                 && this.TargetArchitecture.ArchitectureArea.HasPoint(this.RealDestination)))
             {
-               flag = this.TryToStepForward();
-                // this.Destination = this.RealDestination;
+                if (!this.chongshemubiaoweizhibiaoji)
+                {
+                    this.Destination = this.RealDestination;
+                }
+                flag = this.TryToStepForward();
             }
             else
             {
-                if(this.TargetArchitecture != null && this.TargetArchitecture.Endurance <= 0)
+                if (this.TargetArchitecture != null && this.TargetArchitecture.Endurance <= 0)
                 {
+                    if (!this.chongshemubiaoweizhibiaoji && this.Position != this.RealDestination)
+                    {
+                        this.Destination = this.RealDestination;
+                    }
                     flag = this.TryToStepForward();
                 }
                 else
