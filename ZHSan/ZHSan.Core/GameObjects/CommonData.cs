@@ -225,10 +225,33 @@ namespace GameObjects
         /// </summary>
         public Dictionary<int, ResourceKind> AllResourceKinds { get; set; } = new();
 
+        /// <summary>
+        /// 历史州郡地图配置（全局默认，剧本包内可放 Provinces.json 覆盖）
+        /// </summary>
+        public ProvinceMapConfig ProvinceMapConfig { get; set; }
+
         public CommonData Clone()
         {
             var commonData = this.MemberwiseClone() as CommonData;
             return commonData;
+        }
+
+        private static ProvinceMapConfig LoadDefaultProvinceMapConfig()
+        {
+            try
+            {
+                using var stream = typeof(CommonData).Assembly.GetManifestResourceStream("ZHSan.Core.Content.Data.Common.Provinces.json");
+                if (stream == null) return null;
+                return System.Text.Json.JsonSerializer.Deserialize<ProvinceMapConfig>(stream, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch (Exception ex)
+            {
+                logger?.Warning(ex, "读取内置默认历史州郡配置失败");
+                return null;
+            }
         }
 
         /// <summary>
@@ -286,8 +309,15 @@ namespace GameObjects
                 var castDefaultKinds = archive.Load<List<CastDefaultKindConfig>>("CastDefaultKinds.json");
                 var castTargetKinds = archive.Load<List<CastTargetKindConfig>>("CastTargetKinds.json");
                 var statusEffects = archive.Load<List<StatusEffectConfig>>("StatusEffects.json");
-                // 旧版数据包及MOD可能没有资源种类
+                // 旧版数据包及MOD可能没有资源种类与历史州郡配置
                 var resourceKinds = archive.Load<List<ResourceKindConfig>>("ResourceKinds.json") ?? new();
+                var provinceMapConfig = archive.Load<ProvinceMapConfig>("Provinces.json");
+                if (provinceMapConfig == null && path != "Content/Data/Common/CommonData.dat" && Platform.Current.FileExists("Content/Data/Common/CommonData.dat"))
+                {
+                    using var baseArchive = GameDataArchive.OpenRead("Content/Data/Common/CommonData.dat");
+                    provinceMapConfig = baseArchive.Load<ProvinceMapConfig>("Provinces.json");
+                }
+                provinceMapConfig ??= LoadDefaultProvinceMapConfig();
 
                 Current.AllTerrainDetails = terrainDetails.Select(x => new TerrainDetail(x)).ToDictionary(x => x.ID);
                 Current.AllCombatMethods = combatMethods.Select(x => new CombatMethod(x)).ToDictionary(x => x.ID);
@@ -330,6 +360,7 @@ namespace GameObjects
                 Current.AllCastTargetKinds = castTargetKinds.Select(x => new CastTargetKind(x)).ToList();
                 Current.AllStatusEffects = statusEffects.Select(x => new StatusEffect(x)).ToDictionary(x => x.ID);
                 Current.AllResourceKinds = resourceKinds.Select(x => new ResourceKind(x)).ToDictionary(x => x.ID);
+                Current.ProvinceMapConfig = provinceMapConfig;
 
                 GameScenario.ProcessCommonData(Current);
 

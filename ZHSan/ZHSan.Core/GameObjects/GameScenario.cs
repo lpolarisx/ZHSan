@@ -233,6 +233,11 @@ namespace GameObjects
         public string ScenarioTitle { get; set; }
 
         /// <summary>
+        /// 剧本自定义历史州郡配置（存放于剧本或存档 .dat 内的 Provinces.json；为空时沿用 CommonData.ProvinceMapConfig）
+        /// </summary>
+        public ProvinceMapConfig CustomProvinceMapConfig { get; set; }
+
+        /// <summary>
         /// 军区
         /// </summary>
         public Dictionary<int, Section> Sections { get; set; } = new();
@@ -2967,6 +2972,8 @@ namespace GameObjects
             var events = archive.Load<List<EventConfig>>("Events.json");
             var yearTables = archive.Load<List<YearTableConfig>>("YearTables.json");
             var baseData = archive.Load<GameScenarioConfig>("GameScenarios.json");
+            // 剧本或存档可选自带 Provinces.json 以覆盖 CommonData 中的默认历史州郡
+            CustomProvinceMapConfig = archive.Load<ProvinceMapConfig>("Provinces.json");
 
             Facilities = facilities.Select(x => new Facility(x)).ToDictionary(x => x.ID);
             Informations = informations.Select(x => new Information(x)).ToDictionary(x => x.ID);
@@ -4063,6 +4070,7 @@ namespace GameObjects
             this.Preparing = false;
             // 影响力要用到统治、民心上限，所以放在各种影响生效之后
             MapDetail.TerritoryCalculator.Initialize(this);
+            MapDetail.ProvinceMap.Initialize(this);
             this.InitialGameData();
             Session.Parameters.InitBaseRates();
 
@@ -4097,6 +4105,7 @@ namespace GameObjects
             this.Preparing = false;
 
             MapDetail.TerritoryCalculator.Initialize(this);
+            MapDetail.ProvinceMap.Initialize(this);
 
             this.InitialGameData();
 
@@ -5201,6 +5210,10 @@ namespace GameObjects
             archive.Save("Events.json", events);
             archive.Save("YearTables.json", yearTableConfigs);
             archive.Save("GameScenarios.json", scenarioConfig);
+            if (CustomProvinceMapConfig != null)
+            {
+                archive.Save("Provinces.json", CustomProvinceMapConfig);
+            }
 
             var saves = LoadScenarioSaves();
 

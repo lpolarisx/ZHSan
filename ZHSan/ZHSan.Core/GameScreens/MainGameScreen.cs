@@ -76,7 +76,12 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         //public FreeText qizidezi;
         public bool editMode = false;
         public bool ShowArchitectureConnectedLine = false;
-        public bool ShowFactionBorder = false;
+        public MapBorderMode BorderMode = MapBorderMode.None;
+        public bool ShowFactionBorder
+        {
+            get => this.BorderMode == MapBorderMode.Faction;
+            set => this.BorderMode = value ? MapBorderMode.Faction : (this.BorderMode == MapBorderMode.Faction ? MapBorderMode.None : this.BorderMode);
+        }
         private int ditukuaidezhi = 1;
 
         private bool mapEdited = false;
@@ -3148,17 +3153,26 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 {
                     this.Plugins.ConmentTextPlugin.BuildSecondText("", false);
                 }
+                string provincePrefix = "";
+                if (this.BorderMode == MapBorderMode.Province || this.BorderMode == MapBorderMode.Commandery)
+                {
+                    string provinceText = GameObjects.MapDetail.ProvinceMap.GetDisplayName(this.position.X, this.position.Y, this.BorderMode == MapBorderMode.Commandery);
+                    if (!string.IsNullOrEmpty(provinceText))
+                    {
+                        provincePrefix = provinceText + " ";
+                    }
+                }
                 if ((troopByPosition != null && troopByPosition.Status != TroopStatus.Ambushing) && (Session.GlobalVariables.SkyEye || ((Session.Current.Scenario.CurrentPlayer != null) && Session.Current.Scenario.CurrentPlayer.IsPositionKnown(this.position))))
                 {
-                    this.Plugins.ConmentTextPlugin.BuildFirstText(troopByPosition.DisplayName + " " + this.mainMapLayer.GetTerrainNameByPosition(this.position), true);
+                    this.Plugins.ConmentTextPlugin.BuildFirstText(troopByPosition.DisplayName + " " + provincePrefix + this.mainMapLayer.GetTerrainNameByPosition(this.position), true);
                 }
                 else if (architectureByPosition != null)
                 {
-                    this.Plugins.ConmentTextPlugin.BuildFirstText(architectureByPosition.Name + " " + this.mainMapLayer.GetTerrainNameByPosition(this.position), true);
+                    this.Plugins.ConmentTextPlugin.BuildFirstText(architectureByPosition.Name + " " + provincePrefix + this.mainMapLayer.GetTerrainNameByPosition(this.position), true);
                 }
                 else
                 {
-                    this.Plugins.ConmentTextPlugin.BuildFirstText(this.mainMapLayer.GetTerrainNameByPosition(this.position), false);
+                    this.Plugins.ConmentTextPlugin.BuildFirstText(provincePrefix + this.mainMapLayer.GetTerrainNameByPosition(this.position), !string.IsNullOrEmpty(provincePrefix));
                 }
                 this.Plugins.ConmentTextPlugin.SetView(this.viewportSize.X, this.viewportSize.Y - this.Plugins.ToolBarPlugin.Height);
                 this.Plugins.ConmentTextPlugin.Update(gameTime);

@@ -249,13 +249,29 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                     this.currentKey = Keys.L;
                     this.ShowArchitectureConnectedLine = !this.ShowArchitectureConnectedLine;
                 }
-                else if (InputManager.KeyBoardState.IsKeyDown(Keys.B))
-                {
-                    this.currentKey = Keys.B;
-                    this.ShowFactionBorder = !this.ShowFactionBorder;
-                }
             }
-            if (InputManager.KeyBoardState.IsKeyDown(Keys.Space))
+            if (InputManager.KeyBoardState.IsKeyDown(Keys.B))
+            {
+                this.currentKey = Keys.B;
+                this.BorderMode = this.BorderMode == MapBorderMode.Faction ? MapBorderMode.None : MapBorderMode.Faction;
+                this.lastPosition = new Point(-1, -1);
+            }
+            else if (InputManager.KeyBoardState.IsKeyDown(Keys.P))
+            {
+                this.currentKey = Keys.P;
+                this.BorderMode = this.BorderMode switch
+                {
+                    MapBorderMode.Province => MapBorderMode.Commandery,
+                    MapBorderMode.Commandery => MapBorderMode.None,
+                    _ => MapBorderMode.Province
+                };
+                if (this.BorderMode == MapBorderMode.Province || this.BorderMode == MapBorderMode.Commandery)
+                {
+                    GameObjects.MapDetail.ProvinceMap.EnsureInitialized(Session.Current.Scenario);
+                }
+                this.lastPosition = new Point(-1, -1);
+            }
+            else if (InputManager.KeyBoardState.IsKeyDown(Keys.Space))
             {
 
                 this.currentKey = Keys.Space;

@@ -113,6 +113,8 @@ namespace AirViewPlugin
                         CacheManager.Draw(this.ArchitectureUnitTexture, new Rectangle(((point.X * this.TileLength) + this.MapDisplayOffset.X) - 1, ((point.Y * this.TileLength) + this.MapDisplayOffset.Y) - 1, this.TileLength + 2, this.TileLength + 2), sourceRectangle, white, 0f, Vector2.Zero, SpriteEffects.None, 0.09999f);
                     }
                 }
+                // 州界/州郡界模式下在小地图上显示各州名称（位于城池和部队之上、悬停提示与视野框之下）
+                Session.MainGame.mainGameScreen.factionBorderLayer.DrawMinimapProvinceLabels(this.MapPosition, this.Transparent, 0.09995f);
                 sourceRectangle = null;
                 //CacheManager.Draw(this.FrameTexture, this.FrameDisplayPosition, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.0998f);
                 CacheManager.Draw(this.FrameTexture, this.frameTopPosition, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.0998f);
@@ -121,7 +123,7 @@ namespace AirViewPlugin
                 CacheManager.Draw(this.FrameTexture, this.frameRightPosition, sourceRectangle, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.0998f);
                 if (this.Conment.Text != "")
                 {
-                    CacheManager.Draw(this.ConmentBackgroundTexture, this.Conment.AlignedPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.09999f);
+                    CacheManager.Draw(this.ConmentBackgroundTexture, this.Conment.AlignedPosition, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0.09992f);
                     this.Conment.Draw(0.0999f);
                 }
             }
@@ -339,7 +341,8 @@ namespace AirViewPlugin
                     }
                     else if (this.isPreparedToJump)
                     {
-                        Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(this.GetTranslatedPosition(position));
+                        Point tilePos = this.GetTranslatedPosition(position);
+                        Architecture architectureByPosition = Session.Current.Scenario.GetArchitectureByPosition(tilePos);
                         if (architectureByPosition != null)
                         {
                             this.Conment.DisplayOffset = position;
@@ -347,13 +350,33 @@ namespace AirViewPlugin
                         }
                         else
                         {
-                            this.Conment.Text = "";
+                            var borderMode = Session.MainGame.mainGameScreen.BorderMode;
+                            if (borderMode == WorldOfTheThreeKingdoms.GameScreens.ScreenLayers.MapBorderMode.Province
+                                || borderMode == WorldOfTheThreeKingdoms.GameScreens.ScreenLayers.MapBorderMode.Commandery)
+                            {
+                                GameObjects.MapDetail.ProvinceMap.EnsureInitialized(Session.Current.Scenario);
+                                string provText = GameObjects.MapDetail.ProvinceMap.GetDisplayName(tilePos.X, tilePos.Y, borderMode == WorldOfTheThreeKingdoms.GameScreens.ScreenLayers.MapBorderMode.Commandery);
+                                if (!string.IsNullOrEmpty(provText))
+                                {
+                                    this.Conment.DisplayOffset = position;
+                                    this.Conment.Text = provText;
+                                }
+                                else
+                                {
+                                    this.Conment.Text = "";
+                                }
+                            }
+                            else
+                            {
+                                this.Conment.Text = "";
+                            }
                         }
                     }
                 }
                 else
                 {
                     this.isPreparedToJump = false;
+                    this.Conment.Text = "";
                 }
             }
         }
