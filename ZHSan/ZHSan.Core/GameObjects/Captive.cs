@@ -214,7 +214,7 @@ namespace GameObjects
                 {
                     num = 1;
                 }
-                this.CaptiveFaction.Capital.AddFundPack(this.RansomFund, this.RansomArriveDays + num);
+                this.CaptiveFaction.Capital.AddFundPack(this.RansomFund, this.RansomArriveDays + num, this.BelongedFaction.Capital.ID);
             }
         }
 

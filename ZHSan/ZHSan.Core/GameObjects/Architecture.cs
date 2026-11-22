@@ -1074,19 +1074,19 @@ namespace GameObjects
             }
         }
 
-        public void AddFundPack(int fund, int days)
+        public void AddFundPack(int fund, int days, int sourceArchitectureId = -1)
         {
             if (fund > 0)
             {
-                FundPacks.Add(new FundPack(fund, days));
+                FundPacks.Add(new FundPack(fund, days, sourceArchitectureId));
             }
         }
 
-        public void AddFoodPack(int food, int days)
+        public void AddFoodPack(int food, int days, int sourceArchitectureId = -1)
         {
             if (food > 0)
             {
-                FoodPacks.Add(new FoodPack(food, days));
+                FoodPacks.Add(new FoodPack(food, days, sourceArchitectureId));
             }
         }
 
@@ -1858,11 +1858,11 @@ namespace GameObjects
 
             if (food > 100)
             {
-                this.AddFoodPack((int) (food / Session.Current.Scenario.GetResourceConsumptionRate(src, this)), Session.Current.Scenario.GetTransferFundDays(src, this));
+                this.AddFoodPack((int) (food / Session.Current.Scenario.GetResourceConsumptionRate(src, this)), Session.Current.Scenario.GetTransferFundDays(src, this), src.ID);
             }
             if (fund > 100)
             {
-                this.AddFundPack((int) (fund / Session.Current.Scenario.GetResourceConsumptionRate(src, this)), Session.Current.Scenario.GetTransferFundDays(src, this));
+                this.AddFundPack((int) (fund / Session.Current.Scenario.GetResourceConsumptionRate(src, this)), Session.Current.Scenario.GetTransferFundDays(src, this), src.ID);
             }
 
             return true;
@@ -5276,11 +5276,11 @@ namespace GameObjects
             nearestDays = Math.Max(1, nearestDays);
             foreach (var pack in this.FundPacks)
             {
-                nearest.AddFundPack(pack.Fund, pack.Days + nearestDays);
+                nearest.AddFundPack(pack.Fund, pack.Days + nearestDays, pack.SourceArchitectureID >= 0 ? pack.SourceArchitectureID : this.ID);
             }
             foreach (var pack in this.FoodPacks)
             {
-                nearest.AddFoodPack(pack.Food, pack.Days + nearestDays);
+                nearest.AddFoodPack(pack.Food, pack.Days + nearestDays, pack.SourceArchitectureID >= 0 ? pack.SourceArchitectureID : this.ID);
             }
         }
 
@@ -10394,43 +10394,86 @@ namespace GameObjects
         public string CaptivesString { get; set; }
 
         /// <summary>
-        /// 初始化资金包
+        /// 初始化资金包（兼容旧格式 "fund days" 与新格式 "fund:days:sourceId"）
         /// </summary>
         /// <param name="data"></param>
         public void InitFundPacks()
         {
             var result = new List<FundPack>();
+            if (string.IsNullOrWhiteSpace(FundPacksString))
+            {
+                FundPacks = result;
+                return;
+            }
             var strArray = FundPacksString.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < strArray.Length; i += 2)
+            for (int i = 0; i < strArray.Length;)
             {
-                var fund = int.Parse(strArray[i]);
-                var days = int.Parse(strArray[i + 1]);
-
-                result.Add(new FundPack(fund, days));
+                if (strArray[i].Contains(':'))
+                {
+                    var parts = strArray[i].Split(':');
+                    if (parts.Length >= 2 && int.TryParse(parts[0], out int fund) && int.TryParse(parts[1], out int days))
+                    {
+                        int sourceId = parts.Length >= 3 && int.TryParse(parts[2], out int sid) ? sid : -1;
+                        result.Add(new FundPack(fund, days, sourceId));
+                    }
+                    i += 1;
+                }
+                else if (i + 1 < strArray.Length)
+                {
+                    var fund = int.Parse(strArray[i]);
+                    var days = int.Parse(strArray[i + 1]);
+                    result.Add(new FundPack(fund, days));
+                    i += 2;
+                }
+                else
+                {
+                    break;
+                }
             }
 
-            FundPacks = result; 
+            FundPacks = result;
         }
 
         /// <summary>
-        /// 初始化粮草包
+        /// 初始化粮草包（兼容旧格式 "food days" 与新格式 "food:days:sourceId"）
         /// </summary>
         public void InitFoodPacks()
         {
             var result = new List<FoodPack>();
-
+            if (string.IsNullOrWhiteSpace(FoodPacksString))
+            {
+                FoodPacks = result;
+                return;
+            }
             var strArray = FoodPacksString.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
 
-            for (int i = 0; i < strArray.Length; i += 2)
+            for (int i = 0; i < strArray.Length;)
             {
-                var food = int.Parse(strArray[i]);
-                var days = int.Parse(strArray[i + 1]);
-
-                result.Add(new FoodPack(food, days));
+                if (strArray[i].Contains(':'))
+                {
+                    var parts = strArray[i].Split(':');
+                    if (parts.Length >= 2 && int.TryParse(parts[0], out int food) && int.TryParse(parts[1], out int days))
+                    {
+                        int sourceId = parts.Length >= 3 && int.TryParse(parts[2], out int sid) ? sid : -1;
+                        result.Add(new FoodPack(food, days, sourceId));
+                    }
+                    i += 1;
+                }
+                else if (i + 1 < strArray.Length)
+                {
+                    var food = int.Parse(strArray[i]);
+                    var days = int.Parse(strArray[i + 1]);
+                    result.Add(new FoodPack(food, days));
+                    i += 2;
+                }
+                else
+                {
+                    break;
+                }
             }
 
-            FoodPacks = result; 
+            FoodPacks = result;
         }
 
         /// <summary>
@@ -12369,12 +12412,12 @@ namespace GameObjects
 
         public string SaveFundPacksToString()
         {
-            return string.Join(" ", FundPacks.Select(x => $"{x.Fund} {x.Days}"));
+            return string.Join(" ", FundPacks.Select(x => x.SourceArchitectureID >= 0 ? $"{x.Fund}:{x.Days}:{x.SourceArchitectureID}" : $"{x.Fund} {x.Days}"));
         }
 
         public string SaveFoodPacksToString()
         {
-            return string.Join(" ", FoodPacks.Select(x => $"{x.Food} {x.Days}"));
+            return string.Join(" ", FoodPacks.Select(x => x.SourceArchitectureID >= 0 ? $"{x.Food}:{x.Days}:{x.SourceArchitectureID}" : $"{x.Food} {x.Days}"));
         }
 
         public string SavePopulationPacksToString()
@@ -13634,7 +13677,7 @@ namespace GameObjects
             {
                 var dayInTurn = Session.Current.Scenario.Parameters.DayInTurn;
 
-                return string.Concat(FundPacks.Select(x => $"{x.Days * dayInTurn}天{x.Fund}。"));
+                return string.Join("  ", FundPacks.OrderBy(x => x.Days).Select(x => FormatPackItem(x.Fund, x.Days * dayInTurn, x.SourceArchitectureID)));
             }
         }
 
@@ -13644,8 +13687,17 @@ namespace GameObjects
             {
                 var dayInTurn = Session.Current.Scenario.Parameters.DayInTurn;
 
-                return string.Concat(FoodPacks.Select(x => $"{x.Days * dayInTurn}天{x.Food}。"));
+                return string.Join("  ", FoodPacks.OrderBy(x => x.Days).Select(x => FormatPackItem(x.Food, x.Days * dayInTurn, x.SourceArchitectureID)));
             }
+        }
+
+        private static string FormatPackItem(int amount, int days, int sourceArchitectureId)
+        {
+            if (sourceArchitectureId >= 0 && Session.Current.Scenario.Architectures.TryGetValue(sourceArchitectureId, out var src))
+            {
+                return $"{amount:#,0} / {days}天（自{src.Name}）";
+            }
+            return $"{amount:#,0} / {days}天";
         }
 
         public int GossipArchitectureFund => (int)(Session.Parameters.GossipArchitectureCost * RateOfGossipArchitecture);

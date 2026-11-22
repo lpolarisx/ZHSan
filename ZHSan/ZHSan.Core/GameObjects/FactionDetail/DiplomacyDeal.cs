@@ -308,11 +308,11 @@ namespace GameObjects.FactionDetail
                 this.Target.Capital.DecreaseFood(this.RequestFood);
                 if (this.RequestFund > 0)
                 {
-                    receiver.AddFundPack(this.RequestFund, days);
+                    receiver.AddFundPack(this.RequestFund, days, this.Target.Capital.ID);
                 }
                 if (this.RequestFood > 0)
                 {
-                    receiver.AddFoodPack(this.RequestFood, days);
+                    receiver.AddFoodPack(this.RequestFood, days, this.Target.Capital.ID);
                 }
                 var goods = new List<string>();
                 if (this.RequestFund > 0) goods.Add("资金" + this.RequestFund.ToString("N0"));

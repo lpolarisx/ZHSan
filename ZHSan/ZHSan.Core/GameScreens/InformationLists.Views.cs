@@ -357,7 +357,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 View("一般", name, nameWidth,
                     Col<Architecture, string>("州域", 64, x => x.StateString, 3),
                     Col<Architecture, string>("所属地区", 72, x => x.RegionString),
-                    Col<Architecture, string>("种类", 50, x => x.KindString),
+                    Col<Architecture, string>("种类", 88, x => x.KindString),
                     Col<Architecture, int>("规模", 44, x => x.JianzhuGuimo),
                     Col<Architecture, string>("州效果", 80, x => x.StateEffectString, 4),
                     Col<Architecture, string>("地区效果", 80, x => x.RegionEffectString, 4),

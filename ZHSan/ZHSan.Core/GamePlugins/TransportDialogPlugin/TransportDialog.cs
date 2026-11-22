@@ -434,7 +434,7 @@ namespace TransportDialogPlugin
                         this.SourceArchitecture.DecreaseFund(this.Number);
                         if (Session.Current.Scenario.huangdisuozaijianzhu().BelongedFaction != this.SourceArchitecture.BelongedFaction)
                         {
-                            this.DestinationArchitecture.AddFundPack(this.Number, this.Days);
+                            this.DestinationArchitecture.AddFundPack(this.Number, this.Days, this.SourceArchitecture.ID);
                         }
                         this.SourceArchitecture.BelongedFaction.chaotinggongxiandu += this.Number;
 
@@ -469,12 +469,12 @@ namespace TransportDialogPlugin
                         */
                     case TransportKind.Fund:
                         this.SourceArchitecture.DecreaseFund(this.Number);
-                        this.DestinationArchitecture.AddFundPack((int)(this.Number / Session.Current.Scenario.GetResourceConsumptionRate(this.SourceArchitecture, this.destinationArchitecture)), this.Days);
+                        this.DestinationArchitecture.AddFundPack((int)(this.Number / Session.Current.Scenario.GetResourceConsumptionRate(this.SourceArchitecture, this.destinationArchitecture)), this.Days, this.SourceArchitecture.ID);
                         break;
 
                     case TransportKind.Food:
                         this.SourceArchitecture.DecreaseFood(this.Number);
-                        this.DestinationArchitecture.AddFoodPack((int)(this.Number / Session.Current.Scenario.GetResourceConsumptionRate(this.SourceArchitecture, this.destinationArchitecture)), this.Days);
+                        this.DestinationArchitecture.AddFoodPack((int)(this.Number / Session.Current.Scenario.GetResourceConsumptionRate(this.SourceArchitecture, this.destinationArchitecture)), this.Days, this.SourceArchitecture.ID);
                         break;
                          
                 }

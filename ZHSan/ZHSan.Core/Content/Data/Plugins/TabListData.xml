@@ -1605,7 +1605,7 @@
                                         Align="Middle">
                                 </Column>
                                 <Column ID="3" Name="KindString" CountToDisplay="False"
-                                        IsNumber="false" DisplayName="种类" MinWidth="50"
+                                        IsNumber="false" DisplayName="种类" MinWidth="88"
                                         DetailLevel="1"
                                         FontName="方正隶变_GBK"
                                         FontSize="14"

@@ -1,3 +1,4 @@
+using FontStashSharp;
 using GameEnums;
 using GameGlobal;
 using GameManager;
@@ -9,6 +10,7 @@ using Myra.Events;
 using Myra.Graphics2D;
 using Myra.Graphics2D.Brushes;
 using Myra.Graphics2D.UI;
+using PersonDetailPlugin;
 using Platforms;
 using System;
 using System.Collections.Generic;
@@ -18,8 +20,8 @@ using System.Runtime.CompilerServices;
 namespace WorldOfTheThreeKingdoms.GameScreens
 {
     /// <summary>
-    /// 建筑详情，只用来查看。顶栏是建筑图和资金、军粮、人口，左列是发展和特色，右侧分设施和概况两页。
-    /// 显示的数据与旧的建筑详情插件一致，设施改成带图的卡片，点卡片在右边看说明。
+    /// 建筑详情，只用来查看。顶栏是建筑图和资金、军粮、人口（含上限），左列是发展和特色，右侧页签切换设施、政务与军备、收支与运输三页。
+    /// 设施采用带图卡片，点卡片在右边看说明。
     /// </summary>
     internal class ArchitectureDetailDialog
     {
@@ -60,9 +62,10 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private const int RightBodyHeight = BodyHeight - PanelTitleTop - PanelTitleHeight - 6 - PanelPadding;
         private const int TabButtonWidth = 80;
 
-        // 概况页：每行2项
+        // 概况/收支页：每行2项
         private const int SummaryColumns = 2;
-        private const int SummaryLabelWidth = 100;
+        private const int SummaryLabelWidth = 96;
+        private const int SummaryRowHeight = 22;
 
         // 设施图原图165x91，卡片上按比例缩小
         private const int CardWidth = 100;
@@ -79,8 +82,8 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private const int FilterButtonWidth = 44;
         private const int FilterButtonHeight = 22;
         private const int FacilityBodyHeight = RightBodyHeight - FilterButtonHeight - 6;
-        // 设施空间格子条最宽占多少
-        private const int SpaceBarMaxWidth = 180;
+        // 设施空间格子条最宽占多少（放在设施页筛选栏右侧）
+        private const int SpaceBarMaxWidth = 120;
         // 按住拖动超过这个距离才算滑动列表，否则算点击卡片
         private const int DragThreshold = 6;
 
@@ -88,6 +91,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         internal const string FacilityPicturePath = "Content/Textures/GameComponents/ArchitectureDetail/Data/TheFacilityPage/Facility/";
 
         private static readonly Color LineColor = new Color(90, 110, 120);
+        private static readonly Color DividerColor = new Color(58, 76, 86);
         private static readonly Color BarBackColor = new Color(16, 24, 30);
         private static readonly Color SpaceEmptyColor = new Color(50, 66, 76);
         // 进度条中档的蓝色，与其他文字配色一样降低了饱和度
@@ -103,6 +107,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private readonly List<FacilityItem> items = new List<FacilityItem>();
         private readonly List<Button> filterButtons = new List<Button>();
         private readonly List<ScrollViewer> dragViewers = new List<ScrollViewer>();
+        private readonly List<Tab> tabs = new List<Tab>();
 
         // null表示全部
         private FacilityType? filter;
@@ -111,12 +116,6 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         private ScrollViewer cardsViewer;
         private VerticalStackPanel detailPanel;
         private ScrollViewer detailViewer;
-        private Label facilityTabLabel;
-        private Label summaryTabLabel;
-        private Panel facilityTabLine;
-        private Panel summaryTabLine;
-        private Widget facilityPage;
-        private Widget summaryPage;
 
         // 传给MyraUI的根控件，用来判断本窗口是否在最上层
         private Widget root;
@@ -205,7 +204,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             body.Widgets.Add(this.BuildRightPanel());
             dialog.Widgets.Add(body);
 
-            this.SelectTab(true);
+            this.SelectTab(this.tabs[0]);
             this.RefreshCards();
 
             // 半透明遮罩铺满窗口，压暗后面的游戏界面
@@ -296,9 +295,9 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
 
             Architecture a = this.architecture;
-            header.Widgets.Add(CreateStatCard("资金", a.Fund.ToString("#,0"), FormatIncome(a.ExpectedFund) + "/月", a.ExpectedFund));
-            header.Widgets.Add(CreateStatCard("军粮", a.Food.ToString("#,0"), FormatIncome(a.ExpectedFood) + "/月", a.ExpectedFood));
-            header.Widgets.Add(CreateStatCard("人口", a.Population.ToString("#,0"), "增长 " + a.PopulationDevelopingRateString + "‱", a.PopulationDevelopingRate));
+            header.Widgets.Add(CreateStatCard("资金", a.Fund, a.FundCeiling, FormatIncome(a.ExpectedFund) + "/月", a.ExpectedFund));
+            header.Widgets.Add(CreateStatCard("军粮", a.Food, a.FoodCeiling, FormatIncome(a.ExpectedFood) + "/月", a.ExpectedFood));
+            header.Widgets.Add(CreateStatCard("人口", a.Population, a.PopulationCeiling, "增长 " + a.PopulationDevelopingRateString + "‱", a.PopulationDevelopingRate));
 
             var info = new VerticalStackPanel
             {
@@ -314,24 +313,64 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             return header;
         }
 
-        // 核心数值卡片：名称、大号数值、增量。增量为正青绿，为负赭红
-        private static Widget CreateStatCard(string title, string value, string delta, double deltaValue)
+        // 核心数值卡片：名称+上限（万/亿换算）、精确大号数值、容量进度条、底部增量+百分比。满仓(>=90%)橙黄提醒
+        private static Widget CreateStatCard(string title, int value, int ceiling, string delta, double deltaValue)
         {
+            const int padX = 12;
+            const int padY = 6;
+            int barWidth = StatCardWidth - 2 * padX - 2;
+            double rate = ceiling > 0 ? (double)value / ceiling : 0;
+            bool nearFull = ceiling > 0 && rate >= 0.9;
+
             var card = new VerticalStackPanel
             {
                 Width = StatCardWidth,
                 Height = HeaderHeight,
-                Spacing = 2,
-                Padding = new Thickness(12, 8, 12, 8),
+                Spacing = 3,
+                Padding = new Thickness(padX, padY, padX, padY),
                 Background = new SolidBrush(MyraSkin.ListRowColor),
                 Border = new SolidBrush(LineColor),
                 BorderThickness = new Thickness(1)
             };
-            card.Widgets.Add(CreateLabel(title, 16, MyraSkin.TextSecondary, HorizontalAlignment.Left));
-            card.Widgets.Add(CreateLabel(value, 26, MyraSkin.TextHighlight, HorizontalAlignment.Left));
-            Color color = deltaValue > 0 ? MyraSkin.TextFriendly : deltaValue < 0 ? MyraSkin.TextHostile : MyraSkin.TextSecondary;
-            card.Widgets.Add(CreateLabel(delta, 15, color, HorizontalAlignment.Left));
+
+            var topRow = new Panel();
+            topRow.Widgets.Add(CreateLabel(title, 15, MyraSkin.TextSecondary, HorizontalAlignment.Left));
+            Label ceilingLabel = CreateLabel("上限 " + FormatCompactNumber(ceiling), 13, MyraSkin.TextSecondary, HorizontalAlignment.Right);
+            ceilingLabel.VerticalAlignment = VerticalAlignment.Bottom;
+            topRow.Widgets.Add(ceilingLabel);
+            card.Widgets.Add(topRow);
+
+            int valueFontSize = value >= 100000000 ? 22 : 24;
+            card.Widgets.Add(CreateLabel(value.ToString("#,0"), valueFontSize, MyraSkin.TextHighlight, HorizontalAlignment.Left));
+
+            Color barColor = nearFull ? MyraSkin.TextWarning : rate >= 0.7 ? MyraSkin.TextFriendly : BarBlueColor;
+            Widget bar = CreateBar(barWidth, 4, value, ceiling, barColor);
+            bar.HorizontalAlignment = HorizontalAlignment.Left;
+            card.Widgets.Add(bar);
+
+            var bottomRow = new Panel();
+            Color deltaColor = deltaValue > 0 ? MyraSkin.TextFriendly : deltaValue < 0 ? MyraSkin.TextHostile : MyraSkin.TextSecondary;
+            bottomRow.Widgets.Add(CreateLabel(delta, 14, deltaColor, HorizontalAlignment.Left));
+            string percentText = ceiling > 0 ? ((int)Math.Round(rate * 100)) + "%" : "--";
+            Label percentLabel = CreateLabel(percentText, 13, nearFull ? MyraSkin.TextWarning : MyraSkin.TextSecondary, HorizontalAlignment.Right);
+            percentLabel.VerticalAlignment = VerticalAlignment.Bottom;
+            bottomRow.Widgets.Add(percentLabel);
+            card.Widgets.Add(bottomRow);
+
             return card;
+        }
+
+        private static string FormatCompactNumber(int value)
+        {
+            if (value >= 100000000)
+            {
+                return (value / 100000000.0).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "亿";
+            }
+            if (value >= 10000)
+            {
+                return (value / 10000.0).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "万";
+            }
+            return value.ToString("#,0");
         }
 
         private static string FormatIncome(int income)
@@ -381,7 +420,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             return panel;
         }
 
-        // 右侧大块：标题行切换设施和概况两页
+        // 右侧大块：标题行页签切换设施、政务与军备、收支与运输三页
         private Widget BuildRightPanel()
         {
             var panel = new VerticalStackPanel
@@ -393,66 +432,57 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 Background = MyraSkin.PanelBackground
             };
 
-            // 标题行：左边两个页签，右边设施空间和维持费
-            var titleRow = new Panel
-            {
-                Height = PanelTitleHeight
-            };
-            var tabs = new HorizontalStackPanel
+            this.tabs.Add(new Tab("设施（" + this.architecture.Facilities.Count + "）", this.BuildFacilityPage()));
+            this.tabs.Add(new Tab("政务与军备", this.BuildAffairsPage()));
+            this.tabs.Add(new Tab("收支与运输", this.BuildEconomyPage()));
+
+            var tabRow = new HorizontalStackPanel
             {
                 Spacing = 6,
+                Height = PanelTitleHeight,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Top
             };
-            tabs.Widgets.Add(CreateTab("设施（" + this.architecture.Facilities.Count + "）", TabButtonWidth + 20, () => this.SelectTab(true), out this.facilityTabLabel, out this.facilityTabLine));
-            tabs.Widgets.Add(CreateTab("概况", TabButtonWidth, () => this.SelectTab(false), out this.summaryTabLabel, out this.summaryTabLine));
-            titleRow.Widgets.Add(tabs);
-
-            var right = new HorizontalStackPanel
+            foreach (Tab tab in this.tabs)
             {
-                Spacing = 8,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, 4, 0, 0)
-            };
-            right.Widgets.Add(this.CreateSpaceBar());
-            right.Widgets.Add(CreatePair("空间", this.architecture.FacilityPositionString));
-            right.Widgets.Add(CreatePair("维持", this.architecture.FacilityMaintenanceCostString));
-            titleRow.Widgets.Add(right);
-            panel.Widgets.Add(titleRow);
+                tabRow.Widgets.Add(this.CreateTabButton(tab));
+            }
+            panel.Widgets.Add(tabRow);
 
             var pages = new Panel
             {
                 Height = RightBodyHeight
             };
-            this.facilityPage = this.BuildFacilityPage();
-            this.summaryPage = this.BuildSummaryPage();
-            pages.Widgets.Add(this.facilityPage);
-            pages.Widgets.Add(this.summaryPage);
+            foreach (Tab tab in this.tabs)
+            {
+                pages.Widgets.Add(tab.Page);
+            }
             panel.Widgets.Add(pages);
             return panel;
         }
 
-        // 页签：只有文字，选中的金色并在下面压一条金线，没选中的灰色
-        private static Button CreateTab(string text, int width, Action onClick, out Label label, out Panel line)
+        // 页签：与人物详情一致，文字自适应宽度，选中金字压金线
+        private Button CreateTabButton(Tab tab)
         {
-            label = new Label
+            SpriteFontBase font = TextManager.GetFont(17);
+            int width = Math.Max(TabButtonWidth, (int)Math.Ceiling(font.MeasureString(tab.Title).X) + 28);
+            tab.Label = new Label
             {
-                Text = text,
-                Font = TextManager.GetFont(18),
+                Text = tab.Title,
+                Font = font,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            line = new Panel
+            tab.Line = new Panel
             {
                 Height = 3,
                 VerticalAlignment = VerticalAlignment.Bottom
             };
             var content = new Panel();
-            content.Widgets.Add(label);
-            content.Widgets.Add(line);
+            content.Widgets.Add(tab.Label);
+            content.Widgets.Add(tab.Line);
             IBrush transparent = new SolidBrush(Color.Transparent);
-            var tab = new Button
+            var button = new Button
             {
                 Content = content,
                 Width = width,
@@ -462,37 +492,56 @@ namespace WorldOfTheThreeKingdoms.GameScreens
                 PressedBackground = transparent,
                 OverBackground = new SolidBrush(new Color(44, 64, 76, 120))
             };
-            tab.Click += (sender, args) => onClick();
-            return tab;
+            button.Click += (sender, args) => this.SelectTab(tab);
+            return button;
         }
 
-        private void SelectTab(bool facility)
+        private void SelectTab(Tab selected)
         {
-            this.facilityTabLabel.TextColor = facility ? MyraSkin.TextTitle : MyraSkin.TextSecondary;
-            this.summaryTabLabel.TextColor = facility ? MyraSkin.TextSecondary : MyraSkin.TextTitle;
-            this.facilityTabLine.Background = new SolidBrush(facility ? MyraSkin.TextHighlight : Color.Transparent);
-            this.summaryTabLine.Background = new SolidBrush(facility ? Color.Transparent : MyraSkin.TextHighlight);
-            this.facilityPage.Visible = facility;
-            this.summaryPage.Visible = !facility;
+            foreach (Tab tab in this.tabs)
+            {
+                bool isSelected = tab == selected;
+                tab.Label.TextColor = isSelected ? MyraSkin.TextTitle : MyraSkin.TextSecondary;
+                tab.Line.Background = new SolidBrush(isSelected ? MyraSkin.TextHighlight : Color.Transparent);
+                tab.Page.Visible = isSelected;
+            }
         }
 
-        // 设施页：上面类别筛选，下面左边卡片、右边说明
+        // 设施页：上面左侧类别筛选、右侧设施空间与维持费，下面左边卡片、右边说明
         private Widget BuildFacilityPage()
         {
             var page = new VerticalStackPanel
             {
                 Spacing = 6
             };
+            var topRow = new Panel
+            {
+                Height = FilterButtonHeight
+            };
             var filters = new HorizontalStackPanel
             {
                 Spacing = 6,
-                Height = FilterButtonHeight
+                Height = FilterButtonHeight,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Center
             };
             filters.Widgets.Add(this.CreateFilterButton("全部", null));
             filters.Widgets.Add(this.CreateFilterButton("通用", FacilityType.General));
             filters.Widgets.Add(this.CreateFilterButton("专用", FacilityType.Special));
             filters.Widgets.Add(this.CreateFilterButton("军事", FacilityType.Military));
-            page.Widgets.Add(filters);
+            topRow.Widgets.Add(filters);
+
+            var spaceInfo = new HorizontalStackPanel
+            {
+                Spacing = 8,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            spaceInfo.Widgets.Add(this.CreateSpaceBar());
+            spaceInfo.Widgets.Add(CreatePair("空间", this.architecture.FacilityPositionString, 14));
+            spaceInfo.Widgets.Add(CreatePair("维持", this.architecture.FacilityMaintenanceCostString, 14));
+            topRow.Widgets.Add(spaceInfo);
+            page.Widgets.Add(topRow);
 
             var body = new HorizontalStackPanel
             {
@@ -529,51 +578,298 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             return page;
         }
 
-        // 概况页：旧界面里不常看的数据，每行两项
-        private Widget BuildSummaryPage()
+        // 政务与军备页：行政人事、军备态势、地区灾情分组展示
+        private Widget BuildAffairsPage()
         {
-            var page = new VerticalStackPanel
+            var content = new VerticalStackPanel
             {
-                Spacing = 8
+                Spacing = 12,
+                Padding = new Thickness(0, 4, 0, 4)
             };
+            int contentWidth = RightInnerWidth - ScrollBarWidth;
             Architecture a = this.architecture;
-            var pairs = new List<KeyValuePair<string, string>>
+
+            AddSectionHeader(content, "政务与人事", contentWidth);
+            var mayorCell = a.Mayor != null
+                ? CreateClickableSummaryCell("县令", a.Mayor.Name + " ›", () =>
+                {
+                    if (this.dragDistance <= DragThreshold)
+                    {
+                        PersonDetailDialog.Show(a.Mayor, false);
+                    }
+                }, contentWidth / SummaryColumns)
+                : CreateSummaryCell("县令", a.MayorName, MyraSkin.TextPrimary, contentWidth / SummaryColumns);
+
+            AddSummaryGrid(content, contentWidth, new Widget[]
             {
-                new KeyValuePair<string, string>("人物数量", a.PersonCount.ToString()),
-                new KeyValuePair<string, string>("在野数量", a.NoFactionPersonCount.ToString()),
-                new KeyValuePair<string, string>("编队数量", a.MilitaryCount.ToString()),
-                new KeyValuePair<string, string>("军队数量", a.ArmyQuantity.ToString()),
-                new KeyValuePair<string, string>("军队规模", a.ArmyScale.ToString()),
-                new KeyValuePair<string, string>("设施有效", a.FacilityEnabledString),
-                new KeyValuePair<string, string>("设施维持费", a.FacilityMaintenanceCostString),
-                new KeyValuePair<string, string>("粮道维持费", a.RoutewayActiveCostString),
-                new KeyValuePair<string, string>("情报维持费", a.InformationCostString),
-                new KeyValuePair<string, string>("州效果", a.StateEffectString),
-                new KeyValuePair<string, string>("地区效果", a.RegionEffectString),
+                CreateSummaryCell("所属军区", a.SectionString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                mayorCell,
+                CreateSummaryCell("武将数量", a.PersonCount.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("待命中", a.IdlingPersonCount.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("移动中", a.MovingPersonCount.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("在野数量", a.NoFactionPersonCount.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("妃子空间", a.meinvkongjianzifu, MyraSkin.TextPrimary, contentWidth / SummaryColumns)
+            });
+
+            AddSectionHeader(content, "军备与态势", contentWidth);
+            AddSummaryGrid(content, contentWidth, new Widget[]
+            {
+                CreateSummaryCell("兵役人口", a.MilitaryPopulation.ToString("#,0"), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("军队数量", a.ArmyQuantity.ToString("#,0"), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("军队规模", a.ArmyScale.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("编队数量", a.MilitaryCount.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("前线", a.FrontLineString, a.FrontLine ? MyraSkin.TextWarning : MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("视野范围", a.ViewDistance.ToString(), MyraSkin.TextPrimary, contentWidth / SummaryColumns)
+            });
+
+            AddSectionHeader(content, "地区与灾情", contentWidth);
+            var disasterCells = new List<Widget>
+            {
+                CreateSummaryCell("州效果", a.StateEffectString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("地区效果", a.RegionEffectString, MyraSkin.TextPrimary, contentWidth / SummaryColumns)
             };
-            int cellWidth = RightInnerWidth / SummaryColumns;
+            if (a.youzainan)
+            {
+                disasterCells.Add(CreateSummaryCell("当前灾难", a.zainanming, MyraSkin.TextHostile, contentWidth / SummaryColumns));
+                disasterCells.Add(CreateSummaryCell("剩余天数", a.zainanshengyutianshu + "天", MyraSkin.TextWarning, contentWidth / SummaryColumns));
+            }
+            else
+            {
+                disasterCells.Add(CreateSummaryCell("当前灾难", "无", MyraSkin.TextSecondary, contentWidth / SummaryColumns));
+            }
+            AddSummaryGrid(content, contentWidth, disasterCells);
+
+            var viewer = new ScrollViewer
+            {
+                Content = content,
+                ShowHorizontalScrollBar = false,
+                Width = RightInnerWidth,
+                Height = RightBodyHeight
+            };
+            this.dragViewers.Add(viewer);
+            return viewer;
+        }
+
+        // 收支与运输页：收支维持费与在途资金、军粮明细
+        private Widget BuildEconomyPage()
+        {
+            var content = new VerticalStackPanel
+            {
+                Spacing = 12,
+                Padding = new Thickness(0, 4, 0, 4)
+            };
+            int contentWidth = RightInnerWidth - ScrollBarWidth;
+            Architecture a = this.architecture;
+
+            AddSectionHeader(content, "收支与维持", contentWidth);
+            AddSummaryGrid(content, contentWidth, new Widget[]
+            {
+                CreateSummaryCell("收入缩减率", a.FactionInternalSurplusRatePercentString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("粮草衰减率", a.FoodReduceDayRateString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("设施有效", a.FacilityEnabledString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("设施维持费", a.FacilityMaintenanceCostString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("粮道维持费", a.RoutewayActiveCostString, MyraSkin.TextPrimary, contentWidth / SummaryColumns),
+                CreateSummaryCell("情报维持费", a.InformationCostString, MyraSkin.TextPrimary, contentWidth / SummaryColumns)
+            });
+
+            AddSectionHeader(content, "在途资金", contentWidth);
+            this.AddTransportBlock(
+                content,
+                "正送到资金",
+                a.FundInPack,
+                a.FundPacks.OrderBy(x => x.Days).Select(x => (x.Fund, x.Days, x.SourceArchitectureID)),
+                contentWidth);
+
+            AddSectionHeader(content, "在途军粮", contentWidth);
+            this.AddTransportBlock(
+                content,
+                "正送到军粮",
+                a.FoodInPack,
+                a.FoodPacks.OrderBy(x => x.Days).Select(x => (x.Food, x.Days, x.SourceArchitectureID)),
+                contentWidth);
+
+            var viewer = new ScrollViewer
+            {
+                Content = content,
+                ShowHorizontalScrollBar = false,
+                Width = RightInnerWidth,
+                Height = RightBodyHeight
+            };
+            this.dragViewers.Add(viewer);
+            return viewer;
+        }
+
+        private static void AddSectionHeader(VerticalStackPanel parent, string title, int width)
+        {
+            var header = new VerticalStackPanel
+            {
+                Spacing = 4,
+                Width = width
+            };
+            header.Widgets.Add(CreateLabel(title, 15, MyraSkin.TextTitle, HorizontalAlignment.Left));
+            header.Widgets.Add(new Panel
+            {
+                Width = width,
+                Height = 1,
+                Background = new SolidBrush(DividerColor)
+            });
+            parent.Widgets.Add(header);
+        }
+
+        private static void AddSummaryGrid(VerticalStackPanel parent, int width, IEnumerable<Widget> cells)
+        {
+            var grid = new VerticalStackPanel
+            {
+                Spacing = 6,
+                Width = width
+            };
             HorizontalStackPanel row = null;
-            foreach (var pair in pairs)
+            foreach (Widget cell in cells)
             {
                 if (row == null || row.Widgets.Count >= SummaryColumns)
                 {
                     row = new HorizontalStackPanel
                     {
-                        Height = RowHeight
+                        Height = SummaryRowHeight
                     };
-                    page.Widgets.Add(row);
+                    grid.Widgets.Add(row);
                 }
-                var cell = new HorizontalStackPanel
-                {
-                    Width = cellWidth
-                };
-                Label label = CreateLabel(pair.Key, 16, MyraSkin.TextSecondary, HorizontalAlignment.Left);
-                label.Width = SummaryLabelWidth;
-                cell.Widgets.Add(label);
-                cell.Widgets.Add(CreateLabel(pair.Value, 16, MyraSkin.TextPrimary, HorizontalAlignment.Left));
                 row.Widgets.Add(cell);
             }
-            return page;
+            parent.Widgets.Add(grid);
+        }
+
+        private static Widget CreateSummaryCell(string title, string value, Color valueColor, int cellWidth)
+        {
+            var cell = new HorizontalStackPanel
+            {
+                Width = cellWidth
+            };
+            Label label = CreateLabel(title, 15, MyraSkin.TextSecondary, HorizontalAlignment.Left);
+            label.Width = SummaryLabelWidth;
+            label.VerticalAlignment = VerticalAlignment.Center;
+            cell.Widgets.Add(label);
+            Label val = CreateLabel(value, 15, valueColor, HorizontalAlignment.Left);
+            val.VerticalAlignment = VerticalAlignment.Center;
+            cell.Widgets.Add(val);
+            return cell;
+        }
+
+        private static Widget CreateClickableSummaryCell(string title, string value, Action onClick, int cellWidth)
+        {
+            var cell = new HorizontalStackPanel
+            {
+                Width = cellWidth
+            };
+            Label label = CreateLabel(title, 15, MyraSkin.TextSecondary, HorizontalAlignment.Left);
+            label.Width = SummaryLabelWidth;
+            label.VerticalAlignment = VerticalAlignment.Center;
+            cell.Widgets.Add(label);
+
+            Label linkLabel = CreateLabel(value, 15, MyraSkin.TextHighlight, HorizontalAlignment.Left);
+            linkLabel.VerticalAlignment = VerticalAlignment.Center;
+            IBrush transparent = new SolidBrush(Color.Transparent);
+            var button = new Button
+            {
+                Content = linkLabel,
+                Height = SummaryRowHeight,
+                Background = transparent,
+                FocusedBackground = transparent,
+                PressedBackground = transparent,
+                OverBackground = new SolidBrush(new Color(44, 64, 76, 120)),
+                Padding = new Thickness(4, 0, 6, 0)
+            };
+            button.Click += (sender, args) => onClick();
+            cell.Widgets.Add(button);
+            return cell;
+        }
+
+        private void AddTransportBlock(VerticalStackPanel parent, string totalLabel, int totalAmount, IEnumerable<(int Amount, int Days, int SourceArchId)> packs, int width)
+        {
+            var block = new VerticalStackPanel
+            {
+                Spacing = 6,
+                Width = width
+            };
+            var totalRow = new HorizontalStackPanel
+            {
+                Height = SummaryRowHeight
+            };
+            Label label = CreateLabel(totalLabel, 15, MyraSkin.TextSecondary, HorizontalAlignment.Left);
+            label.Width = SummaryLabelWidth;
+            label.VerticalAlignment = VerticalAlignment.Center;
+            totalRow.Widgets.Add(label);
+            Label amount = CreateLabel(
+                totalAmount > 0 ? totalAmount.ToString("#,0") : "0",
+                15,
+                totalAmount > 0 ? MyraSkin.TextFriendly : MyraSkin.TextSecondary,
+                HorizontalAlignment.Left);
+            amount.VerticalAlignment = VerticalAlignment.Center;
+            totalRow.Widgets.Add(amount);
+            block.Widgets.Add(totalRow);
+
+            var list = packs.ToList();
+            if (list.Count == 0)
+            {
+                block.Widgets.Add(CreateLabel("无在途运输", 15, MyraSkin.TextSecondary, HorizontalAlignment.Left));
+            }
+            else
+            {
+                int dayInTurn = Session.Parameters.DayInTurn;
+                var architectures = Session.Current.Scenario.Architectures;
+                foreach (var item in list)
+                {
+                    var row = new HorizontalStackPanel
+                    {
+                        Height = SummaryRowHeight,
+                        Spacing = 6
+                    };
+                    Label bullet = CreateLabel("•", 15, MyraSkin.TextSecondary, HorizontalAlignment.Left);
+                    bullet.VerticalAlignment = VerticalAlignment.Center;
+                    row.Widgets.Add(bullet);
+
+                    Label valueLabel = CreateLabel(item.Amount.ToString("#,0"), 15, MyraSkin.TextPrimary, HorizontalAlignment.Left);
+                    valueLabel.VerticalAlignment = VerticalAlignment.Center;
+                    row.Widgets.Add(valueLabel);
+
+                    Label daysLabel = CreateLabel("/ " + (item.Days * dayInTurn) + "天", 15, MyraSkin.TextSecondary, HorizontalAlignment.Left);
+                    daysLabel.VerticalAlignment = VerticalAlignment.Center;
+                    row.Widgets.Add(daysLabel);
+
+                    if (item.SourceArchId >= 0 && architectures.TryGetValue(item.SourceArchId, out Architecture srcArch))
+                    {
+                        Label fromLabel = CreateLabel("  自", 15, MyraSkin.TextSecondary, HorizontalAlignment.Left);
+                        fromLabel.VerticalAlignment = VerticalAlignment.Center;
+                        row.Widgets.Add(fromLabel);
+
+                        Label linkLabel = CreateLabel(srcArch.Name + " ›", 15, MyraSkin.TextHighlight, HorizontalAlignment.Left);
+                        linkLabel.VerticalAlignment = VerticalAlignment.Center;
+                        IBrush transparent = new SolidBrush(Color.Transparent);
+                        Architecture target = srcArch;
+                        var button = new Button
+                        {
+                            Content = linkLabel,
+                            Height = SummaryRowHeight,
+                            Background = transparent,
+                            FocusedBackground = transparent,
+                            PressedBackground = transparent,
+                            OverBackground = new SolidBrush(new Color(44, 64, 76, 120)),
+                            Padding = new Thickness(4, 0, 6, 0)
+                        };
+                        button.Click += (sender, args) =>
+                        {
+                            if (this.dragDistance <= DragThreshold)
+                            {
+                                ArchitectureDetailDialog.Show(target);
+                            }
+                        };
+                        row.Widgets.Add(button);
+                    }
+
+                    block.Widgets.Add(row);
+                }
+            }
+            parent.Widgets.Add(block);
         }
 
         private Button CreateFilterButton(string text, FacilityType? type)
@@ -848,14 +1144,14 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         }
 
         // 一对“名称 数值”挤在一起，用在空间紧的地方
-        private static Widget CreatePair(string title, string value)
+        private static Widget CreatePair(string title, string value, int fontSize = 16)
         {
             var pair = new HorizontalStackPanel
             {
                 Spacing = 4
             };
-            pair.Widgets.Add(CreateLabel(title, 16, MyraSkin.TextSecondary, HorizontalAlignment.Left));
-            pair.Widgets.Add(CreateLabel(value, 16, MyraSkin.TextPrimary, HorizontalAlignment.Left));
+            pair.Widgets.Add(CreateLabel(title, fontSize, MyraSkin.TextSecondary, HorizontalAlignment.Left));
+            pair.Widgets.Add(CreateLabel(value, fontSize, MyraSkin.TextPrimary, HorizontalAlignment.Left));
             return pair;
         }
 
@@ -955,7 +1251,7 @@ namespace WorldOfTheThreeKingdoms.GameScreens
             }
             foreach (ScrollViewer viewer in this.dragViewers)
             {
-                if (viewer.ContainsGlobalPoint(position.Value))
+                if (MyraWidgets.IsShown(viewer) && viewer.ContainsGlobalPoint(position.Value))
                 {
                     this.dragViewer = viewer;
                     this.dragLastY = position.Value.Y;
@@ -986,6 +1282,21 @@ namespace WorldOfTheThreeKingdoms.GameScreens
         {
             this.dragLastY = null;
             this.dragViewer = null;
+        }
+
+        // 右侧多页签的一项
+        private class Tab
+        {
+            public readonly string Title;
+            public readonly Widget Page;
+            public Label Label;
+            public Panel Line;
+
+            public Tab(string title, Widget page)
+            {
+                this.Title = title;
+                this.Page = page;
+            }
         }
 
         // 一张设施卡片对应的数据：已建好的设施，或者正在建造的设施（Facility为null）

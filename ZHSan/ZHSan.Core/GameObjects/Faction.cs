@@ -2691,7 +2691,7 @@ namespace GameObjects
                                 num2 = this.Capital.Fund - this.Capital.EnoughFund;
                                 this.Capital.DecreaseFund(num2);
                                 //architecture.AddFundPack(num2, (int)(Session.Current.Scenario.GetDistance(this.Capital.ArchitectureArea, architecture.ArchitectureArea) / 5.0));
-                                architecture.AddFundPack(num2, (int)(Session.Current.Scenario.GetDistance(this.Capital.ArchitectureArea, architecture.ArchitectureArea) / 5.0));
+                                architecture.AddFundPack(num2, (int)(Session.Current.Scenario.GetDistance(this.Capital.ArchitectureArea, architecture.ArchitectureArea) / 5.0), this.Capital.ID);
                             }
                             this.ChangeCapital(architecture);
                         }
@@ -2708,7 +2708,7 @@ namespace GameObjects
                             num2 = this.Capital.Fund - this.Capital.EnoughFund;
                             this.Capital.DecreaseFund(num2);
                             //architecture.AddFundPack(num2, (int)(Session.Current.Scenario.GetDistance(this.Capital.ArchitectureArea, architecture.ArchitectureArea) / 5.0));
-                            architecture.AddFundPack(num2, (int)(Session.Current.Scenario.GetDistance(this.Capital.ArchitectureArea, architecture.ArchitectureArea) / 5.0));
+                            architecture.AddFundPack(num2, (int)(Session.Current.Scenario.GetDistance(this.Capital.ArchitectureArea, architecture.ArchitectureArea) / 5.0), this.Capital.ID);
                         }
                         this.ChangeCapital(architecture);
                     }
@@ -7349,18 +7349,18 @@ namespace GameObjects
         public void CedeArchitecture(Architecture a, Faction targetFaction)
         {
             int days = Math.Max(1, Session.Current.Scenario.GetTransferFundDays(a, this.Capital));
-            this.Capital.AddFundPack(a.Fund, days);
-            this.Capital.AddFoodPack(a.Food, days);
+            this.Capital.AddFundPack(a.Fund, days, a.ID);
+            this.Capital.AddFoodPack(a.Food, days, a.ID);
             a.DecreaseFund(a.Fund);
             a.DecreaseFood(a.Food);
             // 在途的钱粮先到这座城，再转运都城
             foreach (var pack in a.FundPacks)
             {
-                this.Capital.AddFundPack(pack.Fund, pack.Days + days);
+                this.Capital.AddFundPack(pack.Fund, pack.Days + days, pack.SourceArchitectureID >= 0 ? pack.SourceArchitectureID : a.ID);
             }
             foreach (var pack in a.FoodPacks)
             {
-                this.Capital.AddFoodPack(pack.Food, pack.Days + days);
+                this.Capital.AddFoodPack(pack.Food, pack.Days + days, pack.SourceArchitectureID >= 0 ? pack.SourceArchitectureID : a.ID);
             }
             a.ClearFundPacks();
             a.ClearFoodPacks();
